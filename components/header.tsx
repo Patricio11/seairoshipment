@@ -9,8 +9,6 @@ import { AuthPanel } from './auth-panel'
 const navLinks = [
     { name: 'Features', href: '#features' },
     { name: 'How It Works', href: '#how-it-works' },
-    // { name: 'Pricing', href: '#pricing' },
-    // { name: 'Case Studies', href: '#testimonials' },
     { name: 'Contact', href: '#contact' },
 ]
 

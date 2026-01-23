@@ -16,7 +16,7 @@ const outfit = Outfit({
 
 export const metadata: Metadata = {
   title: "Seairo Cargo Solutions | Enterprise Logistics OS",
-  description: "The Digital Twin of Cold Chain - Premium LCL Consolidation & Temperature-Controlled Logistics",
+  description: "The Digital Twin of Cold Chain - Premium SRS Consolidation & Temperature-Controlled Logistics",
 };
 
 export default function RootLayout({
