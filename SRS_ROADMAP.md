@@ -61,9 +61,9 @@
 
 ### Task 1.5: The "Shipments" Kanban Board
 *Visualizing the flow of goods.*
-- [ ] **Kanban Layout:** Drag-and-drop board with columns: `Booked`, `Inspection`, `Sailing`, `Arrived`, `Delivered`.
-- [ ] **Cards:** High-detail cards showing Ref #, Vessel Name, ETA, and Status Badge.
-- [ ] **Filters:** Filter by Route, Status, or Date Range.
+- [x] **Kanban Layout:** Drag-and-drop board with columns: `Booked`, `Inspection`, `Sailing`, `Arrived`, `Delivered`.
+- [x] **Cards:** High-detail cards showing Ref #, Vessel Name, ETA, and Status Badge.
+- [x] **Filters:** Filter by Route, Status, or Date Range.
 
 ### Task 1.6: The "Digital Vault" (Documents)
 *A secure, organized repository for all trade documentation.*
