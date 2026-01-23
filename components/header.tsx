@@ -44,8 +44,6 @@ export function Header() {
                 <div className="mx-auto max-w-7xl px-6">
                     <div className="flex h-20 items-center justify-between">
                         {/* Logo */}
-                        {/* Logo */}
-                        {/* Logo */}
                         <Link href="/" className="flex items-center gap-3">
                             <img
                                 src="/seairo-logo.png"
@@ -56,7 +54,18 @@ export function Header() {
 
                         {/* Desktop Navigation */}
                         <nav className="hidden items-center gap-8 md:flex">
-                            {/* ... */}
+                            {navLinks.map((link) => (
+                                <Link
+                                    key={link.name}
+                                    href={link.href}
+                                    className={`text-sm font-semibold transition-colors ${isScrolled
+                                        ? 'text-slate-600 hover:text-brand-blue'
+                                        : 'text-white/90 hover:text-white'
+                                        }`}
+                                >
+                                    {link.name}
+                                </Link>
+                            ))}
                         </nav>
 
                         {/* CTA Buttons */}

@@ -49,7 +49,7 @@ export function ProcessTimeline() {
                     transition={{ duration: 0.6 }}
                     className="text-center"
                 >
-                    <div className="mb-4 inline-block rounded-full bg-cyan-50 px-4 py-2 text-sm font-bold text-cyan-700">
+                    <div className="mb-4 inline-block rounded-full bg-brand-blue/10 px-4 py-2 text-sm font-bold text-brand-blue">
                         The Process
                     </div>
                     <h2 className="font-display text-4xl font-bold tracking-tight text-slate-900 lg:text-5xl">
