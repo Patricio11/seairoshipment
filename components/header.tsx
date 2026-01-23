@@ -44,29 +44,19 @@ export function Header() {
                 <div className="mx-auto max-w-7xl px-6">
                     <div className="flex h-20 items-center justify-between">
                         {/* Logo */}
+                        {/* Logo */}
+                        {/* Logo */}
                         <Link href="/" className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-cyan-600">
-                                <Package className="h-6 w-6 text-white" strokeWidth={2.5} />
-                            </div>
-                            <div className="font-display text-2xl font-bold">
-                                <span className={isScrolled ? 'text-slate-900' : 'text-white'}>Seairo</span>
-                            </div>
+                            <img
+                                src="/seairo-logo.png"
+                                alt="Seairo Logo"
+                                className="h-10 w-auto" // Adjust height as needed, maintain aspect ratio
+                            />
                         </Link>
 
                         {/* Desktop Navigation */}
                         <nav className="hidden items-center gap-8 md:flex">
-                            {navLinks.map((link) => (
-                                <Link
-                                    key={link.name}
-                                    href={link.href}
-                                    className={`text-sm font-semibold transition-colors ${isScrolled
-                                        ? 'text-slate-600 hover:text-blue-600'
-                                        : 'text-white/90 hover:text-white'
-                                        }`}
-                                >
-                                    {link.name}
-                                </Link>
-                            ))}
+                            {/* ... */}
                         </nav>
 
                         {/* CTA Buttons */}
@@ -74,7 +64,7 @@ export function Header() {
                             <button
                                 onClick={() => openAuth('login')}
                                 className={`text-sm font-semibold transition-colors ${isScrolled
-                                    ? 'text-slate-600 hover:text-blue-600'
+                                    ? 'text-slate-600 hover:text-brand-primary'
                                     : 'text-white/90 hover:text-white'
                                     }`}
                             >
@@ -82,11 +72,12 @@ export function Header() {
                             </button>
                             <button
                                 onClick={() => openAuth('signup')}
-                                className="rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition-all hover:shadow-blue-500/50"
+                                className="rounded-xl bg-gradient-to-r from-brand-blue to-brand-green px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand-blue/30 transition-all hover:shadow-brand-blue/50"
                             >
                                 Get Started
                             </button>
                         </div>
+
 
                         {/* Mobile Menu Button */}
                         <button
@@ -133,7 +124,7 @@ export function Header() {
                                             setIsMobileMenuOpen(false)
                                             openAuth('signup')
                                         }}
-                                        className="block w-full rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-3 text-center text-sm font-bold text-white"
+                                        className="block w-full rounded-xl bg-gradient-to-r from-brand-blue to-brand-green px-4 py-3 text-center text-sm font-bold text-white"
                                     >
                                         Get Started
                                     </button>

@@ -121,7 +121,7 @@ export function Hero3D() {
                     </h1>
 
                     <p className="mx-auto mt-6 max-w-2xl text-xl text-slate-300 lg:text-2xl">
-                        Enterprise Logistics Operating System for Premium LCL Consolidation & IoT-Enabled Temperature Control
+                        Enterprise Logistics Operating System for Premium SRS Consolidation & IoT-Enabled Temperature Control
                     </p>
 
                     <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:justify-center">

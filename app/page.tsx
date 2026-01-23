@@ -11,7 +11,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Seairo Cargo Solutions | Cold Chain Logistics Operating System',
-  description: 'LCL consolidation platform for Cape Town seafood exporters. IoT temperature tracking, automated compliance, real-time visibility.',
+  description: 'SRS consolidation platform for Cape Town seafood exporters. IoT temperature tracking, automated compliance, real-time visibility.',
 }
 
 export default function HomePage() {

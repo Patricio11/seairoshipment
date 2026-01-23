@@ -7,7 +7,7 @@ import { Package, Thermometer, FileCheck, Zap, Shield, DollarSign } from 'lucide
 const features = [
     {
         icon: Package,
-        title: 'LCL Pallet Consolidation',
+        title: 'SRS Pallet Consolidation',
         description: 'Ship 5-20 pallets without paying for a full 40ft container. We consolidate seafood exports from multiple shippers for maximum cost efficiency.',
         benefit: 'Save up to 40% vs FCL',
         industry: 'Ideal for seafood & perishables',
@@ -66,7 +66,7 @@ export function IndustryFeatures() {
                     transition={{ duration: 0.6 }}
                     className="text-center"
                 >
-                    <div className="mb-4 inline-block rounded-full bg-blue-50 px-4 py-2 text-sm font-bold text-blue-600">
+                    <div className="mb-4 inline-block rounded-full bg-brand-blue/10 px-4 py-2 text-sm font-bold text-brand-blue">
                         Platform Capabilities
                     </div>
                     <h2 className="font-display text-4xl font-bold tracking-tight text-slate-900 lg:text-5xl">
@@ -89,7 +89,7 @@ export function IndustryFeatures() {
                         >
                             <div className="relative h-full rounded-2xl border-2 border-slate-100 bg-white p-8 shadow-sm transition-all duration-300 hover:border-blue-200 hover:shadow-xl">
                                 {/* Icon */}
-                                <div className="mb-5 inline-flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 p-3 shadow-lg shadow-blue-500/20">
+                                <div className="mb-5 inline-flex items-center justify-center rounded-xl bg-gradient-to-br from-brand-blue to-brand-green p-3 shadow-lg shadow-brand-blue/20">
                                     <feature.icon className="h-6 w-6 text-white" strokeWidth={2.5} />
                                 </div>
 

@@ -19,15 +19,15 @@ export function ContactSection() {
             icon: MapPin,
             title: 'Global HQ',
             details: ['V&A Waterfront, Cape Town', 'South Africa, 8001'],
-            color: 'text-blue-500',
-            bg: 'bg-blue-500/10'
+            color: 'text-brand-blue',
+            bg: 'bg-brand-blue/10'
         },
         {
             icon: Mail,
             title: 'Email Us',
             details: ['bookings@seairologistics.com', 'support@seairologistics.com'],
-            color: 'text-cyan-500',
-            bg: 'bg-cyan-500/10'
+            color: 'text-brand-green',
+            bg: 'bg-brand-green/10'
         },
         {
             icon: Phone,
@@ -156,7 +156,7 @@ export function ContactSection() {
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
                                     disabled={formState !== 'idle'}
-                                    className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 px-8 py-4 font-display text-lg font-bold text-white shadow-lg shadow-blue-500/25 transition-all hover:shadow-blue-500/40 disabled:opacity-70"
+                                    className="w-full rounded-xl bg-gradient-to-r from-brand-blue to-brand-green px-8 py-4 font-display text-lg font-bold text-white shadow-lg shadow-brand-blue/25 transition-all hover:shadow-brand-blue/40 disabled:opacity-70"
                                 >
                                     {formState === 'idle' ? (
                                         <span className="flex items-center justify-center gap-2">

@@ -80,7 +80,7 @@ export function TestimonialsSection() {
                             <div className="relative rounded-2xl border-2 border-slate-200 bg-white p-12 shadow-xl">
                                 {/* Quote Icon */}
                                 <div className="absolute -top-6 left-12">
-                                    <div className="rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 p-4 shadow-lg">
+                                    <div className="rounded-xl bg-gradient-to-br from-brand-blue to-brand-green p-4 shadow-lg">
                                         <Quote className="h-7 w-7 text-white" />
                                     </div>
                                 </div>
@@ -109,7 +109,7 @@ export function TestimonialsSection() {
 
                                 {/* Author */}
                                 <div className="mt-8 flex items-center gap-4">
-                                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 text-3xl shadow-lg">
+                                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-brand-blue to-brand-green text-3xl shadow-lg">
                                         {testimonials[currentIndex].image}
                                     </div>
                                     <div>
@@ -143,8 +143,8 @@ export function TestimonialsSection() {
                                     key={index}
                                     onClick={() => setCurrentIndex(index)}
                                     className={`h-2 rounded-full transition-all ${index === currentIndex
-                                            ? 'w-8 bg-gradient-to-r from-blue-500 to-cyan-500'
-                                            : 'w-2 bg-slate-300 hover:bg-slate-400'
+                                        ? 'w-8 bg-gradient-to-r from-brand-blue to-brand-green'
+                                        : 'w-2 bg-slate-300 hover:bg-slate-400'
                                         }`}
                                 />
                             ))}

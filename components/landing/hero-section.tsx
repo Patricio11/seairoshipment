@@ -194,21 +194,22 @@ export function IndustryHero() {
                             The Operating System
                             <br />
                             <span className="relative inline-block">
-                                <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-300 bg-clip-text text-transparent">
+                                {/* Brand Color Gradient */}
+                                <span className="bg-gradient-to-r from-brand-blue via-brand-green to-brand-silver bg-clip-text text-transparent">
                                     for Cold Chain
                                 </span>
                                 <motion.div
                                     initial={{ scaleX: 0 }}
                                     animate={{ scaleX: 1 }}
                                     transition={{ duration: 1, delay: 0.5 }}
-                                    className="absolute -bottom-2 left-0 h-1 w-full origin-left rounded-full bg-gradient-to-r from-blue-400 to-cyan-400"
+                                    className="absolute -bottom-2 left-0 h-1 w-full origin-left rounded-full bg-gradient-to-r from-brand-blue to-brand-green"
                                 />
                             </span>
                         </h1>
 
                         {/* Subheadline */}
                         <p className="mx-auto mt-8 max-w-3xl text-xl leading-relaxed text-slate-300 lg:text-2xl">
-                            <strong className="text-white">LCL consolidation</strong> from Cape Town to the world.{' '}
+                            <strong className="text-white">SRS consolidation</strong> from Cape Town to the world.{' '}
                             <strong className="text-white">IoT temperature tracking</strong> on every pallet.{' '}
                             <strong className="text-white">Automated compliance</strong> for seafood exports.
                         </p>
@@ -219,7 +220,7 @@ export function IndustryHero() {
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => setIsAuthOpen(true)}
-                                className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600 px-10 py-5 font-display text-lg font-bold text-white shadow-2xl shadow-blue-500/40"
+                                className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-brand-blue to-brand-green px-10 py-5 font-display text-lg font-bold text-white shadow-2xl shadow-brand-blue/40"
                             >
                                 <span className="relative z-10 flex items-center justify-center gap-2">
                                     Book Your First Shipment

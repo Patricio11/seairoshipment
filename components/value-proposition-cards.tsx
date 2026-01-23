@@ -6,8 +6,8 @@ import { Layers, Thermometer, ShieldCheck, ArrowRight } from 'lucide-react'
 const features = [
     {
         icon: Layers,
-        title: 'LCL Consolidation',
-        description: 'Optimize costs with intelligent pallet-level groupage. Full container efficiency, LCL flexibility.',
+        title: 'SRS Consolidation',
+        description: 'Optimize costs with intelligent pallet-level groupage. Full container efficiency, SRS flexibility.',
         gradient: 'from-blue-500 to-cyan-500',
     },
     {

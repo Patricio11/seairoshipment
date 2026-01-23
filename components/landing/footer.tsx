@@ -46,13 +46,15 @@ export function Footer() {
                 <div className="grid gap-12 lg:grid-cols-5">
                     {/* Brand Column */}
                     <div className="lg:col-span-2">
-                        <div className="font-display text-3xl font-bold">
-                            <span className="bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                                Seairo
-                            </span>
+                        <div className="flex items-center gap-2">
+                            <img
+                                src="/seairo-logo.png"
+                                alt="Seairo"
+                                className="h-10 w-auto object-contain"
+                            />
                         </div>
                         <p className="mt-4 max-w-md text-slate-600">
-                            The operating system for cold chain logistics. Enterprise-grade LCL consolidation platform for Cape Town seafood exporters.
+                            The operating system for cold chain logistics. Enterprise-grade SRS consolidation platform for Cape Town seafood exporters.
                         </p>
 
                         {/* Contact Info */}

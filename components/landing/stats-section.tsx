@@ -9,25 +9,25 @@ const stats = [
         icon: Package,
         value: '50K+',
         label: 'Pallets Shipped Annually',
-        gradient: 'from-blue-500 to-cyan-500',
+        gradient: 'from-brand-blue to-brand-green',
     },
     {
         icon: TrendingUp,
         value: '99.8%',
         label: 'On-Time Delivery Rate',
-        gradient: 'from-cyan-500 to-teal-500',
+        gradient: 'from-brand-green to-brand-silver',
     },
     {
         icon: ThermometerSnowflake,
         value: '-18°C',
         label: 'Perfect Cold Chain Maintained',
-        gradient: 'from-teal-500 to-emerald-500',
+        gradient: 'from-brand-silver to-brand-blue',
     },
     {
         icon: Clock,
         value: '24/7',
         label: 'Live Support & Monitoring',
-        gradient: 'from-emerald-500 to-green-500',
+        gradient: 'from-brand-blue to-brand-green',
     },
 ]
 
