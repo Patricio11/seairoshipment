@@ -67,9 +67,9 @@
 
 ### Task 1.6: The "Digital Vault" (Documents)
 *A secure, organized repository for all trade documentation.*
-- [ ] **Document Grid:** Filterable grid of all documents (Invoices, CoAs, HBLs, Packing Lists).
-- [ ] **Preview Mode:** PDF Previewer / Lightbox.
-- [ ] **Upload Center:** Global upload button to add missing docs to specific shipments.
+- [x] **Document Grid:** Filterable grid of all documents (Invoices, CoAs, HBLs, Packing Lists).
+- [x] **Preview Mode:** PDF Previewer / Lightbox.
+- [x] **Upload Center:** Global upload button to add missing docs to specific shipments.
 
 ### Task 1.7: Financial Hub
 *Transparency in billing.*
