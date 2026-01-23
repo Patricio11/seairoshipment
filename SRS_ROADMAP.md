@@ -44,10 +44,7 @@
 
 ### Task 1.4: The "Mind-Blowing" 3D Booking Wizard
 *The core USP. This replaces the boring form.*
-- [ ] **Step 1: Route & Date (The Filter):**
-    - **Visual:** Mapbox GL element zooming from CPT to Destination.
-    - **Logic:** DatePicker must `disabled={(date) => isFriday(date) || differenceInDays(date, today) < 21}`.
-- [ ] **Step 2: The 3D Container (The "Tetris" Engine):**
+- [x] **Step 1: The 3D Container (The "Tetris" Engine):**
     - **Tech:** `react-three-fiber` (Canvas).
     - **Interaction:** A slider input `[5 - 20]`.
     - **Animation:** As slider moves, 3D pallet blocks *fly* into the container slots using `useSpring`.
@@ -55,8 +52,36 @@
         - 1-4 Pallets: Container turns **Red** (Text: "Min 5 Required").
         - 5-19 Pallets: Blocks are **Blue** (Frost effect).
         - 20 Pallets: Blocks turn **Green** (Full Capacity).
-- [ ] **Step 3: Documents Drag-and-Drop:**
+- [x] **Step 2: Route & Date (The Filter):**
+    - **Visual:** Mapbox GL element zooming from CPT to Destination.
+    - **Logic:** DatePicker must `disabled={(date) => isFriday(date) || differenceInDays(date, today) < 21}`.
+- [x] **Step 3: Docs & Review:**
     - **UI:** A "Scanner" animation that scans the file icon when dropped.
+    - **Fields:** Consignee Name & Address.
+
+### Task 1.5: The "Shipments" Kanban Board
+*Visualizing the flow of goods.*
+- [ ] **Kanban Layout:** Drag-and-drop board with columns: `Booked`, `Inspection`, `Sailing`, `Arrived`, `Delivered`.
+- [ ] **Cards:** High-detail cards showing Ref #, Vessel Name, ETA, and Status Badge.
+- [ ] **Filters:** Filter by Route, Status, or Date Range.
+
+### Task 1.6: The "Digital Vault" (Documents)
+*A secure, organized repository for all trade documentation.*
+- [ ] **Document Grid:** Filterable grid of all documents (Invoices, CoAs, HBLs, Packing Lists).
+- [ ] **Preview Mode:** PDF Previewer / Lightbox.
+- [ ] **Upload Center:** Global upload button to add missing docs to specific shipments.
+
+### Task 1.7: Financial Hub
+*Transparency in billing.*
+- [ ] **Invoice Dashboard:** List of all invoices with status (PAID, DUE, OVERDUE).
+- [ ] **Split-Payment Tracker:** Visual tracker for Deposit (60%) vs Final (40%) payments.
+- [ ] **Statements:** Downloadable monthly statements.
+
+### Task 1.8: Settings & Profile
+*User management and preferences.*
+- [ ] **Company Profile:** Manage company details (VAT, Reg Number).
+- [ ] **Notification Preferences:** Toggle valid alerts (Email/SMS/WhatsApp).
+- [ ] **Account Management:** Password reset, 2FA setup (Mock UI).
 
 ---
 
