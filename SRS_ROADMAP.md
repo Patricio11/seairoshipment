@@ -10,20 +10,20 @@
 
 ### Task 1.1: The "Digital Twin" Landing Page
 *The public face. Must distinguish SRS from standard freight forwarders.*
-- [ ] **Hero Engine:** Implement `react-three-fiber` to render a 3D reefer container floating in an ocean environment.
-- [ ] **Value Prop Cards:** Glassmorphic cards (`backdrop-blur-xl`) detailing:
+- [x] **Hero Engine:** Implement `react-three-fiber` to render a 3D reefer container floating in an ocean environment.
+- [x] **Value Prop Cards:** Glassmorphic cards (`backdrop-blur-xl`) detailing:
     - "LCL Consolidation" (Icon: Layers)
     - "IoT Temperature Tracking" (Icon: Thermometer)
     - "Automated Compliance" (Icon: Shield Check)
-- [ ] **Auth Entry:** A slide-over panel for Login/Sign Up that preserves the 3D background.
+- [x] **Auth Entry:** A slide-over panel for Login/Sign Up that preserves the 3D background.
 
 ### Task 1.2: The Dashboard Shell (The "OS")
 *The User cannot book if not authenticated. This is their daily workspace.*
-- [ ] **App Shell Architecture:**
+- [x] **App Shell Architecture:**
     - **Sidebar (Desktop):** Collapsible (Icon only vs Full Text). Glassmorphism effect (`bg-slate-900/95`).
     - **Mobile Navigation:** Bottom Sheet / Hamburger menu with smooth slide-in.
     - **Global Search:** "Cmd+K" style search bar to find any Container, Invoice, or Date instantly.
-- [ ] **Menu Structure:**
+- [x] **Menu Structure:**
     1.  **Overview:** (Widgets: Active Shipments, Weather at Destination, Next Cut-off).
     2.  **New Booking:** (The 3D Container Wizard).
     3.  **My Shipments:** (Kanban Board: Booked -> Inspection -> Sailing -> Arrived).
@@ -33,12 +33,12 @@
 
 ### Task 1.3: The "Overview" Command Center
 *The default landing view. High density, actionable data.*
-- [ ] **Widget A: "Next Cut-Off" Countdown:**
+- [x] **Widget A: "Next Cut-Off" Countdown:**
     - Visual circular progress bar.
     - Logic: `Time Remaining until Friday 12:00` (NRCS Deadline).
-- [ ] **Widget B: Weather API Integration:**
+- [x] **Widget B: Weather API Integration:**
     - Fetch weather for "Cape Town" (Origin) and "London/Ashdod" (Destination).
-- [ ] **Widget C: Active Shipments Grid:**
+- [x] **Widget C: Active Shipments Grid:**
     - Columns: Ref #, Route, Status (Badge), Temp (Live Mock).
     - Status Badges: `AnimatePulse` effect for "Sailing".
 
