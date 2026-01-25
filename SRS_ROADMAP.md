@@ -109,10 +109,14 @@
 ### Task 2.2: The "State Machine" Logic
 *Logistics is a state machine. Build the transitions.*
 - [ ] **Booking State Machine:**
-    - `DRAFT` -> `SUBMITTED` (triggers Deposit Invoice)
+    - `DRAFT` -> `SUBMITTED` (triggers 60% Deposit Invoice)
     - `DEPOSIT_PAID` -> `CONFIRMED` (triggers Ops Notification)
     - `INSPECTED` -> `LOADED` (triggers TIVE Activation)
-    - `ARRIVED` -> `DELIVERED` (triggers Final Invoice)
+    - `ARRIVED` -> `DELIVERED` (triggers 40% Final Invoice)
+- [ ] **Data Validation Engine:**
+    - **Pallet Logic:** Min 5, Max 20 (40ft). 1m x 1.2m x 1.8m dimensions.
+    - **Pricing:** `(BaseRate * Pallets) + (FuelSurcharge * ROE * 1.20)`.
+    - **Integrations:** Stub endpoints for `Meatship.ai` and `Metaship.ai`.
 - [ ] **Server Actions:**
     - `submitBooking(formData)`: Validates 21-day rule, Friday rule, and Palette capacity.
     - `uploadDocument(file)`: Uploads to S3/UploadThing and updates Doc Status.
@@ -123,7 +127,9 @@
     - Fetch Live ROE (Rate of Exchange) from external API (mock for now).
 - [ ] **Invoice Generator:**
     - Server-side PDF generation using `react-pdf/renderer`.
-    - Generates 60% Deposit Invoice immediately upon booking.
+    - Server-side PDF generation using `react-pdf/renderer`.
+    - Generates **60% Deposit Invoice** immediately upon booking submission.
+    - Generates **40% Balance Invoice** upon arrival at destination.
 
 ---
 
@@ -140,7 +146,10 @@
 
 ### Task 3.2: The Vetting System
 - [ ] **UI:** Split screen. Left: User Application (Docs). Right: Action Panel (Approve/Reject).
-- [ ] **Action:** "Approve" generates a unique Account Number and emails the user.
+- [ ] **Action:** "Approve" triggers system to:
+    - Generate unique Account Number (e.g., `ACC-2024-001`).
+    - Send "Welcome & Rate Card" email.
+    - Enable "New Booking" access in User Dashboard.
 
 ### Task 3.3: The "Load Planner" (Tetris for Admins)
 - [ ] **Visual Interface:**
@@ -170,6 +179,12 @@
 - [ ] **Endpoint:** `POST /api/webhooks/tive`
 - [ ] **Logic:** Receive temp payload. If `temp > -18.0`, trigger `sendAlertEmail()`.
 - [ ] **Frontend:** Render a Recharts Line Graph on the User's Shipment Detail page.
+
+### Task 4.3: Meatship.ai Integration (The Brain)
+*Goal: Sync Bookings and Documents with the core ops system.*
+- [ ] **Booking Push:** When User clicks "Submit", POST booking payload to Meatship.
+- [ ] **Shipment Pull:** Webhook listener for "Shipment Created" events from Meatship (returning the Master Ref).
+- [ ] **Doc Sync:** Two-way sync of CoAs, HBLs, and Invoices.
 
 ---
 
