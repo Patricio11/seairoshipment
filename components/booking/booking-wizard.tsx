@@ -9,7 +9,7 @@ import { Step2Cargo } from "./step-2-cargo"
 import { Step3Docs } from "./step-3-docs"
 import { toast } from "sonner"
 
-export function BookingWizard() {
+export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
     const [step, setStep] = useState(1)
     const [formData, setFormData] = useState({
         origin: "",
@@ -60,27 +60,27 @@ export function BookingWizard() {
         }
         // Mock Submission
         toast.success("Booking Submitted Successfully! Ref: SRS-9921")
-        // Reset or redirect logic here
+        onSuccess?.()
     }
 
     return (
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto w-full">
             {/* Step Indicator */}
-            <div className="mb-8">
+            <div className="mb-6 sm:mb-8">
                 <div className="flex items-center justify-between relative">
                     <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-slate-200 dark:bg-slate-800 -z-10" />
 
                     {[1, 2, 3].map((s) => (
-                        <div key={s} className={`flex flex-col items-center gap-2 bg-slate-50 dark:bg-slate-950 px-2`}>
+                        <div key={s} className="flex flex-col items-center gap-1.5 bg-slate-50 dark:bg-slate-950 px-1 sm:px-2">
                             <div
                                 className={`
-                            h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm transition-all
-                            ${step >= s ? "bg-brand-blue text-white shadow-lg shadow-brand-blue/30 scale-110" : "bg-slate-200 text-slate-500 dark:bg-slate-800"}
-                        `}
+                                h-8 w-8 sm:h-10 sm:w-10 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition-all
+                                ${step >= s ? "bg-brand-blue text-white shadow-lg shadow-brand-blue/30 scale-110" : "bg-slate-200 text-slate-500 dark:bg-slate-800"}
+                            `}
                             >
-                                {step > s ? <Check className="h-5 w-5" /> : s}
+                                {step > s ? <Check className="h-4 w-4 sm:h-5 sm:w-5" /> : s}
                             </div>
-                            <span className={`text-xs font-medium ${step >= s ? "text-brand-blue" : "text-slate-500"}`}>
+                            <span className={`text-[10px] sm:text-xs font-medium ${step >= s ? "text-brand-blue" : "text-slate-500"}`}>
                                 {s === 1 && "Cargo"}
                                 {s === 2 && "Route"}
                                 {s === 3 && "Review"}
@@ -90,36 +90,37 @@ export function BookingWizard() {
                 </div>
             </div>
 
-            {/* Content */}
-            <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-xl border border-slate-100 dark:border-slate-800 min-h-[500px] flex flex-col justify-between">
-                <AnimatePresence mode="wait">
-                    {/* Note: Components are reused but ordered differently */}
-                    {step === 1 && <Step2Cargo key="step1" formData={formData} updateFormData={updateFormData} />}
-                    {step === 2 && <Step1Route key="step2" formData={formData} updateFormData={updateFormData} />}
-                    {step === 3 && <Step3Docs key="step3" formData={formData} updateFormData={updateFormData} />}
-                </AnimatePresence>
+            {/* Content Container */}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xl border border-slate-100 dark:border-slate-800 min-h-[400px] sm:min-h-[500px] flex flex-col justify-between overflow-hidden">
+                <div className="flex-1 overflow-y-auto">
+                    <AnimatePresence mode="wait">
+                        {step === 1 && <Step2Cargo key="step1" formData={formData} updateFormData={updateFormData} />}
+                        {step === 2 && <Step1Route key="step2" formData={formData} updateFormData={updateFormData} />}
+                        {step === 3 && <Step3Docs key="step3" formData={formData} updateFormData={updateFormData} />}
+                    </AnimatePresence>
+                </div>
 
                 {/* Footer Actions */}
-                <div className="flex justify-between items-center pt-8 border-t border-slate-100 dark:border-slate-800 mt-8">
+                <div className="flex justify-between items-center pt-6 sm:pt-8 border-t border-slate-100 dark:border-slate-800 mt-6 sm:mt-8">
                     <Button
                         variant="ghost"
                         onClick={prevStep}
                         disabled={step === 1}
-                        className="text-slate-500"
+                        className="text-slate-500 text-sm sm:text-base h-9 sm:h-10 px-3 sm:px-4"
                     >
-                        <ChevronLeft className="mr-2 h-4 w-4" />
+                        <ChevronLeft className="mr-1 sm:mr-2 h-4 w-4" />
                         Back
                     </Button>
 
                     {step < 3 ? (
-                        <Button onClick={nextStep} className="bg-brand-blue hover:bg-blue-700 min-w-[120px]">
-                            Next Step
-                            <ChevronRight className="ml-2 h-4 w-4" />
+                        <Button onClick={nextStep} className="bg-brand-blue hover:bg-blue-700 min-w-[100px] sm:min-w-[120px] text-sm sm:text-base h-9 sm:h-10">
+                            Next
+                            <ChevronRight className="ml-1 sm:ml-2 h-4 w-4" />
                         </Button>
                     ) : (
-                        <Button onClick={handleSubmit} className="bg-emerald-600 hover:bg-emerald-700 min-w-[120px]">
-                            Confirm Booking
-                            <Check className="ml-2 h-4 w-4" />
+                        <Button onClick={handleSubmit} className="bg-emerald-600 hover:bg-emerald-700 min-w-[100px] sm:min-w-[120px] text-sm sm:text-base h-9 sm:h-10">
+                            Confirm
+                            <Check className="ml-1 sm:ml-2 h-4 w-4" />
                         </Button>
                     )}
                 </div>

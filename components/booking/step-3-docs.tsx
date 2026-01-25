@@ -39,7 +39,7 @@ export function Step3Docs({ formData, updateFormData }: Step3Props) {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="max-w-xl mx-auto space-y-6"
+            className="max-w-xl mx-auto w-full space-y-4 sm:space-y-6"
         >
             <div className="text-center space-y-2">
                 <h3 className="text-lg font-semibold">Docs & Review</h3>

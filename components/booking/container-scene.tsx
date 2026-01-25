@@ -110,7 +110,7 @@ export function ContainerScene({ palletCount }: { palletCount: number }) {
     }, [palletCount])
 
     return (
-        <div className="h-[400px] w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-700 relative shadow-2xl">
+        <div className="h-[250px] sm:h-[400px] w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-700 relative shadow-2xl">
             <div className="absolute top-4 left-4 z-10 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
                 <span className="text-xs font-medium text-white">Live Capacity: {Math.round((palletCount / 20) * 100)}%</span>
             </div>

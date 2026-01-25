@@ -6,6 +6,8 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { BookingModal } from "@/components/booking/booking-modal"
+import { useBookingModal } from "@/hooks/use-booking-modal"
 
 export default function DashboardLayout({
     children,
@@ -13,6 +15,7 @@ export default function DashboardLayout({
     children: React.ReactNode
 }) {
     const [isCollapsed, setIsCollapsed] = React.useState(false)
+    const { isOpen, onClose } = useBookingModal()
 
     return (
         <div className="flex min-h-screen bg-slate-50/50 dark:bg-slate-950/50">
@@ -59,6 +62,8 @@ export default function DashboardLayout({
                     </div>
                 </main>
             </div>
+
+            <BookingModal open={isOpen} onOpenChange={(open) => !open && onClose()} />
         </div>
     )
 }
