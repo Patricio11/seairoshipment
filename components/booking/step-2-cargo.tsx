@@ -99,7 +99,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
-                        className="max-w-2xl mx-auto space-y-8 py-4"
+                        className="w-full space-y-8 py-4"
                     >
                         <div className="text-center space-y-2">
                             <h3 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Shipment Specifications</h3>
@@ -117,7 +117,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                     <div className="space-y-2">
                                         <Label className="text-xs font-semibold">Origin Port</Label>
                                         <Select value={formData.origin} onValueChange={(val) => updateFormData({ origin: val })}>
-                                            <SelectTrigger className="h-12 bg-white dark:bg-slate-950 font-medium">
+                                            <SelectTrigger className="w-full h-12 bg-white dark:bg-slate-950 font-medium">
                                                 <SelectValue placeholder="Select Origin" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -129,7 +129,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                     <div className="space-y-2">
                                         <Label className="text-xs font-semibold">Destination Port</Label>
                                         <Select value={formData.destination} onValueChange={(val) => updateFormData({ destination: val })}>
-                                            <SelectTrigger className="h-12 bg-white dark:bg-slate-950 font-medium">
+                                            <SelectTrigger className="w-full h-12 bg-white dark:bg-slate-950 font-medium">
                                                 <SelectValue placeholder="Select Destination" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -167,7 +167,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                     <div className="space-y-2">
                                         <Label className="text-xs font-semibold">Commodity</Label>
                                         <Select value={formData.commodity} onValueChange={(val) => updateFormData({ commodity: val })}>
-                                            <SelectTrigger className="h-12 bg-white dark:bg-slate-950 font-medium">
+                                            <SelectTrigger className="w-full h-12 bg-white dark:bg-slate-950 font-medium">
                                                 <SelectValue placeholder="Select Commodity" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -180,7 +180,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                     <div className="space-y-2">
                                         <Label className="text-xs font-semibold">Temperature</Label>
                                         <Select value={formData.temperature} onValueChange={(val) => updateFormData({ temperature: val })}>
-                                            <SelectTrigger className="h-12 bg-white dark:bg-slate-950 font-medium">
+                                            <SelectTrigger className="w-full h-12 bg-white dark:bg-slate-950 font-medium">
                                                 <SelectValue placeholder="Select Mode" />
                                             </SelectTrigger>
                                             <SelectContent>
