@@ -1,3 +1,5 @@
+"use client"
+
 import { Button } from "@/components/ui/button"
 import { OverviewGrid } from "@/components/dashboard/overview/overview-grid"
 import { Plus } from "lucide-react"
