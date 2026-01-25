@@ -4,21 +4,16 @@ import { Canvas, useFrame } from "@react-three/fiber"
 import { OrbitControls, PerspectiveCamera, Environment, ContactShadows } from "@react-three/drei"
 import { useRef, useMemo } from "react"
 import * as THREE from "three"
+import { cn } from "@/lib/utils"
 
 // Pallet Block Component
-function Pallet({ position, index }: { position: [number, number, number], index: number }) {
+function Pallet({ position, index, type }: { position: [number, number, number], index: number, type: 'pre-filled' | 'user-added' }) {
     const meshRef = useRef<THREE.Mesh>(null!)
 
-    // Spring-like animation for entry (simple lerp for now)
-    useFrame((state) => {
-        if (meshRef.current) {
-            // Gentle float/bob check
-            // meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime + index) * 0.02
-        }
-    })
-
-    // Color logic based on index or "fill" feel
-    const color = new THREE.Color().setHSL(0.55 + (index * 0.01) % 0.1, 0.8, 0.5)
+    // Color logic: Pre-filled is grey/slate, User-added is brand-blue
+    const color = type === 'pre-filled'
+        ? new THREE.Color("#64748b") // Slate 500
+        : new THREE.Color("#3b82f6") // Blue 500 (Brand Blue)
 
     return (
         <mesh ref={meshRef} position={position} castShadow receiveShadow>
@@ -28,7 +23,7 @@ function Pallet({ position, index }: { position: [number, number, number], index
                 roughness={0.2}
                 metalness={0.1}
                 transparent
-                opacity={0.9}
+                opacity={type === 'pre-filled' ? 0.4 : 0.9}
             />
             <lineSegments>
                 <edgesGeometry args={[new THREE.BoxGeometry(1, 1, 1.2)]} />
@@ -65,61 +60,59 @@ function ContainerFrame() {
     )
 }
 
-export function ContainerScene({ palletCount }: { palletCount: number }) {
-    // Logic to stack pallets in a simplified grid (2 wide, 2 high)
+export function ContainerScene({
+    preFilledCount = 0,
+    userAddedCount = 0,
+    className
+}: {
+    preFilledCount?: number,
+    userAddedCount?: number,
+    className?: string
+}) {
+    const totalCount = preFilledCount + userAddedCount
+    const maxCapacity = 20
+
     const pallets = useMemo(() => {
         const items = []
-        const cols = 2
-        const rows = 2
-        // Length capacity is roughly 5 rows deep for this scale (2x2x5 = 20 max)
+        for (let i = 0; i < totalCount; i++) {
+            const floorIndex = Math.floor(i / 2)
+            const heightIndex = i % 2
+            const col = floorIndex % 2
+            const row = Math.floor(floorIndex / 2)
 
-        for (let i = 0; i < palletCount; i++) {
-            // Calculate grid position
-            // Z fills first (depth), then X (width), then Y (height)
-
-            const layerSize = cols * rows; // 4 per vertical slice? No, real containers load depth first usually.
-            // Let's stack: Fill floor (2 wide) from back to front, then stack on top.
-
-            // Let's do: 2 wide (x), N deep (z). Stack height 2 (y).
-            // Capacity 20: 2 width * 5 depth * 2 height = 20.
-
-            const floorIndex = Math.floor(i / 2) // Index in the 2D floor plane (ignoring height)
-            const heightIndex = i % 2 // 0 = bottom, 1 = top
-
-            const col = floorIndex % 2 // Left or Right
-            const row = Math.floor(floorIndex / 2) // Depth index (0 to 4)
-
-            // Coordinates
-            // Width 2.4 => x spans from -1.2 to 1.2. Centers at roughly -0.6 and 0.6
             const x = col === 0 ? -0.6 : 0.6
-
-            // Depth 6 => z spans -3 to 3. Start from back (-2.4) to front.
-            // Pallet length 1.2. 
-            // 5 rows: -2.4, -1.2, 0, 1.2, 2.4
             const z = -2.4 + (row * 1.2)
+            const y = 0.5 + (heightIndex * 1.1)
 
-            // Height
-            // Pallet height 1. 0.5 (half height) + y index
-            // y=0 -> 0.5
-            // y=1 -> 1.5
-            const y = 0.5 + (heightIndex * 1.1) // 1.1 to leave a tiny gap
-
-            items.push({ x, y, z })
+            items.push({
+                x, y, z,
+                type: i < preFilledCount ? 'pre-filled' : 'user-added' as 'pre-filled' | 'user-added'
+            })
         }
         return items
-    }, [palletCount])
+    }, [preFilledCount, totalCount])
 
     return (
-        <div className="h-[250px] sm:h-[400px] w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-700 relative shadow-2xl">
-            <div className="absolute top-4 left-4 z-10 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
-                <span className="text-xs font-medium text-white">Live Capacity: {Math.round((palletCount / 20) * 100)}%</span>
+        <div className={cn("h-[250px] sm:h-[400px] w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-700 relative shadow-2xl transition-all duration-500", className)}>
+            <div className="absolute top-4 left-4 z-10 flex flex-col gap-1">
+                <div className="bg-black/50 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-slate-500" />
+                    <span className="text-[10px] sm:text-xs font-medium text-white">Occupied: {preFilledCount}</span>
+                </div>
+                {userAddedCount > 0 && (
+                    <div className="bg-black/50 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-blue-500" />
+                        <span className="text-[10px] sm:text-xs font-medium text-white">Your Cargo: {userAddedCount}</span>
+                    </div>
+                )}
             </div>
 
             <Canvas shadows dpr={[1, 2]}>
-                <PerspectiveCamera makeDefault position={[4, 4, 6]} fov={50} />
+                <PerspectiveCamera makeDefault position={[5, 4, 7]} fov={40} />
                 <OrbitControls
                     enablePan={false}
-                    minPolarAngle={0}
+                    enableZoom={false}
+                    minPolarAngle={Math.PI / 4}
                     maxPolarAngle={Math.PI / 2}
                     autoRotate={true}
                     autoRotateSpeed={0.5}
@@ -137,7 +130,12 @@ export function ContainerScene({ palletCount }: { palletCount: number }) {
                 <group position={[0, -1, 0]}>
                     <ContainerFrame />
                     {pallets.map((pos, i) => (
-                        <Pallet key={i} position={[pos.x, pos.y, pos.z]} index={i} />
+                        <Pallet
+                            key={i}
+                            position={[pos.x, pos.y, pos.z]}
+                            index={i}
+                            type={pos.type}
+                        />
                     ))}
                     <ContactShadows resolution={1024} scale={20} blur={1} opacity={0.5} far={10} color="#0f172a" />
                 </group>
