@@ -14,7 +14,7 @@ const allDocs = [
     { id: '3', name: 'Certificate_Analysis_Batch_99.pdf', type: 'CoA', size: '840 KB', date: 'Oct 25, 2025', refId: 'SRS-001' },
     { id: '4', name: 'Packing_List_Final.xlsx', type: 'PackingList', size: '45 KB', date: 'Oct 24, 2025', refId: 'SRS-001' },
     { id: '5', name: 'SRS-002_Invoice_Draft.pdf', type: 'Invoice', size: '1.8 MB', date: 'Nov 02, 2025', refId: 'SRS-002' },
-    { id: '6', name: 'Insurance_Policy_Global.pdf', type: 'Other', size: '3.2 MB', date: 'Nov 01, 2025' },
+    { id: '6', name: 'Insurance_Policy_Global.pdf', type: 'Other', size: '3.2 MB', date: 'Nov 01, 2025', refId: 'SRS-GEN' },
     { id: '7', name: 'Temp_Log_TIVE_SRS-002.csv', type: 'Other', size: '12 KB', date: 'Nov 12, 2025', refId: 'SRS-002' },
 ] as const
 

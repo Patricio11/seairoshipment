@@ -73,9 +73,9 @@
 
 ### Task 1.7: Financial Hub
 *Transparency in billing.*
-- [ ] **Invoice Dashboard:** List of all invoices with status (PAID, DUE, OVERDUE).
-- [ ] **Split-Payment Tracker:** Visual tracker for Deposit (60%) vs Final (40%) payments.
-- [ ] **Statements:** Downloadable monthly statements.
+- [x] **Invoice Dashboard:** List of all invoices with status (PAID, DUE, OVERDUE).
+- [x] **Split-Payment Tracker:** Visual tracker for Deposit (60%) vs Final (40%) payments.
+- [x] **Statements:** Downloadable monthly statements.
 
 ### Task 1.8: Settings & Profile
 *User management and preferences.*
