@@ -175,9 +175,10 @@
 - [ ] **Pull:** Cron job (Vercel Cron) runs every 24h to fetch Sailing Schedules from Metaship API.
 - [ ] **Push:** When Admin clicks "Finalize Load Plan", POST the manifest to Metaship.
 
-### Task 4.2: TIVE IoT Webhooks
-- [ ] **Endpoint:** `POST /api/webhooks/tive`
-- [ ] **Logic:** Receive temp payload. If `temp > -18.0`, trigger `sendAlertEmail()`.
+### Task 4.2: TIVE IoT + QR Code System (Smart Pallets)
+- [ ] **QR Association:** Logic to link a `Pallet ID` (QR) -> `TIVE Device ID`.
+- [ ] **Endpoint:** `POST /api/webhooks/tive`.
+- [ ] **Logic:** Receive temp payload. If `temp > -18.0`, trigger `sendAlertEmail()` (Insurance Requirement).
 - [ ] **Frontend:** Render a Recharts Line Graph on the User's Shipment Detail page.
 
 ### Task 4.3: Meatship.ai Integration (The Brain)
