@@ -83,6 +83,16 @@
 - [x] **Notification Preferences:** Toggle valid alerts (Email/SMS/WhatsApp).
 - [x] **Account Management:** Password reset, 2FA setup (Mock UI).
 
+### Task 1.9: Admin Master Data Management (UI)
+*Goal: Visual interface for managing the core logistics data (The "God Mode" Prep).*
+- [x] **Admin Layout:** Dedicated Admin Sidebar and Shell (`/admin`).
+- [x] **Locations Manager:** UI to add/edit Ports (Origin/Dest) and associated metadata.
+- [x] **Fleet & Container Manager:** Manage Vessel schedules, Container availability, and Temperature defaults per route.
+- [x] **Commodity Registry:** Manage commodities, HS Codes, and specific handling requirements.
+- [x] **User Management (Vetting):** Review new signups, Approve/Reject workflows, and Assign Interest Rates.
+- [x] **Shipment Control Tower:** Global view of all 3rd party logistics (Master Bills, House Bills, Container Tracking).
+- [x] **Admin Finance:** Global view of Invoices (Overdue/Paid), Revenue Stats, and Forex settings.
+
 ---
 
 ## ⚙️ PHASE 2: THE LOGIC ENGINE (Backend & Data)
