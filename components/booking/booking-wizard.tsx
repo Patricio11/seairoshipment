@@ -15,12 +15,14 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
         origin: "",
         destination: "",
         date: undefined,
-        palletCount: 12,
+        palletCount: 5,
         commodity: "",
         temperature: "",
         consigneeName: "",
         consigneeAddress: "",
-        hasDocs: false
+        hasDocs: false,
+        containerId: "",
+        vessel: ""
     })
 
     const updateFormData = (data: any) => {
@@ -28,27 +30,13 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
     }
 
     const nextStep = () => {
-        // Validation for Step 1 (Cargo - WAS Step 2)
         if (step === 1) {
-            if (formData.palletCount < 5) {
-                toast.error("Minimum 5 pallets required.")
-                return
-            }
-            if (!formData.commodity || !formData.temperature) {
-                toast.error("Please select commodity and temperature.")
+            if (!formData.containerId || formData.palletCount < 1) {
+                toast.error("Please pick a container and allocate volume.")
                 return
             }
         }
-
-        // Validation for Step 2 (Route - WAS Step 1)
-        if (step === 2) {
-            if (!formData.origin || !formData.destination || !formData.date) {
-                toast.error("Please complete all route details.")
-                return
-            }
-        }
-
-        setStep((prev) => Math.min(prev + 1, 3))
+        setStep((prev) => Math.min(prev + 1, 2))
     }
 
     const prevStep = () => setStep((prev) => Math.max(prev - 1, 1))
@@ -58,7 +46,6 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
             toast.error("Consignee Name is required.")
             return
         }
-        // Mock Submission
         toast.success("Booking Submitted Successfully! Ref: SRS-9921")
         onSuccess?.()
     }
@@ -67,10 +54,10 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
         <div className="max-w-4xl mx-auto w-full">
             {/* Step Indicator */}
             <div className="mb-6 sm:mb-8">
-                <div className="flex items-center justify-between relative">
+                <div className="flex items-center justify-between relative max-w-sm mx-auto">
                     <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-slate-200 dark:bg-slate-800 -z-10" />
 
-                    {[1, 2, 3].map((s) => (
+                    {[1, 2].map((s) => (
                         <div key={s} className="flex flex-col items-center gap-1.5 bg-slate-50 dark:bg-slate-950 px-1 sm:px-2">
                             <div
                                 className={`
@@ -80,10 +67,9 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
                             >
                                 {step > s ? <Check className="h-4 w-4 sm:h-5 sm:w-5" /> : s}
                             </div>
-                            <span className={`text-[10px] sm:text-xs font-medium ${step >= s ? "text-brand-blue" : "text-slate-500"}`}>
-                                {s === 1 && "Cargo"}
-                                {s === 2 && "Route"}
-                                {s === 3 && "Review"}
+                            <span className={`text-[10px] sm:text-xs font-bold uppercase tracking-tight ${step >= s ? "text-brand-blue" : "text-slate-500"}`}>
+                                {s === 1 && "Cargo & Route"}
+                                {s === 2 && "Finalize"}
                             </span>
                         </div>
                     ))}
@@ -95,8 +81,7 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
                 <div className="flex-1 overflow-y-auto">
                     <AnimatePresence mode="wait">
                         {step === 1 && <Step2Cargo key="step1" formData={formData} updateFormData={updateFormData} />}
-                        {step === 2 && <Step1Route key="step2" formData={formData} updateFormData={updateFormData} />}
-                        {step === 3 && <Step3Docs key="step3" formData={formData} updateFormData={updateFormData} />}
+                        {step === 2 && <Step3Docs key="step2" formData={formData} updateFormData={updateFormData} />}
                     </AnimatePresence>
                 </div>
 
@@ -112,14 +97,14 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
                         Back
                     </Button>
 
-                    {step < 3 ? (
-                        <Button onClick={nextStep} className="bg-brand-blue hover:bg-blue-700 min-w-[100px] sm:min-w-[120px] text-sm sm:text-base h-9 sm:h-10">
-                            Next
+                    {step < 2 ? (
+                        <Button onClick={nextStep} className="bg-brand-blue hover:bg-blue-700 min-w-[100px] sm:min-w-[120px] text-sm sm:text-base h-9 sm:h-10 font-bold">
+                            Next Stage
                             <ChevronRight className="ml-1 sm:ml-2 h-4 w-4" />
                         </Button>
                     ) : (
-                        <Button onClick={handleSubmit} className="bg-emerald-600 hover:bg-emerald-700 min-w-[100px] sm:min-w-[120px] text-sm sm:text-base h-9 sm:h-10">
-                            Confirm
+                        <Button onClick={handleSubmit} className="bg-emerald-600 hover:bg-emerald-700 min-w-[100px] sm:min-w-[120px] text-sm sm:text-base h-9 sm:h-10 font-bold">
+                            Confirm Booking
                             <Check className="ml-1 sm:ml-2 h-4 w-4" />
                         </Button>
                     )}

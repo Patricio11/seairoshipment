@@ -74,12 +74,6 @@ export function AppSidebar({ className, isCollapsed, setIsCollapsed }: SidebarPr
                             <Link
                                 key={item.title}
                                 href={item.url}
-                                onClick={(e) => {
-                                    if (item.title === "New Booking") {
-                                        e.preventDefault()
-                                        onOpen()
-                                    }
-                                }}
                                 className={cn(
                                     "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 group relative overflow-hidden",
                                     isActive

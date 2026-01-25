@@ -19,8 +19,8 @@ export const navItems = [
         isActive: true,
     },
     {
-        title: "New Booking",
-        url: "/dashboard/booking",
+        title: "Bookings",
+        url: "/dashboard/bookings",
         icon: PlusCircle,
     },
     {
