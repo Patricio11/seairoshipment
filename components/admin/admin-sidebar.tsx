@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button"
 
 const ADMIN_LINKS = [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/admin/shipments", label: "Control Tower", icon: Activity },
+    { href: "/admin/bookings", label: "Bookings", icon: Activity },
     { href: "/admin/locations", label: "Locations", icon: MapPin },
     { href: "/admin/fleet", label: "Fleet & Containers", icon: Ship },
     { href: "/admin/commodities", label: "Commodities", icon: Package },
