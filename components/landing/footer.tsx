@@ -54,7 +54,7 @@ export function Footer() {
                             />
                         </div>
                         <p className="mt-4 max-w-md text-slate-600">
-                            The operating system for cold chain logistics. Enterprise-grade SRS consolidation platform for Cape Town seafood exporters.
+                            The operating system for cold chain logistics. Revolutionizing cold chain logistics with smart, sustainable freight solutions.
                         </p>
 
                         {/* Contact Info */}
@@ -63,10 +63,10 @@ export function Footer() {
                                 <MapPin className="h-4 w-4 text-blue-600" />
                                 <span>Cape Town, South Africa</span>
                             </div>
-                            <div className="flex items-center gap-2">
+                            {/* <div className="flex items-center gap-2">
                                 <Phone className="h-4 w-4 text-blue-600" />
                                 <span>+27 21 XXX XXXX</span>
-                            </div>
+                            </div> */}
                             <div className="flex items-center gap-2">
                                 <Mail className="h-4 w-4 text-blue-600" />
                                 <span>hello@seairocargo.com</span>
