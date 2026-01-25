@@ -98,6 +98,14 @@
 ## ⚙️ PHASE 2: THE LOGIC ENGINE (Backend & Data)
 *Goal: The Brain of the system. Robust, secure, and state-aware.*
 
+### Task 2.0: Authentication & Security Core
+*Goal: Secure the platform using Better Auth and set up the environmental foundation.*
+- [ ] **Environment Setup:** Configure `.env.local` with DB, Auth, and API keys.
+- [ ] **Better Auth Integration:** Install and configure `better-auth`.
+- [ ] **Access Control:** Protect `/dashboard` & `/admin` via Layout/Page checks.
+- [ ] **User Role Logic:** Differentiate `ADMIN` vs `CLIENT` access (Better Auth).
+- [ ] **User Seeding:** Script to populate Admin/Client users.
+
 ### Task 2.1: Advanced Database Schema (Drizzle)
 *Implement a relational schema that handles the complexity of logistics.*
 - [ ] **Users Table:** Extended with `accountNumber`, `isVetted`, `companyReg`, `vatNumber`.
