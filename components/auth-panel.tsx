@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Mail, Lock, User, Building2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 interface AuthPanelProps {
     isOpen: boolean
@@ -12,6 +13,7 @@ interface AuthPanelProps {
 
 export function AuthPanel({ isOpen, onClose, initialMode = 'login' }: AuthPanelProps) {
     const [isLogin, setIsLogin] = useState(initialMode === 'login')
+    const router = useRouter()
 
     useEffect(() => {
         setIsLogin(initialMode === 'login')
@@ -61,7 +63,14 @@ export function AuthPanel({ isOpen, onClose, initialMode = 'login' }: AuthPanelP
                                 </div>
 
                                 {/* Form */}
-                                <form className="space-y-6">
+                                <form
+                                    className="space-y-6"
+                                    onSubmit={(e) => {
+                                        e.preventDefault()
+                                        router.push('/dashboard')
+                                        onClose()
+                                    }}
+                                >
                                     {!isLogin && (
                                         <>
                                             <div className="space-y-2">
