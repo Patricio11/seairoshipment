@@ -79,9 +79,9 @@
 
 ### Task 1.8: Settings & Profile
 *User management and preferences.*
-- [ ] **Company Profile:** Manage company details (VAT, Reg Number).
-- [ ] **Notification Preferences:** Toggle valid alerts (Email/SMS/WhatsApp).
-- [ ] **Account Management:** Password reset, 2FA setup (Mock UI).
+- [x] **Company Profile:** Manage company details (VAT, Reg Number).
+- [x] **Notification Preferences:** Toggle valid alerts (Email/SMS/WhatsApp).
+- [x] **Account Management:** Password reset, 2FA setup (Mock UI).
 
 ---
 
