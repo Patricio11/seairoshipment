@@ -71,10 +71,15 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
 
     const handleSelectContainer = (container: any) => {
         const capacity = container.type === "20FT" ? 10 : 20
+        const available = capacity - container.preFilled
+
+        // Ensure we start at 5, but don't exceed available space
+        const initialCount = Math.max(5, Math.min(count || 5, available))
+
         updateFormData({
             containerId: container.id,
             vessel: container.vessel,
-            palletCount: Math.min(count || 5, capacity - container.preFilled)
+            palletCount: initialCount
         })
         setViewStage("adjust")
     }
@@ -261,6 +266,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                             </div>
                                             <ContainerScene
                                                 preFilledCount={container.preFilled}
+                                                type={container.type as any}
                                                 className="h-full pointer-events-none"
                                             />
                                         </div>
@@ -272,9 +278,20 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                             <div className="mt-1 flex items-center justify-between text-xs text-slate-500 font-medium">
                                                 <div className="flex items-center gap-1">
                                                     <Boxes className="h-3 w-3" />
-                                                    <span>{capacity - container.preFilled} Space</span>
+                                                    <span className={cn(capacity - container.preFilled < 5 ? "text-red-500 font-bold" : "")}>
+                                                        {capacity - container.preFilled} Space
+                                                        {capacity - container.preFilled < 5 && " (Min 5 req.)"}
+                                                    </span>
                                                 </div>
-                                                <span className="text-brand-blue font-bold">Select &rarr;</span>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="text-brand-blue font-bold px-0 h-auto hover:bg-transparent"
+                                                    disabled={capacity - container.preFilled < 5}
+                                                    onClick={() => handleSelectContainer(container)}
+                                                >
+                                                    Select &rarr;
+                                                </Button>
                                             </div>
                                         </div>
                                     </motion.div>
@@ -314,6 +331,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                             <ContainerScene
                                 preFilledCount={selectedContainer.preFilled}
                                 userAddedCount={count}
+                                type={selectedContainer.type as any}
                                 className="h-[300px] sm:h-[450px]"
                             />
                         </div>
@@ -335,11 +353,17 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                         <Slider
                                             value={[count]}
                                             max={remainingCapacity}
-                                            min={1}
+                                            min={5}
                                             step={1}
                                             onValueChange={(vals) => updateFormData({ palletCount: vals[0] })}
                                             className="py-4"
+                                            disabled={remainingCapacity < 5}
                                         />
+                                        {remainingCapacity < 5 && (
+                                            <p className="text-[10px] text-red-500 font-bold mt-1">
+                                                Insufficient space for minimum 5 pallet booking.
+                                            </p>
+                                        )}
                                     </div>
 
                                     <div className="space-y-4">

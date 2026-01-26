@@ -35,23 +35,27 @@ function Pallet({ position, index, type }: { position: [number, number, number],
 }
 
 // The Container Frame (Wireframe representation)
-function ContainerFrame() {
+function ContainerFrame({ type }: { type: '20FT' | '40FT' }) {
+    // 20FT is half the length (3m vs 6m visual representation)
+    const length = type === '20FT' ? 3 : 6
+    const zOffset = type === '20FT' ? 0 : 0 // Center it
+
     return (
         <group>
             {/* Floor */}
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
-                <planeGeometry args={[2.5, 6]} />
+                <planeGeometry args={[2.5, length]} />
                 <meshStandardMaterial color="#334155" roughness={0.8} />
             </mesh>
 
             {/* Wireframe Box indicating boundaries */}
             <mesh position={[0, 1.25, 0]}>
-                <boxGeometry args={[2.4, 2.5, 6]} />
+                <boxGeometry args={[2.4, 2.5, length]} />
                 <meshStandardMaterial color="#94a3b8" wireframe transparent opacity={0.2} />
             </mesh>
 
             {/* Frame posts */}
-            {[[-1.2, 2.5, 3], [1.2, 2.5, 3], [-1.2, 2.5, -3], [1.2, 2.5, -3]].map((pos, i) => (
+            {[[-1.2, 2.5, length / 2], [1.2, 2.5, length / 2], [-1.2, 2.5, -length / 2], [1.2, 2.5, -length / 2]].map((pos, i) => (
                 <mesh key={i} position={[pos[0] as number, 1.25, pos[2] as number]}>
                     <boxGeometry args={[0.1, 2.5, 0.1]} />
                     <meshStandardMaterial color="#cbd5e1" />
@@ -64,14 +68,20 @@ function ContainerFrame() {
 export function ContainerScene({
     preFilledCount = 0,
     userAddedCount = 0,
+    type = '40FT',
     className
 }: {
     preFilledCount?: number,
     userAddedCount?: number,
+    type?: '20FT' | '40FT',
     className?: string
 }) {
     const totalCount = preFilledCount + userAddedCount
-    const maxCapacity = 20
+    const maxCapacity = type === '20FT' ? 10 : 20
+    const length = type === '20FT' ? 3 : 6
+
+    // Camera preset zoom
+    const cameraPos: [number, number, number] = type === '20FT' ? [4, 3, 5] : [5, 4, 7]
 
     const pallets = useMemo(() => {
         const items = []
@@ -79,9 +89,10 @@ export function ContainerScene({
         // Vertical slice layout - front to back
         for (let i = 0; i < totalCount; i++) {
             const x = 0                        // Centered width
-            // Front to back spacing (0.3 units apart for 20 slices)
-            // Start from front (-2.8) 
-            const z = -2.8 + (i * 0.3)
+            // Front to back spacing (0.3 units apart) based on container length
+            // Start from front (-length/2 + padding) 
+            const startZ = -(length / 2) + 0.2
+            const z = startZ + (i * 0.3)
             const y = 1.2                      // Centered height (half of 2.3 height + padding)
 
             items.push({
@@ -90,7 +101,7 @@ export function ContainerScene({
             })
         }
         return items
-    }, [preFilledCount, totalCount])
+    }, [preFilledCount, totalCount, length])
 
     return (
         <div className={cn("h-[250px] sm:h-[400px] w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-700 relative shadow-2xl transition-all duration-500", className)}>
@@ -108,7 +119,7 @@ export function ContainerScene({
             </div>
 
             <Canvas shadows dpr={[1, 2]}>
-                <PerspectiveCamera makeDefault position={[5, 4, 7]} fov={40} />
+                <PerspectiveCamera makeDefault position={cameraPos} fov={40} />
                 <OrbitControls
                     enablePan={false}
                     enableZoom={false}
@@ -128,7 +139,7 @@ export function ContainerScene({
                 />
 
                 <group position={[0, -1, 0]}>
-                    <ContainerFrame />
+                    <ContainerFrame type={type} />
                     {pallets.map((pos, i) => (
                         <Pallet
                             key={i}
