@@ -98,21 +98,58 @@
 ## ⚙️ PHASE 2: THE LOGIC ENGINE (Backend & Data)
 *Goal: The Brain of the system. Robust, secure, and state-aware.*
 
-### Task 2.0: Authentication & Security Core
+### Task 2.0: Authentication & Security Core ✅ COMPLETE
 *Goal: Secure the platform using Better Auth and set up the environmental foundation.*
-- [ ] **Environment Setup:** Configure `.env.local` with DB, Auth, and API keys.
-- [ ] **Better Auth Integration:** Install and configure `better-auth`.
-- [ ] **Access Control:** Protect `/dashboard` & `/admin` via Layout/Page checks.
-- [ ] **User Role Logic:** Differentiate `ADMIN` vs `CLIENT` access (Better Auth).
-- [ ] **User Seeding:** Script to populate Admin/Client users.
+- [x] **Environment Setup:** Configure `.env.local` with DB, Auth, and API keys.
+- [x] **Better Auth Integration:** Install and configure `better-auth`.
+- [x] **Access Control:** Protect `/dashboard` & `/admin` via server-side Layout checks (`requireAuth`, `requireRole`).
+- [x] **User Role Logic:** Differentiate `ADMIN` vs `CLIENT` access using Better Auth roles.
+- [x] **User Seeding:** Script to populate Admin/Client users via API.
+- [x] **Sign-Out Functionality:** Implemented in all dashboards (header, sidebar, admin panel).
+- [x] **Hydration Error Fixes:** Suppressed browser extension warnings with `suppressHydrationWarning`.
 
 ### Task 2.1: Advanced Database Schema (Drizzle)
-*Implement a relational schema that handles the complexity of logistics.*
-- [ ] **Users Table:** Extended with `accountNumber`, `isVetted`, `companyReg`, `vatNumber`.
-- [ ] **Commodities Table:** `name`, `hsCode` (0303.66), `minTemp`, `riskLevel`.
-- [ ] **Sailings Table:** `vesselName`, `voyageRef`, `etd`, `eta`, `status` (OPEN/CLOSED/SAILING).
-- [ ] **Bookings Table:** `ref` (SCR-123), `palletCount`, `status` (PENDING/CONFIRMED/SHIPPED), `splitPaymentStatus` (DEPOSIT/FULL).
-- [ ] **Documents Table:** `type` (INVOICE/COA/HBL), `url`, `status` (PENDING/APPROVED/REJECTED).
+*Implement a comprehensive relational schema handling all logistics operations.*
+
+#### Master Data Tables
+- [ ] **Locations Table** (`locations`)
+    - Fields: `id`, `name`, `code` (ZACPT, NLRTM), `country`, `type` (ORIGIN/DESTINATION/HUB), `coordinates`, `active`, `createdAt`
+    - Admin UI: Grid view with filters, CRUD operations
+- [ ] **Commodities Table** (`commodities`) 
+    - Fields: `id`, `name`, `hsCode` (e.g., 0303.66), `minTemp`, `maxTemp`, `riskLevel`, `handlingNotes`, `requiresCert`, `createdAt`
+    - Admin UI: Table with search and filtering
+- [ ] **Containers Table** (`containers`) 
+    - Fields: `id`, `type` (20FT/40FT/40HC), `tempRange`, `maxPallets`, `active`
+    - Note: For fleet management - storing container specifications
+
+#### Operational Tables  
+- [ ] **Sailings Table** (`sailings`)
+    - Fields: `id`, `vesselName`, `voyageRef`, `originId` (FK), `destinationId` (FK), `etd`, `eta`, `status` (SCHEDULED/LOADING/AT_SEA/ARRIVED), `capacity`, `cutoffDate`, `createdAt`
+    - Admin UI: Fleet scheduler with timeline visualization
+    - Relationships: Many-to-One with Locations (origin/destination)
+- [ ] **Bookings Table** (`bookings`)
+    - Fields: `id`, `ref` (SCR-123), `userId` (FK), `sailingId` (FK), `palletCount`, `status` (DRAFT/SUBMITTED/CONFIRMED/LOADED/SHIPPED/DELIVERED), `splitPaymentStatus` (NONE/DEPOSIT/FULL), `totalAmount`, `depositAmount`, `balanceAmount`, `createdAt`, `submittedAt`
+    - Relationships: Many-to-One with Users, Many-to-One with Sailings
+- [ ] **Booking Commodities Junction** (`booking_commodities`)
+    - Fields: `id`, `bookingId` (FK), `commodityId` (FK), `palletCount`, `weight`, `value`
+    - Relationships: Many-to-Many between Bookings and Commodities
+- [ ] **Documents Table** (`documents`)
+    - Fields: `id`, `bookingId` (FK), `type` (INVOICE/COA/HBL/PACKING_LIST/CERT), `fileName`, `fileUrl`, `status` (PENDING/APPROVED/REJECTED), `uploadedBy` (FK), `uploadedAt`, `approvedBy` (FK), `approvedAt`
+    - Relationships: Many-to-One with Bookings
+
+#### Financial Tables
+- [ ] **Invoices Table** (`invoices`)
+    - Fields: `id`, `bookingId` (FK), `type` (DEPOSIT/BALANCE), `amount`, `vatAmount`, `totalAmount`, `status` (PENDING/PAID/OVERDUE), `dueDate`, `paidDate`, `pdfUrl`, `createdAt`
+    - Relationships: Many-to-One with Bookings  
+- [ ] **Pricing Rules Table** (`pricing_rules`)
+    - Fields: `id`, `originId` (FK), `destinationId` (FK), `baseRate`, `fuelSurcharge`, `active`, `validFrom`, `validUntil`
+    - Relationships: Many-to-One with Locations (origin/destination)
+
+#### Schema Management
+- [ ] **Generate Migrations:** Run `drizzle-kit generate` for all new tables
+- [ ] **Apply Schema:** Run `drizzle-kit push` to sync with database
+- [ ] **Seed Master Data:** Create comprehensive seed script for locations, commodities, initial sailing schedules
+- [ ] **Verify Relationships:** Test all foreign key constraints and cascades in Drizzle Studio
 
 ### Task 2.2: The "State Machine" Logic
 *Logistics is a state machine. Build the transitions.*
