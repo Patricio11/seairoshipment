@@ -6,7 +6,7 @@ import { useRef, useMemo } from "react"
 import * as THREE from "three"
 import { cn } from "@/lib/utils"
 
-// Pallet Block Component
+// Pallet Block Component - Full height/width vertical slice
 function Pallet({ position, index, type }: { position: [number, number, number], index: number, type: 'pre-filled' | 'user-added' }) {
     const meshRef = useRef<THREE.Mesh>(null!)
 
@@ -17,7 +17,8 @@ function Pallet({ position, index, type }: { position: [number, number, number],
 
     return (
         <mesh ref={meshRef} position={position} castShadow receiveShadow>
-            <boxGeometry args={[1, 1, 1.2]} />
+            {/* Vertical Slice: width=2.2 (full), height=2.3 (ceiling), depth=0.25 (thin) */}
+            <boxGeometry args={[2.2, 2.3, 0.25]} />
             <meshStandardMaterial
                 color={color}
                 roughness={0.2}
@@ -26,7 +27,7 @@ function Pallet({ position, index, type }: { position: [number, number, number],
                 opacity={type === 'pre-filled' ? 0.4 : 0.9}
             />
             <lineSegments>
-                <edgesGeometry args={[new THREE.BoxGeometry(1, 1, 1.2)]} />
+                <edgesGeometry args={[new THREE.BoxGeometry(2.2, 2.3, 0.25)]} />
                 <lineBasicMaterial color="white" transparent opacity={0.3} />
             </lineSegments>
         </mesh>
@@ -74,15 +75,14 @@ export function ContainerScene({
 
     const pallets = useMemo(() => {
         const items = []
-        for (let i = 0; i < totalCount; i++) {
-            const floorIndex = Math.floor(i / 2)
-            const heightIndex = i % 2
-            const col = floorIndex % 2
-            const row = Math.floor(floorIndex / 2)
 
-            const x = col === 0 ? -0.6 : 0.6
-            const z = -2.4 + (row * 1.2)
-            const y = 0.5 + (heightIndex * 1.1)
+        // Vertical slice layout - front to back
+        for (let i = 0; i < totalCount; i++) {
+            const x = 0                        // Centered width
+            // Front to back spacing (0.3 units apart for 20 slices)
+            // Start from front (-2.8) 
+            const z = -2.8 + (i * 0.3)
+            const y = 1.2                      // Centered height (half of 2.3 height + padding)
 
             items.push({
                 x, y, z,
