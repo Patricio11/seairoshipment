@@ -12,8 +12,24 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { authClient } from "@/lib/auth/client"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 export function DashboardHeader() {
+    const router = useRouter()
+
+    const handleSignOut = async () => {
+        try {
+            await authClient.signOut()
+            toast.success("Signed out successfully")
+            router.push("/")
+            router.refresh()
+        } catch (error) {
+            toast.error("Failed to sign out")
+        }
+    }
+
     return (
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-slate-200/50 bg-white/50 px-6 backdrop-blur-xl dark:border-slate-800/50 dark:bg-slate-900/50">
             <div className="flex flex-1 items-center gap-4">
@@ -62,7 +78,10 @@ export function DashboardHeader() {
                             Settings
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-500 focus:text-red-500">
+                        <DropdownMenuItem
+                            className="text-red-500 focus:text-red-500 cursor-pointer"
+                            onClick={handleSignOut}
+                        >
                             Log out
                         </DropdownMenuItem>
                     </DropdownMenuContent>

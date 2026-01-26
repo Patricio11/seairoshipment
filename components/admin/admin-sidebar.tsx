@@ -1,6 +1,6 @@
 "use client"
 
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import {
@@ -18,6 +18,8 @@ import {
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { authClient } from "@/lib/auth/client"
+import { toast } from "sonner"
 
 const ADMIN_LINKS = [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -31,7 +33,19 @@ const ADMIN_LINKS = [
 
 export function AdminSidebar() {
     const pathname = usePathname()
+    const router = useRouter()
     const [isCollapsed, setIsCollapsed] = useState(false)
+
+    const handleSignOut = async () => {
+        try {
+            await authClient.signOut()
+            toast.success("Signed out successfully")
+            router.push("/")
+            router.refresh()
+        } catch (error) {
+            toast.error("Failed to sign out")
+        }
+    }
 
     return (
         <motion.aside
@@ -95,10 +109,13 @@ export function AdminSidebar() {
 
             {/* Footer */}
             <div className="p-4 border-t border-slate-900">
-                <button className={cn(
-                    "flex items-center gap-3 w-full px-3 py-2 text-slate-500 hover:text-red-400 transition-colors bg-slate-900/30 hover:bg-slate-900 rounded-lg group",
-                    isCollapsed ? "justify-center" : ""
-                )}>
+                <button
+                    onClick={handleSignOut}
+                    className={cn(
+                        "flex items-center gap-3 w-full px-3 py-2 text-slate-500 hover:text-red-400 transition-colors bg-slate-900/30 hover:bg-slate-900 rounded-lg group",
+                        isCollapsed ? "justify-center" : ""
+                    )}
+                >
                     <LogOut className="h-4 w-4" />
                     {!isCollapsed && <span className="text-xs font-bold uppercase tracking-wider">Sign Out</span>}
                 </button>

@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -15,6 +15,8 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { authClient } from "@/lib/auth/client"
+import { toast } from "sonner"
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
     isCollapsed: boolean
@@ -23,8 +25,18 @@ interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export function AppSidebar({ className, isCollapsed, setIsCollapsed }: SidebarProps) {
     const pathname = usePathname()
-    // Not using onOpen here anymore as Sidebar is navigation-focused now
-    // const { onOpen } = useBookingModal()
+    const router = useRouter()
+
+    const handleSignOut = async () => {
+        try {
+            await authClient.signOut()
+            toast.success("Signed out successfully")
+            router.push("/")
+            router.refresh()
+        } catch (error) {
+            toast.error("Failed to sign out")
+        }
+    }
 
     return (
         <TooltipProvider delayDuration={0}>
@@ -117,6 +129,37 @@ export function AppSidebar({ className, isCollapsed, setIsCollapsed }: SidebarPr
                 <div className="mt-auto border-t border-slate-200/50 dark:border-slate-800/50 p-4">
                     <nav className="flex flex-col gap-2">
                         {navSecondary.map((item) => {
+                            // Check if this is the Sign Out button
+                            if (item.title === "Sign Out") {
+                                const content = (
+                                    <button
+                                        key={item.title}
+                                        onClick={handleSignOut}
+                                        className={cn(
+                                            "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200 text-slate-500 hover:bg-slate-100/50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/50 dark:hover:text-slate-100 cursor-pointer",
+                                            isCollapsed && "justify-center px-0 py-3"
+                                        )}
+                                    >
+                                        <item.icon className="h-4 w-4" />
+                                        {!isCollapsed && <span>{item.title}</span>}
+                                    </button>
+                                )
+
+                                if (!isCollapsed) return content
+
+                                return (
+                                    <Tooltip key={item.title}>
+                                        <TooltipTrigger asChild>
+                                            {content}
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" sideOffset={20} className="font-bold bg-slate-800 text-white border-none shadow-xl">
+                                            {item.title}
+                                        </TooltipContent>
+                                    </Tooltip>
+                                )
+                            }
+
+                            // Regular navigation link
                             const content = (
                                 <Link
                                     key={item.title}
