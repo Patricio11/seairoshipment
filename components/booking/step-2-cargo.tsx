@@ -31,21 +31,22 @@ interface Step2Props {
 // Mock containers data mapped by route for demonstration
 const MOCK_STORAGE: Record<string, any[]> = {
     "CPT-RTM": [
-        { id: "CONT-001", vessel: "MSC Orchestra", preFilled: 14, date: "Oct 28" },
-        { id: "CONT-002", vessel: "Maersk Line 2", preFilled: 8, date: "Oct 30" },
-        { id: "CONT-003", vessel: "COSCO Shipping", preFilled: 12, date: "Nov 02" },
-        { id: "CONT-004", vessel: "Evergreen", preFilled: 16, date: "Nov 05" },
+        { id: "CONT-001", vessel: "MSC Orchestra", preFilled: 14, date: "Oct 28", type: "40FT" },
+        { id: "CONT-002", vessel: "Maersk Line 2", preFilled: 6, date: "Oct 30", type: "20FT" },
+        { id: "CONT-003", vessel: "COSCO Shipping", preFilled: 12, date: "Nov 02", type: "40FT" },
+        { id: "CONT-004", vessel: "Evergreen", preFilled: 4, date: "Nov 05", type: "20FT" },
     ],
     "CPT-LND": [
-        { id: "CONT-L01", vessel: "Atlantic Star", preFilled: 10, date: "Oct 29" },
-        { id: "CONT-L02", vessel: "CMA CGM Marco", preFilled: 5, date: "Nov 03" },
+        { id: "CONT-L01", vessel: "Atlantic Star", preFilled: 10, date: "Oct 29", type: "40FT" },
+        { id: "CONT-L02", vessel: "CMA CGM Marco", preFilled: 2, date: "Nov 03", type: "20FT" },
     ],
     "DUR-SIN": [
-        { id: "CONT-S01", vessel: "One Integrity", preFilled: 15, date: "Oct 31" },
+        { id: "CONT-S01", vessel: "One Integrity", preFilled: 15, date: "Oct 31", type: "40FT" },
     ],
     // Default fallback
     "DEFAULT": [
-        { id: "CONT-D01", vessel: "Standard Vessel", preFilled: 10, date: "Seasonal" },
+        { id: "CONT-D01", vessel: "Standard Vessel", preFilled: 10, date: "Seasonal", type: "40FT" },
+        { id: "CONT-D02", vessel: "Express Service", preFilled: 2, date: "Seasonal", type: "20FT" },
     ]
 }
 
@@ -53,37 +54,39 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
     const [viewStage, setViewStage] = useState<"initial" | "pick" | "adjust">(
         formData.containerId ? "adjust" : "initial"
     )
+    const [typeFilter, setTypeFilter] = useState<"ALL" | "20FT" | "40FT">("ALL")
 
     // Derived available containers based on route
     const currentRouteKey = `${formData.origin}-${formData.destination}`
-    const availableContainers = MOCK_STORAGE[currentRouteKey] || MOCK_STORAGE["DEFAULT"]
+    const availableContainers = (MOCK_STORAGE[currentRouteKey] || MOCK_STORAGE["DEFAULT"]).filter(c =>
+        typeFilter === "ALL" || c.type === typeFilter
+    )
 
-    const selectedContainer = availableContainers.find(c => c.id === formData.containerId)
+    const selectedContainer = (MOCK_STORAGE[currentRouteKey] || MOCK_STORAGE["DEFAULT"]).find(c => c.id === formData.containerId)
+    // Container capacity logic: 20FT = 10 pallets, 40FT = 20 pallets
+    const containerCapacity = selectedContainer ? (selectedContainer.type === "20FT" ? 10 : 20) : 20
+
     const count = formData.palletCount || 0
-    const maxCapacity = 20
-    const remainingCapacity = selectedContainer ? maxCapacity - selectedContainer.preFilled : maxCapacity
+    const remainingCapacity = selectedContainer ? containerCapacity - selectedContainer.preFilled : 20
 
     const handleSelectContainer = (container: any) => {
+        const capacity = container.type === "20FT" ? 10 : 20
         updateFormData({
             containerId: container.id,
             vessel: container.vessel,
-            palletCount: Math.min(count || 5, maxCapacity - container.preFilled)
+            palletCount: Math.min(count || 5, capacity - container.preFilled)
         })
         setViewStage("adjust")
     }
 
     const handleViewAvailability = () => {
-        if (availableContainers.length === 1) {
-            handleSelectContainer(availableContainers[0])
-        } else {
-            setViewStage("pick")
-        }
+        setViewStage("pick")
     }
 
     const getStatusColor = () => {
         if (count === 0) return "text-slate-500"
         if (count < 5) return "text-amber-500"
-        if (count + (selectedContainer?.preFilled || 0) === maxCapacity) return "text-emerald-500"
+        if (count + (selectedContainer?.preFilled || 0) === containerCapacity) return "text-emerald-500"
         return "text-brand-blue"
     }
 
@@ -212,45 +215,71 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                         exit={{ opacity: 0, scale: 1.05 }}
                         className="space-y-6"
                     >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div>
-                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Active Consolidation Runs</h3>
-                                <p className="text-sm text-slate-500">Found {availableContainers.length} compatible containers for {formData.origin} &rarr; {formData.destination}</p>
+                        <div className="flex flex-col gap-6">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div>
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Active Consolidation Runs</h3>
+                                    <p className="text-sm text-slate-500">Found {availableContainers.length} compatible containers for {formData.origin} &rarr; {formData.destination}</p>
+                                </div>
+                                <Button variant="ghost" size="sm" onClick={() => setViewStage("initial")} className="text-slate-500">
+                                    <ArrowLeft className="mr-2 h-4 w-4" /> Edit Route
+                                </Button>
                             </div>
-                            <Button variant="ghost" size="sm" onClick={() => setViewStage("initial")} className="text-slate-500">
-                                <ArrowLeft className="mr-2 h-4 w-4" /> Edit Route
-                            </Button>
+
+                            {/* Filter Tabs */}
+                            <div className="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg w-fit">
+                                {["ALL", "20FT", "40FT"].map((t) => (
+                                    <button
+                                        key={t}
+                                        onClick={() => setTypeFilter(t as any)}
+                                        className={cn(
+                                            "px-4 py-1.5 rounded-md text-xs font-bold transition-all",
+                                            typeFilter === t
+                                                ? "bg-white dark:bg-slate-950 text-slate-900 dark:text-white shadow-sm"
+                                                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                                        )}
+                                    >
+                                        {t === "ALL" ? "All Types" : t}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {availableContainers.map((container) => (
-                                <motion.div
-                                    key={container.id}
-                                    whileHover={{ y: -5 }}
-                                    className="group cursor-pointer"
-                                    onClick={() => handleSelectContainer(container)}
-                                >
-                                    <div className="h-48 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm group-hover:shadow-xl transition-all">
-                                        <ContainerScene
-                                            preFilledCount={container.preFilled}
-                                            className="h-full pointer-events-none"
-                                        />
-                                    </div>
-                                    <div className="mt-4 px-1">
-                                        <div className="flex justify-between items-center">
-                                            <span className="font-bold text-slate-900 dark:text-white uppercase tracking-tight">{container.vessel}</span>
-                                            <span className="text-[10px] font-black bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md">{container.date}</span>
-                                        </div>
-                                        <div className="mt-1 flex items-center justify-between text-xs text-slate-500 font-medium">
-                                            <div className="flex items-center gap-1">
-                                                <Boxes className="h-3 w-3" />
-                                                <span>{maxCapacity - container.preFilled} Space</span>
+                            {availableContainers.map((container) => {
+                                const capacity = container.type === "20FT" ? 10 : 20
+                                return (
+                                    <motion.div
+                                        key={container.id}
+                                        whileHover={{ y: -5 }}
+                                        className="group cursor-pointer"
+                                        onClick={() => handleSelectContainer(container)}
+                                    >
+                                        <div className="h-48 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm group-hover:shadow-xl transition-all relative">
+                                            <div className="absolute top-3 right-3 z-10 bg-black/60 backdrop-blur-md text-white px-2 py-0.5 rounded text-[10px] font-bold border border-white/10">
+                                                {container.type}
                                             </div>
-                                            <span className="text-brand-blue font-bold">Select &rarr;</span>
+                                            <ContainerScene
+                                                preFilledCount={container.preFilled}
+                                                className="h-full pointer-events-none"
+                                            />
                                         </div>
-                                    </div>
-                                </motion.div>
-                            ))}
+                                        <div className="mt-4 px-1">
+                                            <div className="flex justify-between items-center">
+                                                <span className="font-bold text-slate-900 dark:text-white uppercase tracking-tight text-sm truncate pr-2">{container.vessel}</span>
+                                                <span className="text-[10px] font-black bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md flex-shrink-0">{container.date}</span>
+                                            </div>
+                                            <div className="mt-1 flex items-center justify-between text-xs text-slate-500 font-medium">
+                                                <div className="flex items-center gap-1">
+                                                    <Boxes className="h-3 w-3" />
+                                                    <span>{capacity - container.preFilled} Space</span>
+                                                </div>
+                                                <span className="text-brand-blue font-bold">Select &rarr;</span>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )
+                            })}
                         </div>
                     </motion.div>
                 )}
@@ -270,7 +299,10 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                         <Ship className="h-5 w-5 text-brand-blue" />
                                     </div>
                                     <div>
-                                        <h3 className="font-black text-slate-900 dark:text-white uppercase">{selectedContainer.vessel}</h3>
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="font-black text-slate-900 dark:text-white uppercase">{selectedContainer.vessel}</h3>
+                                            <span className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">{selectedContainer.type}</span>
+                                        </div>
                                         <p className="text-xs text-slate-500 font-medium">{formData.origin} to {formData.destination} | {selectedContainer.date}</p>
                                     </div>
                                 </div>
@@ -296,7 +328,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                             <div className="text-right">
                                                 <p className="text-xs font-bold text-slate-500">Pallets</p>
                                                 <p className={`text-[10px] font-black uppercase ${getStatusColor()}`}>
-                                                    {count + selectedContainer.preFilled === 20 ? "Limit Reached" : "Available"}
+                                                    {count + selectedContainer.preFilled === containerCapacity ? "Limit Reached" : "Available"}
                                                 </p>
                                             </div>
                                         </div>
@@ -313,16 +345,16 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                     <div className="space-y-4">
                                         <div className="flex justify-between text-xs font-bold">
                                             <span className="text-slate-400 uppercase tracking-tighter">Your Share</span>
-                                            <span className="text-brand-blue">{Math.round((count / maxCapacity) * 100)}%</span>
+                                            <span className="text-brand-blue">{Math.round((count / containerCapacity) * 100)}%</span>
                                         </div>
                                         <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
                                             <div
                                                 className="bg-slate-300 dark:bg-slate-600 h-full border-r border-white/20"
-                                                style={{ width: `${(selectedContainer.preFilled / maxCapacity) * 100}%` }}
+                                                style={{ width: `${(selectedContainer.preFilled / containerCapacity) * 100}%` }}
                                             />
                                             <div
                                                 className="bg-brand-blue h-full transition-all duration-300"
-                                                style={{ width: `${(count / maxCapacity) * 100}%` }}
+                                                style={{ width: `${(count / containerCapacity) * 100}%` }}
                                             />
                                         </div>
                                     </div>
