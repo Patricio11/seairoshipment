@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Mail, Lock, User, Building2 } from 'lucide-react'
+import { X, Mail, Lock, User, Building2, Eye, EyeOff } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { authClient } from "@/lib/auth/client"
+import { toast } from "sonner"
 
 interface AuthPanelProps {
     isOpen: boolean
@@ -13,11 +15,78 @@ interface AuthPanelProps {
 
 export function AuthPanel({ isOpen, onClose, initialMode = 'login' }: AuthPanelProps) {
     const [isLogin, setIsLogin] = useState(initialMode === 'login')
+    const [showPassword, setShowPassword] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
+    const [formData, setFormData] = useState({
+        name: '',
+        company: '',
+        email: '',
+        password: ''
+    })
+
     const router = useRouter()
 
     useEffect(() => {
         setIsLogin(initialMode === 'login')
     }, [initialMode, isOpen])
+
+    const handleInputChange = (field: string, value: string) => {
+        setFormData(prev => ({ ...prev, [field]: value }))
+    }
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+
+        try {
+            if (isLogin) {
+                await authClient.signIn.email({
+                    email: formData.email,
+                    password: formData.password
+                }, {
+                    onSuccess: async (ctx) => {
+                        toast.success("Welcome back!", {
+                            description: "You have been successfully signed in."
+                        });
+                        // Redirect based on role (simple check for now)
+                        router.push('/dashboard');
+                        onClose();
+                    },
+                    onError: (ctx) => {
+                        toast.error("Sign in failed", {
+                            description: ctx.error.message || "Invalid email or password"
+                        });
+                    }
+                });
+            } else {
+                // Sign Up
+                await authClient.signUp.email({
+                    email: formData.email,
+                    password: formData.password,
+                    name: formData.name,
+                }, {
+                    onSuccess: async () => {
+                        toast.success("Account created!", {
+                            description: "Please check your email to verify your account."
+                        });
+                        // Optimistically switch to login or close
+                        onClose();
+                    },
+                    onError: (ctx) => {
+                        toast.error("Sign up failed", {
+                            description: ctx.error.message || "Could not create account"
+                        });
+                    }
+                });
+            }
+        } catch (error) {
+            toast.error("An error occurred", {
+                description: "Please try again later"
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <AnimatePresence>
@@ -63,14 +132,7 @@ export function AuthPanel({ isOpen, onClose, initialMode = 'login' }: AuthPanelP
                                 </div>
 
                                 {/* Form */}
-                                <form
-                                    className="space-y-6"
-                                    onSubmit={(e) => {
-                                        e.preventDefault()
-                                        router.push('/dashboard')
-                                        onClose()
-                                    }}
-                                >
+                                <form className="space-y-6" onSubmit={handleSubmit}>
                                     {!isLogin && (
                                         <>
                                             <div className="space-y-2">
@@ -84,6 +146,9 @@ export function AuthPanel({ isOpen, onClose, initialMode = 'login' }: AuthPanelP
                                                         type="text"
                                                         placeholder="John Smith"
                                                         className="w-full rounded-xl border border-white/10 bg-white/5 py-4 pl-12 pr-4 text-white placeholder-slate-500 backdrop-blur-xl transition-all focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+                                                        value={formData.name}
+                                                        onChange={(e) => handleInputChange('name', e.target.value)}
+                                                        required
                                                     />
                                                 </div>
                                             </div>
@@ -99,6 +164,8 @@ export function AuthPanel({ isOpen, onClose, initialMode = 'login' }: AuthPanelP
                                                         type="text"
                                                         placeholder="Acme Corp"
                                                         className="w-full rounded-xl border border-white/10 bg-white/5 py-4 pl-12 pr-4 text-white placeholder-slate-500 backdrop-blur-xl transition-all focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+                                                        value={formData.company}
+                                                        onChange={(e) => handleInputChange('company', e.target.value)}
                                                     />
                                                 </div>
                                             </div>
@@ -116,6 +183,9 @@ export function AuthPanel({ isOpen, onClose, initialMode = 'login' }: AuthPanelP
                                                 type="email"
                                                 placeholder="you@company.com"
                                                 className="w-full rounded-xl border border-white/10 bg-white/5 py-4 pl-12 pr-4 text-white placeholder-slate-500 backdrop-blur-xl transition-all focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+                                                value={formData.email}
+                                                onChange={(e) => handleInputChange('email', e.target.value)}
+                                                required
                                             />
                                         </div>
                                     </div>
@@ -128,10 +198,20 @@ export function AuthPanel({ isOpen, onClose, initialMode = 'login' }: AuthPanelP
                                             <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                                             <input
                                                 id="password"
-                                                type="password"
+                                                type={showPassword ? "text" : "password"}
                                                 placeholder="••••••••"
-                                                className="w-full rounded-xl border border-white/10 bg-white/5 py-4 pl-12 pr-4 text-white placeholder-slate-500 backdrop-blur-xl transition-all focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+                                                className="w-full rounded-xl border border-white/10 bg-white/5 py-4 pl-12 pr-12 text-white placeholder-slate-500 backdrop-blur-xl transition-all focus:border-cyan-400/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+                                                value={formData.password}
+                                                onChange={(e) => handleInputChange('password', e.target.value)}
+                                                required
                                             />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                                            >
+                                                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                            </button>
                                         </div>
                                     </div>
 
@@ -152,9 +232,10 @@ export function AuthPanel({ isOpen, onClose, initialMode = 'login' }: AuthPanelP
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
                                         type="submit"
-                                        className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 py-4 font-display text-lg font-semibold text-white shadow-lg shadow-blue-500/50 transition-shadow hover:shadow-blue-500/75"
+                                        disabled={isLoading}
+                                        className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 py-4 font-display text-lg font-semibold text-white shadow-lg shadow-blue-500/50 transition-shadow hover:shadow-blue-500/75 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        {isLogin ? 'Sign In' : 'Create Account'}
+                                        {isLoading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
                                     </motion.button>
                                 </form>
 
@@ -170,8 +251,6 @@ export function AuthPanel({ isOpen, onClose, initialMode = 'login' }: AuthPanelP
                                         </button>
                                     </p>
                                 </div>
-
-                                {/* Social Auth Removed */}
                             </div>
                         </div>
                     </motion.div>
