@@ -28,7 +28,13 @@ const ADMIN_LINKS = [
     { href: "/admin/fleet", label: "Fleet & Containers", icon: Ship },
     { href: "/admin/commodities", label: "Commodities", icon: Package },
     { href: "/admin/users", label: "User Vetting", icon: Users },
-    { href: "/admin/finance", label: "Finance & Forex", icon: DollarSign },
+]
+
+const FINANCE_LINKS = [
+    { href: "/admin/finance/origin-charges", label: "Origin Charges", icon: Package },
+    { href: "/admin/finance/ocean-freight", label: "Ocean Freight", icon: Ship },
+    { href: "/admin/finance/destination-charges", label: "Destination Charges", icon: MapPin },
+    { href: "/admin/finance/settings", label: "Settings & Forex", icon: DollarSign },
 ]
 
 export function AdminSidebar() {
@@ -72,7 +78,7 @@ export function AdminSidebar() {
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 py-6 px-3 space-y-1">
+            <nav className="flex-1 py-6 px-3 space-y-1 overflow-y-auto">
                 {ADMIN_LINKS.map((link) => {
                     const isActive = pathname === link.href
                     return (
@@ -105,6 +111,47 @@ export function AdminSidebar() {
                         </Link>
                     )
                 })}
+
+                {/* Finance Section */}
+                <div className="mt-6 pt-6 border-t border-slate-800">
+                    <div className="px-3 mb-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                            Rate Management
+                        </span>
+                    </div>
+                    {FINANCE_LINKS.map((link) => {
+                        const isActive = pathname === link.href
+                        return (
+                            <Link
+                                key={link.href}
+                                href={link.href}
+                                className={cn(
+                                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group relative overflow-hidden",
+                                    isActive
+                                        ? "bg-slate-900 text-white shadow-inner shadow-black/50"
+                                        : "text-slate-400 hover:text-white hover:bg-slate-900/50"
+                                )}
+                            >
+                                {isActive && (
+                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-600 rounded-r-full" />
+                                )}
+                                <link.icon className={cn("h-5 w-5 shrink-0 transition-colors", isActive ? "text-red-500" : "text-slate-500 group-hover:text-white")} />
+                                {!isCollapsed && (
+                                    <span className={cn("text-xs font-bold uppercase tracking-wider", isActive ? "text-white" : "")}>
+                                        {link.label}
+                                    </span>
+                                )}
+
+                                {/* Hover Tooltip for Collapsed State */}
+                                {isCollapsed && (
+                                    <div className="absolute left-full top-1/2 -translate-y-1/2 ml-4 px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 border border-slate-800 shadow-xl">
+                                        {link.label}
+                                    </div>
+                                )}
+                            </Link>
+                        )
+                    })}
+                </div>
             </nav>
 
             {/* Footer */}

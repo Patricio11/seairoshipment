@@ -30,7 +30,7 @@ This roadmap defines the complete development path for SRS, a premium cold chain
 *The public face. Must distinguish SRS from standard freight forwarders.*
 - [x] **Hero Engine:** Implement `react-three-fiber` to render a 3D reefer container floating in an ocean environment.
 - [x] **Value Prop Cards:** Glassmorphic cards (`backdrop-blur-xl`) detailing:
-    - "LCL Consolidation" (Icon: Layers)
+    - "SRS Consolidation" (Icon: Layers)
     - "IoT Temperature Tracking" (Icon: Thermometer)
     - "Automated Compliance" (Icon: Shield Check)
 - [x] **Auth Entry:** A slide-over panel for Login/Sign Up that preserves the 3D background.
@@ -110,7 +110,7 @@ This roadmap defines the complete development path for SRS, a premium cold chain
 - [ ] **Mock Data:**
   ```typescript
   const mockSalesRateTypes = [
-    { id: '1', code: 'SRS', name: 'Shared Reefer Services', description: 'LCL consolidation service for refrigerated cargo', active: true },
+    { id: '1', code: 'SRS', name: 'Shared Reefer Services', description: 'SRS consolidation service for refrigerated cargo', active: true },
     { id: '2', code: 'SCS', name: 'Seairo Cargo Solutions', description: 'Full container load service', active: false },
   ];
   ```

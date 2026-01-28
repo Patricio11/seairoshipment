@@ -12,7 +12,7 @@
 *The public face. Must distinguish SRS from standard freight forwarders.*
 - [x] **Hero Engine:** Implement `react-three-fiber` to render a 3D reefer container floating in an ocean environment.
 - [x] **Value Prop Cards:** Glassmorphic cards (`backdrop-blur-xl`) detailing:
-    - "LCL Consolidation" (Icon: Layers)
+    - "SRS Consolidation" (Icon: Layers)
     - "IoT Temperature Tracking" (Icon: Thermometer)
     - "Automated Compliance" (Icon: Shield Check)
 - [x] **Auth Entry:** A slide-over panel for Login/Sign Up that preserves the 3D background.

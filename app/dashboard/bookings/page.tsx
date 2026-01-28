@@ -55,7 +55,7 @@ export default function BookingsPage() {
                         Bookings
                     </h1>
                     <p className="text-slate-500 font-medium">
-                        Manage your active LCL consolidations and pending shipments.
+                        Manage your active SRS consolidations and pending shipments.
                     </p>
                 </div>
                 <Button
