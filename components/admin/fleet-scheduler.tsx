@@ -1,8 +1,7 @@
 "use client"
 
-import { useState } from "react"
 import { motion } from "framer-motion"
-import { Ship, Calendar, Clock, ChevronRight, Anchor, Plus } from "lucide-react"
+import { Ship, ChevronRight, Anchor, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const MOCK_VESSELS = [

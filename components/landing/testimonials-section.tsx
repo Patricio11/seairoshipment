@@ -94,7 +94,7 @@ export function TestimonialsSection() {
 
                                 {/* Quote */}
                                 <blockquote className="text-2xl font-medium leading-relaxed text-slate-900">
-                                    "{testimonials[currentIndex].quote}"
+                                    &quot;{testimonials[currentIndex].quote}&quot;
                                 </blockquote>
 
                                 {/* Metrics */}

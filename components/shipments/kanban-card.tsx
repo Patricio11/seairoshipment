@@ -2,9 +2,9 @@
 
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Ship, Calendar, MapPin, MoreHorizontal } from "lucide-react"
+import { Ship, Calendar, MapPin } from "lucide-react"
 
 export type Shipment = {
     id: string

@@ -1,17 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { motion } from "framer-motion"
 import {
     Search,
     Filter,
     Ship,
-    MapPin,
     AlertCircle,
     CheckCircle2,
     Clock,
     MoreVertical,
-    FileText,
     ArrowRight
 } from "lucide-react"
 import { Button } from "@/components/ui/button"

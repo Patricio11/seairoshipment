@@ -1,13 +1,5 @@
 "use client"
 
-import { create } from "zustand"
-
-interface BookingModalStore {
-    isOpen: boolean
-    onOpen: () => void
-    onClose: () => void
-}
-
 // Since zustand is not in package.json, I will use a simple custom implementation
 // Or I can just use a React Context. Let's use a simple listener pattern for a global store.
 

@@ -46,7 +46,7 @@ export function ValuePropositionCards() {
                         </span>
                     </h2>
                     <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-400">
-                        We're not a freight forwarder. We're a logistics operating system.
+                        We&apos;re not a freight forwarder. We&apos;re a logistics operating system.
                     </p>
                 </motion.div>
 

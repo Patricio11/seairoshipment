@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Label } from "@/components/ui/label"
 import {
     Select,
     SelectContent,
@@ -247,7 +246,7 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                             {items.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={5} className="h-32 text-center text-slate-500">
-                                        No charge items yet. Click "Add Service" to get started.
+                                        No charge items yet. Click &quot;Add Service&quot; to get started.
                                     </TableCell>
                                 </TableRow>
                             ) : (

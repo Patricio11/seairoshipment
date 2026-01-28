@@ -31,7 +31,6 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
-    DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { ChevronDown, ChevronRight, Plus, Search, MoreVertical, Edit, Copy, AlertCircle } from "lucide-react"
 import Link from "next/link"
@@ -44,13 +43,6 @@ export function OceanFreightGrid() {
 
     // Group by country
     const countries = Array.from(new Set(MOCK_OCEAN_FREIGHT.map(r => r.destinationCountry)))
-
-    const filteredByStatus = MOCK_OCEAN_FREIGHT.filter((rate) => {
-        if (selectedStatus === "all") return true
-        if (selectedStatus === "active") return rate.active
-        if (selectedStatus === "inactive") return !rate.active
-        return true
-    })
 
     const toggleCountry = (country: string) => {
         setOpenCountries(prev =>

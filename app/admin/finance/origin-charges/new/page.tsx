@@ -1,6 +1,5 @@
 import { OriginChargeEditor } from "@/components/admin/finance/origin-charge-editor"
 import { getContainerById } from "@/lib/mock-data/containers"
-import { getSalesRateTypeById } from "@/lib/mock-data/sales-rate-types"
 import type { OriginChargeItem } from "@/lib/types/finance"
 
 export default async function NewOriginChargePage({
@@ -17,7 +16,6 @@ export default async function NewOriginChargePage({
     const effectiveFrom = (params.effectiveFrom as string) || new Date().toISOString().split("T")[0]
 
     const container = getContainerById(containerId)
-    const salesRateType = getSalesRateTypeById(salesRateTypeId)
 
     const initialData = {
         id: "new",

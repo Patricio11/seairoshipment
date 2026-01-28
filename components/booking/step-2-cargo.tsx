@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { ContainerScene } from "./container-scene"
 import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
 import { motion, AnimatePresence } from "framer-motion"
-import { Info, AlertCircle, CheckCircle, Ship, ArrowLeft, ThermometerSnowflake, Boxes, MapPin, Calendar as CalendarIcon } from "lucide-react"
+import { CheckCircle, Ship, ArrowLeft, ThermometerSnowflake, Boxes, MapPin, Calendar as CalendarIcon } from "lucide-react"
 import {
     Select,
     SelectContent,

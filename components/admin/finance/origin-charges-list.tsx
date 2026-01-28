@@ -30,7 +30,7 @@ import {
     DropdownMenuTrigger,
     DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import { MoreVertical, Plus, Search, Filter, Eye, Copy, Archive, Edit } from "lucide-react"
+import { MoreVertical, Search, Filter, Eye, Copy, Archive, Edit } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { CreateOriginChargeDialog } from "./create-origin-charge-dialog"

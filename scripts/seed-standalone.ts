@@ -100,8 +100,9 @@ async function main() {
             } else {
                 console.log(`   ℹ️  Exists.`);
             }
-        } catch (err: any) {
-            console.error(`   ❌ Error: ${err.message}`);
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+            console.error(`   ❌ Error: ${errorMessage}`);
         }
     }
     console.log("\n✅ Done.");

@@ -8,9 +8,7 @@ import {
     Settings,
     Smile,
     User,
-    Search,
     Container,
-    FileCheck,
     Ship,
 } from "lucide-react"
 

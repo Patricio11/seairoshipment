@@ -36,11 +36,11 @@ export function ShipmentsBoard() {
         })
     )
 
-    const handleDragStart = (event: any) => {
-        setActiveId(event.active.id)
+    const handleDragStart = (event: { active: { id: string | number } }) => {
+        setActiveId(String(event.active.id))
     }
 
-    const handleDragEnd = (event: any) => {
+    const handleDragEnd = (event: { active: { id: string | number }; over: { id: string | number } | null }) => {
         const { active, over } = event
 
         if (!over) {
@@ -48,11 +48,12 @@ export function ShipmentsBoard() {
             return
         }
 
-        const activeItem = items.find(i => i.id === active.id)
-        const overId = over.id
+        const activeId = String(active.id)
+        const overId = String(over.id)
+        const activeItem = items.find(i => i.id === activeId)
 
         // Determine the target column
-        let newStatus = overId
+        let newStatus: string = overId
 
         // If dropped over another card, get that card's status
         const overItem = items.find(i => i.id === overId)
@@ -65,7 +66,7 @@ export function ShipmentsBoard() {
 
         if (activeItem && isValidColumn && activeItem.status !== newStatus) {
             setItems((prev) => prev.map(item =>
-                item.id === activeItem.id ? { ...item, status: newStatus } : item
+                item.id === activeItem.id ? { ...item, status: newStatus as Shipment['status'] } : item
             ))
         }
 

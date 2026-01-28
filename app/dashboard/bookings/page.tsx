@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Plus, Search, Filter, Ship, MoreVertical, Calendar, ArrowRight, CheckCircle2, Clock, AlertCircle } from "lucide-react"
+import { Plus, Search, Filter, Ship, MoreVertical, Calendar, ArrowRight, CheckCircle2, Clock } from "lucide-react"
 import { useBookingModal } from "@/hooks/use-booking-modal"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"

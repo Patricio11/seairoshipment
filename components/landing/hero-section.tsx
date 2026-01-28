@@ -80,18 +80,26 @@ function ReeferContainer3D() {
     )
 }
 
+// Pre-generated mist positions to avoid impure Math.random() calls in render
+const MIST_POSITIONS = [
+    { x: -7.2, y: -2.1, z: 8.4, size: 1.3 },
+    { x: 4.5, y: -1.8, z: -6.2, size: 1.7 },
+    { x: -2.8, y: -2.5, z: 3.1, size: 1.1 },
+    { x: 9.1, y: -1.4, z: -1.9, size: 1.9 },
+    { x: -5.6, y: -2.8, z: -7.8, size: 1.4 },
+    { x: 1.3, y: -1.6, z: 6.7, size: 1.6 },
+    { x: -8.9, y: -2.3, z: -3.4, size: 1.2 },
+    { x: 6.4, y: -1.9, z: 2.5, size: 1.8 },
+]
+
 // Cold vapor/mist effect
 function ColdMist() {
     return (
         <>
-            {[...Array(8)].map((_, i) => (
+            {MIST_POSITIONS.map((pos, i) => (
                 <Float key={i} speed={2 + i * 0.3} rotationIntensity={0.2} floatIntensity={1}>
-                    <mesh position={[
-                        (Math.random() - 0.5) * 20,
-                        -3 + Math.random() * 2,
-                        (Math.random() - 0.5) * 20
-                    ]}>
-                        <sphereGeometry args={[1 + Math.random(), 16, 16]} />
+                    <mesh position={[pos.x, pos.y, pos.z]}>
+                        <sphereGeometry args={[pos.size, 16, 16]} />
                         <meshStandardMaterial
                             color="#e0f2fe"
                             transparent

@@ -11,7 +11,6 @@ import {
     Users,
     Activity,
     DollarSign,
-    Settings,
     LogOut,
     Menu
 } from "lucide-react"
@@ -48,7 +47,7 @@ export function AdminSidebar() {
             toast.success("Signed out successfully")
             router.push("/")
             router.refresh()
-        } catch (error) {
+        } catch {
             toast.error("Failed to sign out")
         }
     }
