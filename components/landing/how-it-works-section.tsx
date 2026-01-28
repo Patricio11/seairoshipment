@@ -8,7 +8,7 @@ const steps = [
     {
         icon: Calendar,
         title: 'Book Shipment Online',
-        description: 'Choose route (CPT → London/Antwerp/Ashdod), select sailing date (21+ days, no Fridays), specify pallet count (5-20). Instant pricing.',
+        description: 'Choose route (CPT → London/Antwerp/Ashdod), select sailing date (21+ days), specify pallet count (5-20). Instant pricing.',
         timeline: '3 minutes',
         action: 'Digital booking form',
     },

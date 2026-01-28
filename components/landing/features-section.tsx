@@ -29,7 +29,7 @@ const features = [
     {
         icon: Zap,
         title: '3-Minute Booking',
-        description: 'No phone calls. No emails. Select your route, date (21+ days, no Fridays), and pallet count. Instant price quote.',
+        description: 'No phone calls. No emails. Select your route, date (21+ days), and pallet count. Instant price quote.',
         benefit: 'Book in under 3 minutes',
         industry: 'Replaces 2-hour manual process',
     },
