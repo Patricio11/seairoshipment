@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { MOCK_DESTINATION_CHARGES } from "@/lib/mock-data/destination-charges"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -28,12 +28,24 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Plus, Search, MoreVertical, Edit, Copy, ArrowRightLeft } from "lucide-react"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 
 export function DestinationChargesList() {
+    const searchParams = useSearchParams()
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedCurrency, setSelectedCurrency] = useState<string>("all")
+
+    // Handle initial filtering from query params
+    useEffect(() => {
+        const destId = searchParams.get("destId")
+        if (destId) {
+            // Try to match by port code (which is what we often use as secondary ID)
+            // or just set search term if it's a generic ID
+            setSearchTerm(destId.toUpperCase())
+        }
+    }, [searchParams])
 
     const filteredCharges = MOCK_DESTINATION_CHARGES.filter((charge) => {
         const matchesSearch = charge.destinationName.toLowerCase().includes(searchTerm.toLowerCase())

@@ -2,10 +2,12 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Search, Plus, MoreVertical, Edit, Trash, Anchor } from "lucide-react"
+import { Search, Plus, MoreVertical, Edit, Trash, Anchor, Calculator, Ship, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import Link from "next/link"
+import { CreateLocationDialog } from "./create-location-dialog"
 
 const MOCK_LOCATIONS = [
     { id: "LOC-001", name: "Cape Town", code: "ZACPT", country: "South Africa", type: "ORIGIN", active: true, coordinates: "33.9249° S, 18.4241° E" },
@@ -52,9 +54,7 @@ export function LocationsGrid() {
                         ))}
                     </div>
                 </div>
-                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-10">
-                    <Plus className="mr-2 h-4 w-4" /> Add Location
-                </Button>
+                <CreateLocationDialog />
             </div>
 
             {/* Grid */}
@@ -67,7 +67,7 @@ export function LocationsGrid() {
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
                             transition={{ delay: i * 0.05 }}
-                            className="bg-slate-900 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-colors group relative overflow-hidden"
+                            className="bg-slate-900 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-colors group relative overflow-hidden flex flex-col"
                         >
                             {/* Status Indicator */}
                             <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl ${loc.active ? "from-emerald-500/10" : "from-red-500/10"} to-transparent -mr-10 -mt-10 rounded-full blur-xl`} />
@@ -101,7 +101,37 @@ export function LocationsGrid() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+                            {/* Rate Management Links */}
+                            <div className="mt-auto pt-4 space-y-2">
+                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">Manage Rates</p>
+                                <div className="grid grid-cols-1 gap-2">
+                                    {loc.type === "ORIGIN" ? (
+                                        <Button asChild variant="outline" size="sm" className="w-full justify-start bg-amber-500/5 border-amber-500/20 text-amber-200 hover:bg-amber-500/10 hover:border-amber-500/40 text-xs font-bold font-mono">
+                                            <Link href={`/admin/finance/origin-charges?originId=${loc.id.toLowerCase()}`}>
+                                                <Calculator className="mr-2 h-3.5 w-3.5 text-amber-500" />
+                                                ORIGIN CHARGES (LANDSIDE)
+                                            </Link>
+                                        </Button>
+                                    ) : loc.type === "DESTINATION" ? (
+                                        <>
+                                            <Button asChild variant="outline" size="sm" className="w-full justify-start bg-blue-500/5 border-blue-500/20 text-blue-200 hover:bg-blue-500/10 hover:border-blue-500/40 text-xs font-bold font-mono">
+                                                <Link href={`/admin/finance/destination-charges?destId=${loc.id.toLowerCase()}`}>
+                                                    <Calculator className="mr-2 h-3.5 w-3.5 text-blue-500" />
+                                                    DESTINATION CHARGES
+                                                </Link>
+                                            </Button>
+                                            <Button asChild variant="outline" size="sm" className="w-full justify-start bg-indigo-500/5 border-indigo-500/20 text-indigo-200 hover:bg-indigo-500/10 hover:border-indigo-500/40 text-xs font-bold font-mono">
+                                                <Link href={`/admin/finance/ocean-freight?destId=${loc.id.toLowerCase()}`}>
+                                                    <Ship className="mr-2 h-3.5 w-3.5 text-indigo-500" />
+                                                    OCEAN FREIGHT RATES
+                                                </Link>
+                                            </Button>
+                                        </>
+                                    ) : null}
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-800">
                                 <Badge variant="outline" className={`bg-transparent border ${loc.active ? "border-emerald-500/30 text-emerald-500" : "border-red-500/30 text-red-500"}`}>
                                     {loc.active ? "ACTIVE PORT" : "INACTIVE"}
                                 </Badge>
