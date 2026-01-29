@@ -48,8 +48,14 @@ export function AuthPanel({ isOpen, onClose, initialMode = 'login' }: AuthPanelP
                         toast.success("Welcome back!", {
                             description: "You have been successfully signed in."
                         });
-                        // Redirect based on role (simple check for now)
-                        router.push('/dashboard');
+
+                        // Redirect based on role
+                        const userRole = ctx.data.user.role;
+                        if (userRole === 'admin') {
+                            router.push('/admin');
+                        } else {
+                            router.push('/dashboard');
+                        }
                         onClose();
                     },
                     onError: (ctx) => {

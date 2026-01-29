@@ -74,7 +74,11 @@ export async function requireRole(allowedRoles: Array<"admin" | "client">) {
     const userRole = session.user.role as "admin" | "client";
 
     if (!allowedRoles.includes(userRole)) {
-        redirect("/dashboard");
+        if (userRole === "admin") {
+            redirect("/admin");
+        } else {
+            redirect("/dashboard");
+        }
     }
     return session;
 }

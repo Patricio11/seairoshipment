@@ -1,4 +1,4 @@
-import { requireAuth } from "@/lib/auth/server";
+import { requireAuth, requireRole } from "@/lib/auth/server";
 import { DashboardLayoutClient } from "./layout.client";
 
 export default async function DashboardLayout({
@@ -6,8 +6,8 @@ export default async function DashboardLayout({
 }: {
     children: React.ReactNode
 }) {
-    // Require authentication - redirects to home if not logged in
-    await requireAuth();
+    // Require client role - admins will be redirected to /admin
+    await requireRole(["client"]);
 
     return <DashboardLayoutClient>{children}</DashboardLayoutClient>;
 }
