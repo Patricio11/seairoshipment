@@ -6,7 +6,7 @@ import { useRef, useMemo } from "react"
 import * as THREE from "three"
 import { cn } from "@/lib/utils"
 
-// Pallet Block Component - Full height/width vertical slice
+// Pallet Block Component - Square, full-height realistic pallet
 function Pallet({ position, index, type }: { position: [number, number, number], index: number, type: 'pre-filled' | 'user-added' }) {
     const meshRef = useRef<THREE.Mesh>(null!)
 
@@ -17,8 +17,8 @@ function Pallet({ position, index, type }: { position: [number, number, number],
 
     return (
         <mesh ref={meshRef} position={position} castShadow receiveShadow>
-            {/* Vertical Slice: width=2.2 (full), height=2.3 (ceiling), depth=0.25 (thin) */}
-            <boxGeometry args={[2.2, 2.3, 0.25]} />
+            {/* Square pallet: width=1.0, height=2.3 (full height), depth=1.0 (square) */}
+            <boxGeometry args={[1.0, 2.3, 1.0]} />
             <meshStandardMaterial
                 color={color}
                 roughness={0.2}
@@ -27,7 +27,7 @@ function Pallet({ position, index, type }: { position: [number, number, number],
                 opacity={type === 'pre-filled' ? 0.4 : 0.9}
             />
             <lineSegments>
-                <edgesGeometry args={[new THREE.BoxGeometry(2.2, 2.3, 0.25)]} />
+                <edgesGeometry args={[new THREE.BoxGeometry(1.0, 2.3, 1.0)]} />
                 <lineBasicMaterial color="white" transparent opacity={0.3} />
             </lineSegments>
         </mesh>
@@ -86,14 +86,22 @@ export function ContainerScene({
     const pallets = useMemo(() => {
         const items = []
 
-        // Vertical slice layout - front to back
+        // Two-column layout: 10 pallets on the left, 10 pallets on the right
         for (let i = 0; i < totalCount; i++) {
-            const x = 0                        // Centered width
-            // Front to back spacing (0.3 units apart) based on container length
-            // Start from front (-length/2 + padding) 
-            const startZ = -(length / 2) + 0.2
-            const z = startZ + (i * 0.3)
-            const y = 1.2                      // Centered height (half of 2.3 height + padding)
+            // Determine which column (left or right)
+            const columnIndex = Math.floor(i / 10) // 0 = left column, 1 = right column
+            const rowInColumn = i % 10 // Position within the column (0-9)
+
+            // X position: -0.55 for left column, +0.55 for right column
+            const x = columnIndex === 0 ? -0.55 : 0.55
+
+            // Y position: centered height (half of 2.3 height + padding)
+            const y = 1.2
+
+            // Z position: front to back spacing (0.6 units apart)
+            // Start from front (-length/2 + padding)
+            const startZ = -(length / 2) + 0.5
+            const z = startZ + (rowInColumn * 0.6)
 
             items.push({
                 x, y, z,
