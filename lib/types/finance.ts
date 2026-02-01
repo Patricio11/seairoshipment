@@ -76,22 +76,20 @@ export interface OceanFreightRate {
     id: string;
     salesRateTypeId: string;
     salesRateTypeName: string;
-    origin: string;
-    originCode: string;
-    destinationId: string;
+    origin: string;              // Port of Load
     destinationCountry: string;
     destinationPort: string;
     destinationPortCode: string;
     shippingLine: string;
     containerId: string;
-    containerDisplayName: string;
+    containerDisplayName: string; // Equipment Type
     effectiveFrom: string;
     effectiveTo: string | null;
     freightUSD: number;
     bafUSD: number;
     ispsUSD: number;
-    rcgUSD: number;
     otherSurchargesUSD: number;
+    rcgUSD: number;
     totalUSD: number;
     exchangeRate: number;
     totalZAR: number;

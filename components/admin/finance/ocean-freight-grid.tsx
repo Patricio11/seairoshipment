@@ -36,6 +36,7 @@ import { ChevronDown, ChevronRight, Plus, Search, MoreVertical, Edit, Copy, Aler
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { useSearchParams } from "next/navigation"
+import { CreateOceanFreightDialog } from "./create-ocean-freight-dialog"
 
 export function OceanFreightGrid() {
     const searchParams = useSearchParams()
@@ -76,12 +77,10 @@ export function OceanFreightGrid() {
                         Manage freight rates by route and destination
                     </p>
                 </div>
-                <Link href="/admin/finance/ocean-freight/new">
-                    <Button className="bg-brand-blue hover:bg-blue-700">
-                        <Plus className="mr-2 h-4 w-4" />
-                        New Freight Rate
-                    </Button>
-                </Link>
+                <CreateOceanFreightDialog
+                    defaultDestinationPort={searchTerm}
+                    defaultCountry={countries.length === 1 ? countries[0] : ""}
+                />
             </div>
 
             {/* Filters */}
@@ -162,14 +161,17 @@ export function OceanFreightGrid() {
                                     <Table>
                                         <TableHeader>
                                             <TableRow className="bg-slate-50 dark:bg-slate-900/50">
-                                                <TableHead>Destination Port</TableHead>
+                                                <TableHead className="min-w-[140px]">Port of Load</TableHead>
+                                                <TableHead className="min-w-[140px]">Destination Port</TableHead>
                                                 <TableHead>Shipping Line</TableHead>
-                                                <TableHead>Container</TableHead>
-                                                <TableHead className="text-right">Freight (USD)</TableHead>
+                                                <TableHead>Equipment</TableHead>
+                                                <TableHead className="text-right">Freight</TableHead>
                                                 <TableHead className="text-right">BAF</TableHead>
-                                                <TableHead className="text-right">Surcharges</TableHead>
-                                                <TableHead className="text-right">Total USD</TableHead>
-                                                <TableHead className="text-right">Total ZAR</TableHead>
+                                                <TableHead className="text-right">ISPS</TableHead>
+                                                <TableHead className="text-right">Other</TableHead>
+                                                <TableHead className="text-right">RCG</TableHead>
+                                                <TableHead className="text-right font-bold text-blue-600">Total USD</TableHead>
+                                                <TableHead className="text-right font-bold text-emerald-600">Total ZAR</TableHead>
                                                 <TableHead>Status</TableHead>
                                                 <TableHead className="w-[50px]"></TableHead>
                                             </TableRow>
@@ -177,61 +179,57 @@ export function OceanFreightGrid() {
                                         <TableBody>
                                             {countryRates.map((rate) => (
                                                 <TableRow key={rate.id} className="group hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                                                    <TableCell className="font-medium text-slate-700 dark:text-slate-300">
+                                                        {rate.origin}
+                                                    </TableCell>
                                                     <TableCell>
                                                         <div className="flex flex-col">
                                                             <span className="font-semibold text-slate-900 dark:text-white">
                                                                 {rate.destinationPort}
                                                             </span>
-                                                            <span className="text-xs text-slate-500 font-mono">
+                                                            <span className="text-[10px] text-slate-500 font-mono">
                                                                 {rate.destinationPortCode}
                                                             </span>
                                                         </div>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Badge variant="outline" className="font-semibold">
+                                                        <Badge variant="outline" className="font-semibold bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                                                             {rate.shippingLine}
                                                         </Badge>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <span className="text-xs font-mono">
+                                                        <span className="text-[11px] font-mono text-slate-600 dark:text-slate-400">
                                                             {rate.containerDisplayName}
                                                         </span>
                                                     </TableCell>
-                                                    <TableCell className="text-right">
-                                                        <span className="font-mono text-sm">
-                                                            {rate.active ? `$${rate.freightUSD.toLocaleString()}` : "-"}
-                                                        </span>
+                                                    <TableCell className="text-right font-mono text-sm">
+                                                        {rate.active ? `$${rate.freightUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
                                                     </TableCell>
-                                                    <TableCell className="text-right">
-                                                        <span className="font-mono text-sm text-amber-600">
-                                                            {rate.active ? `$${rate.bafUSD.toLocaleString()}` : "-"}
-                                                        </span>
+                                                    <TableCell className="text-right font-mono text-sm text-amber-600">
+                                                        {rate.active ? `$${rate.bafUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
                                                     </TableCell>
-                                                    <TableCell className="text-right">
-                                                        <span className="font-mono text-sm text-slate-600">
-                                                            {rate.active
-                                                                ? `$${(rate.ispsUSD + rate.rcgUSD + rate.otherSurchargesUSD).toLocaleString()}`
-                                                                : "-"
-                                                            }
-                                                        </span>
+                                                    <TableCell className="text-right font-mono text-sm text-slate-500">
+                                                        {rate.active ? `$${rate.ispsUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
                                                     </TableCell>
-                                                    <TableCell className="text-right">
-                                                        <span className="font-mono text-sm font-bold text-blue-600">
-                                                            {rate.active ? `$${rate.totalUSD.toLocaleString()}` : "-"}
-                                                        </span>
+                                                    <TableCell className="text-right font-mono text-sm text-slate-500">
+                                                        {rate.active ? `$${rate.otherSurchargesUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
                                                     </TableCell>
-                                                    <TableCell className="text-right">
-                                                        <span className="font-mono text-sm font-bold text-emerald-600">
-                                                            {rate.active ? `R ${rate.totalZAR.toLocaleString()}` : "-"}
-                                                        </span>
+                                                    <TableCell className="text-right font-mono text-sm text-slate-500">
+                                                        {rate.active ? `$${rate.rcgUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
+                                                    </TableCell>
+                                                    <TableCell className="text-right font-mono text-sm font-black text-blue-600 bg-blue-50/30 dark:bg-blue-900/10">
+                                                        {rate.active ? `$${rate.totalUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
+                                                    </TableCell>
+                                                    <TableCell className="text-right font-mono text-sm font-black text-emerald-600 bg-emerald-50/30 dark:bg-emerald-900/10">
+                                                        {rate.active ? `R ${rate.totalZAR.toLocaleString(undefined, { minimumFractionDigits: 0 })}` : "-"}
                                                     </TableCell>
                                                     <TableCell>
                                                         <Badge
                                                             className={cn(
-                                                                "font-semibold",
+                                                                "font-bold text-[10px] uppercase tracking-wider",
                                                                 rate.active
-                                                                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                                                                    : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                                                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+                                                                    : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800"
                                                             )}
                                                         >
                                                             {rate.active ? "Active" : "Missing"}
