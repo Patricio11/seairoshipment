@@ -25,7 +25,7 @@ export function ContactSection() {
         {
             icon: Mail,
             title: 'Email Us',
-            details: ['bookings@seairologistics.com', 'support@seairologistics.com'],
+            details: ['bookings@seairo.com', 'support@seairo.com'],
             color: 'text-brand-green',
             bg: 'bg-brand-green/10'
         },
@@ -69,8 +69,7 @@ export function ContactSection() {
                         </h2>
 
                         <p className="mt-6 text-lg leading-relaxed text-slate-600">
-                            Join the fastest-growing network of seafood exporters using our digital twin technology.
-                            Get a custom demo of the platform today.
+                            Join the fastest growing network of food and perishable exporters using our digital twin technology.
                         </p>
 
                         <div className="mt-12 space-y-8">
