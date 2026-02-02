@@ -17,7 +17,7 @@ function Pallet({ position, index, type }: { position: [number, number, number],
 
     return (
         <mesh ref={meshRef} position={position} castShadow receiveShadow>
-            {/* Square pallet: width=1.0, height=2.3 (full height), depth=1.0 (square) */}
+            {/* Square pallet: width=1.0, height=2.3 (full height), depth=1.0 (square footprint) */}
             <boxGeometry args={[1.0, 2.3, 1.0]} />
             <meshStandardMaterial
                 color={color}
@@ -50,7 +50,7 @@ function ContainerFrame({ type }: { type: '20FT' | '40FT' }) {
 
             {/* Wireframe Box indicating boundaries */}
             <mesh position={[0, 1.25, 0]}>
-                <boxGeometry args={[2.4, 2.5, length]} />
+                <boxGeometry args={[2.5, 2.5, length]} />
                 <meshStandardMaterial color="#94a3b8" wireframe transparent opacity={0.2} />
             </mesh>
 
@@ -92,16 +92,20 @@ export function ContainerScene({
             const columnIndex = Math.floor(i / 10) // 0 = left column, 1 = right column
             const rowInColumn = i % 10 // Position within the column (0-9)
 
-            // X position: -0.55 for left column, +0.55 for right column
-            const x = columnIndex === 0 ? -0.55 : 0.55
+            // X position: -0.525 for left column, +0.525 for right column (small middle gap like between pallets)
+            const x = columnIndex === 0 ? -0.525 : 0.525
 
             // Y position: centered height (half of 2.3 height + padding)
             const y = 1.2
 
-            // Z position: front to back spacing (0.6 units apart)
-            // Start from front (-length/2 + padding)
-            const startZ = -(length / 2) + 0.5
-            const z = startZ + (rowInColumn * 0.6)
+            // Z position: front to back with spacing
+            // Calculate to fit 10 pallets (depth 1.0 each) with gaps between them
+            // Container length = 6 units (for 40FT), boundaries: -3 to +3
+            // Total pallet depth needed: 10 * 1.0 = 10 (too much!)
+            // Need to space them: available = 6 - 1.0 = 5.0 units
+            // Spacing between centers: 5.0 / 9 = 0.556
+            const startZ = -(length / 2) + 0.6 // Start 0.6 units from front
+            const z = startZ + (rowInColumn * 0.556) // Centers spaced 0.556 apart
 
             items.push({
                 x, y, z,

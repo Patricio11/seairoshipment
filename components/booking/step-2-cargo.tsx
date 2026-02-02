@@ -5,7 +5,7 @@ import { ContainerScene } from "./container-scene"
 import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
 import { motion, AnimatePresence } from "framer-motion"
-import { CheckCircle, Ship, ArrowLeft, ThermometerSnowflake, Boxes, MapPin, Calendar as CalendarIcon } from "lucide-react"
+import { CheckCircle, Ship, ArrowLeft, ThermometerSnowflake, Boxes, MapPin } from "lucide-react"
 import {
     Select,
     SelectContent,
@@ -14,13 +14,6 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover"
-import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 
 interface Step2Props {
@@ -32,13 +25,12 @@ interface Step2Props {
 const MOCK_STORAGE: Record<string, any[]> = {
     "CPT-RTM": [
         { id: "CONT-001", vessel: "MSC Orchestra", preFilled: 14, date: "Oct 28", type: "40FT" },
-        { id: "CONT-002", vessel: "Maersk Line 2", preFilled: 6, date: "Oct 30", type: "20FT" },
         { id: "CONT-003", vessel: "COSCO Shipping", preFilled: 12, date: "Nov 02", type: "40FT" },
-        { id: "CONT-004", vessel: "Evergreen", preFilled: 4, date: "Nov 05", type: "20FT" },
+        { id: "CONT-005", vessel: "Hapag Lloyd", preFilled: 5, date: "Nov 06", type: "40FT" },
+        { id: "CONT-006", vessel: "CMA CGM Antoine", preFilled: 15, date: "Nov 10", type: "40FT" },
     ],
     "CPT-LND": [
         { id: "CONT-L01", vessel: "Atlantic Star", preFilled: 10, date: "Oct 29", type: "40FT" },
-        { id: "CONT-L02", vessel: "CMA CGM Marco", preFilled: 2, date: "Nov 03", type: "20FT" },
     ],
     "DUR-SIN": [
         { id: "CONT-S01", vessel: "One Integrity", preFilled: 15, date: "Oct 31", type: "40FT" },
@@ -46,21 +38,27 @@ const MOCK_STORAGE: Record<string, any[]> = {
     // Default fallback
     "DEFAULT": [
         { id: "CONT-D01", vessel: "Standard Vessel", preFilled: 10, date: "Seasonal", type: "40FT" },
-        { id: "CONT-D02", vessel: "Express Service", preFilled: 2, date: "Seasonal", type: "20FT" },
     ]
 }
+
+// Mock sailing dates - will be pulled from external system
+const AVAILABLE_SAILING_DATES = [
+    { value: "2026-02-15", label: "Feb 15, 2026" },
+    { value: "2026-02-22", label: "Feb 22, 2026" },
+    { value: "2026-03-01", label: "Mar 1, 2026" },
+    { value: "2026-03-08", label: "Mar 8, 2026" },
+    { value: "2026-03-15", label: "Mar 15, 2026" },
+    { value: "2026-03-22", label: "Mar 22, 2026" },
+]
 
 export function Step2Cargo({ formData, updateFormData }: Step2Props) {
     const [viewStage, setViewStage] = useState<"initial" | "pick" | "adjust">(
         formData.containerId ? "adjust" : "initial"
     )
-    const [typeFilter, setTypeFilter] = useState<"ALL" | "20FT" | "40FT">("ALL")
 
     // Derived available containers based on route
     const currentRouteKey = `${formData.origin}-${formData.destination}`
-    const availableContainers = (MOCK_STORAGE[currentRouteKey] || MOCK_STORAGE["DEFAULT"]).filter(c =>
-        typeFilter === "ALL" || c.type === typeFilter
-    )
+    const availableContainers = (MOCK_STORAGE[currentRouteKey] || MOCK_STORAGE["DEFAULT"])
 
     const selectedContainer = (MOCK_STORAGE[currentRouteKey] || MOCK_STORAGE["DEFAULT"]).find(c => c.id === formData.containerId)
     // Container capacity logic: 20FT = 10 pallets, 40FT = 20 pallets
@@ -95,7 +93,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
         return "text-brand-blue"
     }
 
-    const isInitialComplete = formData.origin && formData.destination && formData.date && formData.commodity && formData.temperature
+    const isInitialComplete = formData.origin && formData.destination && formData.sailingDate && formData.commodity && formData.temperature
 
     return (
         <div className="space-y-6">
@@ -150,18 +148,19 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-semibold">Ready Date (CRD)</Label>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" className={cn("w-full h-12 justify-start text-left font-medium bg-white dark:bg-slate-950", !formData.date && "text-muted-foreground")}>
-                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {formData.date ? format(formData.date, "PPP") : "Select ready date"}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar mode="single" selected={formData.date} onSelect={(date) => updateFormData({ date })} disabled={(date) => date < new Date()} />
-                                        </PopoverContent>
-                                    </Popover>
+                                    <Label className="text-xs font-semibold">Next available sailings</Label>
+                                    <Select value={formData.sailingDate} onValueChange={(val) => updateFormData({ sailingDate: val })}>
+                                        <SelectTrigger className="w-full h-12 bg-white dark:bg-slate-950 font-medium">
+                                            <SelectValue placeholder="Select sailing date" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {AVAILABLE_SAILING_DATES.map((date) => (
+                                                <SelectItem key={date.value} value={date.value}>
+                                                    {date.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                             </div>
 
@@ -229,24 +228,6 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                 <Button variant="ghost" size="sm" onClick={() => setViewStage("initial")} className="text-slate-500">
                                     <ArrowLeft className="mr-2 h-4 w-4" /> Edit Route
                                 </Button>
-                            </div>
-
-                            {/* Filter Tabs */}
-                            <div className="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg w-fit">
-                                {["ALL", "20FT", "40FT"].map((t) => (
-                                    <button
-                                        key={t}
-                                        onClick={() => setTypeFilter(t as any)}
-                                        className={cn(
-                                            "px-4 py-1.5 rounded-md text-xs font-bold transition-all",
-                                            typeFilter === t
-                                                ? "bg-white dark:bg-slate-950 text-slate-900 dark:text-white shadow-sm"
-                                                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                                        )}
-                                    >
-                                        {t === "ALL" ? "All Types" : t}
-                                    </button>
-                                ))}
                             </div>
                         </div>
 
