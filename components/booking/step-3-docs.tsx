@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { UploadCloud, FileText, Check, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 
 interface Step3Props {
     formData: any
@@ -123,6 +124,33 @@ export function Step3Docs({ formData, updateFormData }: Step3Props) {
                     <div className="flex flex-col text-left">
                         <span className="text-sm font-medium">Commercial Invoice</span>
                         <span className="text-xs text-muted-foreground">Required</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Terms & Conditions */}
+            <div className="border-t border-slate-100 dark:border-slate-800 pt-6 mt-6">
+                <div className="flex items-start gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                    <Checkbox
+                        id="terms"
+                        checked={formData.agreeToTerms || false}
+                        onCheckedChange={(checked) => updateFormData({ agreeToTerms: checked })}
+                        className="mt-1"
+                    />
+                    <div className="flex-1">
+                        <label
+                            htmlFor="terms"
+                            className="text-sm font-medium leading-relaxed cursor-pointer"
+                        >
+                            I agree to the{" "}
+                            <a href="#" className="text-brand-blue hover:underline font-semibold">
+                                Terms & Conditions
+                            </a>
+                            {" "}and{" "}
+                            <a href="#" className="text-brand-blue hover:underline font-semibold">
+                                Privacy Policy
+                            </a>
+                        </label>
                     </div>
                 </div>
             </div>

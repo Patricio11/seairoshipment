@@ -21,7 +21,8 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
         consigneeAddress: "",
         hasDocs: false,
         containerId: "",
-        vessel: ""
+        vessel: "",
+        agreeToTerms: false
     })
 
     const updateFormData = (data: any) => {
@@ -45,7 +46,15 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
             toast.error("Consignee Name is required.")
             return
         }
-        toast.success("Booking Submitted Successfully! Ref: SRS-9921")
+        if (!formData.agreeToTerms) {
+            toast.error("Please agree to the Terms & Conditions to continue.")
+            return
+        }
+        toast.success("Booking Submitted Successfully!", {
+            description: "Reference Number: SRS-9921",
+            duration: 5000,
+            className: "text-base p-4",
+        })
         onSuccess?.()
     }
 
