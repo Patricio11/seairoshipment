@@ -17,8 +17,8 @@ function Pallet({ position, index, type }: { position: [number, number, number],
 
     return (
         <mesh ref={meshRef} position={position} castShadow receiveShadow>
-            {/* Square pallet: width=1.0, height=2.3 (full height), depth=1.0 (square footprint) */}
-            <boxGeometry args={[1.0, 2.3, 1.0]} />
+            {/* Square pallet: width=1.2, height=2.3 (full height), depth=1.2 (square footprint) */}
+            <boxGeometry args={[1.2, 2.3, 1.2]} />
             <meshStandardMaterial
                 color={color}
                 roughness={0.2}
@@ -27,7 +27,7 @@ function Pallet({ position, index, type }: { position: [number, number, number],
                 opacity={type === 'pre-filled' ? 0.4 : 0.9}
             />
             <lineSegments>
-                <edgesGeometry args={[new THREE.BoxGeometry(1.0, 2.3, 1.0)]} />
+                <edgesGeometry args={[new THREE.BoxGeometry(1.2, 2.3, 1.2)]} />
                 <lineBasicMaterial color="white" transparent opacity={0.3} />
             </lineSegments>
         </mesh>
@@ -36,26 +36,26 @@ function Pallet({ position, index, type }: { position: [number, number, number],
 
 // The Container Frame (Wireframe representation)
 function ContainerFrame({ type }: { type: '20FT' | '40FT' }) {
-    // 20FT is half the length (3m vs 6m visual representation)
-    const length = type === '20FT' ? 3 : 6
+    // 20FT is half the length (6.5m vs 13m visual representation)
+    const length = type === '20FT' ? 6.5 : 13
     const zOffset = type === '20FT' ? 0 : 0 // Center it
 
     return (
         <group>
             {/* Floor */}
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
-                <planeGeometry args={[2.5, length]} />
+                <planeGeometry args={[3.5, length]} />
                 <meshStandardMaterial color="#334155" roughness={0.8} />
             </mesh>
 
             {/* Wireframe Box indicating boundaries */}
             <mesh position={[0, 1.25, 0]}>
-                <boxGeometry args={[2.5, 2.5, length]} />
+                <boxGeometry args={[3.5, 2.5, length]} />
                 <meshStandardMaterial color="#94a3b8" wireframe transparent opacity={0.2} />
             </mesh>
 
             {/* Frame posts */}
-            {[[-1.2, 2.5, length / 2], [1.2, 2.5, length / 2], [-1.2, 2.5, -length / 2], [1.2, 2.5, -length / 2]].map((pos, i) => (
+            {[[-1.75, 2.5, length / 2], [1.75, 2.5, length / 2], [-1.75, 2.5, -length / 2], [1.75, 2.5, -length / 2]].map((pos, i) => (
                 <mesh key={i} position={[pos[0] as number, 1.25, pos[2] as number]}>
                     <boxGeometry args={[0.1, 2.5, 0.1]} />
                     <meshStandardMaterial color="#cbd5e1" />
@@ -78,10 +78,10 @@ export function ContainerScene({
 }) {
     const totalCount = preFilledCount + userAddedCount
     const maxCapacity = type === '20FT' ? 10 : 20
-    const length = type === '20FT' ? 3 : 6
+    const length = type === '20FT' ? 6.5 : 13
 
-    // Camera preset zoom
-    const cameraPos: [number, number, number] = type === '20FT' ? [4, 3, 5] : [5, 4, 7]
+    // Camera preset zoom - further back for larger container
+    const cameraPos: [number, number, number] = type === '20FT' ? [6, 5, 8] : [8, 6, 12]
 
     const pallets = useMemo(() => {
         const items = []
@@ -92,20 +92,17 @@ export function ContainerScene({
             const columnIndex = Math.floor(i / 10) // 0 = left column, 1 = right column
             const rowInColumn = i % 10 // Position within the column (0-9)
 
-            // X position: -0.525 for left column, +0.525 for right column (small middle gap like between pallets)
-            const x = columnIndex === 0 ? -0.525 : 0.525
+            // X position: -0.8 for left column, +0.8 for right column
+            const x = columnIndex === 0 ? -0.8 : 0.8
 
             // Y position: centered height (half of 2.3 height + padding)
             const y = 1.2
 
             // Z position: front to back with spacing
-            // Calculate to fit 10 pallets (depth 1.0 each) with gaps between them
-            // Container length = 6 units (for 40FT), boundaries: -3 to +3
-            // Total pallet depth needed: 10 * 1.0 = 10 (too much!)
-            // Need to space them: available = 6 - 1.0 = 5.0 units
-            // Spacing between centers: 5.0 / 9 = 0.556
-            const startZ = -(length / 2) + 0.6 // Start 0.6 units from front
-            const z = startZ + (rowInColumn * 0.556) // Centers spaced 0.556 apart
+            // Container length 13 units. 10 pallets.
+            // Spacing: 1.25 units per pallet slot (0.05 gap)
+            const startZ = -(length / 2) + 0.8
+            const z = startZ + (rowInColumn * 1.25)
 
             items.push({
                 x, y, z,
