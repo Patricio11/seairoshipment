@@ -209,9 +209,11 @@ export function DestinationChargesList() {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem>
-                                                        <Edit className="mr-2 h-4 w-4" />
-                                                        Edit
+                                                    <DropdownMenuItem asChild>
+                                                        <Link href={`/admin/finance/destination-charges/${charge.id}`}>
+                                                            <Edit className="mr-2 h-4 w-4" />
+                                                            Edit
+                                                        </Link>
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem>
                                                         <Copy className="mr-2 h-4 w-4" />
