@@ -73,7 +73,7 @@ export function IndustryFeatures() {
                         Built for Perishable Exports
                     </h2>
                     <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
-                        Purpose-built for Cape Town seafood exporters shipping to Europe, UK, and Middle East
+                        Purpose built for Perishable and FMCG exporters shipping to Europe, UK, Middle East and the world
                     </p>
                 </motion.div>
 

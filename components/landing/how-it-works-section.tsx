@@ -14,8 +14,8 @@ const steps = [
     },
     {
         icon: PackageCheck,
-        title: 'Savino Inspection & Load',
-        description: 'Deliver pallets to Savino Del Bene warehouse. Our team inspects, photographs, and attaches TIVE sensors. Container loaded.',
+        title: 'Inspection & Load',
+        description: 'Deliver pallets to Del Bene warehouse. Our team inspects, photographs, and attaches TIVE sensors. Container loaded.',
         timeline: '24-48 hours',
         action: 'Warehouse coordination',
     },

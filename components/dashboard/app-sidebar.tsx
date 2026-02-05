@@ -197,7 +197,7 @@ export function AppSidebar({ className, isCollapsed, setIsCollapsed }: SidebarPr
                                 </div>
                                 <div className="flex flex-col overflow-hidden">
                                     <span className="text-sm font-semibold truncate leading-none">John Doe</span>
-                                    <span className="text-xs text-slate-500 truncate mt-1">Savino Del Bene</span>
+                                    <span className="text-xs text-slate-500 truncate mt-1">Del Bene</span>
                                 </div>
                             </div>
                         </div>
