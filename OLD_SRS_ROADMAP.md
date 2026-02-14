@@ -179,7 +179,7 @@
 ---
 
 ## 🛡️ PHASE 3: THE ADMIN "GOD MODE" (Operational Portal)
-*Goal: A completely separate interface for Seairo/Savino staff to manage the chaos.*
+*Goal: A completely separate interface for Seairo staff to manage the chaos.*
 
 ### Task 3.1: Admin Shell & Auth
 - [ ] **Separate Route:** `/admin/*` protected by `role === 'ADMIN'`.

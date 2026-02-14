@@ -8,7 +8,7 @@ const features = [
     {
         icon: Package,
         title: 'SRS Pallet Consolidation',
-        description: 'Ship 5-20 pallets without paying for a full 40ft container. We consolidate seafood exports from multiple shippers for maximum cost efficiency.',
+        description: 'Ship 5-20 pallets without paying for a full 40ft container. We consolidate perishable and FMCG exports from multiple shippers for maximum cost efficiency.',
         benefit: 'Save up to 40% vs FCL',
         industry: 'Ideal for seafood & perishables',
     },
@@ -36,7 +36,7 @@ const features = [
     {
         icon: Shield,
         title: 'Pre-Departure Inspection',
-        description: 'Our Savino warehouse team inspects every pallet before loading. Photos sent to your dashboard. TIVE sensor activated on-site.',
+        description: 'Our warehouse team inspects every pallet before loading. Photos sent to your dashboard. TIVE sensor activated on-site.',
         benefit: 'Zero damaged goods',
         industry: 'ISO 9001 certified facility',
     },
