@@ -1,117 +1,9 @@
 'use client'
 
-import { Canvas } from '@react-three/fiber'
-import { OrbitControls, PerspectiveCamera, Float } from '@react-three/drei'
-import { Suspense, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import * as THREE from 'three'
 import { Ship, Thermometer, MapPin, ArrowRight } from 'lucide-react'
 import { AuthPanel } from '../auth-panel'
-
-// 3D Reefer Container Component
-function ReeferContainer3D() {
-    const meshRef = useRef<THREE.Group>(null)
-
-    return (
-        <Float speed={1.5} rotationIntensity={0.3} floatIntensity={0.5}>
-            <group ref={meshRef} rotation={[0, Math.PI / 6, 0]}>
-                {/* Main Container Body */}
-                <mesh position={[0, 0, 0]} castShadow>
-                    <boxGeometry args={[6, 2.6, 12]} />
-                    <meshStandardMaterial
-                        color="#1e40af"
-                        metalness={0.8}
-                        roughness={0.3}
-                    />
-                </mesh>
-
-                {/* Cooling Unit - Front */}
-                <mesh position={[0, 1.5, -6.2]} castShadow>
-                    <boxGeometry args={[5.8, 0.8, 0.8]} />
-                    <meshStandardMaterial
-                        color="#0ea5e9"
-                        metalness={0.9}
-                        roughness={0.2}
-                        emissive="#0284c7"
-                        emissiveIntensity={0.4}
-                    />
-                </mesh>
-
-                {/* Temperature Display Panel */}
-                <mesh position={[0, 0.5, -6.45]}>
-                    <boxGeometry args={[2, 0.8, 0.1]} />
-                    <meshStandardMaterial
-                        color="#000000"
-                        emissive="#00ff00"
-                        emissiveIntensity={0.3}
-                    />
-                </mesh>
-
-                {/* Door - Back */}
-                <mesh position={[0, 0, 6.05]}>
-                    <boxGeometry args={[5.6, 2.4, 0.1]} />
-                    <meshStandardMaterial
-                        color="#334155"
-                        metalness={0.6}
-                        roughness={0.5}
-                    />
-                </mesh>
-
-                {/* "REEFER" Label */}
-                <mesh position={[0, 0.8, 6.1]}>
-                    <boxGeometry args={[3, 0.4, 0.05]} />
-                    <meshStandardMaterial
-                        color="#f59e0b"
-                        emissive="#f59e0b"
-                        emissiveIntensity={0.6}
-                    />
-                </mesh>
-
-                {/* Temperature Warning Stripe */}
-                <mesh position={[0, -1.25, 0]}>
-                    <boxGeometry args={[6.1, 0.2, 12.1]} />
-                    <meshStandardMaterial
-                        color="#ef4444"
-                        metalness={0.7}
-                    />
-                </mesh>
-            </group>
-        </Float>
-    )
-}
-
-// Pre-generated mist positions to avoid impure Math.random() calls in render
-const MIST_POSITIONS = [
-    { x: -7.2, y: -2.1, z: 8.4, size: 1.3 },
-    { x: 4.5, y: -1.8, z: -6.2, size: 1.7 },
-    { x: -2.8, y: -2.5, z: 3.1, size: 1.1 },
-    { x: 9.1, y: -1.4, z: -1.9, size: 1.9 },
-    { x: -5.6, y: -2.8, z: -7.8, size: 1.4 },
-    { x: 1.3, y: -1.6, z: 6.7, size: 1.6 },
-    { x: -8.9, y: -2.3, z: -3.4, size: 1.2 },
-    { x: 6.4, y: -1.9, z: 2.5, size: 1.8 },
-]
-
-// Cold vapor/mist effect
-function ColdMist() {
-    return (
-        <>
-            {MIST_POSITIONS.map((pos, i) => (
-                <Float key={i} speed={2 + i * 0.3} rotationIntensity={0.2} floatIntensity={1}>
-                    <mesh position={[pos.x, pos.y, pos.z]}>
-                        <sphereGeometry args={[pos.size, 16, 16]} />
-                        <meshStandardMaterial
-                            color="#e0f2fe"
-                            transparent
-                            opacity={0.15}
-                            roughness={1}
-                        />
-                    </mesh>
-                </Float>
-            ))}
-        </>
-    )
-}
 
 export function IndustryHero() {
     const [hoveredStat, setHoveredStat] = useState<number | null>(null)
@@ -134,53 +26,20 @@ export function IndustryHero() {
     return (
         <>
             <section ref={ref} className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 pt-20">
-                {/* Animated Grid Background */}
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e3a8a_1px,transparent_1px),linear-gradient(to_bottom,#1e3a8a_1px,transparent_1px)] bg-[size:3rem_3rem] opacity-20" />
-
-                {/* 3D Container Scene */}
-                <div className="absolute inset-0 opacity-60">
-                    <Canvas shadows>
-                        <Suspense fallback={null}>
-                            <PerspectiveCamera makeDefault position={[10, 5, 15]} fov={50} />
-
-                            {/* Lighting */}
-                            <ambientLight intensity={0.4} />
-                            <directionalLight
-                                position={[10, 10, 5]}
-                                intensity={1.5}
-                                castShadow
-                                shadow-mapSize-width={2048}
-                                shadow-mapSize-height={2048}
-                            />
-                            <pointLight position={[-10, 5, -10]} intensity={0.8} color="#0ea5e9" />
-                            <pointLight position={[10, 5, 10]} intensity={0.6} color="#06b6d4" />
-
-                            {/* 3D Elements */}
-                            <ReeferContainer3D />
-                            <ColdMist />
-
-                            {/* Ground Plane */}
-                            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} receiveShadow>
-                                <planeGeometry args={[100, 100]} />
-                                <meshStandardMaterial
-                                    color="#0c4a6e"
-                                    metalness={0.5}
-                                    roughness={0.8}
-                                    opacity={0.5}
-                                    transparent
-                                />
-                            </mesh>
-
-                            <OrbitControls
-                                enableZoom={false}
-                                enablePan={false}
-                                autoRotate
-                                autoRotateSpeed={0.8}
-                                maxPolarAngle={Math.PI / 2.2}
-                                minPolarAngle={Math.PI / 3}
-                            />
-                        </Suspense>
-                    </Canvas>
+                {/* Video Background */}
+                <div className="absolute inset-0">
+                    <video
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        className="h-full w-full object-cover"
+                        poster="/video-poster.jpg"
+                    >
+                        <source src="/cargo-ship.mp4" type="video/mp4" />
+                    </video>
+                    {/* Dark overlay for text readability */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-slate-900/70 via-blue-950/60 to-slate-900/80" />
                 </div>
 
                 {/* Content Overlay */}
