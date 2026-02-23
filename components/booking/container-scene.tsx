@@ -1,13 +1,13 @@
 "use client"
 
-import { Canvas, useFrame } from "@react-three/fiber"
+import { Canvas } from "@react-three/fiber"
 import { OrbitControls, PerspectiveCamera, Environment, ContactShadows } from "@react-three/drei"
 import { useRef, useMemo } from "react"
 import * as THREE from "three"
 import { cn } from "@/lib/utils"
 
 // Pallet Block Component - Square, full-height realistic pallet
-function Pallet({ position, index, type }: { position: [number, number, number], index: number, type: 'pre-filled' | 'user-added' }) {
+function Pallet({ position, type }: { position: [number, number, number], index: number, type: 'pre-filled' | 'user-added' }) {
     const meshRef = useRef<THREE.Mesh>(null!)
 
     // Color logic: Pre-filled is grey/slate, User-added is brand-blue
@@ -38,7 +38,6 @@ function Pallet({ position, index, type }: { position: [number, number, number],
 function ContainerFrame({ type }: { type: '20FT' | '40FT' }) {
     // 20FT is half the length (6.5m vs 13m visual representation)
     const length = type === '20FT' ? 6.5 : 13
-    const zOffset = type === '20FT' ? 0 : 0 // Center it
 
     return (
         <group>
@@ -77,7 +76,6 @@ export function ContainerScene({
     className?: string
 }) {
     const totalCount = preFilledCount + userAddedCount
-    const maxCapacity = type === '20FT' ? 10 : 20
     const length = type === '20FT' ? 6.5 : 13
 
     // Camera preset zoom - further back for larger container

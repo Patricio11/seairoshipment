@@ -6,10 +6,11 @@ import { UploadCloud, FileText, Check, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
+import type { BookingFormData } from "@/types"
 
 interface Step3Props {
-    formData: any
-    updateFormData: (data: any) => void
+    formData: BookingFormData
+    updateFormData: (data: Partial<BookingFormData>) => void
 }
 
 export function Step3Docs({ formData, updateFormData }: Step3Props) {
@@ -134,7 +135,7 @@ export function Step3Docs({ formData, updateFormData }: Step3Props) {
                     <Checkbox
                         id="terms"
                         checked={formData.agreeToTerms || false}
-                        onCheckedChange={(checked) => updateFormData({ agreeToTerms: checked })}
+                        onCheckedChange={(checked) => updateFormData({ agreeToTerms: checked === true })}
                         className="mt-1"
                     />
                     <div className="flex-1">

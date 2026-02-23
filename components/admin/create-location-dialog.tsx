@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useForm } from "react-hook-form"
 import {
     Dialog,
     DialogContent,
@@ -123,7 +122,7 @@ export function CreateLocationDialog() {
                                 </Label>
                                 <Select
                                     value={formData.type}
-                                    onValueChange={(val: any) => setFormData({ ...formData, type: val })}
+                                    onValueChange={(val) => setFormData({ ...formData, type: val as CreateLocationForm["type"] })}
                                 >
                                     <SelectTrigger className="bg-slate-950 border-slate-800 text-white capitalize h-11">
                                         <SelectValue />

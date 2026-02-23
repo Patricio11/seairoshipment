@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useCallback } from "react"
 import {
     Dialog,
     DialogContent,
@@ -67,10 +67,9 @@ export function CreateOceanFreightDialog({
         exchangeRate: 15.9,
     })
 
-    // Update form when defaults change (e.g. when dialog is opened from a specific location)
-    useEffect(() => {
-        if (open) {
-            // Try to find the location if a default name is provided
+    const handleOpenChange = useCallback((isOpen: boolean) => {
+        setOpen(isOpen)
+        if (isOpen) {
             const foundLoc = MOCK_LOCATIONS.find(l =>
                 l.name === defaultDestinationPort ||
                 l.code === defaultDestinationPort
@@ -84,7 +83,7 @@ export function CreateOceanFreightDialog({
                     destinationPort: foundLoc.name,
                     destinationPortCode: foundLoc.code,
                 }));
-            } else {
+            } else if (defaultCountry || defaultDestinationPort) {
                 setFormData(prev => ({
                     ...prev,
                     destinationCountry: defaultCountry || prev.destinationCountry,
@@ -92,7 +91,7 @@ export function CreateOceanFreightDialog({
                 }));
             }
         }
-    }, [open, defaultDestinationPort, defaultCountry])
+    }, [defaultDestinationPort, defaultCountry])
 
     const handleDestinationChange = (locId: string) => {
         const loc = MOCK_LOCATIONS.find(l => l.id === locId);
@@ -126,7 +125,7 @@ export function CreateOceanFreightDialog({
     }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 <Button className="bg-brand-blue hover:bg-blue-700 text-white font-bold h-10 shadow-lg shadow-blue-900/20">
                     <Plus className="mr-2 h-4 w-4" /> New Freight Rate

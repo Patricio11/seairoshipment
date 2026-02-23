@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { UploadCloud, FileText, Check, Loader2 } from "lucide-react"
+import { UploadCloud, FileText, Loader2 } from "lucide-react"
 import {
     Dialog,
     DialogContent,

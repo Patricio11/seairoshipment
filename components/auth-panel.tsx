@@ -85,7 +85,7 @@ export function AuthPanel({ isOpen, onClose, initialMode = 'login' }: AuthPanelP
                     }
                 });
             }
-        } catch (error) {
+        } catch {
             toast.error("An error occurred", {
                 description: "Please try again later"
             });

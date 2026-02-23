@@ -6,8 +6,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react"
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react"
 import { navItems, navSecondary } from "./nav-main"
 import {
     Tooltip,
@@ -15,7 +14,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { authClient } from "@/lib/auth/client"
+import { authClient, useAuth } from "@/lib/auth/client"
 import { toast } from "sonner"
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -26,6 +25,10 @@ interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
 export function AppSidebar({ className, isCollapsed, setIsCollapsed }: SidebarProps) {
     const pathname = usePathname()
     const router = useRouter()
+    const { user } = useAuth()
+
+    const displayName = user?.name || "User"
+    const initials = displayName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
 
     const handleSignOut = async () => {
         try {
@@ -33,7 +36,7 @@ export function AppSidebar({ className, isCollapsed, setIsCollapsed }: SidebarPr
             toast.success("Signed out successfully")
             router.push("/")
             router.refresh()
-        } catch (error) {
+        } catch {
             toast.error("Failed to sign out")
         }
     }
@@ -193,11 +196,11 @@ export function AppSidebar({ className, isCollapsed, setIsCollapsed }: SidebarPr
                         <div className="mt-6 rounded-xl bg-slate-100 p-4 dark:bg-slate-800/50">
                             <div className="flex items-center gap-3">
                                 <div className="h-8 w-8 rounded-full bg-gradient-to-br from-brand-blue to-brand-green flex items-center justify-center text-white font-bold text-xs ring-2 ring-white dark:ring-slate-900">
-                                    JD
+                                    {initials}
                                 </div>
                                 <div className="flex flex-col overflow-hidden">
-                                    <span className="text-sm font-semibold truncate leading-none">John Doe</span>
-                                    <span className="text-xs text-slate-500 truncate mt-1">Cape Town</span>
+                                    <span className="text-sm font-semibold truncate leading-none">{displayName}</span>
+                                    <span className="text-xs text-slate-500 truncate mt-1">{user?.email || ""}</span>
                                 </div>
                             </div>
                         </div>

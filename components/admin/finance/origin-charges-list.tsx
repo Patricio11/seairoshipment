@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { MOCK_ORIGIN_CHARGES } from "@/lib/mock-data/origin-charges"
 import { MOCK_CONTAINERS } from "@/lib/mock-data/containers"
@@ -38,18 +38,11 @@ import { CreateOriginChargeDialog } from "./create-origin-charge-dialog"
 export function OriginChargesList() {
     const router = useRouter()
     const searchParams = useSearchParams()
+    const originIdParam = searchParams.get("originId")
     const [searchTerm, setSearchTerm] = useState("")
-    const [selectedOrigin, setSelectedOrigin] = useState<string>("all")
+    const [selectedOrigin, setSelectedOrigin] = useState<string>(originIdParam?.toLowerCase() ?? "all")
     const [selectedContainer, setSelectedContainer] = useState<string>("all")
     const [selectedStatus, setSelectedStatus] = useState<string>("all")
-
-    // Handle initial filtering from query params
-    useEffect(() => {
-        const originId = searchParams.get("originId")
-        if (originId) {
-            setSelectedOrigin(originId.toLowerCase())
-        }
-    }, [searchParams])
 
     // Filter data
     const filteredCharges = MOCK_ORIGIN_CHARGES.filter((charge) => {

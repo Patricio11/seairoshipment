@@ -12,12 +12,17 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { authClient } from "@/lib/auth/client"
+import { authClient, useAuth } from "@/lib/auth/client"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 export function DashboardHeader() {
     const router = useRouter()
+    const { user } = useAuth()
+
+    const displayName = user?.name || "User"
+    const displayEmail = user?.email || ""
+    const initials = displayName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
 
     const handleSignOut = async () => {
         try {
@@ -25,7 +30,7 @@ export function DashboardHeader() {
             toast.success("Signed out successfully")
             router.push("/")
             router.refresh()
-        } catch (error) {
+        } catch {
             toast.error("Failed to sign out")
         }
     }
@@ -53,17 +58,17 @@ export function DashboardHeader() {
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="relative h-9 w-9 rounded-full ring-2 ring-white/50 dark:ring-slate-800/50">
                             <Avatar className="h-9 w-9">
-                                <AvatarImage src="/avatars/01.png" alt="@johndoe" />
-                                <AvatarFallback className="bg-gradient-to-br from-brand-blue to-brand-green text-white">JD</AvatarFallback>
+                                <AvatarImage src={user?.image || ""} alt={displayName} />
+                                <AvatarFallback className="bg-gradient-to-br from-brand-blue to-brand-green text-white">{initials}</AvatarFallback>
                             </Avatar>
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-56" align="end" forceMount>
                         <DropdownMenuLabel className="font-normal">
                             <div className="flex flex-col space-y-1">
-                                <p className="text-sm font-medium leading-none">John Doe</p>
+                                <p className="text-sm font-medium leading-none">{displayName}</p>
                                 <p className="text-xs leading-none text-muted-foreground">
-                                    john.doe@srs.com
+                                    {displayEmail}
                                 </p>
                             </div>
                         </DropdownMenuLabel>

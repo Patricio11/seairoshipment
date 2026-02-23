@@ -2,7 +2,8 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { Facebook, Twitter, Linkedin, Instagram, Mail, Phone, MapPin } from 'lucide-react'
+import Image from 'next/image'
+import { Facebook, Twitter, Linkedin, Instagram, Mail, MapPin } from 'lucide-react'
 
 const footerLinks = {
     product: [
@@ -47,9 +48,11 @@ export function Footer() {
                     {/* Brand Column */}
                     <div className="lg:col-span-2">
                         <div className="flex items-center gap-2">
-                            <img
+                            <Image
                                 src="/seairo-logo.png"
                                 alt="Seairo"
+                                width={120}
+                                height={40}
                                 className="h-10 w-auto object-contain"
                             />
                         </div>

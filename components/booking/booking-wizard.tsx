@@ -1,16 +1,17 @@
 "use client"
 
 import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { ChevronRight, ChevronLeft, Check } from "lucide-react"
 import { Step2Cargo } from "./step-2-cargo"
 import { Step3Docs } from "./step-3-docs"
 import { toast } from "sonner"
+import type { BookingFormData } from "@/types"
 
 export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
     const [step, setStep] = useState(1)
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<BookingFormData>({
         origin: "",
         destination: "",
         date: undefined,
@@ -25,7 +26,7 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
         agreeToTerms: false
     })
 
-    const updateFormData = (data: any) => {
+    const updateFormData = (data: Partial<BookingFormData>) => {
         setFormData((prev) => ({ ...prev, ...data }))
     }
 

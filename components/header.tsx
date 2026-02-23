@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, Package } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { AuthPanel } from './auth-panel'
 
 const navLinks = [
@@ -43,10 +44,12 @@ export function Header() {
                     <div className="flex h-20 items-center justify-between">
                         {/* Logo */}
                         <Link href="/" className="flex items-center gap-3">
-                            <img
+                            <Image
                                 src="/seairo-logo.png"
                                 alt="Seairo Logo"
-                                className="h-10 w-auto" // Adjust height as needed, maintain aspect ratio
+                                width={120}
+                                height={40}
+                                className="h-10 w-auto"
                             />
                         </Link>
 

@@ -1,4 +1,4 @@
-import { requireAuth, requireRole } from "@/lib/auth/server";
+import { requireRole } from "@/lib/auth/server";
 import { DashboardLayoutClient } from "./layout.client";
 
 export default async function DashboardLayout({

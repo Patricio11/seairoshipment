@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { MOCK_OCEAN_FREIGHT, getOceanFreightByCountry } from "@/lib/mock-data/ocean-freight"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -32,27 +32,21 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { ChevronDown, ChevronRight, Plus, Search, MoreVertical, Edit, Copy, AlertCircle } from "lucide-react"
-import Link from "next/link"
+import { ChevronDown, ChevronRight, Search, MoreVertical, Edit, Copy, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useSearchParams } from "next/navigation"
 import { CreateOceanFreightDialog } from "./create-ocean-freight-dialog"
 
 export function OceanFreightGrid() {
     const searchParams = useSearchParams()
-    const [searchTerm, setSearchTerm] = useState("")
+    const destIdParam = searchParams.get("destId")
+    const [searchTerm, setSearchTerm] = useState(destIdParam?.toUpperCase() ?? "")
     const [selectedStatus, setSelectedStatus] = useState<string>("all")
-    const [openCountries, setOpenCountries] = useState<string[]>(["UK", "Ireland"])
-
-    // Handle initial filtering from query params
-    useEffect(() => {
-        const destId = searchParams.get("destId")
-        if (destId) {
-            setSearchTerm(destId.toUpperCase())
-            // Also try to open all countries to show the result if we are filtering
-            setOpenCountries(Array.from(new Set(MOCK_OCEAN_FREIGHT.map(r => r.destinationCountry))))
-        }
-    }, [searchParams])
+    const [openCountries, setOpenCountries] = useState<string[]>(
+        destIdParam
+            ? Array.from(new Set(MOCK_OCEAN_FREIGHT.map(r => r.destinationCountry)))
+            : ["UK", "Ireland"]
+    )
 
     // Group by country
     const countries = Array.from(new Set(MOCK_OCEAN_FREIGHT.map(r => r.destinationCountry)))

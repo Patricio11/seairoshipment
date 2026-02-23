@@ -54,3 +54,27 @@ export interface Location {
     type: 'ORIGIN' | 'DESTINATION' | 'HUB';
     coordinates?: string;
 }
+
+export interface BookingFormData {
+    origin: string;
+    destination: string;
+    date: string | undefined;
+    sailingDate?: string;
+    palletCount: number;
+    commodity: string;
+    temperature: string;
+    consigneeName: string;
+    consigneeAddress: string;
+    hasDocs: boolean;
+    containerId: string;
+    vessel: string;
+    agreeToTerms: boolean;
+}
+
+export interface ContainerSlot {
+    id: string;
+    vessel: string;
+    preFilled: number;
+    date: string;
+    type: "20FT" | "40FT";
+}

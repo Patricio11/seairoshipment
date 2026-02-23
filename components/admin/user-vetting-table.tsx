@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Check, X, Eye, FileText, UserCheck, ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -23,7 +23,19 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 
-const MOCK_USERS = [
+interface MockUser {
+    id: string
+    name: string
+    contact: string
+    email: string
+    status: "PENDING" | "VETTED" | "REJECTED"
+    date: string
+    docs?: string[]
+    account?: string
+    reason?: string
+}
+
+const MOCK_USERS: MockUser[] = [
     { id: "USR-PEND-01", name: "Global Fruits Trading", contact: "Sarah Jenkins", email: "sarah@gft.co.za", status: "PENDING", date: "2 mins ago", docs: ["CK Document", "Tax Clearance"] },
     { id: "USR-PEND-02", name: "Oceanic Seafoods", contact: "Mike Ross", email: "mike@oceanic.com", status: "PENDING", date: "45 mins ago", docs: ["CK Document"] },
     { id: "USR-VET-01", name: "Cape Citrus Exporters", contact: "John Doe", email: "john@cce.co.za", status: "VETTED", date: "2 days ago", account: "ACC-9921" },
@@ -31,13 +43,15 @@ const MOCK_USERS = [
 ]
 
 export function UserVettingTable() {
-    const [selectedUser, setSelectedUser] = useState<any>(null)
+    const [selectedUser, setSelectedUser] = useState<MockUser | null>(null)
     const [isApproveOpen, setIsApproveOpen] = useState(false)
     const [generatedAcc, setGeneratedAcc] = useState("")
+    const accountCounter = useRef(1000)
 
-    const handleApproveClick = (user: any) => {
+    const handleApproveClick = (user: MockUser) => {
         setSelectedUser(user)
-        setGeneratedAcc(`ACC-${Math.floor(Math.random() * 10000)}`)
+        accountCounter.current += 1
+        setGeneratedAcc(`ACC-${accountCounter.current}`)
         setIsApproveOpen(true)
     }
 

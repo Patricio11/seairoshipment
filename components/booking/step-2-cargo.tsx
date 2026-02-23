@@ -15,14 +15,15 @@ import {
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import type { BookingFormData, ContainerSlot } from "@/types"
 
 interface Step2Props {
-    formData: any
-    updateFormData: (data: any) => void
+    formData: BookingFormData
+    updateFormData: (data: Partial<BookingFormData>) => void
 }
 
 // Mock containers data mapped by route for demonstration
-const MOCK_STORAGE: Record<string, any[]> = {
+const MOCK_STORAGE: Record<string, ContainerSlot[]> = {
     "CPT-RTM": [
         { id: "CONT-001", vessel: "MSC Orchestra", preFilled: 14, date: "Oct 28", type: "40FT" },
         { id: "CONT-003", vessel: "COSCO Shipping", preFilled: 12, date: "Nov 02", type: "40FT" },
@@ -67,7 +68,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
     const count = formData.palletCount || 0
     const remainingCapacity = selectedContainer ? containerCapacity - selectedContainer.preFilled : 20
 
-    const handleSelectContainer = (container: any) => {
+    const handleSelectContainer = (container: ContainerSlot) => {
         const capacity = container.type === "20FT" ? 10 : 20
         const available = capacity - container.preFilled
 
@@ -247,7 +248,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                             </div>
                                             <ContainerScene
                                                 preFilledCount={container.preFilled}
-                                                type={container.type as any}
+                                                type={container.type}
                                                 className="h-full pointer-events-none"
                                             />
                                         </div>
@@ -312,7 +313,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                             <ContainerScene
                                 preFilledCount={selectedContainer.preFilled}
                                 userAddedCount={count}
-                                type={selectedContainer.type as any}
+                                type={selectedContainer.type}
                                 className="h-[300px] sm:h-[450px]"
                             />
                         </div>

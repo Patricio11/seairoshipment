@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -79,14 +79,15 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
     )
 
     // Recalculate ZAR amounts when ROE changes
-    useEffect(() => {
+    const handleExchangeRateChange = useCallback((newRate: number) => {
+        setExchangeRate(newRate)
         setItems(prevItems =>
             prevItems.map(item => ({
                 ...item,
-                amountZAR: item.amountLocal * exchangeRate
+                amountZAR: item.amountLocal * newRate
             }))
         )
-    }, [exchangeRate])
+    }, [])
 
     // Calculate totals
     const calculateTotals = () => {
@@ -224,7 +225,7 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
                                 type="number"
                                 step="0.01"
                                 value={exchangeRate}
-                                onChange={(e) => setExchangeRate(parseFloat(e.target.value) || 0)}
+                                onChange={(e) => handleExchangeRateChange(parseFloat(e.target.value) || 0)}
                                 className="pl-9 font-mono font-bold"
                             />
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
