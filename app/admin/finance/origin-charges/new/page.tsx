@@ -1,5 +1,7 @@
 import { OriginChargeEditor } from "@/components/admin/finance/origin-charge-editor"
-import { getContainerById } from "@/lib/mock-data/containers"
+import { db } from "@/lib/db"
+import { containerTypes } from "@/lib/db/schema"
+import { eq } from "drizzle-orm"
 import type { OriginChargeItem } from "@/lib/types/finance"
 
 export default async function NewOriginChargePage({
@@ -9,13 +11,17 @@ export default async function NewOriginChargePage({
 }) {
     const params = await searchParams
     const originId = (params.originId as string) || "cpt"
-    const originName = (params.originName as string) || (originId === "cpt" ? "Cape Town" : originId === "dur" ? "Durban" : "Port Elizabeth")
+    const originName = (params.originName as string) || "Cape Town"
     const country = (params.country as string) || "South Africa"
     const containerId = (params.containerId as string) || "40ft-reefer-hc"
     const salesRateTypeId = (params.salesRateTypeId as string) || "srs"
     const effectiveFrom = (params.effectiveFrom as string) || new Date().toISOString().split("T")[0]
 
-    const container = getContainerById(containerId)
+    const [container] = await db
+        .select({ displayName: containerTypes.displayName })
+        .from(containerTypes)
+        .where(eq(containerTypes.id, containerId))
+        .limit(1)
 
     const initialData = {
         id: "new",

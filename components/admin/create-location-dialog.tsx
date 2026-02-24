@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
     Dialog,
     DialogContent,
@@ -32,58 +32,111 @@ interface CreateLocationForm {
     active: boolean
 }
 
-export function CreateLocationDialog() {
-    const [open, setOpen] = useState(false)
+interface LocationData {
+    id: string
+    name: string
+    code: string
+    country: string
+    type: "ORIGIN" | "DESTINATION" | "HUB"
+    active: boolean
+    coordinates: string | null
+}
+
+interface CreateLocationDialogProps {
+    editData?: LocationData | null
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
+    onSuccess?: () => void
+    triggerless?: boolean
+}
+
+const defaultForm: CreateLocationForm = {
+    name: "",
+    code: "",
+    country: "South Africa",
+    type: "ORIGIN",
+    coordinates: "",
+    active: true,
+}
+
+export function CreateLocationDialog({ editData, open: controlledOpen, onOpenChange, onSuccess, triggerless }: CreateLocationDialogProps) {
+    const [internalOpen, setInternalOpen] = useState(false)
     const [loading, setLoading] = useState(false)
 
-    const [formData, setFormData] = useState<CreateLocationForm>({
-        name: "",
-        code: "",
-        country: "South Africa",
-        type: "ORIGIN",
-        coordinates: "",
-        active: true,
-    })
+    const open = controlledOpen !== undefined ? controlledOpen : internalOpen
+    const setOpen = onOpenChange || setInternalOpen
+
+    const [formData, setFormData] = useState<CreateLocationForm>(defaultForm)
+
+    const isEditing = !!editData
+
+    useEffect(() => {
+        if (editData) {
+            setFormData({
+                name: editData.name,
+                code: editData.code,
+                country: editData.country,
+                type: editData.type,
+                coordinates: editData.coordinates || "",
+                active: editData.active,
+            })
+        } else {
+            setFormData(defaultForm)
+        }
+    }, [editData])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
 
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        try {
+            const url = isEditing
+                ? `/api/admin/locations/${editData!.id}`
+                : "/api/admin/locations"
+            const method = isEditing ? "PUT" : "POST"
 
-        toast.success("Location created successfully!", {
-            description: `${formData.name} (${formData.code}) has been added to the system.`
-        })
+            const res = await fetch(url, {
+                method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData),
+            })
 
-        setLoading(false)
-        setOpen(false)
-        setFormData({
-            name: "",
-            code: "",
-            country: "South Africa",
-            type: "ORIGIN",
-            coordinates: "",
-            active: true,
-        })
+            if (res.ok) {
+                toast.success(isEditing ? "Location updated!" : "Location created!", {
+                    description: `${formData.name} (${formData.code}) has been ${isEditing ? "updated" : "added"}.`
+                })
+                setOpen(false)
+                setFormData(defaultForm)
+                onSuccess?.()
+            } else {
+                const data = await res.json()
+                toast.error(data.error || "Operation failed")
+            }
+        } catch {
+            toast.error("Failed to save location")
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-10 shadow-lg shadow-emerald-900/20">
-                    <Plus className="mr-2 h-4 w-4" /> Add Location
-                </Button>
-            </DialogTrigger>
+            {!triggerless && (
+                <DialogTrigger asChild>
+                    <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-10 shadow-lg shadow-emerald-900/20">
+                        <Plus className="mr-2 h-4 w-4" /> Add Location
+                    </Button>
+                </DialogTrigger>
+            )}
             <DialogContent className="sm:max-w-[425px] bg-slate-900 border-slate-800 text-white">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle className="text-xl font-black tracking-tight flex items-center gap-2">
                             <MapPin className="h-5 w-5 text-emerald-500" />
-                            ADD NEW LOCATION
+                            {isEditing ? "EDIT LOCATION" : "ADD NEW LOCATION"}
                         </DialogTitle>
                         <DialogDescription className="text-slate-400 font-mono text-xs">
-                            REGISTER A NEW PORT OR LANDSIDE FACILITY
+                            {isEditing ? "UPDATE PORT OR FACILITY DETAILS" : "REGISTER A NEW PORT OR LANDSIDE FACILITY"}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -178,7 +231,7 @@ export function CreateLocationDialog() {
                             disabled={loading}
                             className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold min-w-[120px]"
                         >
-                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "CREATE LOCATION"}
+                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : isEditing ? "SAVE CHANGES" : "CREATE LOCATION"}
                         </Button>
                     </DialogFooter>
                 </form>

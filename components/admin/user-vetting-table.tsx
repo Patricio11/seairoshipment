@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState } from "react"
 import { Check, X, Eye, FileText, UserCheck, ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -36,22 +36,18 @@ interface MockUser {
 }
 
 const MOCK_USERS: MockUser[] = [
-    { id: "USR-PEND-01", name: "Global Fruits Trading", contact: "Sarah Jenkins", email: "sarah@gft.co.za", status: "PENDING", date: "2 mins ago", docs: ["CK Document", "Tax Clearance"] },
-    { id: "USR-PEND-02", name: "Oceanic Seafoods", contact: "Mike Ross", email: "mike@oceanic.com", status: "PENDING", date: "45 mins ago", docs: ["CK Document"] },
-    { id: "USR-VET-01", name: "Cape Citrus Exporters", contact: "John Doe", email: "john@cce.co.za", status: "VETTED", date: "2 days ago", account: "ACC-9921" },
-    { id: "USR-REJ-01", name: "Fake Co Ltd", contact: "Scammer Steve", email: "steve@fake.com", status: "REJECTED", date: "5 days ago", reason: "Invalid Tax Number" },
+    { id: "USR-PEND-01", name: "Global Fruits Trading", contact: "Sarah Jenkins", email: "sarah@gft.co.za", status: "PENDING", date: "2 mins ago", docs: ["CK Document", "Tax Clearance"], account: "SRS-K7MNX2PQ" },
+    { id: "USR-PEND-02", name: "Oceanic Seafoods", contact: "Mike Ross", email: "mike@oceanic.com", status: "PENDING", date: "45 mins ago", docs: ["CK Document"], account: "SRS-R4TBW9YL" },
+    { id: "USR-VET-01", name: "Cape Citrus Exporters", contact: "John Doe", email: "john@cce.co.za", status: "VETTED", date: "2 days ago", account: "SRS-A1C3E5G7" },
+    { id: "USR-REJ-01", name: "Fake Co Ltd", contact: "Scammer Steve", email: "steve@fake.com", status: "REJECTED", date: "5 days ago", reason: "Invalid Tax Number", account: "SRS-Z9X8W7V6" },
 ]
 
 export function UserVettingTable() {
     const [selectedUser, setSelectedUser] = useState<MockUser | null>(null)
     const [isApproveOpen, setIsApproveOpen] = useState(false)
-    const [generatedAcc, setGeneratedAcc] = useState("")
-    const accountCounter = useRef(1000)
 
     const handleApproveClick = (user: MockUser) => {
         setSelectedUser(user)
-        accountCounter.current += 1
-        setGeneratedAcc(`ACC-${accountCounter.current}`)
         setIsApproveOpen(true)
     }
 
@@ -131,9 +127,9 @@ export function UserVettingTable() {
 
                     <div className="p-4 bg-slate-950 rounded-lg space-y-4 border border-slate-800 mt-4">
                         <div className="space-y-2">
-                            <Label className="text-xs text-slate-500 uppercase font-bold">Generated Account #</Label>
+                            <Label className="text-xs text-slate-500 uppercase font-bold">Account #</Label>
                             <div className="flex gap-2">
-                                <Input value={generatedAcc} readOnly className="bg-slate-900 border-slate-800 text-emerald-400 font-mono font-bold" />
+                                <Input value={selectedUser?.account || "N/A"} readOnly className="bg-slate-900 border-slate-800 text-emerald-400 font-mono font-bold" />
                                 <Button size="icon" variant="outline" className="border-slate-800"><ShieldAlert className="h-4 w-4 text-slate-500" /></Button>
                             </div>
                         </div>

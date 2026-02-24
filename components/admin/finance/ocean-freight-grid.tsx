@@ -1,7 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import { MOCK_OCEAN_FREIGHT, getOceanFreightByCountry } from "@/lib/mock-data/ocean-freight"
+import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -37,19 +36,57 @@ import { cn } from "@/lib/utils"
 import { useSearchParams } from "next/navigation"
 import { CreateOceanFreightDialog } from "./create-ocean-freight-dialog"
 
+interface OceanFreightRate {
+    id: string
+    origin: string
+    destinationCountry: string
+    destinationPort: string
+    destinationPortCode: string
+    shippingLine: string
+    containerId: string
+    containerDisplayName: string | null
+    freightUSD: string | null
+    bafUSD: string | null
+    ispsUSD: string | null
+    otherSurchargesUSD: string | null
+    rcgUSD: string | null
+    totalUSD: string | null
+    totalZAR: string | null
+    exchangeRate: string | null
+    active: boolean
+}
+
 export function OceanFreightGrid() {
     const searchParams = useSearchParams()
     const destIdParam = searchParams.get("destId")
     const [searchTerm, setSearchTerm] = useState(destIdParam?.toUpperCase() ?? "")
     const [selectedStatus, setSelectedStatus] = useState<string>("all")
-    const [openCountries, setOpenCountries] = useState<string[]>(
-        destIdParam
-            ? Array.from(new Set(MOCK_OCEAN_FREIGHT.map(r => r.destinationCountry)))
-            : ["UK", "Ireland"]
-    )
+    const [rates, setRates] = useState<OceanFreightRate[]>([])
+    const [openCountries, setOpenCountries] = useState<string[]>([])
+    const [initialized, setInitialized] = useState(false)
+
+    const fetchRates = async () => {
+        try {
+            const res = await fetch("/api/admin/ocean-freight")
+            if (res.ok) {
+                const data = await res.json()
+                setRates(data)
+                if (!initialized) {
+                    const allCountries = Array.from(new Set(data.map((r: OceanFreightRate) => r.destinationCountry))) as string[]
+                    setOpenCountries(destIdParam ? allCountries : ["UK", "Ireland"])
+                    setInitialized(true)
+                }
+            }
+        } catch { /* silently fail */ }
+    }
+
+    useEffect(() => {
+        const timeout = setTimeout(() => fetchRates(), 0)
+        return () => clearTimeout(timeout)
+    }, [])
 
     // Group by country
-    const countries = Array.from(new Set(MOCK_OCEAN_FREIGHT.map(r => r.destinationCountry)))
+    const countries = Array.from(new Set(rates.map(r => r.destinationCountry)))
 
     const toggleCountry = (country: string) => {
         setOpenCountries(prev =>
@@ -57,6 +94,15 @@ export function OceanFreightGrid() {
                 ? prev.filter(c => c !== country)
                 : [...prev, country]
         )
+    }
+
+    const getCountryRates = (country: string) => {
+        return rates.filter(r => r.destinationCountry === country).filter((rate) => {
+            if (selectedStatus === "all") return true
+            if (selectedStatus === "active") return rate.active
+            if (selectedStatus === "inactive") return !rate.active
+            return true
+        })
     }
 
     return (
@@ -74,6 +120,7 @@ export function OceanFreightGrid() {
                 <CreateOceanFreightDialog
                     defaultDestinationPort={searchTerm}
                     defaultCountry={countries.length === 1 ? countries[0] : ""}
+                    onSuccess={fetchRates}
                 />
             </div>
 
@@ -110,12 +157,7 @@ export function OceanFreightGrid() {
             {/* Grouped by Country */}
             <div className="space-y-4">
                 {countries.map((country) => {
-                    const countryRates = getOceanFreightByCountry(country).filter((rate) => {
-                        if (selectedStatus === "all") return true
-                        if (selectedStatus === "active") return rate.active
-                        if (selectedStatus === "inactive") return !rate.active
-                        return true
-                    })
+                    const countryRates = getCountryRates(country)
 
                     if (countryRates.length === 0) return null
 
@@ -193,29 +235,29 @@ export function OceanFreightGrid() {
                                                     </TableCell>
                                                     <TableCell>
                                                         <span className="text-[11px] font-mono text-slate-600 dark:text-slate-400">
-                                                            {rate.containerDisplayName}
+                                                            {rate.containerDisplayName || rate.containerId}
                                                         </span>
                                                     </TableCell>
                                                     <TableCell className="text-right font-mono text-sm">
-                                                        {rate.active ? `$${rate.freightUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
+                                                        {rate.active ? `$${Number(rate.freightUSD).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
                                                     </TableCell>
                                                     <TableCell className="text-right font-mono text-sm text-amber-600">
-                                                        {rate.active ? `$${rate.bafUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
+                                                        {rate.active ? `$${Number(rate.bafUSD).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
                                                     </TableCell>
                                                     <TableCell className="text-right font-mono text-sm text-slate-500">
-                                                        {rate.active ? `$${rate.ispsUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
+                                                        {rate.active ? `$${Number(rate.ispsUSD).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
                                                     </TableCell>
                                                     <TableCell className="text-right font-mono text-sm text-slate-500">
-                                                        {rate.active ? `$${rate.otherSurchargesUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
+                                                        {rate.active ? `$${Number(rate.otherSurchargesUSD).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
                                                     </TableCell>
                                                     <TableCell className="text-right font-mono text-sm text-slate-500">
-                                                        {rate.active ? `$${rate.rcgUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
+                                                        {rate.active ? `$${Number(rate.rcgUSD).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
                                                     </TableCell>
                                                     <TableCell className="text-right font-mono text-sm font-black text-blue-600 bg-blue-50/30 dark:bg-blue-900/10">
-                                                        {rate.active ? `$${rate.totalUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
+                                                        {rate.active ? `$${Number(rate.totalUSD).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
                                                     </TableCell>
                                                     <TableCell className="text-right font-mono text-sm font-black text-emerald-600 bg-emerald-50/30 dark:bg-emerald-900/10">
-                                                        {rate.active ? `R ${rate.totalZAR.toLocaleString(undefined, { minimumFractionDigits: 0 })}` : "-"}
+                                                        {rate.active ? `R ${Number(rate.totalZAR).toLocaleString(undefined, { minimumFractionDigits: 0 })}` : "-"}
                                                     </TableCell>
                                                     <TableCell>
                                                         <Badge

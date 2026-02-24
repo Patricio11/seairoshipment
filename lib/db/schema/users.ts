@@ -14,7 +14,7 @@ export const user = pgTable("user", {
     // SRS Operational Fields
     role: roleEnum("role").default("client").notNull(),
     isVetted: boolean("isVetted").default(false).notNull(),
-    accountNumber: text("accountNumber"),
+    accountNumber: text("accountNumber").unique(),
     companyName: text("companyName"),
     companyReg: text("companyReg"),
 });

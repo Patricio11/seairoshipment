@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import {
     Dialog,
@@ -22,13 +22,34 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Plus, Loader2 } from "lucide-react"
-import { MOCK_CONTAINERS } from "@/lib/mock-data/containers"
-import { MOCK_SALES_RATE_TYPES } from "@/lib/mock-data/sales-rate-types"
+
+interface ContainerTypeData { id: string; displayName: string; active: boolean }
+interface SalesRateTypeData { id: string; code: string; name: string; active: boolean }
+interface LocationData { id: string; name: string; code: string; country: string }
 
 export function CreateOriginChargeDialog() {
     const router = useRouter()
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
+    const [containers, setContainers] = useState<ContainerTypeData[]>([])
+    const [salesRateTypes, setSalesRateTypes] = useState<SalesRateTypeData[]>([])
+    const [originLocations, setOriginLocations] = useState<LocationData[]>([])
+
+    useEffect(() => {
+        const timeout = setTimeout(async () => {
+            try {
+                const [cRes, sRes, lRes] = await Promise.all([
+                    fetch("/api/admin/container-types"),
+                    fetch("/api/admin/sales-rate-types"),
+                    fetch("/api/admin/locations?type=ORIGIN"),
+                ])
+                if (cRes.ok) setContainers(await cRes.json())
+                if (sRes.ok) setSalesRateTypes(await sRes.json())
+                if (lRes.ok) setOriginLocations(await lRes.json())
+            } catch { /* silently fail */ }
+        }, 0)
+        return () => clearTimeout(timeout)
+    }, [])
 
     const [formData, setFormData] = useState({
         originId: "cpt",
@@ -47,10 +68,12 @@ export function CreateOriginChargeDialog() {
         e.preventDefault()
         setLoading(true)
 
+        const selectedLoc = originLocations.find(l => l.code.toLowerCase().slice(2) === formData.originId)
+
         // Build query params
         const params = new URLSearchParams({
             originId: formData.originId,
-            originName: isCustomOrigin ? formData.customOriginName : (formData.originId === "cpt" ? "Cape Town" : formData.originId === "dur" ? "Durban" : "Port Elizabeth"),
+            originName: isCustomOrigin ? formData.customOriginName : (selectedLoc?.name || formData.originId),
             country: isCustomCountry ? formData.customCountryName : formData.country,
             containerId: formData.containerId,
             salesRateTypeId: formData.salesRateTypeId,
@@ -94,9 +117,11 @@ export function CreateOriginChargeDialog() {
                                     <SelectValue placeholder="Select origin" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="cpt">Cape Town (CPT)</SelectItem>
-                                    <SelectItem value="dur">Durban (DUR)</SelectItem>
-                                    <SelectItem value="plz">Port Elizabeth (PLZ)</SelectItem>
+                                    {originLocations.map(loc => (
+                                        <SelectItem key={loc.id} value={loc.code.toLowerCase().slice(2)}>
+                                            {loc.name} ({loc.code.slice(2)})
+                                        </SelectItem>
+                                    ))}
                                     <SelectItem value="other" className="font-semibold text-brand-blue">
                                         Other (New Landside)
                                     </SelectItem>
@@ -172,7 +197,7 @@ export function CreateOriginChargeDialog() {
                                     <SelectValue placeholder="Select container type" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {MOCK_CONTAINERS.map((container) => (
+                                    {containers.filter(c => c.active).map((container) => (
                                         <SelectItem key={container.id} value={container.id}>
                                             {container.displayName}
                                         </SelectItem>
@@ -192,7 +217,7 @@ export function CreateOriginChargeDialog() {
                                     <SelectValue placeholder="Select rate type" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {MOCK_SALES_RATE_TYPES.map((type) => (
+                                    {salesRateTypes.filter(t => t.active).map((type) => (
                                         <SelectItem key={type.id} value={type.id}>
                                             {type.name} ({type.code})
                                         </SelectItem>

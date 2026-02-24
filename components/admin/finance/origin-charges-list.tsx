@@ -1,9 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { MOCK_ORIGIN_CHARGES } from "@/lib/mock-data/origin-charges"
-import { MOCK_CONTAINERS } from "@/lib/mock-data/containers"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -35,6 +33,35 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { CreateOriginChargeDialog } from "./create-origin-charge-dialog"
 
+interface OriginChargeData {
+    id: string
+    salesRateTypeId: string | null
+    originId: string
+    originName: string
+    containerId: string
+    effectiveFrom: string
+    effectiveTo: string | null
+    currency: string
+    active: boolean
+    createdAt: string
+    updatedAt: string
+    containerDisplayName: string | null
+    salesRateTypeName: string | null
+    items: { chargeType: string; unitCost: string | null; containerCost: string | null }[]
+}
+
+interface ContainerTypeData {
+    id: string
+    displayName: string
+    active: boolean
+}
+
+interface LocationData {
+    id: string
+    name: string
+    code: string
+}
+
 export function OriginChargesList() {
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -43,11 +70,30 @@ export function OriginChargesList() {
     const [selectedOrigin, setSelectedOrigin] = useState<string>(originIdParam?.toLowerCase() ?? "all")
     const [selectedContainer, setSelectedContainer] = useState<string>("all")
     const [selectedStatus, setSelectedStatus] = useState<string>("all")
+    const [charges, setCharges] = useState<OriginChargeData[]>([])
+    const [containerTypesList, setContainerTypesList] = useState<ContainerTypeData[]>([])
+    const [originLocations, setOriginLocations] = useState<LocationData[]>([])
+
+    useEffect(() => {
+        const timeout = setTimeout(async () => {
+            try {
+                const [chargesRes, containersRes, locationsRes] = await Promise.all([
+                    fetch("/api/admin/origin-charges"),
+                    fetch("/api/admin/container-types"),
+                    fetch("/api/admin/locations?type=ORIGIN"),
+                ])
+                if (chargesRes.ok) setCharges(await chargesRes.json())
+                if (containersRes.ok) setContainerTypesList(await containersRes.json())
+                if (locationsRes.ok) setOriginLocations(await locationsRes.json())
+            } catch { /* silently fail */ }
+        }, 0)
+        return () => clearTimeout(timeout)
+    }, [])
 
     // Filter data
-    const filteredCharges = MOCK_ORIGIN_CHARGES.filter((charge) => {
+    const filteredCharges = charges.filter((charge) => {
         const matchesSearch = charge.originName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            charge.containerDisplayName.toLowerCase().includes(searchTerm.toLowerCase())
+            (charge.containerDisplayName || "").toLowerCase().includes(searchTerm.toLowerCase())
         const matchesOrigin = selectedOrigin === "all" || charge.originId === selectedOrigin
         const matchesContainer = selectedContainer === "all" || charge.containerId === selectedContainer
         const matchesStatus = selectedStatus === "all" ||
@@ -58,18 +104,16 @@ export function OriginChargesList() {
     })
 
     // Calculate totals matching the editor logic
-    const calculateTotal = (chargeId: string) => {
-        const charge = MOCK_ORIGIN_CHARGES.find(c => c.id === chargeId)
-        if (!charge) return { totalPerContainer: 0, totalPerPallet: 0, totalItems: 0 }
+    const calculateTotal = (charge: OriginChargeData) => {
+        if (!charge.items) return { totalPerContainer: 0, totalPerPallet: 0, totalItems: 0 }
 
         let totalPerContainer = 0
 
         charge.items.forEach(item => {
             if (item.chargeType === "PER_CONTAINER" && item.containerCost) {
-                totalPerContainer += item.containerCost
+                totalPerContainer += Number(item.containerCost)
             } else if (item.chargeType === "PER_PALLET" && item.unitCost) {
-                // Auto-calculate container cost for per-pallet items (x20)
-                totalPerContainer += item.unitCost * 20
+                totalPerContainer += Number(item.unitCost) * 20
             }
         })
 
@@ -118,8 +162,9 @@ export function OriginChargesList() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Origins</SelectItem>
-                            <SelectItem value="cpt">Cape Town</SelectItem>
-                            <SelectItem value="dur">Durban</SelectItem>
+                            {originLocations.map(loc => (
+                                <SelectItem key={loc.code} value={loc.code.toLowerCase().slice(2)}>{loc.name}</SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
 
@@ -129,7 +174,7 @@ export function OriginChargesList() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Containers</SelectItem>
-                            {MOCK_CONTAINERS.filter(c => c.active).map(container => (
+                            {containerTypesList.filter(c => c.active).map(container => (
                                 <SelectItem key={container.id} value={container.id}>
                                     {container.displayName}
                                 </SelectItem>
@@ -152,7 +197,7 @@ export function OriginChargesList() {
 
             {/* Results Summary */}
             <div className="flex items-center justify-between text-sm text-slate-500">
-                <span>Showing {filteredCharges.length} of {MOCK_ORIGIN_CHARGES.length} rate cards</span>
+                <span>Showing {filteredCharges.length} of {charges.length} rate cards</span>
                 <span className="flex items-center gap-2">
                     <Filter className="h-4 w-4" />
                     {(selectedOrigin !== "all" || selectedContainer !== "all" || selectedStatus !== "all" || searchTerm) && (
@@ -188,7 +233,7 @@ export function OriginChargesList() {
                             </TableRow>
                         ) : (
                             filteredCharges.map((charge) => {
-                                const totals = calculateTotal(charge.id)
+                                const totals = calculateTotal(charge)
                                 return (
                                     <TableRow
                                         key={charge.id}
@@ -207,12 +252,12 @@ export function OriginChargesList() {
                                         </TableCell>
                                         <TableCell>
                                             <Badge variant="outline" className="font-mono text-xs">
-                                                {charge.containerDisplayName}
+                                                {charge.containerDisplayName || charge.containerId}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
                                             <Badge className="bg-brand-blue text-white">
-                                                {charge.salesRateTypeName}
+                                                {charge.salesRateTypeName || charge.salesRateTypeId}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>

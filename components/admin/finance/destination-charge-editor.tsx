@@ -141,14 +141,62 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
         toast.success("Charge item removed")
     }
 
-    const handleSave = () => {
+    const [saving, setSaving] = useState(false)
+
+    const handleSave = async () => {
         const hasEmptyNames = items.some(item => !item.chargeName.trim())
         if (hasEmptyNames) {
             toast.error("All charge items must have a name")
             return
         }
 
-        toast.success("Destination charge rate card saved successfully!")
+        setSaving(true)
+        try {
+            const isNew = !initialData?.id || initialData.id === "new"
+            const url = isNew ? "/api/admin/destination-charges" : `/api/admin/destination-charges/${initialData!.id}`
+            const method = isNew ? "POST" : "PUT"
+
+            const res = await fetch(url, {
+                method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    ...(!isNew ? {} : {
+                        salesRateTypeId: initialData?.salesRateTypeId,
+                        destinationId: initialData?.destinationId,
+                        destinationName: initialData?.destinationName,
+                        destinationPortCode: initialData?.destinationPortCode,
+                        containerId: initialData?.containerId,
+                        effectiveFrom: initialData?.effectiveFrom,
+                        effectiveTo: initialData?.effectiveTo,
+                    }),
+                    currency,
+                    exchangeRateToZAR: exchangeRate,
+                    active: initialData?.active !== false,
+                    items: items.map(item => ({
+                        id: item.id,
+                        chargeCode: item.chargeCode || "",
+                        chargeName: item.chargeName,
+                        chargeType: item.chargeType || "PER_CONTAINER",
+                        amountLocal: item.amountLocal,
+                        amountZAR: item.amountZAR,
+                        sortOrder: item.sortOrder,
+                        notes: item.notes,
+                    })),
+                }),
+            })
+
+            if (res.ok) {
+                toast.success("Destination charge rate card saved successfully!")
+                router.push("/admin/finance/destination-charges")
+            } else {
+                const data = await res.json()
+                toast.error(data.error || "Failed to save")
+            }
+        } catch {
+            toast.error("Failed to save rate card")
+        } finally {
+            setSaving(false)
+        }
     }
 
     return (

@@ -21,12 +21,40 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
+import { useAuth } from "@/lib/auth/client"
+
+const DOC_TYPE_LABELS: Record<string, string> = {
+    invoice: "Invoice",
+    bol: "BoL",
+    coa: "CoA",
+    packing: "PackingList",
+}
+
+function generateStoredName(
+    accountNumber: string | undefined,
+    docType: string,
+    shipmentRef: string,
+    originalName: string
+): string {
+    const ext = originalName.split(".").pop() || "pdf"
+    const acc = accountNumber || "UNVERIFIED"
+    const typeLabel = DOC_TYPE_LABELS[docType] || "Document"
+    const ref = shipmentRef || "NO-REF"
+    return `${acc}_${typeLabel}_${ref}.${ext}`
+}
 
 export function UploadDialog() {
     const [isOpen, setIsOpen] = useState(false)
     const [isDragging, setIsDragging] = useState(false)
     const [file, setFile] = useState<File | null>(null)
     const [uploading, setUploading] = useState(false)
+    const [docType, setDocType] = useState("")
+    const [shipmentRef, setShipmentRef] = useState("")
+    const { user } = useAuth()
+
+    const storedName = file && docType
+        ? generateStoredName(user?.accountNumber, docType, shipmentRef, file.name)
+        : null
 
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault()
@@ -39,11 +67,16 @@ export function UploadDialog() {
     const handleUpload = () => {
         if (!file) return
         setUploading(true)
+        // TODO: integrate with UploadThing for real file storage
         setTimeout(() => {
             setUploading(false)
+            toast.success("Document uploaded successfully to Vault.", {
+                description: storedName ? `Saved as: ${storedName}` : undefined,
+            })
             setFile(null)
+            setDocType("")
+            setShipmentRef("")
             setIsOpen(false)
-            toast.success("Document uploaded successfully to Vault.")
         }, 1500)
     }
 
@@ -67,7 +100,7 @@ export function UploadDialog() {
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>Document Type</Label>
-                            <Select>
+                            <Select value={docType} onValueChange={setDocType}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select Type" />
                                 </SelectTrigger>
@@ -81,7 +114,11 @@ export function UploadDialog() {
                         </div>
                         <div className="space-y-2">
                             <Label>Shipment Ref</Label>
-                            <Input placeholder="SRS-..." />
+                            <Input
+                                placeholder="SRS-..."
+                                value={shipmentRef}
+                                onChange={(e) => setShipmentRef(e.target.value)}
+                            />
                         </div>
                     </div>
 
@@ -99,6 +136,11 @@ export function UploadDialog() {
                             <div className="flex flex-col items-center gap-2">
                                 <FileText className="h-8 w-8 text-emerald-500" />
                                 <span className="text-sm font-medium">{file.name}</span>
+                                {storedName && (
+                                    <span className="text-xs text-brand-blue font-mono bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">
+                                        Saved as: {storedName}
+                                    </span>
+                                )}
                                 <Button
                                     variant="link"
                                     className="text-red-500 h-auto p-0 text-xs"

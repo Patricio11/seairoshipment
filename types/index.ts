@@ -60,8 +60,16 @@ export interface BookingFormData {
     destination: string;
     date: string | undefined;
     sailingDate?: string;
+    sailingScheduleId?: string;
+    voyageNumber?: string;
+    vesselName?: string;
     palletCount: number;
     commodity: string;
+    commodityName?: string;
+    hsCode?: string;
+    commodityDescription?: string;
+    nettWeight?: number;
+    grossWeight?: number;
     temperature: string;
     consigneeName: string;
     consigneeAddress: string;
@@ -77,4 +85,58 @@ export interface ContainerSlot {
     preFilled: number;
     date: string;
     type: "20FT" | "40FT";
+}
+
+export interface SailingSchedule {
+    id: string;
+    vesselName: string;
+    voyageNumber: string;
+    portOfLoadValue: string;
+    portOfLoadName: string;
+    finalDestinationValue: string;
+    finalDestinationName: string;
+    etd: string;
+    eta: string;
+    transitTime: number;
+    serviceType: string;
+}
+
+export interface MetaShipProduct {
+    id: string | number;
+    name: string;
+    hsCode: string;
+    description: string;
+}
+
+export interface CostBreakdown {
+    originPerPallet: number;
+    oceanPerPallet: number;
+    destinationPerPallet: number;
+    totalPerPallet: number;
+    totalCost: number;
+    depositAmount: number;
+    balanceAmount: number;
+    palletCount: number;
+    originName: string;
+    destinationName: string;
+    hasOriginRates: boolean;
+    hasOceanRates: boolean;
+    hasDestinationRates: boolean;
+}
+
+export interface Invoice {
+    id: string;
+    type: "DEPOSIT" | "BALANCE";
+    status: "PENDING" | "PAID" | "OVERDUE" | "CANCELLED";
+    bookingRef: string;
+    route: string;
+    palletCount: number;
+    subtotalZAR: number;
+    percentage: number;
+    amountZAR: number;
+    dueDate: string;
+    paidAt: string | null;
+    createdAt: string;
+    companyName?: string;
+    userId?: string;
 }

@@ -1,7 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import { MOCK_DESTINATION_CHARGES } from "@/lib/mock-data/destination-charges"
+import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -32,24 +31,47 @@ import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 
+interface DestinationChargeData {
+    id: string
+    destinationId: string
+    destinationName: string
+    destinationPortCode: string
+    containerId: string
+    containerDisplayName: string | null
+    currency: string
+    exchangeRateToZAR: string
+    active: boolean
+    items: { amountLocal: string; amountZAR: string }[]
+}
+
 export function DestinationChargesList() {
     const searchParams = useSearchParams()
     const destIdParam = searchParams.get("destId")
     const [searchTerm, setSearchTerm] = useState(destIdParam?.toUpperCase() ?? "")
     const [selectedCurrency, setSelectedCurrency] = useState<string>("all")
+    const [charges, setCharges] = useState<DestinationChargeData[]>([])
 
-    const filteredCharges = MOCK_DESTINATION_CHARGES.filter((charge) => {
+    useEffect(() => {
+        const timeout = setTimeout(async () => {
+            try {
+                const res = await fetch("/api/admin/destination-charges")
+                if (res.ok) setCharges(await res.json())
+            } catch { /* silently fail */ }
+        }, 0)
+        return () => clearTimeout(timeout)
+    }, [])
+
+    const filteredCharges = charges.filter((charge) => {
         const matchesSearch = charge.destinationName.toLowerCase().includes(searchTerm.toLowerCase())
         const matchesCurrency = selectedCurrency === "all" || charge.currency === selectedCurrency
         return matchesSearch && matchesCurrency
     })
 
-    const calculateTotals = (chargeId: string) => {
-        const charge = MOCK_DESTINATION_CHARGES.find(c => c.id === chargeId)
-        if (!charge) return { totalLocal: 0, totalZAR: 0, itemCount: 0 }
+    const calculateTotals = (charge: DestinationChargeData) => {
+        if (!charge.items) return { totalLocal: 0, totalZAR: 0, itemCount: 0 }
 
-        const totalLocal = charge.items.reduce((sum, item) => sum + item.amountLocal, 0)
-        const totalZAR = charge.items.reduce((sum, item) => sum + item.amountZAR, 0)
+        const totalLocal = charge.items.reduce((sum, item) => sum + Number(item.amountLocal), 0)
+        const totalZAR = charge.items.reduce((sum, item) => sum + Number(item.amountZAR), 0)
 
         return { totalLocal, totalZAR, itemCount: charge.items.length }
     }
@@ -126,7 +148,7 @@ export function DestinationChargesList() {
                             </TableRow>
                         ) : (
                             filteredCharges.map((charge) => {
-                                const totals = calculateTotals(charge.id)
+                                const totals = calculateTotals(charge)
                                 return (
                                     <TableRow key={charge.id} className="group hover:bg-slate-50 dark:hover:bg-slate-900/50">
                                         <TableCell>
@@ -141,7 +163,7 @@ export function DestinationChargesList() {
                                         </TableCell>
                                         <TableCell>
                                             <Badge variant="outline" className="font-mono text-xs">
-                                                {charge.containerDisplayName}
+                                                {charge.containerDisplayName || charge.containerId}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
@@ -159,7 +181,7 @@ export function DestinationChargesList() {
                                         <TableCell className="text-right">
                                             <div className="flex items-center justify-end gap-1 text-xs">
                                                 <span className="font-mono font-semibold">
-                                                    {charge.exchangeRateToZAR.toFixed(2)}
+                                                    {Number(charge.exchangeRateToZAR).toFixed(2)}
                                                 </span>
                                                 <ArrowRightLeft className="h-3 w-3 text-slate-400" />
                                                 <span className="text-slate-500">ZAR</span>

@@ -5,6 +5,7 @@ import * as schema from "@/lib/db/schema";
 import { headers } from "next/headers";
 import { cache } from "react";
 import { redirect } from "next/navigation";
+import { nanoid } from "nanoid";
 
 export const auth = betterAuth({
     baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
@@ -17,6 +18,20 @@ export const auth = betterAuth({
             verification: schema.verification
         },
     }),
+    databaseHooks: {
+        user: {
+            create: {
+                before: async (user) => {
+                    return {
+                        data: {
+                            ...user,
+                            accountNumber: `SRS-${nanoid(8).toUpperCase()}`,
+                        },
+                    };
+                },
+            },
+        },
+    },
     emailAndPassword: {
         enabled: true,
         requireEmailVerification: true,
@@ -43,6 +58,10 @@ export const auth = betterAuth({
                 type: "boolean",
                 required: false,
                 defaultValue: false,
+            },
+            accountNumber: {
+                type: "string",
+                required: false,
             },
         },
     },

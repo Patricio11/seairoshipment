@@ -12,13 +12,25 @@ import {
     Activity,
     DollarSign,
     LogOut,
-    Menu
+    Menu,
+    Bell,
+    X
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { authClient } from "@/lib/auth/client"
 import { toast } from "sonner"
+
+interface AdminNotification {
+    id: string
+    type: string
+    title: string
+    message: string
+    containerId: string | null
+    isRead: boolean
+    createdAt: string
+}
 
 const ADMIN_LINKS = [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -40,6 +52,50 @@ export function AdminSidebar() {
     const pathname = usePathname()
     const router = useRouter()
     const [isCollapsed, setIsCollapsed] = useState(false)
+    const [notifications, setNotifications] = useState<AdminNotification[]>([])
+    const [showNotifications, setShowNotifications] = useState(false)
+
+    const unreadCount = notifications.filter(n => !n.isRead).length
+
+    // Subscribe to notification updates via polling
+    useEffect(() => {
+        let cancelled = false
+
+        // Initial fetch (via setTimeout to avoid sync setState in effect body)
+        const timeout = setTimeout(async () => {
+            try {
+                const res = await fetch("/api/admin/notifications")
+                if (res.ok && !cancelled) setNotifications(await res.json())
+            } catch { /* silently fail */ }
+        }, 0)
+
+        // Poll every 30s
+        const interval = setInterval(async () => {
+            try {
+                const res = await fetch("/api/admin/notifications")
+                if (res.ok && !cancelled) setNotifications(await res.json())
+            } catch { /* silently fail */ }
+        }, 30000)
+
+        return () => {
+            cancelled = true
+            clearTimeout(timeout)
+            clearInterval(interval)
+        }
+    }, [])
+
+    const markAsRead = async (id: string) => {
+        try {
+            await fetch("/api/admin/notifications", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id }),
+            })
+            setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n))
+        } catch {
+            // silently fail
+        }
+    }
 
     const handleSignOut = async () => {
         try {
@@ -74,6 +130,65 @@ export function AdminSidebar() {
                 >
                     <Menu className="h-4 w-4" />
                 </Button>
+            </div>
+
+            {/* Notification Bell */}
+            <div className="px-3 pt-4 pb-2 relative">
+                <button
+                    onClick={() => setShowNotifications(!showNotifications)}
+                    className={cn(
+                        "flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-all group relative",
+                        showNotifications
+                            ? "bg-slate-900 text-white"
+                            : "text-slate-400 hover:text-white hover:bg-slate-900/50"
+                    )}
+                >
+                    <div className="relative">
+                        <Bell className="h-5 w-5 shrink-0" />
+                        {unreadCount > 0 && (
+                            <span className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-red-600 text-[9px] font-black flex items-center justify-center text-white animate-pulse">
+                                {unreadCount}
+                            </span>
+                        )}
+                    </div>
+                    {!isCollapsed && (
+                        <span className="text-xs font-bold uppercase tracking-wider">Notifications</span>
+                    )}
+                </button>
+
+                {/* Notification Dropdown */}
+                {showNotifications && !isCollapsed && (
+                    <div className="absolute left-3 right-3 top-full mt-1 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 max-h-80 overflow-y-auto">
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Recent</span>
+                            <button onClick={() => setShowNotifications(false)} className="text-slate-500 hover:text-white">
+                                <X className="h-3.5 w-3.5" />
+                            </button>
+                        </div>
+                        {notifications.length === 0 ? (
+                            <div className="p-4 text-center text-slate-500 text-xs">No notifications</div>
+                        ) : (
+                            notifications.slice(0, 10).map((notif) => (
+                                <button
+                                    key={notif.id}
+                                    onClick={() => markAsRead(notif.id)}
+                                    className={cn(
+                                        "w-full text-left px-4 py-3 border-b border-slate-800/50 hover:bg-slate-800/50 transition-colors",
+                                        !notif.isRead && "bg-slate-800/30"
+                                    )}
+                                >
+                                    <div className="flex items-start gap-2">
+                                        {!notif.isRead && <div className="h-2 w-2 rounded-full bg-red-500 mt-1 shrink-0" />}
+                                        <div className="min-w-0">
+                                            <p className="text-xs font-bold text-white truncate">{notif.title}</p>
+                                            <p className="text-[10px] text-slate-400 line-clamp-2 mt-0.5">{notif.message}</p>
+                                        </div>
+                                    </div>
+                                </button>
+                            ))
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Navigation */}

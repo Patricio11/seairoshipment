@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import {
     Dialog,
     DialogContent,
@@ -22,8 +22,9 @@ import {
 } from "@/components/ui/select"
 import { Plus, Loader2, Ship, Calculator } from "lucide-react"
 import { toast } from "sonner"
-import { MOCK_CONTAINERS } from "@/lib/mock-data/containers"
-import { MOCK_LOCATIONS } from "@/lib/mock-data/locations"
+
+interface ContainerTypeData { id: string; displayName: string; active: boolean }
+interface LocationData { id: string; name: string; code: string; country: string; type: string }
 
 interface CreateOceanFreightForm {
     origin: string
@@ -43,13 +44,31 @@ interface CreateOceanFreightForm {
 
 export function CreateOceanFreightDialog({
     defaultDestinationPort = "",
-    defaultCountry = ""
+    defaultCountry = "",
+    onSuccess,
 }: {
     defaultDestinationPort?: string
     defaultCountry?: string
+    onSuccess?: () => void
 }) {
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
+    const [containers, setContainers] = useState<ContainerTypeData[]>([])
+    const [locations, setLocations] = useState<LocationData[]>([])
+
+    useEffect(() => {
+        const timeout = setTimeout(async () => {
+            try {
+                const [cRes, lRes] = await Promise.all([
+                    fetch("/api/admin/container-types"),
+                    fetch("/api/admin/locations"),
+                ])
+                if (cRes.ok) setContainers(await cRes.json())
+                if (lRes.ok) setLocations(await lRes.json())
+            } catch { /* silently fail */ }
+        }, 0)
+        return () => clearTimeout(timeout)
+    }, [])
 
     const [formData, setFormData] = useState<CreateOceanFreightForm>({
         origin: "Cape Town",
@@ -70,7 +89,7 @@ export function CreateOceanFreightDialog({
     const handleOpenChange = useCallback((isOpen: boolean) => {
         setOpen(isOpen)
         if (isOpen) {
-            const foundLoc = MOCK_LOCATIONS.find(l =>
+            const foundLoc = locations.find(l =>
                 l.name === defaultDestinationPort ||
                 l.code === defaultDestinationPort
             );
@@ -91,10 +110,10 @@ export function CreateOceanFreightDialog({
                 }));
             }
         }
-    }, [defaultDestinationPort, defaultCountry])
+    }, [defaultDestinationPort, defaultCountry, locations])
 
     const handleDestinationChange = (locId: string) => {
-        const loc = MOCK_LOCATIONS.find(l => l.id === locId);
+        const loc = locations.find(l => l.id === locId);
         if (loc) {
             setFormData({
                 ...formData,
@@ -113,15 +132,42 @@ export function CreateOceanFreightDialog({
         e.preventDefault()
         setLoading(true)
 
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        try {
+            const res = await fetch("/api/admin/ocean-freight", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    origin: formData.origin,
+                    destinationCountry: formData.destinationCountry,
+                    destinationPort: formData.destinationPort,
+                    destinationPortCode: formData.destinationPortCode,
+                    shippingLine: formData.shippingLine,
+                    containerId: formData.containerId,
+                    freightUSD: formData.freightUSD,
+                    bafUSD: formData.bafUSD,
+                    ispsUSD: formData.ispsUSD,
+                    otherSurchargesUSD: formData.otherSurchargesUSD,
+                    rcgUSD: formData.rcgUSD,
+                    exchangeRate: formData.exchangeRate,
+                    effectiveFrom: new Date().toISOString().split("T")[0],
+                }),
+            })
 
-        toast.success("Ocean Freight Rate Created", {
-            description: `Route: ${formData.origin} to ${formData.destinationPort} created successfully.`
-        })
-
-        setLoading(false)
-        setOpen(false)
+            if (res.ok) {
+                toast.success("Ocean Freight Rate Created", {
+                    description: `Route: ${formData.origin} to ${formData.destinationPort} created successfully.`
+                })
+                setOpen(false)
+                onSuccess?.()
+            } else {
+                const data = await res.json()
+                toast.error(data.error || "Failed to create freight rate")
+            }
+        } catch {
+            toast.error("Failed to create freight rate")
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (
@@ -156,7 +202,7 @@ export function CreateOceanFreightDialog({
                                         <SelectValue placeholder="Select Origin" />
                                     </SelectTrigger>
                                     <SelectContent className="bg-slate-900 border-slate-800 text-white">
-                                        {MOCK_LOCATIONS.filter(l => l.type === 'ORIGIN').map(loc => (
+                                        {locations.filter(l => l.type === 'ORIGIN').map(loc => (
                                             <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
                                         ))}
                                     </SelectContent>
@@ -172,7 +218,7 @@ export function CreateOceanFreightDialog({
                                         <SelectValue placeholder="Select Destination" />
                                     </SelectTrigger>
                                     <SelectContent className="bg-slate-900 border-slate-800 text-white">
-                                        {MOCK_LOCATIONS.filter(l => l.type === 'DESTINATION').map(loc => (
+                                        {locations.filter(l => l.type === 'DESTINATION').map(loc => (
                                             <SelectItem key={loc.id} value={loc.id}>
                                                 {loc.name} ({loc.code})
                                             </SelectItem>
@@ -205,7 +251,7 @@ export function CreateOceanFreightDialog({
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent className="bg-slate-900 border-slate-800 text-white">
-                                            {MOCK_CONTAINERS.map(c => (
+                                            {containers.filter(c => c.active).map(c => (
                                                 <SelectItem key={c.id} value={c.id}>{c.displayName}</SelectItem>
                                             ))}
                                         </SelectContent>
