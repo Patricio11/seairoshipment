@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { nanoid } from "nanoid";
+import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email";
 
 export const auth = betterAuth({
     baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
@@ -35,17 +36,16 @@ export const auth = betterAuth({
     emailAndPassword: {
         enabled: true,
         requireEmailVerification: true,
+        sendResetPassword: async ({ user, url }) => {
+            await sendPasswordResetEmail(user.email, url);
+        },
     },
     emailVerification: {
         sendOnSignUp: true,
         autoSignInAfterVerification: true,
         sendVerificationEmail: async ({ user, url }) => {
-            console.log("---- MOCK EMAIL SERVICE ----");
-            console.log(`To: ${user.email}`);
-            console.log(`Subject: Verify your email`);
-            console.log(`Link: ${url}`);
-            console.log("----------------------------");
-        }
+            await sendVerificationEmail(user.email, url);
+        },
     },
     user: {
         additionalFields: {
@@ -60,6 +60,10 @@ export const auth = betterAuth({
                 defaultValue: false,
             },
             accountNumber: {
+                type: "string",
+                required: false,
+            },
+            companyName: {
                 type: "string",
                 required: false,
             },

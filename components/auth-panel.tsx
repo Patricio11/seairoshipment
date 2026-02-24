@@ -66,10 +66,12 @@ export function AuthPanel({ isOpen, onClose, initialMode = 'login' }: AuthPanelP
                 });
             } else {
                 // Sign Up
-                await authClient.signUp.email({
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                await (authClient.signUp.email as any)({
                     email: formData.email,
                     password: formData.password,
                     name: formData.name,
+                    companyName: formData.company || undefined,
                 }, {
                     onSuccess: async () => {
                         toast.success("Account created!", {
@@ -78,7 +80,7 @@ export function AuthPanel({ isOpen, onClose, initialMode = 'login' }: AuthPanelP
                         // Optimistically switch to login or close
                         onClose();
                     },
-                    onError: (ctx) => {
+                    onError: (ctx: { error: { message?: string } }) => {
                         toast.error("Sign up failed", {
                             description: ctx.error.message || "Could not create account"
                         });
@@ -227,7 +229,7 @@ export function AuthPanel({ isOpen, onClose, initialMode = 'login' }: AuthPanelP
                                                 <input type="checkbox" className="rounded border-white/10 bg-white/5 text-cyan-500 focus:ring-cyan-400/20" />
                                                 Remember me
                                             </label>
-                                            <a href="#" className="font-semibold text-cyan-400 hover:text-cyan-300">
+                                            <a href="/auth/forgot-password" className="font-semibold text-cyan-400 hover:text-cyan-300">
                                                 Forgot password?
                                             </a>
                                         </div>
