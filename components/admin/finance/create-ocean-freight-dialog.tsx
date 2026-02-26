@@ -20,11 +20,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Plus, Loader2, Ship, Calculator } from "lucide-react"
+import { Plus, Loader2, Ship, Calculator, Pencil } from "lucide-react"
 import { toast } from "sonner"
 
 interface ContainerTypeData { id: string; displayName: string; active: boolean }
 interface LocationData { id: string; name: string; code: string; country: string; type: string }
+interface SalesRateTypeData { id: string; code: string; name: string; active: boolean }
 
 interface CreateOceanFreightForm {
     origin: string
@@ -34,6 +35,7 @@ interface CreateOceanFreightForm {
     destinationPortCode: string
     shippingLine: string
     containerId: string
+    salesRateTypeId: string
     freightUSD: number
     bafUSD: number
     ispsUSD: number
@@ -42,75 +44,134 @@ interface CreateOceanFreightForm {
     exchangeRate: number
 }
 
+export interface OceanFreightEditData {
+    id: string
+    origin: string
+    destinationCountry: string
+    destinationPort: string
+    destinationPortCode: string
+    shippingLine: string
+    containerId: string
+    salesRateTypeId: string | null
+    freightUSD: string | null
+    bafUSD: string | null
+    ispsUSD: string | null
+    otherSurchargesUSD: string | null
+    rcgUSD: string | null
+    exchangeRate: string | null
+}
+
 export function CreateOceanFreightDialog({
     defaultDestinationPort = "",
     defaultCountry = "",
+    editData,
     onSuccess,
+    trigger,
+    controlledOpen,
+    onControlledOpenChange,
 }: {
     defaultDestinationPort?: string
     defaultCountry?: string
+    editData?: OceanFreightEditData | null
     onSuccess?: () => void
+    trigger?: React.ReactNode
+    controlledOpen?: boolean
+    onControlledOpenChange?: (open: boolean) => void
 }) {
-    const [open, setOpen] = useState(false)
+    const isEditMode = !!editData
+    const isControlled = controlledOpen !== undefined
+    const [internalOpen, setInternalOpen] = useState(false)
+    const open = isControlled ? controlledOpen : internalOpen
+    const setOpen = isControlled ? (v: boolean) => onControlledOpenChange?.(v) : setInternalOpen
     const [loading, setLoading] = useState(false)
     const [containers, setContainers] = useState<ContainerTypeData[]>([])
     const [locations, setLocations] = useState<LocationData[]>([])
+    const [salesRateTypes, setSalesRateTypes] = useState<SalesRateTypeData[]>([])
 
     useEffect(() => {
         const timeout = setTimeout(async () => {
             try {
-                const [cRes, lRes] = await Promise.all([
+                const [cRes, lRes, sRes] = await Promise.all([
                     fetch("/api/admin/container-types"),
                     fetch("/api/admin/locations"),
+                    fetch("/api/admin/sales-rate-types"),
                 ])
                 if (cRes.ok) setContainers(await cRes.json())
                 if (lRes.ok) setLocations(await lRes.json())
+                if (sRes.ok) setSalesRateTypes(await sRes.json())
             } catch { /* silently fail */ }
         }, 0)
         return () => clearTimeout(timeout)
     }, [])
 
-    const [formData, setFormData] = useState<CreateOceanFreightForm>({
-        origin: "Cape Town",
-        destinationId: "",
-        destinationCountry: defaultCountry,
-        destinationPort: defaultDestinationPort,
-        destinationPortCode: "",
-        shippingLine: "MSC",
-        containerId: "40ft-reefer-hc",
-        freightUSD: 0,
-        bafUSD: 0,
-        ispsUSD: 0,
-        otherSurchargesUSD: 0,
-        rcgUSD: 0,
-        exchangeRate: 15.9,
-    })
+    const buildInitialForm = useCallback((): CreateOceanFreightForm => {
+        if (editData) {
+            return {
+                origin: editData.origin,
+                destinationId: "",
+                destinationCountry: editData.destinationCountry,
+                destinationPort: editData.destinationPort,
+                destinationPortCode: editData.destinationPortCode,
+                shippingLine: editData.shippingLine,
+                containerId: editData.containerId,
+                salesRateTypeId: editData.salesRateTypeId || "srs",
+                freightUSD: Number(editData.freightUSD) || 0,
+                bafUSD: Number(editData.bafUSD) || 0,
+                ispsUSD: Number(editData.ispsUSD) || 0,
+                otherSurchargesUSD: Number(editData.otherSurchargesUSD) || 0,
+                rcgUSD: Number(editData.rcgUSD) || 0,
+                exchangeRate: Number(editData.exchangeRate) || 15.9,
+            }
+        }
+        return {
+            origin: "Cape Town",
+            destinationId: "",
+            destinationCountry: defaultCountry,
+            destinationPort: defaultDestinationPort,
+            destinationPortCode: "",
+            shippingLine: "MSC",
+            containerId: "40ft-reefer-hc",
+            salesRateTypeId: "srs",
+            freightUSD: 0,
+            bafUSD: 0,
+            ispsUSD: 0,
+            otherSurchargesUSD: 0,
+            rcgUSD: 0,
+            exchangeRate: 15.9,
+        }
+    }, [editData, defaultCountry, defaultDestinationPort])
+
+    const [formData, setFormData] = useState<CreateOceanFreightForm>(buildInitialForm)
 
     const handleOpenChange = useCallback((isOpen: boolean) => {
         setOpen(isOpen)
         if (isOpen) {
-            const foundLoc = locations.find(l =>
-                l.name === defaultDestinationPort ||
-                l.code === defaultDestinationPort
-            );
+            if (editData) {
+                setFormData(buildInitialForm())
+            } else {
+                const foundLoc = locations.find(l =>
+                    l.name === defaultDestinationPort ||
+                    l.code === defaultDestinationPort
+                );
 
-            if (foundLoc) {
-                setFormData(prev => ({
-                    ...prev,
-                    destinationId: foundLoc.id,
-                    destinationCountry: foundLoc.country,
-                    destinationPort: foundLoc.name,
-                    destinationPortCode: foundLoc.code,
-                }));
-            } else if (defaultCountry || defaultDestinationPort) {
-                setFormData(prev => ({
-                    ...prev,
-                    destinationCountry: defaultCountry || prev.destinationCountry,
-                    destinationPort: defaultDestinationPort || prev.destinationPort,
-                }));
+                if (foundLoc) {
+                    setFormData(prev => ({
+                        ...prev,
+                        destinationId: foundLoc.id,
+                        destinationCountry: foundLoc.country,
+                        destinationPort: foundLoc.name,
+                        destinationPortCode: foundLoc.code,
+                    }));
+                } else if (defaultCountry || defaultDestinationPort) {
+                    setFormData(prev => ({
+                        ...prev,
+                        destinationCountry: defaultCountry || prev.destinationCountry,
+                        destinationPort: defaultDestinationPort || prev.destinationPort,
+                    }));
+                }
             }
         }
-    }, [defaultDestinationPort, defaultCountry, locations])
+    }, [defaultDestinationPort, defaultCountry, locations, editData, buildInitialForm])
 
     const handleDestinationChange = (locId: string) => {
         const loc = locations.find(l => l.id === locId);
@@ -133,10 +194,16 @@ export function CreateOceanFreightDialog({
         setLoading(true)
 
         try {
-            const res = await fetch("/api/admin/ocean-freight", {
-                method: "POST",
+            const url = isEditMode
+                ? `/api/admin/ocean-freight/${editData!.id}`
+                : "/api/admin/ocean-freight"
+            const method = isEditMode ? "PUT" : "POST"
+
+            const res = await fetch(url, {
+                method,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
+                    salesRateTypeId: formData.salesRateTypeId,
                     origin: formData.origin,
                     destinationCountry: formData.destinationCountry,
                     destinationPort: formData.destinationPort,
@@ -154,17 +221,17 @@ export function CreateOceanFreightDialog({
             })
 
             if (res.ok) {
-                toast.success("Ocean Freight Rate Created", {
-                    description: `Route: ${formData.origin} to ${formData.destinationPort} created successfully.`
+                toast.success(isEditMode ? "Ocean Freight Rate Updated" : "Ocean Freight Rate Created", {
+                    description: `Route: ${formData.origin} to ${formData.destinationPort} ${isEditMode ? "updated" : "created"} successfully.`
                 })
                 setOpen(false)
                 onSuccess?.()
             } else {
                 const data = await res.json()
-                toast.error(data.error || "Failed to create freight rate")
+                toast.error(data.error || "Failed to save freight rate")
             }
         } catch {
-            toast.error("Failed to create freight rate")
+            toast.error("Failed to save freight rate")
         } finally {
             setLoading(false)
         }
@@ -172,17 +239,21 @@ export function CreateOceanFreightDialog({
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>
-                <Button className="bg-brand-blue hover:bg-blue-700 text-white font-bold h-10 shadow-lg shadow-blue-900/20">
-                    <Plus className="mr-2 h-4 w-4" /> New Freight Rate
-                </Button>
-            </DialogTrigger>
+            {!isControlled && (trigger ? (
+                <DialogTrigger asChild>{trigger}</DialogTrigger>
+            ) : (
+                <DialogTrigger asChild>
+                    <Button className="bg-brand-blue hover:bg-blue-700 text-white font-bold h-10 shadow-lg shadow-blue-900/20">
+                        <Plus className="mr-2 h-4 w-4" /> New Freight Rate
+                    </Button>
+                </DialogTrigger>
+            ))}
             <DialogContent className="sm:max-w-[600px] bg-slate-950 border-slate-800 text-white">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle className="text-xl font-black tracking-tight flex items-center gap-2">
-                            <Ship className="h-5 w-5 text-blue-500" />
-                            NEW OCEAN FREIGHT RATE
+                            {isEditMode ? <Pencil className="h-5 w-5 text-blue-500" /> : <Ship className="h-5 w-5 text-blue-500" />}
+                            {isEditMode ? "EDIT OCEAN FREIGHT RATE" : "NEW OCEAN FREIGHT RATE"}
                         </DialogTitle>
                         <DialogDescription className="text-slate-400 font-mono text-[10px] uppercase tracking-widest">
                             Configure Port-to-Port Freight Charges & Surcharges
@@ -257,6 +328,19 @@ export function CreateOceanFreightDialog({
                                         </SelectContent>
                                     </Select>
                                 </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Rate Type</Label>
+                                <Select value={formData.salesRateTypeId} onValueChange={(v) => setFormData({ ...formData, salesRateTypeId: v })}>
+                                    <SelectTrigger className="bg-slate-900 border-slate-800 h-9 text-sm">
+                                        <SelectValue placeholder="Select rate type" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-slate-900 border-slate-800 text-white">
+                                        {salesRateTypes.filter(t => t.active).map(t => (
+                                            <SelectItem key={t.id} value={t.id}>{t.name} ({t.code})</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
 
@@ -360,7 +444,7 @@ export function CreateOceanFreightDialog({
                             className="bg-blue-600 hover:bg-blue-700 text-white font-black px-8"
                         >
                             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                            {loading ? "SAVING..." : "SAVE FREIGHT RATE"}
+                            {loading ? "SAVING..." : isEditMode ? "UPDATE FREIGHT RATE" : "SAVE FREIGHT RATE"}
                         </Button>
                     </DialogFooter>
                 </form>

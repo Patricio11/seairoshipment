@@ -24,12 +24,25 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Plus, Search, MoreVertical, Edit, Copy, ArrowRightLeft } from "lucide-react"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Search, MoreVertical, Edit, Trash2, ArrowRightLeft } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { CreateDestinationChargeDialog } from "./create-destination-charge-dialog"
+import { toast } from "sonner"
 
 interface DestinationChargeData {
     id: string
@@ -38,6 +51,8 @@ interface DestinationChargeData {
     destinationPortCode: string
     containerId: string
     containerDisplayName: string | null
+    salesRateTypeId: string | null
+    salesRateTypeName: string | null
     currency: string
     exchangeRateToZAR: string
     active: boolean
@@ -50,14 +65,18 @@ export function DestinationChargesList() {
     const [searchTerm, setSearchTerm] = useState(destIdParam?.toUpperCase() ?? "")
     const [selectedCurrency, setSelectedCurrency] = useState<string>("all")
     const [charges, setCharges] = useState<DestinationChargeData[]>([])
+    const [deleteId, setDeleteId] = useState<string | null>(null)
+    const [deleting, setDeleting] = useState(false)
+
+    const fetchCharges = async () => {
+        try {
+            const res = await fetch("/api/admin/destination-charges")
+            if (res.ok) setCharges(await res.json())
+        } catch { /* silently fail */ }
+    }
 
     useEffect(() => {
-        const timeout = setTimeout(async () => {
-            try {
-                const res = await fetch("/api/admin/destination-charges")
-                if (res.ok) setCharges(await res.json())
-            } catch { /* silently fail */ }
-        }, 0)
+        const timeout = setTimeout(() => fetchCharges(), 0)
         return () => clearTimeout(timeout)
     }, [])
 
@@ -76,6 +95,25 @@ export function DestinationChargesList() {
         return { totalLocal, totalZAR, itemCount: charge.items.length }
     }
 
+    const handleDelete = async () => {
+        if (!deleteId) return
+        setDeleting(true)
+        try {
+            const res = await fetch(`/api/admin/destination-charges/${deleteId}`, { method: "DELETE" })
+            if (res.ok) {
+                toast.success("Destination charge deleted")
+                fetchCharges()
+            } else {
+                toast.error("Failed to delete destination charge")
+            }
+        } catch {
+            toast.error("Failed to delete destination charge")
+        } finally {
+            setDeleting(false)
+            setDeleteId(null)
+        }
+    }
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -88,13 +126,30 @@ export function DestinationChargesList() {
                         Manage destination charges for European ports (Delivered at Place)
                     </p>
                 </div>
-                <Link href="/admin/finance/destination-charges/new">
-                    <Button className="bg-brand-blue hover:bg-blue-700">
-                        <Plus className="mr-2 h-4 w-4" />
-                        New DAP Card
-                    </Button>
-                </Link>
+                <CreateDestinationChargeDialog onSuccess={fetchCharges} />
             </div>
+
+            {/* Delete Confirmation */}
+            <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Destination Charge</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete this destination charge rate card? This will also remove all charge items. This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDelete}
+                            disabled={deleting}
+                            className="bg-red-600 hover:bg-red-700"
+                        >
+                            {deleting ? "Deleting..." : "Delete"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {/* Filters */}
             <Card className="p-4">
@@ -130,6 +185,7 @@ export function DestinationChargesList() {
                         <TableRow className="bg-slate-50 dark:bg-slate-900/50">
                             <TableHead>Destination Port</TableHead>
                             <TableHead>Container</TableHead>
+                            <TableHead>Rate Type</TableHead>
                             <TableHead>Currency</TableHead>
                             <TableHead className="text-right">Exchange Rate</TableHead>
                             <TableHead className="text-right">Items</TableHead>
@@ -142,7 +198,7 @@ export function DestinationChargesList() {
                     <TableBody>
                         {filteredCharges.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={9} className="text-center py-12 text-slate-500">
+                                <TableCell colSpan={10} className="text-center py-12 text-slate-500">
                                     No destination charges found
                                 </TableCell>
                             </TableRow>
@@ -164,6 +220,11 @@ export function DestinationChargesList() {
                                         <TableCell>
                                             <Badge variant="outline" className="font-mono text-xs">
                                                 {charge.containerDisplayName || charge.containerId}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge className="bg-brand-blue text-white">
+                                                {charge.salesRateTypeName || charge.salesRateTypeId || "—"}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
@@ -228,9 +289,13 @@ export function DestinationChargesList() {
                                                             Edit
                                                         </Link>
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem>
-                                                        <Copy className="mr-2 h-4 w-4" />
-                                                        Clone to New Destination
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem
+                                                        onClick={() => setDeleteId(charge.id)}
+                                                        className="text-red-600 focus:text-red-600"
+                                                    >
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        Delete
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>

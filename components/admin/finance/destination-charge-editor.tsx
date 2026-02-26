@@ -212,6 +212,9 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
                             {initialData ? "Edit Destination Charges (DAP)" : "New Destination Charges (DAP)"}
                         </h1>
                         <p className="text-sm text-slate-500 mt-1">
+                            {initialData?.salesRateTypeName && (
+                                <span className="font-semibold text-blue-600">{initialData.salesRateTypeName} • </span>
+                            )}
                             {initialData?.destinationName || "London Gateway"}
                             {" • "}
                             {initialData?.containerDisplayName || "40ft HC Reefer"}

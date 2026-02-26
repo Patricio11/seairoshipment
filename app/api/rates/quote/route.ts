@@ -23,7 +23,8 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        const quote = await calculateQuote(origin, destination, palletCount);
+        const salesRateTypeId = searchParams.get("salesRateTypeId") || "srs";
+        const quote = await calculateQuote(origin, destination, palletCount, salesRateTypeId);
 
         return NextResponse.json(quote);
     } catch (error: unknown) {

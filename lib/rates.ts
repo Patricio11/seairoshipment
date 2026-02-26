@@ -80,7 +80,8 @@ const BALANCE_PERCENTAGE = 40;
 export async function calculateQuote(
     originCode: string,
     destinationCode: string,
-    palletCount: number
+    palletCount: number,
+    salesRateTypeId: string = "srs"
 ): Promise<CostBreakdownResult> {
     const originId = ORIGIN_MAP[originCode];
     const oceanPortCode = DESTINATION_OCEAN_MAP[destinationCode];
@@ -118,7 +119,7 @@ export async function calculateQuote(
                 and(
                     eq(originCharges.originId, originId),
                     eq(originCharges.containerId, "40ft-reefer-hc"),
-                    eq(originCharges.salesRateTypeId, "srs"),
+                    eq(originCharges.salesRateTypeId, salesRateTypeId),
                     eq(originCharges.active, true)
                 )
             )
@@ -158,7 +159,7 @@ export async function calculateQuote(
                 and(
                     eq(oceanFreightRates.destinationPortCode, oceanPortCode),
                     eq(oceanFreightRates.containerId, "40ft-reefer-hc"),
-                    eq(oceanFreightRates.salesRateTypeId, "srs"),
+                    eq(oceanFreightRates.salesRateTypeId, salesRateTypeId),
                     eq(oceanFreightRates.active, true)
                 )
             )
@@ -181,7 +182,7 @@ export async function calculateQuote(
                 and(
                     eq(destinationCharges.destinationId, destChargeId),
                     eq(destinationCharges.containerId, "40ft-reefer-hc"),
-                    eq(destinationCharges.salesRateTypeId, "srs"),
+                    eq(destinationCharges.salesRateTypeId, salesRateTypeId),
                     eq(destinationCharges.active, true)
                 )
             )

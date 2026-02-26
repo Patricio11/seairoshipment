@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
         const bookingRef = `SRS-${nanoid(6).toUpperCase()}`;
 
         // Generate invoices (60% deposit + 40% balance)
-        const quote = await calculateQuote(origin, destination, palletCount);
+        const quote = await calculateQuote(origin, destination, palletCount, body.salesRateTypeId || "srs");
         const year = new Date().getFullYear();
         const routeLabel = `${quote.originName} → ${quote.destinationName}`;
 

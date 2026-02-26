@@ -29,15 +29,29 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { ChevronDown, ChevronRight, Search, MoreVertical, Edit, Copy, AlertCircle } from "lucide-react"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { ChevronDown, ChevronRight, Search, MoreVertical, Edit, Trash2, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useSearchParams } from "next/navigation"
-import { CreateOceanFreightDialog } from "./create-ocean-freight-dialog"
+import { CreateOceanFreightDialog, type OceanFreightEditData } from "./create-ocean-freight-dialog"
+import { toast } from "sonner"
 
 interface OceanFreightRate {
     id: string
+    salesRateTypeId: string | null
+    salesRateTypeName: string | null
     origin: string
     destinationCountry: string
     destinationPort: string
@@ -64,6 +78,9 @@ export function OceanFreightGrid() {
     const [rates, setRates] = useState<OceanFreightRate[]>([])
     const [openCountries, setOpenCountries] = useState<string[]>([])
     const [initialized, setInitialized] = useState(false)
+    const [editingRate, setEditingRate] = useState<OceanFreightEditData | null>(null)
+    const [deleteId, setDeleteId] = useState<string | null>(null)
+    const [deleting, setDeleting] = useState(false)
 
     const fetchRates = async () => {
         try {
@@ -105,6 +122,25 @@ export function OceanFreightGrid() {
         })
     }
 
+    const handleDelete = async () => {
+        if (!deleteId) return
+        setDeleting(true)
+        try {
+            const res = await fetch(`/api/admin/ocean-freight/${deleteId}`, { method: "DELETE" })
+            if (res.ok) {
+                toast.success("Freight rate deleted")
+                fetchRates()
+            } else {
+                toast.error("Failed to delete freight rate")
+            }
+        } catch {
+            toast.error("Failed to delete freight rate")
+        } finally {
+            setDeleting(false)
+            setDeleteId(null)
+        }
+    }
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -123,6 +159,41 @@ export function OceanFreightGrid() {
                     onSuccess={fetchRates}
                 />
             </div>
+
+            {/* Edit Dialog — controlled open via editingRate */}
+            <CreateOceanFreightDialog
+                editData={editingRate}
+                controlledOpen={!!editingRate}
+                onControlledOpenChange={(isOpen) => {
+                    if (!isOpen) setEditingRate(null)
+                }}
+                onSuccess={() => {
+                    setEditingRate(null)
+                    fetchRates()
+                }}
+            />
+
+            {/* Delete Confirmation */}
+            <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Freight Rate</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete this freight rate? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDelete}
+                            disabled={deleting}
+                            className="bg-red-600 hover:bg-red-700"
+                        >
+                            {deleting ? "Deleting..." : "Delete"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {/* Filters */}
             <Card className="p-4">
@@ -201,6 +272,7 @@ export function OceanFreightGrid() {
                                                 <TableHead className="min-w-[140px]">Destination Port</TableHead>
                                                 <TableHead>Shipping Line</TableHead>
                                                 <TableHead>Equipment</TableHead>
+                                                <TableHead>Rate Type</TableHead>
                                                 <TableHead className="text-right">Freight</TableHead>
                                                 <TableHead className="text-right">BAF</TableHead>
                                                 <TableHead className="text-right">ISPS</TableHead>
@@ -237,6 +309,11 @@ export function OceanFreightGrid() {
                                                         <span className="text-[11px] font-mono text-slate-600 dark:text-slate-400">
                                                             {rate.containerDisplayName || rate.containerId}
                                                         </span>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge className="bg-brand-blue text-white">
+                                                            {rate.salesRateTypeName || rate.salesRateTypeId || "—"}
+                                                        </Badge>
                                                     </TableCell>
                                                     <TableCell className="text-right font-mono text-sm">
                                                         {rate.active ? `$${Number(rate.freightUSD).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
@@ -279,13 +356,32 @@ export function OceanFreightGrid() {
                                                                 </Button>
                                                             </DropdownMenuTrigger>
                                                             <DropdownMenuContent align="end">
-                                                                <DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => setEditingRate({
+                                                                    id: rate.id,
+                                                                    origin: rate.origin,
+                                                                    destinationCountry: rate.destinationCountry,
+                                                                    destinationPort: rate.destinationPort,
+                                                                    destinationPortCode: rate.destinationPortCode,
+                                                                    shippingLine: rate.shippingLine,
+                                                                    containerId: rate.containerId,
+                                                                    salesRateTypeId: rate.salesRateTypeId,
+                                                                    freightUSD: rate.freightUSD,
+                                                                    bafUSD: rate.bafUSD,
+                                                                    ispsUSD: rate.ispsUSD,
+                                                                    otherSurchargesUSD: rate.otherSurchargesUSD,
+                                                                    rcgUSD: rate.rcgUSD,
+                                                                    exchangeRate: rate.exchangeRate,
+                                                                })}>
                                                                     <Edit className="mr-2 h-4 w-4" />
                                                                     Edit Rate
                                                                 </DropdownMenuItem>
-                                                                <DropdownMenuItem>
-                                                                    <Copy className="mr-2 h-4 w-4" />
-                                                                    Duplicate
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem
+                                                                    onClick={() => setDeleteId(rate.id)}
+                                                                    className="text-red-600 focus:text-red-600"
+                                                                >
+                                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                                    Delete
                                                                 </DropdownMenuItem>
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
