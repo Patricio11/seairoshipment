@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth/server";
+import { requireAdmin } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { adminNotifications } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 
 export async function GET() {
     try {
-        const session = await getSession();
-        if (!session || session.user.role !== "admin") {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-        }
+        const { error } = await requireAdmin();
+        if (error) return error;
 
         const notifications = await db
             .select()
@@ -29,10 +27,8 @@ export async function GET() {
 // Mark notification as read
 export async function PATCH(request: NextRequest) {
     try {
-        const session = await getSession();
-        if (!session || session.user.role !== "admin") {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-        }
+        const { error } = await requireAdmin();
+        if (error) return error;
 
         const { id } = await request.json();
         if (!id) {

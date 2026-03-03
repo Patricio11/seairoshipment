@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth/server";
+import { requireAdmin } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { destinationCharges, destinationChargeItems, containerTypes, salesRateTypes } from "@/lib/db/schema";
 import { eq, asc } from "drizzle-orm";
@@ -10,10 +10,8 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const session = await getSession();
-        if (!session || (session.user as { role?: string }).role !== "admin") {
-            return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-        }
+        const { error } = await requireAdmin();
+        if (error) return error;
 
         const { id } = await params;
 
@@ -63,10 +61,8 @@ export async function PUT(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const session = await getSession();
-        if (!session || (session.user as { role?: string }).role !== "admin") {
-            return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-        }
+        const { error } = await requireAdmin();
+        if (error) return error;
 
         const { id } = await params;
         const body = await request.json();
@@ -122,10 +118,8 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const session = await getSession();
-        if (!session || (session.user as { role?: string }).role !== "admin") {
-            return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-        }
+        const { error } = await requireAdmin();
+        if (error) return error;
 
         const { id } = await params;
         const [deleted] = await db

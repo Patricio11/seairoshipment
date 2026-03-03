@@ -1,15 +1,13 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth/server";
+import { requireAdmin } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { containers, palletAllocations, user } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 
 export async function GET() {
     try {
-        const session = await getSession();
-        if (!session || session.user.role !== "admin") {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-        }
+        const { error } = await requireAdmin();
+        if (error) return error;
 
         // Get all containers with their allocations
         const allContainers = await db

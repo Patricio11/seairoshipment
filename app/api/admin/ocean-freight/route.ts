@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth/server";
+import { requireAdmin } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { oceanFreightRates, containerTypes, salesRateTypes } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
@@ -7,10 +7,8 @@ import { nanoid } from "nanoid";
 
 export async function GET(request: NextRequest) {
     try {
-        const session = await getSession();
-        if (!session || (session.user as { role?: string }).role !== "admin") {
-            return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-        }
+        const { error } = await requireAdmin();
+        if (error) return error;
 
         const { searchParams } = new URL(request.url);
         const destId = searchParams.get("destId");
@@ -68,10 +66,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        const session = await getSession();
-        if (!session || (session.user as { role?: string }).role !== "admin") {
-            return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-        }
+        const { error } = await requireAdmin();
+        if (error) return error;
 
         const body = await request.json();
         const {

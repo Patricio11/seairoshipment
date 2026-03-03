@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth/server";
+import { requireAdmin } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { locations } from "@/lib/db/schema";
 import { eq, asc } from "drizzle-orm";
@@ -7,10 +7,8 @@ import { nanoid } from "nanoid";
 
 export async function GET(request: NextRequest) {
     try {
-        const session = await getSession();
-        if (!session || (session.user as { role?: string }).role !== "admin") {
-            return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-        }
+        const { error } = await requireAdmin();
+        if (error) return error;
 
         const { searchParams } = new URL(request.url);
         const type = searchParams.get("type");
@@ -36,10 +34,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        const session = await getSession();
-        if (!session || (session.user as { role?: string }).role !== "admin") {
-            return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-        }
+        const { error } = await requireAdmin();
+        if (error) return error;
 
         const body = await request.json();
         const { name, code, country, type, coordinates, active } = body;

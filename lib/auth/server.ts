@@ -5,11 +5,15 @@ import * as schema from "@/lib/db/schema";
 import { headers } from "next/headers";
 import { cache } from "react";
 import { redirect } from "next/navigation";
+import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email";
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
 export const auth = betterAuth({
-    baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    baseURL: appUrl,
+    trustedOrigins: [appUrl, "http://localhost:3000", "http://localhost:3001"],
     database: drizzleAdapter(db, {
         provider: "pg",
         schema: {
@@ -19,6 +23,14 @@ export const auth = betterAuth({
             verification: schema.verification
         },
     }),
+    session: {
+        expiresIn: 60 * 60 * 24 * 30, // 30 days
+        updateAge: 60 * 60 * 4, // refresh session every 4 hours
+        cookieCache: {
+            enabled: true,
+            maxAge: 5 * 60, // 5 minutes — reduces DB lookups
+        },
+    },
     databaseHooks: {
         user: {
             create: {
@@ -72,11 +84,44 @@ export const auth = betterAuth({
 });
 
 export const getSession = cache(async () => {
-    const session = await auth.api.getSession({
-        headers: await headers()
-    });
-    return session;
+    try {
+        const session = await auth.api.getSession({
+            headers: await headers()
+        });
+        return session;
+    } catch (error) {
+        console.error("[auth] Failed to get session:", error);
+        return null;
+    }
 });
+
+/**
+ * Require admin role for API routes.
+ * Returns the session if valid admin, or a NextResponse error.
+ */
+export async function requireAdmin(): Promise<
+    | { session: NonNullable<Awaited<ReturnType<typeof getSession>>>; error?: never }
+    | { session?: never; error: NextResponse }
+> {
+    const session = await getSession();
+    if (!session) {
+        return {
+            error: NextResponse.json(
+                { error: "Not authenticated — please sign in again" },
+                { status: 401 }
+            ),
+        };
+    }
+    if ((session.user.role as string) !== "admin") {
+        return {
+            error: NextResponse.json(
+                { error: "Admin access required" },
+                { status: 403 }
+            ),
+        };
+    }
+    return { session };
+}
 
 /**
  * Require authentication - redirects to home if not authenticated
