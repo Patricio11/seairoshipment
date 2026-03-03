@@ -143,6 +143,13 @@ export function CreateOceanFreightDialog({
 
     const [formData, setFormData] = useState<CreateOceanFreightForm>(buildInitialForm)
 
+    // When controlled dialog opens with edit data, populate the form
+    useEffect(() => {
+        if (isControlled && controlledOpen && editData) {
+            setFormData(buildInitialForm())
+        }
+    }, [isControlled, controlledOpen, editData, buildInitialForm])
+
     const handleOpenChange = useCallback((isOpen: boolean) => {
         setOpen(isOpen)
         if (isOpen) {
