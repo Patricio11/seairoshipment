@@ -36,25 +36,6 @@ interface Step2Props {
     updateFormData: (data: Partial<BookingFormData>) => void
 }
 
-// Mock containers data mapped by route (UN/LOCODE format)
-const MOCK_STORAGE: Record<string, ContainerSlot[]> = {
-    "ZACPT-NLRTM": [
-        { id: "CONT-001", vessel: "MSC Orchestra", preFilled: 14, date: "Oct 28", type: "40FT" },
-        { id: "CONT-003", vessel: "COSCO Shipping", preFilled: 12, date: "Nov 02", type: "40FT" },
-        { id: "CONT-005", vessel: "Hapag Lloyd", preFilled: 5, date: "Nov 06", type: "40FT" },
-        { id: "CONT-006", vessel: "CMA CGM Antoine", preFilled: 15, date: "Nov 10", type: "40FT" },
-    ],
-    "ZACPT-GBLND": [
-        { id: "CONT-L01", vessel: "Atlantic Star", preFilled: 10, date: "Oct 29", type: "40FT" },
-    ],
-    "ZADUR-SGSIN": [
-        { id: "CONT-S01", vessel: "One Integrity", preFilled: 15, date: "Oct 31", type: "40FT" },
-    ],
-    "DEFAULT": [
-        { id: "CONT-D01", vessel: "Standard Vessel", preFilled: 10, date: "Seasonal", type: "40FT" },
-    ]
-}
-
 interface LocationOption {
     id: string
     name: string
@@ -81,6 +62,10 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
     const [loadingSchedules, setLoadingSchedules] = useState(false)
     const [products, setProducts] = useState<MetaShipProduct[]>([])
     const [loadingProducts, setLoadingProducts] = useState(false)
+
+    // Real container data from DB
+    const [availableContainers, setAvailableContainers] = useState<ContainerSlot[]>([])
+    const [loadingContainers, setLoadingContainers] = useState(false)
 
     // Fetch locations + products on mount
     useEffect(() => {
@@ -140,11 +125,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
         }
     }, [formData.origin, formData.destination, fetchSchedules])
 
-    // Derived available containers based on route
-    const currentRouteKey = `${formData.origin}-${formData.destination}`
-    const availableContainers = (MOCK_STORAGE[currentRouteKey] || MOCK_STORAGE["DEFAULT"])
-
-    const selectedContainer = (MOCK_STORAGE[currentRouteKey] || MOCK_STORAGE["DEFAULT"]).find(c => c.id === formData.containerId)
+    const selectedContainer = availableContainers.find(c => c.id === formData.containerId)
     const containerCapacity = selectedContainer ? (selectedContainer.type === "20FT" ? 10 : 20) : 20
 
     const count = formData.palletCount || 0
@@ -164,8 +145,24 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
         setViewStage("adjust")
     }
 
-    const handleViewAvailability = () => {
+    const handleViewAvailability = async () => {
+        const route = `${formData.origin}-${formData.destination}`
+        setLoadingContainers(true)
         setViewStage("pick")
+        try {
+            const res = await fetch(`/api/containers?route=${route}`)
+            if (res.ok) {
+                const data = await res.json()
+                setAvailableContainers(Array.isArray(data) ? data : [])
+            } else {
+                setAvailableContainers([])
+            }
+        } catch {
+            console.error("Failed to fetch containers")
+            setAvailableContainers([])
+        } finally {
+            setLoadingContainers(false)
+        }
     }
 
     const handleOriginChange = (val: string) => {
@@ -506,7 +503,12 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                 <div>
                                     <h3 className="text-xl font-bold text-slate-900 dark:text-white">Active Consolidation Runs</h3>
-                                    <p className="text-sm text-slate-500">Found {availableContainers.length} compatible containers for {formData.origin} &rarr; {formData.destination}</p>
+                                    <p className="text-sm text-slate-500">
+                                        {loadingContainers
+                                            ? "Searching for available containers..."
+                                            : `Found ${availableContainers.length} compatible containers for ${formData.origin} → ${formData.destination}`
+                                        }
+                                    </p>
                                 </div>
                                 <Button variant="ghost" size="sm" onClick={() => setViewStage("initial")} className="text-slate-500">
                                     <ArrowLeft className="mr-2 h-4 w-4" /> Edit Route
@@ -514,6 +516,18 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                             </div>
                         </div>
 
+                        {loadingContainers ? (
+                            <div className="flex items-center justify-center py-16 text-slate-500">
+                                <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                                Loading available containers...
+                            </div>
+                        ) : availableContainers.length === 0 ? (
+                            <div className="text-center py-16">
+                                <Boxes className="h-12 w-12 mx-auto mb-3 text-slate-300 dark:text-slate-600" />
+                                <p className="font-bold text-slate-700 dark:text-slate-300">No containers available for this route yet</p>
+                                <p className="text-sm text-slate-500 mt-1">Contact us for availability or check back later.</p>
+                            </div>
+                        ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                             {availableContainers.map((container) => {
                                 const capacity = container.type === "20FT" ? 10 : 20
@@ -562,6 +576,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                 )
                             })}
                         </div>
+                        )}
                     </motion.div>
                 )}
 
@@ -675,19 +690,6 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                                 className="bg-brand-blue h-full transition-all duration-300"
                                                 style={{ width: `${(count / containerCapacity) * 100}%` }}
                                             />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="pt-6 border-t border-slate-100 dark:border-slate-800 space-y-4">
-                                    <div className="flex justify-between items-center font-bold">
-                                        <span className="text-xs text-slate-500 uppercase tracking-widest">Rate Est.</span>
-                                        <span className="text-2xl text-emerald-600">${(1350 + (count * 50)).toLocaleString()}</span>
-                                    </div>
-                                    <div className="bg-emerald-50 dark:bg-emerald-900/10 p-4 rounded-2xl flex items-start gap-3">
-                                        <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5" />
-                                        <div className="text-[10px] font-medium text-emerald-800 dark:text-emerald-400 leading-relaxed">
-                                            This consolidation secures a -15% discount compared to dedicated reefer rates.
                                         </div>
                                     </div>
                                 </div>

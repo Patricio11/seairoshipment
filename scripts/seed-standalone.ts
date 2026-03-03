@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import { pgTable, text, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, integer, pgEnum } from "drizzle-orm/pg-core";
 import { eq } from "drizzle-orm";
 import * as dotenv from "dotenv";
 
@@ -24,9 +24,55 @@ export const user = pgTable("user", {
     companyReg: text("companyReg"),
 });
 
+export const containerStatusEnum = pgEnum("container_status", [
+    "OPEN", "THRESHOLD_REACHED", "BOOKED", "SAILING", "DELIVERED",
+]);
+
+export const containerTypeEnum = pgEnum("container_type", ["20FT", "40FT"]);
+
+export const containers = pgTable("containers", {
+    id: text("id").primaryKey(),
+    route: text("route").notNull(),
+    vessel: text("vessel").notNull(),
+    voyageNumber: text("voyage_number"),
+    sailingScheduleId: text("sailing_schedule_id"),
+    type: containerTypeEnum("type").default("40FT").notNull(),
+    etd: timestamp("etd"),
+    eta: timestamp("eta"),
+    totalPallets: integer("total_pallets").default(0).notNull(),
+    maxCapacity: integer("max_capacity").default(20).notNull(),
+    status: containerStatusEnum("status").default("OPEN").notNull(),
+    metashipOrderNo: text("metaship_order_no"),
+    metashipReference: text("metaship_reference"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const palletAllocationStatusEnum = pgEnum("pallet_allocation_status", [
+    "PENDING", "CONFIRMED", "CANCELLED",
+]);
+
+export const palletAllocations = pgTable("pallet_allocations", {
+    id: text("id").primaryKey(),
+    containerId: text("container_id").notNull(),
+    userId: text("user_id").notNull(),
+    palletCount: integer("pallet_count").notNull(),
+    productId: text("product_id"),
+    commodityName: text("commodity_name"),
+    hsCode: text("hs_code"),
+    nettWeight: text("nett_weight"),
+    grossWeight: text("gross_weight"),
+    temperature: text("temperature"),
+    consigneeName: text("consignee_name"),
+    consigneeAddress: text("consignee_address"),
+    status: palletAllocationStatusEnum("status").default("PENDING").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // --- DB Connect ---
 const sql = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql, { schema: { user } });
+const db = drizzle(sql, { schema: { user, containers, palletAllocations } });
 
 // --- Seed Logic ---
 const seedUsers = [
@@ -105,6 +151,176 @@ async function main() {
             console.error(`   ❌ Error: ${errorMessage}`);
         }
     }
+    // --- Seed Containers ---
+    console.log("\n📦 Seeding containers...");
+
+    // Get the client user ID for allocations
+    const clientUsers = await db.select().from(user).where(eq(user.email, "client@srs.com"));
+    const clientUserId = clientUsers[0]?.id;
+
+    const seedContainers = [
+        {
+            id: "CNT-SEED-001",
+            route: "ZACPT-NLRTM",
+            vessel: "MSC Orchestra",
+            voyageNumber: "VO2401",
+            type: "40FT" as const,
+            etd: new Date("2025-11-15"),
+            eta: new Date("2025-12-01"),
+            totalPallets: 14,
+            maxCapacity: 20,
+            status: "OPEN" as const,
+        },
+        {
+            id: "CNT-SEED-002",
+            route: "ZACPT-NLRTM",
+            vessel: "COSCO Shipping",
+            voyageNumber: "VO2402",
+            type: "40FT" as const,
+            etd: new Date("2025-11-22"),
+            eta: new Date("2025-12-08"),
+            totalPallets: 0,
+            maxCapacity: 20,
+            status: "OPEN" as const,
+        },
+        {
+            id: "CNT-SEED-003",
+            route: "ZACPT-GBLND",
+            vessel: "Atlantic Star",
+            voyageNumber: "VO2403",
+            type: "40FT" as const,
+            etd: new Date("2025-11-18"),
+            eta: new Date("2025-12-04"),
+            totalPallets: 10,
+            maxCapacity: 20,
+            status: "OPEN" as const,
+        },
+        {
+            id: "CNT-SEED-004",
+            route: "ZADUR-SGSIN",
+            vessel: "One Integrity",
+            voyageNumber: "VO2404",
+            type: "40FT" as const,
+            etd: new Date("2025-11-25"),
+            eta: new Date("2025-12-15"),
+            totalPallets: 0,
+            maxCapacity: 20,
+            status: "OPEN" as const,
+        },
+        {
+            id: "CNT-SEED-005",
+            route: "ZACPT-NLRTM",
+            vessel: "Hapag Lloyd Express",
+            voyageNumber: "VO2405",
+            type: "40FT" as const,
+            etd: new Date("2025-12-01"),
+            eta: new Date("2025-12-17"),
+            totalPallets: 16,
+            maxCapacity: 20,
+            status: "THRESHOLD_REACHED" as const,
+        },
+    ];
+
+    for (const containerData of seedContainers) {
+        const existing = await db.select().from(containers).where(eq(containers.id, containerData.id));
+        if (existing.length === 0) {
+            await db.insert(containers).values(containerData);
+            console.log(`   ✅ Container ${containerData.id}: ${containerData.route} (${containerData.vessel})`);
+        } else {
+            console.log(`   ℹ️  Container ${containerData.id} exists.`);
+        }
+    }
+
+    // --- Seed Pallet Allocations (for pre-filled containers) ---
+    if (clientUserId) {
+        console.log("\n📋 Seeding pallet allocations...");
+
+        const seedAllocations = [
+            {
+                id: "ALC-SEED-001",
+                containerId: "CNT-SEED-001",
+                userId: clientUserId,
+                palletCount: 8,
+                commodityName: "Fresh Citrus",
+                hsCode: "0805.10",
+                nettWeight: "8000",
+                grossWeight: "8800",
+                temperature: "chilled",
+                consigneeName: "Rotterdam Fresh Imports",
+                consigneeAddress: "Port of Rotterdam, NL",
+                status: "PENDING" as const,
+            },
+            {
+                id: "ALC-SEED-002",
+                containerId: "CNT-SEED-001",
+                userId: clientUserId,
+                palletCount: 6,
+                commodityName: "Table Grapes",
+                hsCode: "0806.10",
+                nettWeight: "5400",
+                grossWeight: "6000",
+                temperature: "chilled",
+                consigneeName: "EU Fruits BV",
+                consigneeAddress: "Amsterdam, NL",
+                status: "PENDING" as const,
+            },
+            {
+                id: "ALC-SEED-003",
+                containerId: "CNT-SEED-003",
+                userId: clientUserId,
+                palletCount: 10,
+                commodityName: "Frozen Hake Fillets",
+                hsCode: "0304.71",
+                nettWeight: "10000",
+                grossWeight: "11000",
+                temperature: "frozen",
+                consigneeName: "UK Seafood Ltd",
+                consigneeAddress: "London Gateway, GB",
+                status: "PENDING" as const,
+            },
+            {
+                id: "ALC-SEED-004",
+                containerId: "CNT-SEED-005",
+                userId: clientUserId,
+                palletCount: 10,
+                commodityName: "Avocados",
+                hsCode: "0804.40",
+                nettWeight: "9000",
+                grossWeight: "10000",
+                temperature: "chilled",
+                consigneeName: "Fresh Europe GmbH",
+                consigneeAddress: "Rotterdam, NL",
+                status: "PENDING" as const,
+            },
+            {
+                id: "ALC-SEED-005",
+                containerId: "CNT-SEED-005",
+                userId: clientUserId,
+                palletCount: 6,
+                commodityName: "Blueberries",
+                hsCode: "0810.40",
+                nettWeight: "3600",
+                grossWeight: "4200",
+                temperature: "chilled",
+                consigneeName: "Berry Direct NL",
+                consigneeAddress: "Barendrecht, NL",
+                status: "PENDING" as const,
+            },
+        ];
+
+        for (const allocData of seedAllocations) {
+            const existing = await db.select().from(palletAllocations).where(eq(palletAllocations.id, allocData.id));
+            if (existing.length === 0) {
+                await db.insert(palletAllocations).values(allocData);
+                console.log(`   ✅ Allocation ${allocData.id}: ${allocData.palletCount} pallets of ${allocData.commodityName}`);
+            } else {
+                console.log(`   ℹ️  Allocation ${allocData.id} exists.`);
+            }
+        }
+    } else {
+        console.log("\n⚠️  No client user found — skipping pallet allocation seeds.");
+    }
+
     console.log("\n✅ Done.");
     process.exit(0);
 }

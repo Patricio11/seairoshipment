@@ -10,7 +10,7 @@ export default function FleetPage() {
                 </div>
                 <div>
                     <h1 className="text-3xl font-black text-white tracking-tight">Fleet & Containers</h1>
-                    <p className="text-slate-500">Manage vessel schedules, allocations, and container positioning.</p>
+                    <p className="text-slate-500">Manage containers, allocations, and MetaShip bookings.</p>
                 </div>
             </div>
 
