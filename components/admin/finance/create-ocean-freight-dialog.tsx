@@ -255,7 +255,11 @@ export function CreateOceanFreightDialog({
                     </Button>
                 </DialogTrigger>
             ))}
-            <DialogContent className="sm:max-w-[600px] bg-slate-950 border-slate-800 text-white">
+            <DialogContent
+                className="sm:max-w-[600px] bg-slate-950 border-slate-800 text-white"
+                onInteractOutside={(e) => e.preventDefault()}
+                onEscapeKeyDown={(e) => e.preventDefault()}
+            >
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle className="text-xl font-black tracking-tight flex items-center gap-2">

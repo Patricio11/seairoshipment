@@ -96,7 +96,11 @@ export function CreateOriginChargeDialog() {
                     New Rate Card
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[450px]">
+            <DialogContent
+                className="sm:max-w-[450px]"
+                onInteractOutside={(e) => e.preventDefault()}
+                onEscapeKeyDown={(e) => e.preventDefault()}
+            >
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle>Create New Rate Card</DialogTitle>

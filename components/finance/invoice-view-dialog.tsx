@@ -136,7 +136,11 @@ export function InvoiceViewDialog({ invoice, open, onOpenChange }: InvoiceViewDi
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0">
+            <DialogContent
+                className="max-w-[210mm] max-h-[90vh] overflow-y-auto p-0"
+                onInteractOutside={(e) => e.preventDefault()}
+                onEscapeKeyDown={(e) => e.preventDefault()}
+            >
                 <div ref={invoiceRef} className="bg-white dark:bg-slate-900">
                     {/* Header */}
                     <div className="p-6 pb-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">

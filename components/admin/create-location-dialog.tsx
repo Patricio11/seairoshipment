@@ -128,7 +128,11 @@ export function CreateLocationDialog({ editData, open: controlledOpen, onOpenCha
                     </Button>
                 </DialogTrigger>
             )}
-            <DialogContent className="sm:max-w-[425px] bg-slate-900 border-slate-800 text-white">
+            <DialogContent
+                className="sm:max-w-[425px] bg-slate-900 border-slate-800 text-white"
+                onInteractOutside={(e) => e.preventDefault()}
+                onEscapeKeyDown={(e) => e.preventDefault()}
+            >
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle className="text-xl font-black tracking-tight flex items-center gap-2">
