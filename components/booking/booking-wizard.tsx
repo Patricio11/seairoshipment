@@ -37,7 +37,8 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
         hasDocs: false,
         containerId: "",
         vessel: "",
-        agreeToTerms: false
+        agreeToTerms: false,
+        poNumber: ""
     })
 
     const updateFormData = (data: Partial<BookingFormData>) => {
@@ -88,6 +89,7 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
                     consigneeName: formData.consigneeName,
                     consigneeAddress: formData.consigneeAddress,
                     containerId: formData.containerId,
+                    poNumber: formData.poNumber || null,
                 }),
             })
 
@@ -141,7 +143,7 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
                 <div className="flex-1 overflow-y-auto">
                     <AnimatePresence mode="wait">
                         {step === 1 && <Step2Cargo key="step1" formData={formData} updateFormData={updateFormData} />}
-                        {step === 2 && <StepCostBreakdown key="step2" formData={formData} onQuoteLoaded={setCostBreakdown} />}
+                        {step === 2 && <StepCostBreakdown key="step2" formData={formData} updateFormData={updateFormData} onQuoteLoaded={setCostBreakdown} />}
                         {step === 3 && <Step3Docs key="step3" formData={formData} updateFormData={updateFormData} />}
                     </AnimatePresence>
                 </div>

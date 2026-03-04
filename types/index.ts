@@ -77,6 +77,7 @@ export interface BookingFormData {
     containerId: string;
     vessel: string;
     agreeToTerms: boolean;
+    poNumber?: string;
 }
 
 export interface ContainerSlot {
@@ -131,12 +132,17 @@ export interface Invoice {
     bookingRef: string;
     route: string;
     palletCount: number;
+    originChargesZAR?: number;
+    oceanFreightZAR?: number;
+    destinationChargesZAR?: number;
     subtotalZAR: number;
     percentage: number;
     amountZAR: number;
+    poNumber?: string;
     dueDate: string;
     paidAt: string | null;
     createdAt: string;
     companyName?: string;
+    clientName?: string;
     userId?: string;
 }

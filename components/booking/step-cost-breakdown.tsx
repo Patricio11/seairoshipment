@@ -1,14 +1,17 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Loader2, AlertTriangle, Ship, MapPin, Anchor } from "lucide-react"
+import { Loader2, AlertTriangle, Ship, MapPin, Anchor, FileText } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import type { BookingFormData, CostBreakdown } from "@/types"
 
 interface StepCostBreakdownProps {
     formData: BookingFormData
+    updateFormData: (data: Partial<BookingFormData>) => void
     onQuoteLoaded?: (quote: CostBreakdown) => void
 }
 
@@ -16,7 +19,7 @@ function formatZAR(amount: number): string {
     return `R ${amount.toLocaleString("en-ZA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
-export function StepCostBreakdown({ formData, onQuoteLoaded }: StepCostBreakdownProps) {
+export function StepCostBreakdown({ formData, updateFormData, onQuoteLoaded }: StepCostBreakdownProps) {
     const [quote, setQuote] = useState<CostBreakdown | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -120,6 +123,23 @@ export function StepCostBreakdown({ formData, onQuoteLoaded }: StepCostBreakdown
                         40ft HC Reefer
                     </Badge>
                 </div>
+            </div>
+
+            {/* PO / Reference Number */}
+            <div className="space-y-2">
+                <Label htmlFor="poNumber" className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-brand-blue" />
+                    PO / Reference Number
+                    <span className="text-xs font-normal text-slate-400">(Optional)</span>
+                </Label>
+                <Input
+                    id="poNumber"
+                    placeholder="Enter your PO or reference number"
+                    value={formData.poNumber || ""}
+                    onChange={(e) => updateFormData({ poNumber: e.target.value })}
+                    className="border-slate-200 dark:border-slate-700"
+                />
+                <p className="text-[11px] text-slate-400">This reference will appear on your invoices for easy tracking.</p>
             </div>
 
             {/* Cost breakdown card */}

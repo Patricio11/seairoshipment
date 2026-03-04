@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
             consigneeName,
             consigneeAddress,
             containerId: requestedContainerId,
+            poNumber,
         } = body;
 
         if (!origin || !destination || !palletCount || palletCount < 5) {
@@ -183,6 +184,7 @@ export async function POST(request: NextRequest) {
                 subtotalZAR: quote.totalCost.toFixed(2),
                 percentage: 60,
                 amountZAR: quote.depositAmount.toFixed(2),
+                poNumber: poNumber || null,
                 dueDate: depositDue,
             },
             {
@@ -200,6 +202,7 @@ export async function POST(request: NextRequest) {
                 subtotalZAR: quote.totalCost.toFixed(2),
                 percentage: 40,
                 amountZAR: quote.balanceAmount.toFixed(2),
+                poNumber: poNumber || null,
                 dueDate: balanceDue,
             },
         ]);
