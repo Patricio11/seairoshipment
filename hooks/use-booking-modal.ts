@@ -1,25 +1,35 @@
 "use client"
 
-// Since zustand is not in package.json, I will use a simple custom implementation
-// Or I can just use a React Context. Let's use a simple listener pattern for a global store.
+type ModalListener = (state: boolean) => void
+type RefreshListener = (key: number) => void
 
-type Listener = (state: boolean) => void
 let isOpen = false
-const listeners = new Set<Listener>()
+let refreshKey = 0
+const modalListeners = new Set<ModalListener>()
+const refreshListeners = new Set<RefreshListener>()
 
 export const bookingModalStore = {
     isOpen: () => isOpen,
-    subscribe: (listener: Listener) => {
-        listeners.add(listener)
-        return () => listeners.delete(listener)
+    getRefreshKey: () => refreshKey,
+    subscribe: (listener: ModalListener) => {
+        modalListeners.add(listener)
+        return () => modalListeners.delete(listener)
+    },
+    subscribeRefresh: (listener: RefreshListener) => {
+        refreshListeners.add(listener)
+        return () => refreshListeners.delete(listener)
     },
     onOpen: () => {
         isOpen = true
-        listeners.forEach((l) => l(isOpen))
+        modalListeners.forEach((l) => l(isOpen))
     },
     onClose: () => {
         isOpen = false
-        listeners.forEach((l) => l(isOpen))
+        modalListeners.forEach((l) => l(isOpen))
+    },
+    triggerRefresh: () => {
+        refreshKey++
+        refreshListeners.forEach((l) => l(refreshKey))
     },
 }
 
@@ -27,11 +37,14 @@ import { useState, useEffect } from "react"
 
 export function useBookingModal() {
     const [open, setOpen] = useState(bookingModalStore.isOpen())
+    const [rKey, setRKey] = useState(bookingModalStore.getRefreshKey())
 
     useEffect(() => {
-        const unsubscribe = bookingModalStore.subscribe(setOpen)
+        const unsub1 = bookingModalStore.subscribe(setOpen)
+        const unsub2 = bookingModalStore.subscribeRefresh(setRKey)
         return () => {
-            unsubscribe()
+            unsub1()
+            unsub2()
         }
     }, [])
 
@@ -39,5 +52,7 @@ export function useBookingModal() {
         isOpen: open,
         onOpen: bookingModalStore.onOpen,
         onClose: bookingModalStore.onClose,
+        refreshKey: rKey,
+        triggerRefresh: bookingModalStore.triggerRefresh,
     }
 }

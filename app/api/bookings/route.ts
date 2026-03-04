@@ -2,9 +2,111 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { containers, palletAllocations, adminNotifications, invoices } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { calculateQuote } from "@/lib/rates";
+
+function deriveBookingStatus(
+    allocationStatus: string,
+    containerStatus: string,
+    depositInvoiceStatus: string | null
+): "PENDING" | "DEPOSIT_PAID" | "CONFIRMED" | "SAILING" | "DELIVERED" | "CANCELLED" {
+    if (allocationStatus === "CANCELLED") return "CANCELLED";
+    if (containerStatus === "DELIVERED") return "DELIVERED";
+    if (containerStatus === "SAILING") return "SAILING";
+    if (allocationStatus === "CONFIRMED") return "CONFIRMED";
+    if (depositInvoiceStatus === "PAID") return "DEPOSIT_PAID";
+    return "PENDING";
+}
+
+export async function GET() {
+    try {
+        const session = await getSession();
+        if (!session) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        // Get all allocations for this user with container data
+        const allocations = await db
+            .select({
+                allocation: palletAllocations,
+                container: containers,
+            })
+            .from(palletAllocations)
+            .innerJoin(containers, eq(palletAllocations.containerId, containers.id))
+            .where(eq(palletAllocations.userId, session.user.id))
+            .orderBy(desc(palletAllocations.createdAt));
+
+        // Get all invoices for this user
+        const userInvoices = await db
+            .select()
+            .from(invoices)
+            .where(eq(invoices.userId, session.user.id));
+
+        // Group invoices by allocationId
+        const invoicesByAllocation = new Map<string, {
+            bookingRef: string;
+            routeLabel: string;
+            deposit: typeof userInvoices[0] | null;
+            balance: typeof userInvoices[0] | null;
+        }>();
+
+        for (const inv of userInvoices) {
+            if (!inv.allocationId) continue;
+            if (!invoicesByAllocation.has(inv.allocationId)) {
+                invoicesByAllocation.set(inv.allocationId, {
+                    bookingRef: inv.bookingRef,
+                    routeLabel: inv.route,
+                    deposit: null,
+                    balance: null,
+                });
+            }
+            const group = invoicesByAllocation.get(inv.allocationId)!;
+            if (inv.type === "DEPOSIT") group.deposit = inv;
+            else group.balance = inv;
+        }
+
+        // Shape the response
+        const bookings = allocations.map(({ allocation, container }) => {
+            const invGroup = invoicesByAllocation.get(allocation.id);
+            return {
+                id: allocation.id,
+                bookingRef: invGroup?.bookingRef || "N/A",
+                status: deriveBookingStatus(
+                    allocation.status,
+                    container.status,
+                    invGroup?.deposit?.status || null
+                ),
+                palletCount: allocation.palletCount,
+                commodityName: allocation.commodityName,
+                temperature: allocation.temperature,
+                consigneeName: allocation.consigneeName,
+                consigneeAddress: allocation.consigneeAddress,
+                vessel: container.vessel,
+                voyageNumber: container.voyageNumber,
+                route: container.route,
+                routeLabel: invGroup?.routeLabel || container.route,
+                containerType: container.type,
+                etd: container.etd,
+                eta: container.eta,
+                containerStatus: container.status,
+                depositStatus: invGroup?.deposit?.status || null,
+                balanceStatus: invGroup?.balance?.status || null,
+                depositAmount: invGroup?.deposit?.amountZAR || null,
+                balanceAmount: invGroup?.balance?.amountZAR || null,
+                totalAmount: invGroup?.deposit?.subtotalZAR || null,
+                createdAt: allocation.createdAt,
+            };
+        });
+
+        return NextResponse.json(bookings);
+    } catch (error: unknown) {
+        console.error("Fetch bookings error:", error);
+        const message =
+            error instanceof Error ? error.message : "Failed to fetch bookings";
+        return NextResponse.json({ error: message }, { status: 500 });
+    }
+}
 
 export async function POST(request: NextRequest) {
     try {

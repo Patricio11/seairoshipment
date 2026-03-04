@@ -125,6 +125,31 @@ export interface CostBreakdown {
     hasDestinationRates: boolean;
 }
 
+export interface ClientBooking {
+    id: string;
+    bookingRef: string;
+    status: "PENDING" | "DEPOSIT_PAID" | "CONFIRMED" | "SAILING" | "DELIVERED" | "CANCELLED";
+    palletCount: number;
+    commodityName: string | null;
+    temperature: string | null;
+    consigneeName: string | null;
+    consigneeAddress: string | null;
+    vessel: string;
+    voyageNumber: string | null;
+    route: string;
+    routeLabel: string;
+    containerType: "20FT" | "40FT";
+    etd: string | null;
+    eta: string | null;
+    containerStatus: string;
+    depositStatus: string | null;
+    balanceStatus: string | null;
+    depositAmount: string | null;
+    balanceAmount: string | null;
+    totalAmount: string | null;
+    createdAt: string;
+}
+
 export interface Invoice {
     id: string;
     type: "DEPOSIT" | "BALANCE";

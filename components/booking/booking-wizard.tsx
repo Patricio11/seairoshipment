@@ -9,6 +9,7 @@ import { StepCostBreakdown } from "./step-cost-breakdown"
 import { Step3Docs } from "./step-3-docs"
 import { toast } from "sonner"
 import type { BookingFormData, CostBreakdown } from "@/types"
+import { bookingModalStore } from "@/hooks/use-booking-modal"
 
 const STEP_LABELS = ["Cargo & Route", "Cost & Payment", "Confirm Booking"]
 const TOTAL_STEPS = 3
@@ -105,6 +106,7 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
                 duration: 5000,
                 className: "text-base p-4",
             })
+            bookingModalStore.triggerRefresh()
             onSuccess?.()
         } catch {
             toast.error("Failed to submit booking. Please try again.")

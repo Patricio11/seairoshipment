@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -17,104 +18,121 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { ArrowRight, MoreHorizontal } from "lucide-react"
+import { ArrowRight, Loader2, Ship } from "lucide-react"
+import Link from "next/link"
+import type { ClientBooking } from "@/types"
 
-const shipments = [
-    {
-        ref: "REF-2024-001",
-        route: "CPT → LND",
-        vessel: "MSC Orchestra",
-        eta: "Nov 14, 2024",
-        status: "Sailing",
-        pallets: 20,
-    },
-    {
-        ref: "REF-2024-003",
-        route: "CPT → ASH",
-        vessel: "Maersk Vallvik",
-        eta: "Nov 18, 2024",
-        status: "Booked",
-        pallets: 12,
-    },
-    {
-        ref: "REF-2024-008",
-        route: "CPT → RTM",
-        vessel: "Santa Rita",
-        eta: "Nov 22, 2024",
-        status: "Inspection",
-        pallets: 18,
-    },
-    {
-        ref: "REF-2024-012",
-        route: "CPT → LND",
-        vessel: "MSC Opera",
-        eta: "Nov 29, 2024",
-        status: "Pending Docs",
-        pallets: 5,
-    },
-]
+const STATUS_BADGES: Record<string, { label: string; className: string }> = {
+    PENDING: { label: "Pending", className: "border-slate-300 text-slate-500" },
+    DEPOSIT_PAID: { label: "Deposit Paid", className: "bg-blue-100 text-blue-700 hover:bg-blue-200 border-0" },
+    CONFIRMED: { label: "Confirmed", className: "border-slate-300 text-slate-500" },
+    SAILING: { label: "Sailing", className: "bg-blue-100 text-blue-700 hover:bg-blue-200 border-0" },
+    DELIVERED: { label: "Delivered", className: "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-0" },
+    CANCELLED: { label: "Cancelled", className: "bg-red-100 text-red-700 hover:bg-red-200 border-0" },
+}
+
+function formatDate(dateStr: string | null) {
+    if (!dateStr) return "TBD"
+    return new Date(dateStr).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" })
+}
 
 export function RecentShipments() {
+    const [bookings, setBookings] = useState<ClientBooking[]>([])
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        let cancelled = false
+        const timeout = setTimeout(async () => {
+            try {
+                const res = await fetch("/api/bookings")
+                if (res.ok && !cancelled) {
+                    const data = await res.json()
+                    setBookings(data.slice(0, 4))
+                }
+            } catch {
+                // silently fail
+            } finally {
+                if (!cancelled) setLoading(false)
+            }
+        }, 0)
+        return () => { cancelled = true; clearTimeout(timeout) }
+    }, [])
+
+    const activeCount = bookings.length
+
     return (
         <Card className="col-span-1 md:col-span-2 lg:col-span-3 border-slate-200/50 dark:border-slate-800/50">
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                     <CardTitle className="text-lg font-medium">Recent Shipments</CardTitle>
-                    <CardDescription>You have 14 active shipments in transit.</CardDescription>
+                    <CardDescription>
+                        {loading ? "Loading shipments..." : `You have ${activeCount} recent booking${activeCount !== 1 ? "s" : ""}.`}
+                    </CardDescription>
                 </div>
-                <Button variant="outline" size="sm" className="hidden sm:flex">
-                    View All
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                <Button variant="outline" size="sm" className="hidden sm:flex" asChild>
+                    <Link href="/dashboard/bookings">
+                        View All
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
                 </Button>
             </CardHeader>
             <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-[100px]">Reference</TableHead>
-                            <TableHead>Route</TableHead>
-                            <TableHead className="hidden md:table-cell">Vessel</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="hidden md:table-cell">ETA</TableHead>
-                            <TableHead className="text-right">Action</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {shipments.map((shipment) => (
-                            <TableRow key={shipment.ref}>
-                                <TableCell className="font-medium text-brand-blue">{shipment.ref}</TableCell>
-                                <TableCell>{shipment.route}</TableCell>
-                                <TableCell className="hidden md:table-cell text-muted-foreground">{shipment.vessel}</TableCell>
-                                <TableCell>
-                                    {shipment.status === "Sailing" && (
-                                        <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-0 flex w-fit items-center gap-1">
-                                            <span className="relative flex h-2 w-2">
-                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-                                            </span>
-                                            Sailing
-                                        </Badge>
-                                    )}
-                                    {shipment.status === "Booked" && (
-                                        <Badge variant="outline" className="border-slate-300 text-slate-500">Booked</Badge>
-                                    )}
-                                    {shipment.status === "Inspection" && (
-                                        <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-0">Inspection</Badge>
-                                    )}
-                                    {shipment.status === "Pending Docs" && (
-                                        <Badge variant="destructive" className="bg-red-100 text-red-700 hover:bg-red-200 border-0">Action Req</Badge>
-                                    )}
-                                </TableCell>
-                                <TableCell className="hidden md:table-cell">{shipment.eta}</TableCell>
-                                <TableCell className="text-right">
-                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                </TableCell>
+                {loading ? (
+                    <div className="flex items-center justify-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                ) : bookings.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 gap-2 text-muted-foreground">
+                        <Ship className="h-8 w-8" />
+                        <p className="text-sm">No bookings yet</p>
+                    </div>
+                ) : (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[100px]">Reference</TableHead>
+                                <TableHead>Route</TableHead>
+                                <TableHead className="hidden md:table-cell">Vessel</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="hidden md:table-cell">ETD</TableHead>
+                                <TableHead className="text-right">Pallets</TableHead>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                        </TableHeader>
+                        <TableBody>
+                            {bookings.map((booking) => {
+                                const badge = STATUS_BADGES[booking.status] || STATUS_BADGES.PENDING
+                                const routeParts = booking.routeLabel.includes("→")
+                                    ? booking.routeLabel.split("→").map(s => s.trim())
+                                    : [booking.routeLabel, ""]
+
+                                return (
+                                    <TableRow key={booking.id}>
+                                        <TableCell className="font-medium text-brand-blue">{booking.bookingRef}</TableCell>
+                                        <TableCell>{routeParts[0]} → {routeParts[1]}</TableCell>
+                                        <TableCell className="hidden md:table-cell text-muted-foreground">{booking.vessel}</TableCell>
+                                        <TableCell>
+                                            {booking.status === "SAILING" ? (
+                                                <Badge variant="secondary" className={badge.className}>
+                                                    <span className="relative flex h-2 w-2 mr-1">
+                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+                                                    </span>
+                                                    {badge.label}
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="outline" className={badge.className}>
+                                                    {badge.label}
+                                                </Badge>
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="hidden md:table-cell">{formatDate(booking.etd)}</TableCell>
+                                        <TableCell className="text-right font-medium">{booking.palletCount}</TableCell>
+                                    </TableRow>
+                                )
+                            })}
+                        </TableBody>
+                    </Table>
+                )}
             </CardContent>
         </Card>
     )
