@@ -32,6 +32,7 @@ export const invoices = pgTable("invoices", {
     percentage: integer("percentage").notNull(),
     amountZAR: numeric("amount_zar").notNull(),
     poNumber: text("po_number"),
+    reminderSentAt: timestamp("reminder_sent_at"),
     dueDate: timestamp("due_date").notNull(),
     paidAt: timestamp("paid_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),

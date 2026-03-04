@@ -4,6 +4,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
     "CONTAINER_THRESHOLD",
     "BOOKING_CREATED",
     "DOCUMENT_UPLOADED",
+    "PAYMENT_REMINDER",
 ]);
 
 export const adminNotifications = pgTable("admin_notifications", {

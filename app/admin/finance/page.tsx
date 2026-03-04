@@ -9,8 +9,8 @@ export default function FinancePage() {
                     <DollarSign className="h-6 w-6 text-emerald-500" />
                 </div>
                 <div>
-                    <h1 className="text-3xl font-black text-white tracking-tight">Financial Overview</h1>
-                    <p className="text-slate-500">Revenue tracking, invoicing, and exchange rates.</p>
+                    <h1 className="text-3xl font-black text-white tracking-tight">Finance Management</h1>
+                    <p className="text-slate-500">Invoice tracking, payment management, and collection oversight.</p>
                 </div>
             </div>
 

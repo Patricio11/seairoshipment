@@ -14,7 +14,6 @@ export async function GET() {
         const isAdmin = (session.user as { role?: string }).role === "admin";
 
         if (isAdmin) {
-            // Admin gets all invoices with company names
             const results = await db
                 .select({
                     id: invoices.id,
@@ -30,6 +29,7 @@ export async function GET() {
                     percentage: invoices.percentage,
                     amountZAR: invoices.amountZAR,
                     poNumber: invoices.poNumber,
+                    reminderSentAt: invoices.reminderSentAt,
                     dueDate: invoices.dueDate,
                     paidAt: invoices.paidAt,
                     createdAt: invoices.createdAt,
@@ -40,11 +40,10 @@ export async function GET() {
                 .from(invoices)
                 .leftJoin(user, eq(invoices.userId, user.id))
                 .orderBy(desc(invoices.createdAt))
-                .limit(100);
+                .limit(200);
 
             return NextResponse.json(results);
         } else {
-            // Client gets their own invoices
             const results = await db
                 .select({
                     id: invoices.id,
@@ -60,6 +59,7 @@ export async function GET() {
                     percentage: invoices.percentage,
                     amountZAR: invoices.amountZAR,
                     poNumber: invoices.poNumber,
+                    reminderSentAt: invoices.reminderSentAt,
                     dueDate: invoices.dueDate,
                     paidAt: invoices.paidAt,
                     createdAt: invoices.createdAt,
@@ -93,11 +93,30 @@ export async function PATCH(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { id, status, paidAt } = body;
+        const { id, status, paidAt, action } = body;
 
-        if (!id || !status) {
+        if (!id) {
+            return NextResponse.json({ error: "id is required" }, { status: 400 });
+        }
+
+        // Handle send reminder action
+        if (action === "SEND_REMINDER") {
+            const [updated] = await db
+                .update(invoices)
+                .set({ reminderSentAt: new Date(), updatedAt: new Date() })
+                .where(eq(invoices.id, id))
+                .returning();
+
+            if (!updated) {
+                return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
+            }
+            return NextResponse.json(updated);
+        }
+
+        // Handle status updates
+        if (!status) {
             return NextResponse.json(
-                { error: "id and status are required" },
+                { error: "status is required for status updates" },
                 { status: 400 }
             );
         }

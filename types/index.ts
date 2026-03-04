@@ -139,6 +139,7 @@ export interface Invoice {
     percentage: number;
     amountZAR: number;
     poNumber?: string;
+    reminderSentAt?: string;
     dueDate: string;
     paidAt: string | null;
     createdAt: string;
