@@ -116,6 +116,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(created, { status: 201 });
     } catch (error: unknown) {
         console.error("Ocean freight create error:", error);
-        return NextResponse.json({ error: "Failed to create ocean freight rate" }, { status: 500 });
+        const message = error instanceof Error ? error.message : "Failed to create ocean freight rate";
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }

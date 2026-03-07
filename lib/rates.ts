@@ -9,54 +9,6 @@ import {
 } from "@/lib/db/schema";
 import { eq, and, asc } from "drizzle-orm";
 
-// Map booking form UN/LOCODE → origin short IDs used in rate tables
-const ORIGIN_MAP: Record<string, string> = {
-    ZACPT: "cpt",
-    ZADUR: "dur",
-};
-
-// Map booking form UN/LOCODE → ocean freight destination port codes
-const DESTINATION_OCEAN_MAP: Record<string, string> = {
-    GBLND: "GBLON",
-    NLRTM: "NLRTM",
-    SGSIN: "SGSIN",
-    IEDUB: "IEDUB",
-    ITGOA: "ITGOA",
-    FRLEH: "FRLEH",
-    PTLEI: "PTLEI",
-    BEANR: "BEANR",
-    DEBRV: "DEBRV",
-    ESVGO: "ESVGO",
-    CYLMS: "CYLMS",
-    ESLPA: "ESLPA",
-};
-
-// Map booking form UN/LOCODE → destination charge IDs
-const DESTINATION_CHARGE_MAP: Record<string, string> = {
-    GBLND: "lon",
-    IEDUB: "dub",
-    ITGOA: "goa",
-    FRLEH: "leh",
-};
-
-// Friendly names for display (fallback if not found in DB)
-const PORT_NAMES: Record<string, string> = {
-    ZACPT: "Cape Town",
-    ZADUR: "Durban",
-    GBLND: "London Gateway",
-    NLRTM: "Rotterdam",
-    SGSIN: "Singapore",
-    IEDUB: "Dublin",
-    ITGOA: "Genoa",
-    FRLEH: "Le Havre",
-    PTLEI: "Leixões",
-    BEANR: "Antwerp",
-    DEBRV: "Bremerhaven",
-    ESVGO: "Vigo",
-    CYLMS: "Limassol",
-    ESLPA: "Las Palmas",
-};
-
 export interface CostBreakdownResult {
     originPerPallet: number;
     oceanPerPallet: number;
@@ -77,19 +29,26 @@ const PALLETS_PER_CONTAINER = 20;
 const DEPOSIT_PERCENTAGE = 60;
 const BALANCE_PERCENTAGE = 40;
 
+/**
+ * Derive short IDs from UN/LOCODE codes — matches what the admin forms save.
+ * e.g. "ZACPT" → "cpt", "GBLND" → "lnd", "IEDUB" → "dub"
+ */
+function deriveShortId(code: string): string {
+    return code.toLowerCase().slice(2);
+}
+
 export async function calculateQuote(
     originCode: string,
     destinationCode: string,
     palletCount: number,
     salesRateTypeId: string = "srs"
 ): Promise<CostBreakdownResult> {
-    const originId = ORIGIN_MAP[originCode];
-    const oceanPortCode = DESTINATION_OCEAN_MAP[destinationCode];
-    const destChargeId = DESTINATION_CHARGE_MAP[destinationCode];
+    // Derive IDs the same way the admin forms do
+    const originId = deriveShortId(originCode);       // e.g. "ZACPT" → "cpt"
 
-    // Try to resolve names from DB locations
-    let originName = PORT_NAMES[originCode] || originCode;
-    let destinationName = PORT_NAMES[destinationCode] || destinationCode;
+    // Resolve friendly names from DB locations
+    let originName = originCode;
+    let destinationName = destinationCode;
     try {
         const [originLoc] = await db
             .select({ name: locations.name })
@@ -105,13 +64,13 @@ export async function calculateQuote(
             .limit(1);
         if (destLoc) destinationName = destLoc.name;
     } catch {
-        // Use fallback names
+        // Use fallback codes as names
     }
 
-    // 1. Origin charges — find active 40ft HC Reefer SRS rate from DB
+    // 1. Origin charges — find active rate by originId (derived short code)
     let originPerPallet = 0;
     let hasOriginRates = false;
-    if (originId) {
+    {
         const [originCharge] = await db
             .select({ id: originCharges.id })
             .from(originCharges)
@@ -148,16 +107,16 @@ export async function calculateQuote(
         }
     }
 
-    // 2. Ocean freight — find active rate for destination from DB
+    // 2. Ocean freight — look up by destinationPortCode (the location code saved by the form)
     let oceanPerPallet = 0;
     let hasOceanRates = false;
-    if (oceanPortCode) {
+    {
         const [oceanRate] = await db
             .select({ totalZAR: oceanFreightRates.totalZAR })
             .from(oceanFreightRates)
             .where(
                 and(
-                    eq(oceanFreightRates.destinationPortCode, oceanPortCode),
+                    eq(oceanFreightRates.destinationPortCode, destinationCode),
                     eq(oceanFreightRates.containerId, "40ft-reefer-hc"),
                     eq(oceanFreightRates.salesRateTypeId, salesRateTypeId),
                     eq(oceanFreightRates.active, true)
@@ -171,16 +130,16 @@ export async function calculateQuote(
         }
     }
 
-    // 3. Destination charges — find active rate from DB
+    // 3. Destination charges — look up by destinationPortCode (the location code saved by the form)
     let destinationPerPallet = 0;
     let hasDestinationRates = false;
-    if (destChargeId) {
+    {
         const [destCharge] = await db
             .select({ id: destinationCharges.id })
             .from(destinationCharges)
             .where(
                 and(
-                    eq(destinationCharges.destinationId, destChargeId),
+                    eq(destinationCharges.destinationPortCode, destinationCode),
                     eq(destinationCharges.containerId, "40ft-reefer-hc"),
                     eq(destinationCharges.salesRateTypeId, salesRateTypeId),
                     eq(destinationCharges.active, true)

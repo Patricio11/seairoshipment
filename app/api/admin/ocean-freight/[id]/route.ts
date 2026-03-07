@@ -61,7 +61,8 @@ export async function PUT(
         return NextResponse.json(updated);
     } catch (error: unknown) {
         console.error("Ocean freight update error:", error);
-        return NextResponse.json({ error: "Failed to update ocean freight rate" }, { status: 500 });
+        const message = error instanceof Error ? error.message : "Failed to update ocean freight rate";
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }
 

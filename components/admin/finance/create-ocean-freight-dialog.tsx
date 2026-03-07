@@ -106,9 +106,18 @@ export function CreateOceanFreightDialog({
 
     const buildInitialForm = useCallback((): CreateOceanFreightForm => {
         if (editData) {
+            // Resolve destinationId from locations by matching portCode or name
+            const destLoc = locations.find(l =>
+                l.code === editData.destinationPortCode ||
+                l.name === editData.destinationPort
+            );
+            // Resolve origin location by matching name
+            const originLoc = locations.find(l =>
+                l.type === "ORIGIN" && l.name === editData.origin
+            );
             return {
-                origin: editData.origin,
-                destinationId: "",
+                origin: originLoc ? originLoc.name : editData.origin,
+                destinationId: destLoc?.id || "",
                 destinationCountry: editData.destinationCountry,
                 destinationPort: editData.destinationPort,
                 destinationPortCode: editData.destinationPortCode,
@@ -139,16 +148,16 @@ export function CreateOceanFreightDialog({
             rcgUSD: 0,
             exchangeRate: 15.9,
         }
-    }, [editData, defaultCountry, defaultDestinationPort])
+    }, [editData, defaultCountry, defaultDestinationPort, locations])
 
     const [formData, setFormData] = useState<CreateOceanFreightForm>(buildInitialForm)
 
-    // When controlled dialog opens with edit data, populate the form
+    // When controlled dialog opens with edit data, or when locations finish loading, populate the form
     useEffect(() => {
         if (isControlled && controlledOpen && editData) {
             setFormData(buildInitialForm())
         }
-    }, [isControlled, controlledOpen, editData, buildInitialForm])
+    }, [isControlled, controlledOpen, editData, buildInitialForm, locations])
 
     const handleOpenChange = useCallback((isOpen: boolean) => {
         setOpen(isOpen)

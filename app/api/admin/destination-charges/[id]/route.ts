@@ -109,7 +109,8 @@ export async function PUT(
         return NextResponse.json(updated);
     } catch (error: unknown) {
         console.error("Destination charge update error:", error);
-        return NextResponse.json({ error: "Failed to update destination charge" }, { status: 500 });
+        const message = error instanceof Error ? error.message : "Failed to update destination charge";
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }
 
