@@ -12,16 +12,21 @@ export async function POST(request: NextRequest) {
 
         const body = await request.json();
         const {
-            originPort,
-            destinationPort,
+            portOfLoadValue,
+            portOfLoadCity,
+            portOfDischargeValue,
+            portOfDischargeCity,
+            finalDestinationValue,
             finalDestinationCity,
+            originCountry,
+            destinationCountry,
             etd,
             eta,
             voyageNumber,
             containers,
         } = body;
 
-        if (!originPort || !destinationPort || !etd || !containers?.length) {
+        if (!portOfLoadValue || !portOfDischargeValue || !etd || !containers?.length) {
             return NextResponse.json(
                 { error: "Missing required booking fields" },
                 { status: 400 }
@@ -29,9 +34,14 @@ export async function POST(request: NextRequest) {
         }
 
         const result = await createMetaShipBooking({
-            originPort,
-            destinationPort,
-            finalDestinationCity: finalDestinationCity || "",
+            portOfLoadValue,
+            portOfLoadCity: portOfLoadCity || "",
+            portOfDischargeValue,
+            portOfDischargeCity: portOfDischargeCity || "",
+            finalDestinationValue: finalDestinationValue || portOfDischargeValue,
+            finalDestinationCity: finalDestinationCity || portOfDischargeCity || "",
+            originCountry: originCountry || portOfLoadValue.slice(0, 2),
+            destinationCountry: destinationCountry || portOfDischargeValue.slice(0, 2),
             etd,
             eta: eta || "",
             voyageNumber: voyageNumber || "",

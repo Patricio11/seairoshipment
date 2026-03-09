@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/server";
 import { db } from "@/lib/db";
-import { containers, palletAllocations, adminNotifications } from "@/lib/db/schema";
+import { containers, palletAllocations, adminNotifications, locations } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { createMetaShipBooking } from "@/lib/metaship";
 import { nanoid } from "nanoid";
@@ -47,8 +47,25 @@ export async function POST(
             );
         }
 
-        // Extract origin/destination from route
-        const [originPort, destinationPort] = container.route.split("-");
+        // Extract origin/destination UN/LOCODE from route (e.g. "ZACPT-NLRTM")
+        const [originCode, destinationCode] = container.route.split("-");
+
+        // Resolve location names from DB
+        const [originLoc] = await db
+            .select({ name: locations.name, country: locations.country })
+            .from(locations)
+            .where(eq(locations.code, originCode))
+            .limit(1);
+
+        const [destLoc] = await db
+            .select({ name: locations.name, country: locations.country })
+            .from(locations)
+            .where(eq(locations.code, destinationCode))
+            .limit(1);
+
+        // Derive ISO 2-letter country codes from UN/LOCODE (first 2 chars)
+        const originCountry = originCode.slice(0, 2);
+        const destinationCountry = destinationCode.slice(0, 2);
 
         // Map each allocation to a product entry in the MetaShip container
         const products = allocations.map((alloc) => ({
@@ -64,9 +81,14 @@ export async function POST(
 
         // Create MetaShip booking
         const result = await createMetaShipBooking({
-            originPort,
-            destinationPort,
-            finalDestinationCity: destinationPort, // Will be resolved by MetaShip
+            portOfLoadValue: originCode,
+            portOfLoadCity: originLoc?.name || originCode,
+            portOfDischargeValue: destinationCode,
+            portOfDischargeCity: destLoc?.name || destinationCode,
+            finalDestinationValue: destinationCode,
+            finalDestinationCity: destLoc?.name || destinationCode,
+            originCountry,
+            destinationCountry,
             etd: container.etd?.toISOString() || new Date().toISOString(),
             eta: container.eta?.toISOString() || "",
             voyageNumber: container.voyageNumber || "",

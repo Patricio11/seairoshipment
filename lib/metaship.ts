@@ -99,11 +99,17 @@ export async function metaShipPost<T = unknown>(
 
 /**
  * Create a booking in MetaShip with the consolidated container data.
+ * Endpoint: POST /public/v2/booking (singular)
  */
 export async function createMetaShipBooking(payload: {
-    originPort: string;
-    destinationPort: string;
-    finalDestinationCity: string;
+    portOfLoadValue: string;       // UN/LOCODE e.g. "ZACPT"
+    portOfLoadCity: string;        // e.g. "Cape Town"
+    portOfDischargeValue: string;  // UN/LOCODE e.g. "NLRTM"
+    portOfDischargeCity: string;   // e.g. "Rotterdam"
+    finalDestinationValue: string; // UN/LOCODE e.g. "NLRTM"
+    finalDestinationCity: string;  // e.g. "Rotterdam"
+    originCountry: string;         // ISO 2-letter e.g. "ZA"
+    destinationCountry: string;    // ISO 2-letter e.g. "NL"
     etd: string;
     eta: string;
     voyageNumber: string;
@@ -121,12 +127,17 @@ export async function createMetaShipBooking(payload: {
     return metaShipPost<{
         message: string;
         data: { orderNo: string; systemReference: string };
-    }>("/public/v2/bookings", {
+    }>("/public/v2/booking", {
         movementType: "EXPORT",
         serviceType: "FCL",
         modeOfTransport: "OCEAN",
-        originPort: payload.originPort,
-        destinationPort: payload.destinationPort,
+        originCountry: payload.originCountry,
+        destinationCountry: payload.destinationCountry,
+        portOfLoadValue: payload.portOfLoadValue,
+        portOfLoadCity: payload.portOfLoadCity,
+        portOfDischargeValue: payload.portOfDischargeValue,
+        portOfDischargeCity: payload.portOfDischargeCity,
+        finalDestinationValue: payload.finalDestinationValue,
         finalDestinationCity: payload.finalDestinationCity,
         etd: payload.etd,
         eta: payload.eta,
