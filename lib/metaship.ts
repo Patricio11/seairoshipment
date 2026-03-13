@@ -97,11 +97,7 @@ export async function metaShipPost<T = unknown>(
     return res.json();
 }
 
-/**
- * Create a booking in MetaShip with the consolidated container data.
- * Endpoint: POST /public/v2/booking (singular)
- */
-export async function createMetaShipBooking(payload: {
+export interface MetaShipBookingPayload {
     portOfLoadValue: string;       // UN/LOCODE e.g. "ZACPT"
     portOfLoadCity: string;        // e.g. "Cape Town"
     portOfDischargeValue: string;  // UN/LOCODE e.g. "NLRTM"
@@ -113,17 +109,38 @@ export async function createMetaShipBooking(payload: {
     etd: string;
     eta: string;
     voyageNumber: string;
+    regimeCode?: string;           // Temperature regime e.g. "EC1"
+    incoTerm?: string;             // e.g. "EXW", "FOB"
+    carrierReferenceNumber?: string;
+    contractNumber?: string;
+    carrierScac?: string;
+    vesselIMO?: string;
+    isHazardous?: boolean;
     containers: Array<{
         containerTypeCode: string;
+        containerNo?: string;
+        billOfLadingNo?: string;
+        sealNo?: string;
         products: Array<{
             productId: number;
             nettWeight: number;
             grossWeight: number;
             pallets: number;
             quantity: number;
+            volume?: number;
+            batchNumber?: string;
+            industrial?: boolean;
+            organic?: boolean;
+            hazardous?: boolean;
         }>;
     }>;
-}) {
+}
+
+/**
+ * Create a booking in MetaShip with the consolidated container data.
+ * Endpoint: POST /public/v2/booking (singular)
+ */
+export async function createMetaShipBooking(payload: MetaShipBookingPayload) {
     return metaShipPost<{
         message: string;
         data: { orderNo: string; systemReference: string };
@@ -142,6 +159,19 @@ export async function createMetaShipBooking(payload: {
         etd: payload.etd,
         eta: payload.eta,
         voyageNumber: payload.voyageNumber,
-        containers: payload.containers,
+        regimeCode: payload.regimeCode || "",
+        incoTerm: payload.incoTerm || "EXW",
+        carrierReferenceNumber: payload.carrierReferenceNumber || "",
+        contractNumber: payload.contractNumber || "",
+        carrierScac: payload.carrierScac || "",
+        vesselIMO: payload.vesselIMO || "",
+        isHazardous: payload.isHazardous || false,
+        containers: payload.containers.map(c => ({
+            containerNo: c.containerNo || "",
+            billOfLadingNo: c.billOfLadingNo || "",
+            sealNo: c.sealNo || "",
+            containerTypeCode: c.containerTypeCode,
+            products: c.products,
+        })),
     });
 }

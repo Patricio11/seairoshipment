@@ -15,6 +15,13 @@ import {
     Pencil,
     Trash2,
     Search,
+    Calendar,
+    Copy,
+    Check,
+    Eye,
+    Thermometer,
+    Weight,
+    MapPin,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -141,6 +148,15 @@ export function FleetScheduler() {
     // MetaShip booking dialog
     const [bookingDialog, setBookingDialog] = useState<ContainerData | null>(null)
     const [creatingBooking, setCreatingBooking] = useState(false)
+    const [copiedId, setCopiedId] = useState<string | null>(null)
+    const [detailDialog, setDetailDialog] = useState<ContainerData | null>(null)
+
+    const copyToClipboard = (text: string, id: string) => {
+        navigator.clipboard.writeText(text)
+        setCopiedId(id)
+        toast.success("Copied to clipboard")
+        setTimeout(() => setCopiedId(null), 2000)
+    }
 
     // Locations for route selection
     const [originLocations, setOriginLocations] = useState<LocationOption[]>([])
@@ -180,7 +196,9 @@ export function FleetScheduler() {
     const filteredContainers = containerData.filter(c =>
         c.route.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.vessel.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.id.toLowerCase().includes(searchTerm.toLowerCase())
+        c.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (c.metashipOrderNo && c.metashipOrderNo.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (c.voyageNumber && c.voyageNumber.toLowerCase().includes(searchTerm.toLowerCase()))
     )
 
     const handleOpenCreate = () => {
@@ -370,11 +388,11 @@ export function FleetScheduler() {
                                                 {container.voyageNumber && ` • V/${container.voyageNumber}`}
                                             </p>
                                             {(container.etd || container.eta) && (
-                                                <p className="text-slate-600 text-xs font-mono mt-0.5">
-                                                    {container.etd && `ETD: ${new Date(container.etd).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`}
-                                                    {container.etd && container.eta && " — "}
-                                                    {container.eta && `ETA: ${new Date(container.eta).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`}
-                                                </p>
+                                                <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
+                                                    <Calendar className="h-3 w-3" />
+                                                    {container.etd && <span>ETD: <span className="text-slate-300">{new Date(container.etd).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</span></span>}
+                                                    {container.eta && <span>ETA: <span className="text-slate-300">{new Date(container.eta).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</span></span>}
+                                                </div>
                                             )}
                                         </div>
                                     </div>
@@ -400,10 +418,28 @@ export function FleetScheduler() {
                                         )}
 
                                         {container.metashipOrderNo && (
-                                            <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 gap-1">
-                                                <ExternalLink className="h-3 w-3" />
-                                                Order #{container.metashipOrderNo}
-                                            </Badge>
+                                            <div className="flex items-center gap-2">
+                                                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-1.5 flex items-center gap-2">
+                                                    <ExternalLink className="h-3.5 w-3.5 text-emerald-400" />
+                                                    <div className="flex flex-col">
+                                                        <span className="text-emerald-400 font-black text-sm">Order #{container.metashipOrderNo}</span>
+                                                        {container.metashipReference && (
+                                                            <span className="text-emerald-400/60 text-[10px] font-mono">{container.metashipReference}</span>
+                                                        )}
+                                                    </div>
+                                                    <button
+                                                        onClick={() => copyToClipboard(container.metashipOrderNo!, `order-${container.id}`)}
+                                                        className="ml-1 p-1 rounded hover:bg-emerald-500/20 transition-colors"
+                                                        title="Copy order number"
+                                                    >
+                                                        {copiedId === `order-${container.id}` ? (
+                                                            <Check className="h-3.5 w-3.5 text-emerald-400" />
+                                                        ) : (
+                                                            <Copy className="h-3.5 w-3.5 text-emerald-400/60" />
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            </div>
                                         )}
 
                                         <DropdownMenu>
@@ -413,6 +449,14 @@ export function FleetScheduler() {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent className="bg-slate-950 border-slate-800 text-white">
+                                                {container.metashipOrderNo && (
+                                                    <DropdownMenuItem
+                                                        className="focus:bg-slate-900 focus:text-white cursor-pointer gap-2"
+                                                        onClick={() => setDetailDialog(container)}
+                                                    >
+                                                        <Eye className="h-4 w-4" /> View Booking Details
+                                                    </DropdownMenuItem>
+                                                )}
                                                 <DropdownMenuItem
                                                     className="focus:bg-slate-900 focus:text-white cursor-pointer gap-2"
                                                     onClick={() => handleOpenEdit(container)}
@@ -462,6 +506,7 @@ export function FleetScheduler() {
                                                     <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-[10px]">Product</TableHead>
                                                     <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-[10px] text-center">Pallets</TableHead>
                                                     <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-[10px] text-center">Weight (kg)</TableHead>
+                                                    <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-[10px] text-center">Temp</TableHead>
                                                     <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-[10px] text-center">Status</TableHead>
                                                 </TableRow>
                                             </TableHeader>
@@ -481,6 +526,15 @@ export function FleetScheduler() {
                                                         <TableCell className="text-center text-white font-black">{alloc.allocation.palletCount}</TableCell>
                                                         <TableCell className="text-center text-xs text-slate-400">
                                                             {alloc.allocation.nettWeight ? `${alloc.allocation.nettWeight}N` : "—"} / {alloc.allocation.grossWeight ? `${alloc.allocation.grossWeight}G` : "—"}
+                                                        </TableCell>
+                                                        <TableCell className="text-center text-xs">
+                                                            {alloc.allocation.temperature === "frozen" ? (
+                                                                <span className="text-blue-400">-18°C</span>
+                                                            ) : alloc.allocation.temperature === "chilled" ? (
+                                                                <span className="text-cyan-400">+5°C</span>
+                                                            ) : (
+                                                                <span className="text-slate-500">—</span>
+                                                            )}
                                                         </TableCell>
                                                         <TableCell className="text-center">
                                                             <Badge className={
@@ -660,6 +714,236 @@ export function FleetScheduler() {
                 </DialogContent>
             </Dialog>
 
+            {/* Booking Detail View Dialog */}
+            <Dialog open={!!detailDialog} onOpenChange={() => setDetailDialog(null)}>
+                <DialogContent
+                    className="bg-slate-950 border-slate-800 text-white max-w-2xl max-h-[85vh] overflow-y-auto"
+                    onInteractOutside={(e) => e.preventDefault()}
+                    onEscapeKeyDown={(e) => e.preventDefault()}
+                >
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-black flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+                                <Ship className="h-5 w-5" />
+                            </div>
+                            Booking Details
+                        </DialogTitle>
+                        <DialogDescription className="text-slate-400">
+                            Full booking information for container {detailDialog?.id}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {detailDialog && (
+                        <div className="space-y-5 py-4">
+                            {/* MetaShip Reference */}
+                            {detailDialog.metashipOrderNo && (
+                                <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4">
+                                    <p className="text-[10px] font-bold uppercase text-emerald-400/60 mb-2">MetaShip Booking</p>
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-emerald-400 font-black text-lg">Order #{detailDialog.metashipOrderNo}</p>
+                                            {detailDialog.metashipReference && (
+                                                <p className="text-emerald-400/60 text-xs font-mono mt-0.5">{detailDialog.metashipReference}</p>
+                                            )}
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => copyToClipboard(detailDialog.metashipOrderNo!, "detail-order")}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors text-xs text-emerald-400 font-bold"
+                                            >
+                                                {copiedId === "detail-order" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                                                Copy Order #
+                                            </button>
+                                            {detailDialog.metashipReference && (
+                                                <button
+                                                    onClick={() => copyToClipboard(detailDialog.metashipReference!, "detail-ref")}
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors text-xs text-emerald-400 font-bold"
+                                                >
+                                                    {copiedId === "detail-ref" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                                                    Copy Ref
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Container & Route Info */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="bg-slate-900 rounded-lg p-3 border border-slate-800">
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 flex items-center gap-1"><MapPin className="h-3 w-3" /> Route</p>
+                                    <p className="text-white font-black text-lg mt-1">{detailDialog.route}</p>
+                                </div>
+                                <div className="bg-slate-900 rounded-lg p-3 border border-slate-800">
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 flex items-center gap-1"><Ship className="h-3 w-3" /> Vessel</p>
+                                    <p className="text-white font-black mt-1">{detailDialog.vessel}</p>
+                                    {detailDialog.voyageNumber && (
+                                        <p className="text-slate-500 text-xs mt-0.5">Voyage: <span className="text-slate-300 font-mono">{detailDialog.voyageNumber}</span></p>
+                                    )}
+                                </div>
+                                <div className="bg-slate-900 rounded-lg p-3 border border-slate-800">
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 flex items-center gap-1"><Container className="h-3 w-3" /> Container</p>
+                                    <p className="text-white font-black mt-1">{detailDialog.type}</p>
+                                    <p className="text-slate-500 text-xs mt-0.5 font-mono">{detailDialog.id}</p>
+                                </div>
+                                <div className="bg-slate-900 rounded-lg p-3 border border-slate-800">
+                                    <p className="text-[10px] font-bold uppercase text-slate-500">Status</p>
+                                    <div className="mt-1">
+                                        <Badge className={STATUS_COLORS[detailDialog.status] || STATUS_COLORS.OPEN}>
+                                            {detailDialog.status.replace("_", " ")}
+                                        </Badge>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Dates */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="bg-slate-900 rounded-lg p-3 border border-slate-800">
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 flex items-center gap-1"><Calendar className="h-3 w-3" /> ETD (Departure)</p>
+                                    <p className="text-white font-bold mt-1">
+                                        {detailDialog.etd
+                                            ? new Date(detailDialog.etd).toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "long", year: "numeric" })
+                                            : "Not set"}
+                                    </p>
+                                </div>
+                                <div className="bg-slate-900 rounded-lg p-3 border border-slate-800">
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 flex items-center gap-1"><Calendar className="h-3 w-3" /> ETA (Arrival)</p>
+                                    <p className="text-white font-bold mt-1">
+                                        {detailDialog.eta
+                                            ? new Date(detailDialog.eta).toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "long", year: "numeric" })
+                                            : "Not set"}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Capacity Summary */}
+                            <div className="bg-slate-900 rounded-lg p-4 border border-slate-800">
+                                <p className="text-[10px] font-bold uppercase text-slate-500 mb-3 flex items-center gap-1"><Package className="h-3 w-3" /> Capacity</p>
+                                <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <span className={`text-3xl font-black ${detailDialog.totalPallets >= 15 ? "text-amber-400" : "text-white"}`}>{detailDialog.totalPallets}</span>
+                                        <span className="text-slate-500">/ {detailDialog.maxCapacity} pallets</span>
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="h-3 w-full bg-slate-800 rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full rounded-full transition-all ${detailDialog.totalPallets >= 15 ? "bg-amber-500" : "bg-blue-500"}`}
+                                                style={{ width: `${(detailDialog.totalPallets / detailDialog.maxCapacity) * 100}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                    <span className="text-sm font-bold text-slate-400">{Math.round((detailDialog.totalPallets / detailDialog.maxCapacity) * 100)}%</span>
+                                </div>
+                                {/* Temperature summary */}
+                                {(() => {
+                                    const temps = detailDialog.allocations.map(a => a.allocation.temperature).filter(Boolean)
+                                    const frozen = temps.filter(t => t === "frozen").length
+                                    const chilled = temps.filter(t => t === "chilled").length
+                                    if (frozen === 0 && chilled === 0) return null
+                                    return (
+                                        <div className="flex items-center gap-3 mt-3 pt-3 border-t border-slate-800">
+                                            <Thermometer className="h-3.5 w-3.5 text-slate-500" />
+                                            {frozen > 0 && <span className="text-xs text-blue-400 font-bold">{frozen} Frozen (-18°C)</span>}
+                                            {chilled > 0 && <span className="text-xs text-cyan-400 font-bold">{chilled} Chilled (+5°C)</span>}
+                                        </div>
+                                    )
+                                })()}
+                            </div>
+
+                            {/* Client Allocations */}
+                            {detailDialog.allocations.length > 0 && (
+                                <div>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 mb-2 flex items-center gap-1">
+                                        <Users className="h-3 w-3" /> Client Allocations ({detailDialog.allocations.length})
+                                    </p>
+                                    <div className="rounded-lg border border-slate-800 overflow-hidden">
+                                        <Table>
+                                            <TableHeader className="bg-slate-950">
+                                                <TableRow className="hover:bg-transparent border-slate-800">
+                                                    <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-[10px]">Client</TableHead>
+                                                    <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-[10px]">Account</TableHead>
+                                                    <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-[10px]">Product</TableHead>
+                                                    <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-[10px] text-center">Pallets</TableHead>
+                                                    <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-[10px] text-center">Nett (kg)</TableHead>
+                                                    <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-[10px] text-center">Gross (kg)</TableHead>
+                                                    <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-[10px] text-center">Temp</TableHead>
+                                                    <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-[10px]">Consignee</TableHead>
+                                                    <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-[10px] text-center">Status</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {detailDialog.allocations.map((alloc) => (
+                                                    <TableRow key={alloc.allocation.id} className="border-slate-800 hover:bg-slate-900/40">
+                                                        <TableCell>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-slate-300 font-medium text-xs">{alloc.userName || "—"}</span>
+                                                                {alloc.userEmail && <span className="text-[10px] text-slate-500">{alloc.userEmail}</span>}
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell className="font-mono text-xs text-slate-400">{alloc.accountNumber || "—"}</TableCell>
+                                                        <TableCell>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-xs text-white font-bold">{alloc.allocation.commodityName || "—"}</span>
+                                                                {alloc.allocation.hsCode && (
+                                                                    <span className="text-[10px] text-slate-500 font-mono">HS: {alloc.allocation.hsCode}</span>
+                                                                )}
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell className="text-center text-white font-black">{alloc.allocation.palletCount}</TableCell>
+                                                        <TableCell className="text-center text-xs text-slate-400">{alloc.allocation.nettWeight || "—"}</TableCell>
+                                                        <TableCell className="text-center text-xs text-slate-400">{alloc.allocation.grossWeight || "—"}</TableCell>
+                                                        <TableCell className="text-center text-xs">
+                                                            {alloc.allocation.temperature === "frozen" ? (
+                                                                <span className="text-blue-400 font-bold">-18°C</span>
+                                                            ) : alloc.allocation.temperature === "chilled" ? (
+                                                                <span className="text-cyan-400 font-bold">+5°C</span>
+                                                            ) : (
+                                                                <span className="text-slate-500">—</span>
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell className="text-xs text-slate-400">{alloc.allocation.consigneeName || "—"}</TableCell>
+                                                        <TableCell className="text-center">
+                                                            <Badge className={
+                                                                alloc.allocation.status === "CONFIRMED"
+                                                                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                                                    : "bg-slate-500/10 text-slate-400 border-slate-500/20"
+                                                            }>
+                                                                {alloc.allocation.status}
+                                                            </Badge>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                    {/* Totals row */}
+                                    <div className="flex items-center justify-between mt-2 px-3 py-2 bg-slate-900/50 rounded-lg border border-slate-800 text-xs">
+                                        <span className="text-slate-500 font-bold uppercase">Totals</span>
+                                        <div className="flex items-center gap-6">
+                                            <span className="text-white font-black">
+                                                {detailDialog.allocations.reduce((sum, a) => sum + a.allocation.palletCount, 0)} pallets
+                                            </span>
+                                            <span className="text-slate-400 flex items-center gap-1">
+                                                <Weight className="h-3 w-3" />
+                                                {detailDialog.allocations.reduce((sum, a) => sum + (parseFloat(a.allocation.nettWeight || "0")), 0).toLocaleString()}N
+                                                {" / "}
+                                                {detailDialog.allocations.reduce((sum, a) => sum + (parseFloat(a.allocation.grossWeight || "0")), 0).toLocaleString()}G kg
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => setDetailDialog(null)} className="text-slate-400">
+                            Close
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             {/* MetaShip Booking Confirmation Dialog */}
             <Dialog open={!!bookingDialog} onOpenChange={() => setBookingDialog(null)}>
                 <DialogContent className="bg-slate-950 border-slate-800 text-white max-w-lg">
@@ -680,6 +964,9 @@ export function FleetScheduler() {
                                 <div className="bg-slate-900 rounded-lg p-3 border border-slate-800">
                                     <p className="text-[10px] font-bold uppercase text-slate-500">Vessel</p>
                                     <p className="text-white font-black">{bookingDialog.vessel}</p>
+                                    {bookingDialog.voyageNumber && (
+                                        <p className="text-slate-500 text-[10px]">Voyage: {bookingDialog.voyageNumber}</p>
+                                    )}
                                 </div>
                                 <div className="bg-slate-900 rounded-lg p-3 border border-slate-800">
                                     <p className="text-[10px] font-bold uppercase text-slate-500">Total Pallets</p>
@@ -689,6 +976,18 @@ export function FleetScheduler() {
                                     <p className="text-[10px] font-bold uppercase text-slate-500">Clients</p>
                                     <p className="text-white font-black text-lg">{bookingDialog.allocations.length}</p>
                                 </div>
+                                {bookingDialog.etd && (
+                                    <div className="bg-slate-900 rounded-lg p-3 border border-slate-800">
+                                        <p className="text-[10px] font-bold uppercase text-slate-500">ETD</p>
+                                        <p className="text-white font-bold">{new Date(bookingDialog.etd).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</p>
+                                    </div>
+                                )}
+                                {bookingDialog.eta && (
+                                    <div className="bg-slate-900 rounded-lg p-3 border border-slate-800">
+                                        <p className="text-[10px] font-bold uppercase text-slate-500">ETA</p>
+                                        <p className="text-white font-bold">{new Date(bookingDialog.eta).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</p>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="bg-slate-900 rounded-lg border border-slate-800 p-3">
