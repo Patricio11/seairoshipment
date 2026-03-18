@@ -155,9 +155,21 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
     const [saving, setSaving] = useState(false)
 
     const handleSave = async () => {
+        if (items.length === 0) {
+            toast.error("Rate card must have at least one charge item")
+            return
+        }
         const hasEmptyNames = items.some(item => !item.chargeName.trim())
         if (hasEmptyNames) {
             toast.error("All charge items must have a name")
+            return
+        }
+        const hasZeroCost = items.some(item => {
+            const cost = item.chargeType === "PER_PALLET" ? (item.unitCost || 0) : (item.containerCost || 0)
+            return cost <= 0
+        })
+        if (hasZeroCost) {
+            toast.error("All charge items must have a cost greater than zero")
             return
         }
 

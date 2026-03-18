@@ -28,10 +28,19 @@ import {
     DropdownMenuTrigger,
     DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import { MoreVertical, Search, Filter, Eye, Copy, Archive, Edit } from "lucide-react"
+import { MoreVertical, Search, Filter, Eye, Trash2, Edit, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { CreateOriginChargeDialog } from "./create-origin-charge-dialog"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
+import { toast } from "sonner"
 
 interface OriginChargeData {
     id: string
@@ -73,22 +82,46 @@ export function OriginChargesList() {
     const [charges, setCharges] = useState<OriginChargeData[]>([])
     const [containerTypesList, setContainerTypesList] = useState<ContainerTypeData[]>([])
     const [originLocations, setOriginLocations] = useState<LocationData[]>([])
+    const [deleteDialog, setDeleteDialog] = useState<OriginChargeData | null>(null)
+    const [deleting, setDeleting] = useState(false)
+
+    const fetchCharges = async () => {
+        try {
+            const [chargesRes, containersRes, locationsRes] = await Promise.all([
+                fetch("/api/admin/origin-charges"),
+                fetch("/api/admin/container-types"),
+                fetch("/api/admin/locations?type=ORIGIN"),
+            ])
+            if (chargesRes.ok) setCharges(await chargesRes.json())
+            if (containersRes.ok) setContainerTypesList(await containersRes.json())
+            if (locationsRes.ok) setOriginLocations(await locationsRes.json())
+        } catch { /* silently fail */ }
+    }
 
     useEffect(() => {
-        const timeout = setTimeout(async () => {
-            try {
-                const [chargesRes, containersRes, locationsRes] = await Promise.all([
-                    fetch("/api/admin/origin-charges"),
-                    fetch("/api/admin/container-types"),
-                    fetch("/api/admin/locations?type=ORIGIN"),
-                ])
-                if (chargesRes.ok) setCharges(await chargesRes.json())
-                if (containersRes.ok) setContainerTypesList(await containersRes.json())
-                if (locationsRes.ok) setOriginLocations(await locationsRes.json())
-            } catch { /* silently fail */ }
-        }, 0)
+        const timeout = setTimeout(fetchCharges, 0)
         return () => clearTimeout(timeout)
     }, [])
+
+    const handleDelete = async () => {
+        if (!deleteDialog) return
+        setDeleting(true)
+        try {
+            const res = await fetch(`/api/admin/origin-charges/${deleteDialog.id}`, { method: "DELETE" })
+            if (res.ok) {
+                toast.success("Rate card deleted", { description: `${deleteDialog.originName} — ${deleteDialog.containerDisplayName || deleteDialog.containerId}` })
+                setDeleteDialog(null)
+                fetchCharges()
+            } else {
+                const data = await res.json()
+                toast.error(data.error || "Failed to delete rate card")
+            }
+        } catch {
+            toast.error("Failed to delete rate card")
+        } finally {
+            setDeleting(false)
+        }
+    }
 
     // Filter data
     const filteredCharges = charges.filter((charge) => {
@@ -317,14 +350,13 @@ export function OriginChargesList() {
                                                             Edit
                                                         </Link>
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem>
-                                                        <Copy className="mr-2 h-4 w-4" />
-                                                        Clone Rate Card
-                                                    </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
-                                                    <DropdownMenuItem className="text-red-600">
-                                                        <Archive className="mr-2 h-4 w-4" />
-                                                        Archive
+                                                    <DropdownMenuItem
+                                                        className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/30 cursor-pointer"
+                                                        onClick={(e) => { e.stopPropagation(); setDeleteDialog(charge) }}
+                                                    >
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        Delete
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
@@ -336,6 +368,32 @@ export function OriginChargesList() {
                     </TableBody>
                 </Table>
             </Card>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={!!deleteDialog} onOpenChange={() => setDeleteDialog(null)}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-red-600">
+                            <Trash2 className="h-5 w-5" />
+                            Delete Rate Card
+                        </DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to permanently delete the <strong>{deleteDialog?.originName}</strong> rate card
+                            ({deleteDialog?.containerDisplayName || deleteDialog?.containerId})?
+                            This will also delete all {deleteDialog?.items?.length || 0} charge items.
+                            This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => setDeleteDialog(null)} disabled={deleting}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+                            {deleting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting...</> : <><Trash2 className="mr-2 h-4 w-4" /> Delete Rate Card</>}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

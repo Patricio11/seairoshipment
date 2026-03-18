@@ -7,7 +7,7 @@ import {
     destinationChargeItems,
     locations,
 } from "@/lib/db/schema";
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, desc } from "drizzle-orm";
 
 export interface CostBreakdownResult {
     originPerPallet: number;
@@ -82,6 +82,7 @@ export async function calculateQuote(
                     eq(originCharges.active, true)
                 )
             )
+            .orderBy(desc(originCharges.effectiveFrom))
             .limit(1);
 
         if (originCharge) {
@@ -122,6 +123,7 @@ export async function calculateQuote(
                     eq(oceanFreightRates.active, true)
                 )
             )
+            .orderBy(desc(oceanFreightRates.effectiveFrom))
             .limit(1);
 
         if (oceanRate && Number(oceanRate.totalZAR) > 0) {
@@ -145,6 +147,7 @@ export async function calculateQuote(
                     eq(destinationCharges.active, true)
                 )
             )
+            .orderBy(desc(destinationCharges.effectiveFrom))
             .limit(1);
 
         if (destCharge) {

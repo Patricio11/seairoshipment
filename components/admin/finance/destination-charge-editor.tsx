@@ -144,9 +144,18 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
     const [saving, setSaving] = useState(false)
 
     const handleSave = async () => {
+        if (items.length === 0) {
+            toast.error("Rate card must have at least one charge item")
+            return
+        }
         const hasEmptyNames = items.some(item => !item.chargeName.trim())
         if (hasEmptyNames) {
             toast.error("All charge items must have a name")
+            return
+        }
+        const hasZeroAmount = items.some(item => (item.amountLocal || 0) <= 0)
+        if (hasZeroAmount) {
+            toast.error("All charge items must have an amount greater than zero")
             return
         }
 

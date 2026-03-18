@@ -207,6 +207,16 @@ export function CreateOceanFreightDialog({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+
+        if (totalUSD <= 0) {
+            toast.error("Ocean freight rate must have a total greater than zero — add at least a base freight amount")
+            return
+        }
+        if (formData.exchangeRate <= 0) {
+            toast.error("Exchange rate must be greater than zero")
+            return
+        }
+
         setLoading(true)
 
         try {
