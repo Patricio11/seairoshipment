@@ -81,6 +81,7 @@ export function OceanFreightGrid() {
     const [editingRate, setEditingRate] = useState<OceanFreightEditData | null>(null)
     const [deleteId, setDeleteId] = useState<string | null>(null)
     const [deleting, setDeleting] = useState(false)
+    const [loading, setLoading] = useState(true)
 
     const fetchRates = async () => {
         try {
@@ -94,7 +95,9 @@ export function OceanFreightGrid() {
                     setInitialized(true)
                 }
             }
-        } catch { /* silently fail */ }
+        } catch { /* silently fail */ } finally {
+            setLoading(false)
+        }
     }
 
     useEffect(() => {
@@ -227,7 +230,22 @@ export function OceanFreightGrid() {
 
             {/* Grouped by Country */}
             <div className="space-y-4">
-                {countries.map((country) => {
+                {loading ? (
+                    Array.from({ length: 3 }).map((_, i) => (
+                        <Card key={i} className="overflow-hidden">
+                            <div className="p-4 flex items-center gap-3">
+                                <div className="h-5 w-5 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+                                <div className="h-5 w-32 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+                                <div className="h-5 w-20 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+                            </div>
+                            <div className="px-4 pb-4 space-y-2">
+                                {Array.from({ length: 2 }).map((_, j) => (
+                                    <div key={j} className="h-10 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+                                ))}
+                            </div>
+                        </Card>
+                    ))
+                ) : countries.map((country) => {
                     const countryRates = getCountryRates(country)
 
                     if (countryRates.length === 0) return null

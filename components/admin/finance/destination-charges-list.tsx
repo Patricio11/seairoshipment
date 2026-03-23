@@ -67,12 +67,15 @@ export function DestinationChargesList() {
     const [charges, setCharges] = useState<DestinationChargeData[]>([])
     const [deleteId, setDeleteId] = useState<string | null>(null)
     const [deleting, setDeleting] = useState(false)
+    const [loading, setLoading] = useState(true)
 
     const fetchCharges = async () => {
         try {
             const res = await fetch("/api/admin/destination-charges")
             if (res.ok) setCharges(await res.json())
-        } catch { /* silently fail */ }
+        } catch { /* silently fail */ } finally {
+            setLoading(false)
+        }
     }
 
     useEffect(() => {
@@ -196,7 +199,17 @@ export function DestinationChargesList() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredCharges.length === 0 ? (
+                        {loading ? (
+                            Array.from({ length: 5 }).map((_, i) => (
+                                <TableRow key={i}>
+                                    {Array.from({ length: 10 }).map((_, j) => (
+                                        <TableCell key={j}>
+                                            <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))
+                        ) : filteredCharges.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={10} className="text-center py-12 text-slate-500">
                                     No destination charges found

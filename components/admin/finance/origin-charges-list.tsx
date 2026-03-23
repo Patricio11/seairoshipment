@@ -78,12 +78,13 @@ export function OriginChargesList() {
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedOrigin, setSelectedOrigin] = useState<string>(originIdParam?.toLowerCase() ?? "all")
     const [selectedContainer, setSelectedContainer] = useState<string>("all")
-    const [selectedStatus, setSelectedStatus] = useState<string>("all")
+    const [selectedStatus, setSelectedStatus] = useState<string>("active")
     const [charges, setCharges] = useState<OriginChargeData[]>([])
     const [containerTypesList, setContainerTypesList] = useState<ContainerTypeData[]>([])
     const [originLocations, setOriginLocations] = useState<LocationData[]>([])
     const [deleteDialog, setDeleteDialog] = useState<OriginChargeData | null>(null)
     const [deleting, setDeleting] = useState(false)
+    const [loading, setLoading] = useState(true)
 
     const fetchCharges = async () => {
         try {
@@ -95,7 +96,9 @@ export function OriginChargesList() {
             if (chargesRes.ok) setCharges(await chargesRes.json())
             if (containersRes.ok) setContainerTypesList(await containersRes.json())
             if (locationsRes.ok) setOriginLocations(await locationsRes.json())
-        } catch { /* silently fail */ }
+        } catch { /* silently fail */ } finally {
+            setLoading(false)
+        }
     }
 
     useEffect(() => {
@@ -258,7 +261,17 @@ export function OriginChargesList() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredCharges.length === 0 ? (
+                        {loading ? (
+                            Array.from({ length: 5 }).map((_, i) => (
+                                <TableRow key={i}>
+                                    {Array.from({ length: 9 }).map((_, j) => (
+                                        <TableCell key={j}>
+                                            <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))
+                        ) : filteredCharges.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={9} className="text-center py-12 text-slate-500">
                                     No origin charges found matching your criteria
