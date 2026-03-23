@@ -67,11 +67,6 @@ export async function POST(
         const originCountry = originCode.slice(0, 2);
         const destinationCountry = destinationCode.slice(0, 2);
 
-        // Derive regime code from allocation temperatures
-        // "frozen" → "FC1" (Frozen Cargo), "chilled" → "EC1" (Export Chilled)
-        const temperatures = [...new Set(allocations.map(a => a.temperature).filter(Boolean))];
-        const regimeCode = temperatures.includes("frozen") ? "FC1" : "EC1";
-
         // Map each allocation to a product entry in the MetaShip container
         const products = allocations.map((alloc) => ({
             productId: alloc.productId ? parseInt(alloc.productId, 10) : 0,
@@ -97,7 +92,6 @@ export async function POST(
             etd: container.etd?.toISOString() || new Date().toISOString(),
             eta: container.eta?.toISOString() || "",
             voyageNumber: container.voyageNumber || "",
-            regimeCode,
             containers: [
                 {
                     containerTypeCode,

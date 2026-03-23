@@ -159,7 +159,7 @@ export async function createMetaShipBooking(payload: MetaShipBookingPayload) {
         etd: payload.etd,
         eta: payload.eta,
         voyageNumber: payload.voyageNumber,
-        regimeCode: payload.regimeCode || "",
+        ...(payload.regimeCode ? { regimeCode: payload.regimeCode } : {}),
         incoTerm: payload.incoTerm || "EXW",
         carrierReferenceNumber: payload.carrierReferenceNumber || "",
         contractNumber: payload.contractNumber || "",
