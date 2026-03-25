@@ -43,7 +43,7 @@ export function Step3Docs({ formData, updateFormData }: Step3Props) {
                 const existing = new Set(prev.map((u) => `${u.file.name}-${u.file.size}`))
                 const toAdd = newFiles.filter((u) => !existing.has(`${u.file.name}-${u.file.size}`))
                 const next = [...prev, ...toAdd]
-                updateFormData({ hasDocs: next.length > 0 })
+                updateFormData({ hasDocs: next.length > 0, files: next.map(u => u.file) })
                 return next
             })
             setUploading(false)
@@ -53,7 +53,7 @@ export function Step3Docs({ formData, updateFormData }: Step3Props) {
     const removeFile = (id: string) => {
         setFiles((prev) => {
             const next = prev.filter((f) => f.id !== id)
-            updateFormData({ hasDocs: next.length > 0 })
+            updateFormData({ hasDocs: next.length > 0, files: next.map(u => u.file) })
             return next
         })
     }

@@ -10,11 +10,14 @@ import { Step3Docs } from "./step-3-docs"
 import { toast } from "sonner"
 import type { BookingFormData, CostBreakdown } from "@/types"
 import { bookingModalStore } from "@/hooks/use-booking-modal"
+import { uploadFile, STORAGE_PATHS } from "@/lib/supabase"
+import { useAuth } from "@/lib/auth/client"
 
 const STEP_LABELS = ["Cargo & Route", "Cost & Payment", "Confirm Booking"]
 const TOTAL_STEPS = 3
 
 export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
+    const { user } = useAuth()
     const [step, setStep] = useState(1)
     const [submitting, setSubmitting] = useState(false)
     const [costBreakdown, setCostBreakdown] = useState<CostBreakdown | null>(null)
@@ -101,6 +104,33 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
             if (!res.ok) {
                 toast.error(data.error || "Failed to submit booking")
                 return
+            }
+
+            // Upload documents if any were attached
+            const files = formData.files || []
+            if (files.length > 0 && data.allocationId) {
+                const accountPrefix = user?.accountNumber || "UNVERIFIED"
+                const uploadResults = await Promise.allSettled(
+                    files.map(async (file) => {
+                        const prefixedName = `${accountPrefix}_${file.name}`
+                        const result = await uploadFile(file, STORAGE_PATHS.BOOKING_DOCUMENTS, prefixedName)
+                        if (!result.success || !result.url) return
+                        await fetch(`/api/bookings/${data.allocationId}/documents`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                originalName: prefixedName,
+                                storedName: result.path,
+                                url: result.url,
+                                type: "OTHER",
+                            }),
+                        })
+                    })
+                )
+                const failed = uploadResults.filter(r => r.status === "rejected").length
+                if (failed > 0) {
+                    toast.warning(`${files.length - failed}/${files.length} documents uploaded. ${failed} failed — you can re-upload from your bookings page.`)
+                }
             }
 
             toast.success("Booking Submitted Successfully!", {

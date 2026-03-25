@@ -79,6 +79,7 @@ export interface BookingFormData {
     agreeToTerms: boolean;
     poNumber?: string;
     salesRateTypeId?: string;
+    files?: File[];
 }
 
 export interface ContainerSlot {
