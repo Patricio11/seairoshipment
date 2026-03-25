@@ -64,11 +64,11 @@ export interface OceanFreightEditData {
     otherSurchargesUSD: string | null
     rcgUSD: string | null
     exchangeRate: string | null
-    buyFreightUSD: string | null
-    buyBafUSD: string | null
-    buyIspsUSD: string | null
-    buyOtherSurchargesUSD: string | null
-    buyRcgUSD: string | null
+    buyFreightUSD?: string | null
+    buyBafUSD?: string | null
+    buyIspsUSD?: string | null
+    buyOtherSurchargesUSD?: string | null
+    buyRcgUSD?: string | null
 }
 
 export function CreateOceanFreightDialog({
