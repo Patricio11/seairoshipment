@@ -46,8 +46,10 @@ export interface OriginChargeItem {
     chargeName: string;
     chargeType: ChargeType;
     category: ChargeCategory;
-    unitCost: number | null;        // per pallet
-    containerCost: number | null;   // per container
+    unitCost: number | null;        // sell per pallet
+    containerCost: number | null;   // sell per container
+    buyUnitCost: number | null;     // buy per pallet
+    buyContainerCost: number | null; // buy per container
     mandatory: boolean;
     sortOrder: number;
     notes: string | null;
@@ -93,6 +95,13 @@ export interface OceanFreightRate {
     totalUSD: number;
     exchangeRate: number;
     totalZAR: number;
+    buyFreightUSD: number;
+    buyBafUSD: number;
+    buyIspsUSD: number;
+    buyOtherSurchargesUSD: number;
+    buyRcgUSD: number;
+    buyTotalUSD: number;
+    buyTotalZAR: number;
     active: boolean;
     createdAt: string;
     updatedAt: string;
@@ -108,6 +117,7 @@ export interface DestinationChargeItem {
     chargeType: 'PER_CONTAINER' | 'FIXED';
     amountLocal: number;
     amountZAR: number;
+    buyAmountZAR: number | null;
     sortOrder: number;
     notes: string | null;
     createdAt: string;
@@ -125,6 +135,7 @@ export interface DestinationCharge {
     containerDisplayName: string;
     currency: 'GBP' | 'EUR' | 'USD';
     exchangeRateToZAR: number;
+    buyExchangeRateToZAR: number | null;
     effectiveFrom: string;
     effectiveTo: string | null;
     items: DestinationChargeItem[];

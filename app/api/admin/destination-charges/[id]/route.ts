@@ -25,6 +25,7 @@ export async function GET(
                 containerId: destinationCharges.containerId,
                 currency: destinationCharges.currency,
                 exchangeRateToZAR: destinationCharges.exchangeRateToZAR,
+                buyExchangeRateToZAR: destinationCharges.buyExchangeRateToZAR,
                 effectiveFrom: destinationCharges.effectiveFrom,
                 effectiveTo: destinationCharges.effectiveTo,
                 active: destinationCharges.active,
@@ -66,11 +67,12 @@ export async function PUT(
 
         const { id } = await params;
         const body = await request.json();
-        const { currency, exchangeRateToZAR, effectiveFrom, effectiveTo, active, items } = body;
+        const { currency, exchangeRateToZAR, buyExchangeRateToZAR, effectiveFrom, effectiveTo, active, items } = body;
 
         const updateData: Record<string, unknown> = { updatedAt: new Date() };
         if (currency !== undefined) updateData.currency = currency;
         if (exchangeRateToZAR !== undefined) updateData.exchangeRateToZAR = String(exchangeRateToZAR);
+        if (buyExchangeRateToZAR !== undefined) updateData.buyExchangeRateToZAR = buyExchangeRateToZAR != null ? String(buyExchangeRateToZAR) : null;
         if (effectiveFrom !== undefined) updateData.effectiveFrom = effectiveFrom;
         if (effectiveTo !== undefined) updateData.effectiveTo = effectiveTo;
         if (active !== undefined) updateData.active = active;
@@ -99,6 +101,7 @@ export async function PUT(
                         chargeType: (item.chargeType as string) || "PER_CONTAINER",
                         amountLocal: String(item.amountLocal),
                         amountZAR: String(item.amountZAR),
+                        buyAmountZAR: item.buyAmountZAR != null ? String(item.buyAmountZAR) : null,
                         sortOrder: (item.sortOrder as number) ?? idx + 1,
                         notes: (item.notes as string) || null,
                     }))

@@ -15,7 +15,7 @@ export async function PUT(
         const { id } = await params;
         const body = await request.json();
 
-        // Recompute totals if any cost field changed
+        // Recompute totals
         const freight = Number(body.freightUSD) || 0;
         const baf = Number(body.bafUSD) || 0;
         const isps = Number(body.ispsUSD) || 0;
@@ -24,6 +24,14 @@ export async function PUT(
         const rate = Number(body.exchangeRate) || 0;
         const totalUSD = freight + baf + isps + other + rcg;
         const totalZAR = totalUSD * rate;
+
+        const bFreight = Number(body.buyFreightUSD) || 0;
+        const bBaf = Number(body.buyBafUSD) || 0;
+        const bIsps = Number(body.buyIspsUSD) || 0;
+        const bOther = Number(body.buyOtherSurchargesUSD) || 0;
+        const bRcg = Number(body.buyRcgUSD) || 0;
+        const buyTotalUSD = bFreight + bBaf + bIsps + bOther + bRcg;
+        const buyTotalZAR = buyTotalUSD * rate;
 
         const updateData: Record<string, unknown> = {
             updatedAt: new Date(),
@@ -35,6 +43,13 @@ export async function PUT(
             totalUSD: totalUSD.toFixed(2),
             exchangeRate: rate.toFixed(2),
             totalZAR: totalZAR.toFixed(2),
+            buyFreightUSD: bFreight.toFixed(2),
+            buyBafUSD: bBaf.toFixed(2),
+            buyIspsUSD: bIsps.toFixed(2),
+            buyOtherSurchargesUSD: bOther.toFixed(2),
+            buyRcgUSD: bRcg.toFixed(2),
+            buyTotalUSD: buyTotalUSD.toFixed(2),
+            buyTotalZAR: buyTotalZAR.toFixed(2),
         };
 
         if (body.origin !== undefined) updateData.origin = body.origin;

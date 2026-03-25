@@ -33,6 +33,13 @@ export async function GET(request: NextRequest) {
             totalUSD: oceanFreightRates.totalUSD,
             exchangeRate: oceanFreightRates.exchangeRate,
             totalZAR: oceanFreightRates.totalZAR,
+            buyFreightUSD: oceanFreightRates.buyFreightUSD,
+            buyBafUSD: oceanFreightRates.buyBafUSD,
+            buyIspsUSD: oceanFreightRates.buyIspsUSD,
+            buyOtherSurchargesUSD: oceanFreightRates.buyOtherSurchargesUSD,
+            buyRcgUSD: oceanFreightRates.buyRcgUSD,
+            buyTotalUSD: oceanFreightRates.buyTotalUSD,
+            buyTotalZAR: oceanFreightRates.buyTotalZAR,
             active: oceanFreightRates.active,
             createdAt: oceanFreightRates.createdAt,
             updatedAt: oceanFreightRates.updatedAt,
@@ -75,9 +82,10 @@ export async function POST(request: NextRequest) {
             destinationPortCode, shippingLine, containerId, effectiveFrom,
             effectiveTo, freightUSD, bafUSD, ispsUSD, otherSurchargesUSD,
             rcgUSD, exchangeRate, active,
+            buyFreightUSD, buyBafUSD, buyIspsUSD, buyOtherSurchargesUSD, buyRcgUSD,
         } = body;
 
-        // Compute totals
+        // Compute sell totals
         const freight = Number(freightUSD) || 0;
         const baf = Number(bafUSD) || 0;
         const isps = Number(ispsUSD) || 0;
@@ -86,6 +94,15 @@ export async function POST(request: NextRequest) {
         const rate = Number(exchangeRate) || 0;
         const totalUSD = freight + baf + isps + other + rcg;
         const totalZAR = totalUSD * rate;
+
+        // Compute buy totals
+        const bFreight = Number(buyFreightUSD) || 0;
+        const bBaf = Number(buyBafUSD) || 0;
+        const bIsps = Number(buyIspsUSD) || 0;
+        const bOther = Number(buyOtherSurchargesUSD) || 0;
+        const bRcg = Number(buyRcgUSD) || 0;
+        const buyTotalUSD = bFreight + bBaf + bIsps + bOther + bRcg;
+        const buyTotalZAR = buyTotalUSD * rate;
 
         const id = `of-${nanoid(6)}`;
         const [created] = await db
@@ -109,6 +126,13 @@ export async function POST(request: NextRequest) {
                 totalUSD: totalUSD.toFixed(2),
                 exchangeRate: rate.toFixed(2),
                 totalZAR: totalZAR.toFixed(2),
+                buyFreightUSD: bFreight.toFixed(2),
+                buyBafUSD: bBaf.toFixed(2),
+                buyIspsUSD: bIsps.toFixed(2),
+                buyOtherSurchargesUSD: bOther.toFixed(2),
+                buyRcgUSD: bRcg.toFixed(2),
+                buyTotalUSD: buyTotalUSD.toFixed(2),
+                buyTotalZAR: buyTotalZAR.toFixed(2),
                 active: active !== false,
             })
             .returning();

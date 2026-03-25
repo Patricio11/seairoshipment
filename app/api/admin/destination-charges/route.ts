@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
             containerId: destinationCharges.containerId,
             currency: destinationCharges.currency,
             exchangeRateToZAR: destinationCharges.exchangeRateToZAR,
+            buyExchangeRateToZAR: destinationCharges.buyExchangeRateToZAR,
             effectiveFrom: destinationCharges.effectiveFrom,
             effectiveTo: destinationCharges.effectiveTo,
             active: destinationCharges.active,
@@ -76,7 +77,7 @@ export async function POST(request: NextRequest) {
         const {
             id: customId, salesRateTypeId, destinationId, destinationName,
             destinationPortCode, containerId, currency, exchangeRateToZAR,
-            effectiveFrom, effectiveTo, active, items,
+            buyExchangeRateToZAR, effectiveFrom, effectiveTo, active, items,
         } = body;
 
         const id = customId || `dc-${nanoid(8)}`;
@@ -91,6 +92,7 @@ export async function POST(request: NextRequest) {
                 containerId,
                 currency,
                 exchangeRateToZAR: String(exchangeRateToZAR),
+                buyExchangeRateToZAR: buyExchangeRateToZAR != null ? String(buyExchangeRateToZAR) : null,
                 effectiveFrom,
                 effectiveTo: effectiveTo || null,
                 active: active !== false,
@@ -107,6 +109,7 @@ export async function POST(request: NextRequest) {
                     chargeType: (item.chargeType as string) || "PER_CONTAINER",
                     amountLocal: String(item.amountLocal),
                     amountZAR: String(item.amountZAR),
+                    buyAmountZAR: item.buyAmountZAR != null ? String(item.buyAmountZAR) : null,
                     sortOrder: (item.sortOrder as number) ?? idx + 1,
                     notes: (item.notes as string) || null,
                 }))

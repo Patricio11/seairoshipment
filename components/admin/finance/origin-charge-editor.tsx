@@ -131,6 +131,8 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
             category: "OTHER",
             unitCost: null,
             containerCost: null,
+            buyUnitCost: null,
+            buyContainerCost: null,
             mandatory: true,
             sortOrder: items.length + 1,
             notes: null,
@@ -201,6 +203,8 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                         category: item.category,
                         unitCost: item.unitCost,
                         containerCost: item.containerCost,
+                        buyUnitCost: item.buyUnitCost,
+                        buyContainerCost: item.buyContainerCost,
                         mandatory: item.mandatory,
                         sortOrder: item.sortOrder,
                         notes: item.notes,
@@ -287,13 +291,17 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                         <TableHeader>
                             <TableRow className="bg-slate-100 dark:bg-slate-900">
                                 <TableHead className="w-[50px]">#</TableHead>
-                                <TableHead className="min-w-[400px]">
+                                <TableHead className="min-w-[300px]">
                                     <span className="font-bold">Additional Services</span>
                                     <span className="block text-xs font-normal text-slate-500">(Charge Name)</span>
                                 </TableHead>
+                                <TableHead className="w-[200px] text-right bg-amber-50 dark:bg-amber-900/10">
+                                    <span className="font-bold text-amber-700 dark:text-amber-400">Buy Rate</span>
+                                    <span className="block text-xs font-normal text-slate-500">Cost price (ZAR)</span>
+                                </TableHead>
                                 <TableHead className="w-[300px] text-right">
-                                    <span className="font-bold">Unit Cost per Pallet</span>
-                                    <span className="block text-xs font-normal text-slate-500">or Per Container</span>
+                                    <span className="font-bold">Sell Rate</span>
+                                    <span className="block text-xs font-normal text-slate-500">Per Pallet or Per Container</span>
                                 </TableHead>
                                 <TableHead className="w-[250px] text-right bg-blue-50 dark:bg-blue-900/20">
                                     <span className="font-bold">40ft HC Reefer</span>
@@ -305,7 +313,7 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                         <TableBody>
                             {items.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="h-32 text-center text-slate-500">
+                                    <TableCell colSpan={6} className="h-32 text-center text-slate-500">
                                         No charge items yet. Click &quot;Add Service&quot; to get started.
                                     </TableCell>
                                 </TableRow>
@@ -395,6 +403,35 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                                                     </Popover>
                                                 )}
                                             </TableCell>
+                                            {/* Buy Rate Cell */}
+                                            <TableCell className="align-top py-2 bg-amber-50/50 dark:bg-amber-900/5">
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-amber-500 font-mono text-sm">R</span>
+                                                    <Input
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={
+                                                            item.chargeType === "PER_PALLET"
+                                                                ? (item.buyUnitCost || "")
+                                                                : (item.buyContainerCost || "")
+                                                        }
+                                                        onChange={(e) => {
+                                                            const value = parseFloat(e.target.value) || 0
+                                                            if (item.chargeType === "PER_PALLET") {
+                                                                updateItem(item.id, {
+                                                                    buyUnitCost: value,
+                                                                    buyContainerCost: value * 20
+                                                                })
+                                                            } else {
+                                                                updateItem(item.id, { buyContainerCost: value })
+                                                            }
+                                                        }}
+                                                        placeholder="0.00"
+                                                        className="text-right font-mono font-bold pl-8 text-base h-10 border-amber-300 dark:border-amber-700 focus-visible:ring-amber-400"
+                                                    />
+                                                </div>
+                                            </TableCell>
+                                            {/* Sell Rate Cell */}
                                             <TableCell className="align-top py-2">
                                                 <div className="flex items-center gap-3">
                                                     <div className="flex items-center gap-2 flex-1 relative">

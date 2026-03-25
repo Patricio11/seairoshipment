@@ -42,6 +42,11 @@ interface CreateOceanFreightForm {
     otherSurchargesUSD: number
     rcgUSD: number
     exchangeRate: number
+    buyFreightUSD: number
+    buyBafUSD: number
+    buyIspsUSD: number
+    buyOtherSurchargesUSD: number
+    buyRcgUSD: number
 }
 
 export interface OceanFreightEditData {
@@ -59,6 +64,11 @@ export interface OceanFreightEditData {
     otherSurchargesUSD: string | null
     rcgUSD: string | null
     exchangeRate: string | null
+    buyFreightUSD: string | null
+    buyBafUSD: string | null
+    buyIspsUSD: string | null
+    buyOtherSurchargesUSD: string | null
+    buyRcgUSD: string | null
 }
 
 export function CreateOceanFreightDialog({
@@ -130,6 +140,11 @@ export function CreateOceanFreightDialog({
                 otherSurchargesUSD: Number(editData.otherSurchargesUSD) || 0,
                 rcgUSD: Number(editData.rcgUSD) || 0,
                 exchangeRate: Number(editData.exchangeRate) || 15.9,
+                buyFreightUSD: Number(editData.buyFreightUSD) || 0,
+                buyBafUSD: Number(editData.buyBafUSD) || 0,
+                buyIspsUSD: Number(editData.buyIspsUSD) || 0,
+                buyOtherSurchargesUSD: Number(editData.buyOtherSurchargesUSD) || 0,
+                buyRcgUSD: Number(editData.buyRcgUSD) || 0,
             }
         }
         return {
@@ -147,6 +162,11 @@ export function CreateOceanFreightDialog({
             otherSurchargesUSD: 0,
             rcgUSD: 0,
             exchangeRate: 15.9,
+            buyFreightUSD: 0,
+            buyBafUSD: 0,
+            buyIspsUSD: 0,
+            buyOtherSurchargesUSD: 0,
+            buyRcgUSD: 0,
         }
     }, [editData, defaultCountry, defaultDestinationPort, locations])
 
@@ -204,6 +224,9 @@ export function CreateOceanFreightDialog({
 
     const totalUSD = formData.freightUSD + formData.bafUSD + formData.ispsUSD + formData.otherSurchargesUSD + formData.rcgUSD
     const totalZAR = totalUSD * formData.exchangeRate
+    const buyTotalUSD = formData.buyFreightUSD + formData.buyBafUSD + formData.buyIspsUSD + formData.buyOtherSurchargesUSD + formData.buyRcgUSD
+    const buyTotalZAR = buyTotalUSD * formData.exchangeRate
+    const marginUSD = totalUSD - buyTotalUSD
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -242,6 +265,11 @@ export function CreateOceanFreightDialog({
                     otherSurchargesUSD: formData.otherSurchargesUSD,
                     rcgUSD: formData.rcgUSD,
                     exchangeRate: formData.exchangeRate,
+                    buyFreightUSD: formData.buyFreightUSD,
+                    buyBafUSD: formData.buyBafUSD,
+                    buyIspsUSD: formData.buyIspsUSD,
+                    buyOtherSurchargesUSD: formData.buyOtherSurchargesUSD,
+                    buyRcgUSD: formData.buyRcgUSD,
                     effectiveFrom: new Date().toISOString().split("T")[0],
                 }),
             })
@@ -275,7 +303,7 @@ export function CreateOceanFreightDialog({
                 </DialogTrigger>
             ))}
             <DialogContent
-                className="sm:max-w-[600px] bg-slate-950 border-slate-800 text-white"
+                className="sm:max-w-[780px] bg-slate-950 border-slate-800 text-white"
                 onInteractOutside={(e) => e.preventDefault()}
                 onEscapeKeyDown={(e) => e.preventDefault()}
             >
@@ -376,53 +404,111 @@ export function CreateOceanFreightDialog({
 
                         {/* Right Column: Financials */}
                         <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Freight (USD)</Label>
-                                    <Input
-                                        type="number"
-                                        value={formData.freightUSD}
-                                        onChange={(e) => setFormData({ ...formData, freightUSD: Number(e.target.value) })}
-                                        className="bg-slate-900 border-slate-800 h-9 text-sm font-mono"
-                                    />
+                            {/* Sell Rates */}
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-blue-400 mb-2">Sell Rates (USD)</p>
+                                <div className="grid grid-cols-2 gap-3 mb-3">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Freight</Label>
+                                        <Input
+                                            type="number"
+                                            value={formData.freightUSD}
+                                            onChange={(e) => setFormData({ ...formData, freightUSD: Number(e.target.value) })}
+                                            className="bg-slate-900 border-slate-800 h-9 text-sm font-mono"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">BAF</Label>
+                                        <Input
+                                            type="number"
+                                            value={formData.bafUSD}
+                                            onChange={(e) => setFormData({ ...formData, bafUSD: Number(e.target.value) })}
+                                            className="bg-slate-900 border-slate-800 h-9 text-sm font-mono"
+                                        />
+                                    </div>
                                 </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">BAF (USD)</Label>
-                                    <Input
-                                        type="number"
-                                        value={formData.bafUSD}
-                                        onChange={(e) => setFormData({ ...formData, bafUSD: Number(e.target.value) })}
-                                        className="bg-slate-900 border-slate-800 h-9 text-sm font-mono"
-                                    />
+                                <div className="grid grid-cols-3 gap-2">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">ISPS</Label>
+                                        <Input
+                                            type="number"
+                                            value={formData.ispsUSD}
+                                            onChange={(e) => setFormData({ ...formData, ispsUSD: Number(e.target.value) })}
+                                            className="bg-slate-900 border-slate-800 h-9 text-xs font-mono"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">RCG</Label>
+                                        <Input
+                                            type="number"
+                                            value={formData.rcgUSD}
+                                            onChange={(e) => setFormData({ ...formData, rcgUSD: Number(e.target.value) })}
+                                            className="bg-slate-900 border-slate-800 h-9 text-xs font-mono"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">OTHER</Label>
+                                        <Input
+                                            type="number"
+                                            value={formData.otherSurchargesUSD}
+                                            onChange={(e) => setFormData({ ...formData, otherSurchargesUSD: Number(e.target.value) })}
+                                            className="bg-slate-900 border-slate-800 h-9 text-xs font-mono"
+                                        />
+                                    </div>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">ISPS</Label>
-                                    <Input
-                                        type="number"
-                                        value={formData.ispsUSD}
-                                        onChange={(e) => setFormData({ ...formData, ispsUSD: Number(e.target.value) })}
-                                        className="bg-slate-900 border-slate-800 h-9 text-xs font-mono"
-                                    />
+
+                            {/* Buy Rates */}
+                            <div className="border-t border-slate-800/50 pt-3">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-amber-400 mb-2">Buy Rates (USD)</p>
+                                <div className="grid grid-cols-2 gap-3 mb-3">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Buy Freight</Label>
+                                        <Input
+                                            type="number"
+                                            value={formData.buyFreightUSD}
+                                            onChange={(e) => setFormData({ ...formData, buyFreightUSD: Number(e.target.value) })}
+                                            className="bg-slate-900 border-amber-800/40 h-9 text-sm font-mono"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Buy BAF</Label>
+                                        <Input
+                                            type="number"
+                                            value={formData.buyBafUSD}
+                                            onChange={(e) => setFormData({ ...formData, buyBafUSD: Number(e.target.value) })}
+                                            className="bg-slate-900 border-amber-800/40 h-9 text-sm font-mono"
+                                        />
+                                    </div>
                                 </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">RCG</Label>
-                                    <Input
-                                        type="number"
-                                        value={formData.rcgUSD}
-                                        onChange={(e) => setFormData({ ...formData, rcgUSD: Number(e.target.value) })}
-                                        className="bg-slate-900 border-slate-800 h-9 text-xs font-mono"
-                                    />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">OTHER</Label>
-                                    <Input
-                                        type="number"
-                                        value={formData.otherSurchargesUSD}
-                                        onChange={(e) => setFormData({ ...formData, otherSurchargesUSD: Number(e.target.value) })}
-                                        className="bg-slate-900 border-slate-800 h-9 text-xs font-mono"
-                                    />
+                                <div className="grid grid-cols-3 gap-2">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Buy ISPS</Label>
+                                        <Input
+                                            type="number"
+                                            value={formData.buyIspsUSD}
+                                            onChange={(e) => setFormData({ ...formData, buyIspsUSD: Number(e.target.value) })}
+                                            className="bg-slate-900 border-amber-800/40 h-9 text-xs font-mono"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Buy RCG</Label>
+                                        <Input
+                                            type="number"
+                                            value={formData.buyRcgUSD}
+                                            onChange={(e) => setFormData({ ...formData, buyRcgUSD: Number(e.target.value) })}
+                                            className="bg-slate-900 border-amber-800/40 h-9 text-xs font-mono"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Buy OTHER</Label>
+                                        <Input
+                                            type="number"
+                                            value={formData.buyOtherSurchargesUSD}
+                                            onChange={(e) => setFormData({ ...formData, buyOtherSurchargesUSD: Number(e.target.value) })}
+                                            className="bg-slate-900 border-amber-800/40 h-9 text-xs font-mono"
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
@@ -440,19 +526,27 @@ export function CreateOceanFreightDialog({
                                         />
                                     </div>
                                 </div>
-                                <div className="flex justify-between items-end pt-1">
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] font-black text-slate-500 flex items-center gap-1">
-                                            <Calculator className="h-3 w-3" /> TOTAL ESTIMATE
+                                <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-800/50">
+                                    <div>
+                                        <span className="text-[10px] font-black text-blue-400 flex items-center gap-1 mb-0.5">
+                                            <Calculator className="h-3 w-3" /> SELL
                                         </span>
-                                        <span className="text-xl font-black text-blue-500 leading-none mt-1">
-                                            ${totalUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                        </span>
+                                        <div className="text-base font-black text-blue-400">${totalUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                                        <div className="text-[10px] text-slate-500">R {totalZAR.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
                                     </div>
-                                    <div className="text-right">
-                                        <span className="text-xs font-black text-emerald-500">
-                                            R {totalZAR.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                        </span>
+                                    <div>
+                                        <span className="text-[10px] font-black text-amber-400 mb-0.5 block">BUY</span>
+                                        <div className="text-base font-black text-amber-400">${buyTotalUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                                        <div className="text-[10px] text-slate-500">R {buyTotalZAR.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
+                                    </div>
+                                    <div>
+                                        <span className="text-[10px] font-black text-emerald-400 mb-0.5 block">MARGIN</span>
+                                        <div className={`text-base font-black ${marginUSD >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                                            ${marginUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </div>
+                                        <div className="text-[10px] text-slate-500">
+                                            {totalUSD > 0 ? `${((marginUSD / totalUSD) * 100).toFixed(1)}%` : "—"}
+                                        </div>
                                     </div>
                                 </div>
                             </div>

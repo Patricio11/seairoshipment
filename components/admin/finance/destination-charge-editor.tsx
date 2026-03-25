@@ -69,6 +69,7 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
     // Form State
     const [currency, setCurrency] = useState<'GBP' | 'EUR' | 'USD'>(initialData?.currency || 'GBP')
     const [exchangeRate, setExchangeRate] = useState<number>(initialData?.exchangeRateToZAR || 22.30)
+    const [buyExchangeRate, setBuyExchangeRate] = useState<number>(initialData?.buyExchangeRateToZAR || initialData?.exchangeRateToZAR || 22.30)
 
     // Initialize items with custom mode check
     const [items, setItems] = useState<UIDestinationChargeItem[]>(
@@ -78,7 +79,7 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
         }))
     )
 
-    // Recalculate ZAR amounts when ROE changes
+    // Recalculate sell ZAR amounts when sell ROE changes
     const handleExchangeRateChange = useCallback((newRate: number) => {
         setExchangeRate(newRate)
         setItems(prevItems =>
@@ -89,15 +90,29 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
         )
     }, [])
 
+    // Recalculate buy ZAR amounts when buy ROE changes
+    const handleBuyExchangeRateChange = useCallback((newRate: number) => {
+        setBuyExchangeRate(newRate)
+        setItems(prevItems =>
+            prevItems.map(item => ({
+                ...item,
+                buyAmountZAR: item.amountLocal * newRate
+            }))
+        )
+    }, [])
+
     // Calculate totals
     const calculateTotals = () => {
         const totalLocal = items.reduce((sum, item) => sum + (item.amountLocal || 0), 0)
         const totalZAR = items.reduce((sum, item) => sum + (item.amountZAR || 0), 0)
+        const buyTotalZAR = items.reduce((sum, item) => sum + (item.buyAmountZAR || 0), 0)
 
         return {
             totalLocal,
             totalZAR,
-            perPalletZAR: totalZAR / 20 // Assuming 20 pallets
+            buyTotalZAR,
+            perPalletZAR: totalZAR / 20,
+            marginZAR: totalZAR - buyTotalZAR,
         }
     }
 
@@ -112,6 +127,7 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
             chargeType: "PER_CONTAINER",
             amountLocal: 0,
             amountZAR: 0,
+            buyAmountZAR: null,
             sortOrder: items.length + 1,
             notes: null,
             createdAt: new Date().toISOString(),
@@ -127,9 +143,10 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
 
             const updatedItem = { ...item, ...updates };
 
-            // If amountLocal changed, valid recalculation of ZAR
+            // If amountLocal changed, recalculate both sell and buy ZAR
             if ('amountLocal' in updates) {
                 updatedItem.amountZAR = (updatedItem.amountLocal || 0) * exchangeRate;
+                updatedItem.buyAmountZAR = (updatedItem.amountLocal || 0) * buyExchangeRate;
             }
 
             return updatedItem;
@@ -180,6 +197,7 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
                     }),
                     currency,
                     exchangeRateToZAR: exchangeRate,
+                    buyExchangeRateToZAR: buyExchangeRate,
                     active: initialData?.active !== false,
                     items: items.map(item => ({
                         id: item.id,
@@ -188,6 +206,7 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
                         chargeType: item.chargeType || "PER_CONTAINER",
                         amountLocal: item.amountLocal,
                         amountZAR: item.amountZAR,
+                        buyAmountZAR: item.buyAmountZAR,
                         sortOrder: item.sortOrder,
                         notes: item.notes,
                     })),
@@ -250,7 +269,7 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
 
             {/* Main Settings Card */}
             <Card className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-500">Destination Port</label>
                         <Input
@@ -278,7 +297,7 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-500">Exchange Rate (To ZAR)</label>
+                        <label className="text-sm font-medium text-slate-500">Sell ROE (to ZAR)</label>
                         <div className="relative">
                             <ArrowRightLeft className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                             <Input
@@ -290,6 +309,23 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
                             />
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
                                 1 {currency} = R {exchangeRate}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-amber-600">Buy ROE (to ZAR)</label>
+                        <div className="relative">
+                            <ArrowRightLeft className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-amber-400" />
+                            <Input
+                                type="number"
+                                step="0.01"
+                                value={buyExchangeRate}
+                                onChange={(e) => handleBuyExchangeRateChange(parseFloat(e.target.value) || 0)}
+                                className="pl-9 font-mono font-bold border-amber-300 focus-visible:ring-amber-400"
+                            />
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-amber-500">
+                                1 {currency} = R {buyExchangeRate}
                             </div>
                         </div>
                     </div>
@@ -321,15 +357,21 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
                         <TableHeader>
                             <TableRow className="bg-slate-100 dark:bg-slate-900">
                                 <TableHead className="w-[50px]">#</TableHead>
-                                <TableHead className="min-w-[400px]">
+                                <TableHead className="min-w-[300px]">
                                     <span className="font-bold">Charge Description</span>
                                 </TableHead>
-                                <TableHead className="w-[200px] text-right">
+                                <TableHead className="w-[160px] text-right">
                                     <span className="font-bold">Amount ({currency})</span>
                                 </TableHead>
-                                <TableHead className="w-[250px] text-right bg-blue-50 dark:bg-blue-900/20">
-                                    <span className="font-bold">Amount (ZAR)</span>
-                                    <span className="block text-xs font-normal text-slate-500 max-w-[200px] truncate ml-auto">
+                                <TableHead className="w-[200px] text-right bg-amber-50 dark:bg-amber-900/10">
+                                    <span className="font-bold text-amber-700 dark:text-amber-400">Buy (ZAR)</span>
+                                    <span className="block text-xs font-normal text-slate-500 max-w-[180px] truncate ml-auto">
+                                        @{buyExchangeRate.toFixed(2)} ROE
+                                    </span>
+                                </TableHead>
+                                <TableHead className="w-[200px] text-right bg-blue-50 dark:bg-blue-900/20">
+                                    <span className="font-bold">Sell (ZAR)</span>
+                                    <span className="block text-xs font-normal text-slate-500 max-w-[180px] truncate ml-auto">
                                         @{exchangeRate.toFixed(2)} ROE
                                     </span>
                                 </TableHead>
@@ -339,7 +381,7 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
                         <TableBody>
                             {items.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="h-32 text-center text-slate-500">
+                                    <TableCell colSpan={6} className="h-32 text-center text-slate-500">
                                         No charge items yet. Click &quot;Add Item&quot; to get started.
                                     </TableCell>
                                 </TableRow>
@@ -438,6 +480,9 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
                                                 />
                                             </div>
                                         </TableCell>
+                                        <TableCell className="text-right bg-amber-50/70 dark:bg-amber-900/10 font-mono text-base font-bold text-amber-700 dark:text-amber-400 align-middle">
+                                            R {(item.buyAmountZAR ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </TableCell>
                                         <TableCell className="text-right bg-slate-50 dark:bg-slate-900/30 font-mono text-lg font-black text-slate-900 dark:text-white align-middle">
                                             R {item.amountZAR.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </TableCell>
@@ -461,32 +506,28 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
                 {/* Totals Section */}
                 {items.length > 0 && (
                     <div className="border-t-4 border-slate-900 dark:border-white bg-gradient-to-r from-blue-50 to-emerald-50 dark:from-blue-900/20 dark:to-emerald-900/20 p-8">
-                        <div className="flex items-center justify-between max-w-3xl ml-auto">
-                            <div></div>
-                            <div className="space-y-4 text-right">
-                                <div className="flex items-baseline justify-end gap-6">
-                                    <span className="text-base font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest">
-                                        Total ({currency})
-                                    </span>
-                                    <span className="font-mono text-4xl font-black text-slate-900 dark:text-white">
-                                        {currency} {totals.totalLocal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                    </span>
+                        <div className="grid grid-cols-3 gap-8 max-w-3xl ml-auto">
+                            <div className="text-right space-y-1">
+                                <div className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-2">Buy Total (ZAR)</div>
+                                <div className="font-mono text-2xl font-black text-amber-600 dark:text-amber-400">
+                                    R {totals.buyTotalZAR.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                 </div>
-                                <div className="flex items-baseline justify-end gap-6 text-emerald-600 dark:text-emerald-400">
-                                    <span className="text-sm font-semibold uppercase tracking-wider">
-                                        Total (ZAR)
-                                    </span>
-                                    <span className="font-mono text-3xl font-bold">
-                                        R {totals.totalZAR.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                    </span>
+                                <div className="text-xs text-slate-500">@ {buyExchangeRate.toFixed(2)} ROE</div>
+                            </div>
+                            <div className="text-right space-y-1">
+                                <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-2">Sell Total (ZAR)</div>
+                                <div className="font-mono text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                                    R {totals.totalZAR.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                 </div>
-                                <div className="flex items-baseline justify-end gap-6 text-slate-500">
-                                    <span className="text-xs font-medium uppercase tracking-wider">
-                                        Per Pallet (ZAR)
-                                    </span>
-                                    <span className="font-mono text-xl font-bold">
-                                        R {totals.perPalletZAR.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                    </span>
+                                <div className="text-xs text-slate-500">@ {exchangeRate.toFixed(2)} ROE · R {totals.perPalletZAR.toLocaleString(undefined, { maximumFractionDigits: 2 })} / pallet</div>
+                            </div>
+                            <div className="text-right space-y-1">
+                                <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Margin (ZAR)</div>
+                                <div className={`font-mono text-2xl font-black ${totals.marginZAR >= 0 ? "text-slate-900 dark:text-white" : "text-red-600"}`}>
+                                    R {totals.marginZAR.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                </div>
+                                <div className="text-xs text-slate-500">
+                                    {totals.totalZAR > 0 ? `${((totals.marginZAR / totals.totalZAR) * 100).toFixed(1)}% margin` : "—"}
                                 </div>
                             </div>
                         </div>

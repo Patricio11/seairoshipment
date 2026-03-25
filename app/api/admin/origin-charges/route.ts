@@ -119,6 +119,8 @@ export async function POST(request: NextRequest) {
                     category: (item.category as string) || "OTHER",
                     unitCost: item.unitCost != null ? String(item.unitCost) : null,
                     containerCost: item.containerCost != null ? String(item.containerCost) : null,
+                    buyUnitCost: item.buyUnitCost != null ? String(item.buyUnitCost) : null,
+                    buyContainerCost: item.buyContainerCost != null ? String(item.buyContainerCost) : null,
                     mandatory: item.mandatory !== false,
                     sortOrder: (item.sortOrder as number) ?? idx + 1,
                     notes: (item.notes as string) || null,
