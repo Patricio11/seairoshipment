@@ -493,6 +493,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                             <SelectContent>
                                                 <SelectItem value="frozen">-18°C (Frozen)</SelectItem>
                                                 <SelectItem value="chilled">+5°C (Chilled)</SelectItem>
+                                                <SelectItem value="ambient">+18°C (Ambient)</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
