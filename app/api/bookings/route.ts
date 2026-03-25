@@ -138,9 +138,9 @@ export async function POST(request: NextRequest) {
             salesRateTypeId,
         } = body;
 
-        if (!origin || !destination || !palletCount || palletCount < 5) {
+        if (!origin || !destination || !palletCount || palletCount < 1) {
             return NextResponse.json(
-                { error: "Origin, destination, and minimum 5 pallets required" },
+                { error: "Origin, destination, and at least 1 pallet are required" },
                 { status: 400 }
             );
         }
@@ -189,12 +189,18 @@ export async function POST(request: NextRequest) {
         }
 
         // Check capacity
+        const remaining = container.maxCapacity - container.totalPallets;
+        const minRequired = remaining < 5 ? 1 : 5;
+        if (palletCount < minRequired) {
+            return NextResponse.json(
+                { error: `Minimum booking is ${minRequired} pallet${minRequired > 1 ? "s" : ""} for this container` },
+                { status: 400 }
+            );
+        }
         const newTotal = container.totalPallets + palletCount;
         if (newTotal > container.maxCapacity) {
             return NextResponse.json(
-                {
-                    error: `Container only has ${container.maxCapacity - container.totalPallets} pallet spaces remaining`,
-                },
+                { error: `Container only has ${remaining} pallet space${remaining !== 1 ? "s" : ""} remaining` },
                 { status: 400 }
             );
         }

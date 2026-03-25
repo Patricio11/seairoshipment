@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
                     eq(containers.route, route),
                     eq(containers.status, "OPEN"),
                     eq(containers.salesRateTypeId, salesRateTypeId),
-                    sql`${containers.maxCapacity} - ${containers.totalPallets} >= 5`
+                    sql`${containers.maxCapacity} - ${containers.totalPallets} >= 1`
                 )
             );
 

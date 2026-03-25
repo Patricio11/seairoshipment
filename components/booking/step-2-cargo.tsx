@@ -135,7 +135,8 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
         const capacity = container.type === "20FT" ? 10 : 20
         const available = capacity - container.preFilled
 
-        const initialCount = Math.max(5, Math.min(count || 5, available))
+        const minPallets = available < 5 ? 1 : 5
+        const initialCount = Math.max(minPallets, Math.min(count || minPallets, available))
 
         updateFormData({
             containerId: container.id,
@@ -597,16 +598,15 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                             <div className="mt-1 flex items-center justify-between text-xs text-slate-500 font-medium">
                                                 <div className="flex items-center gap-1">
                                                     <Boxes className="h-3 w-3" />
-                                                    <span className={cn(capacity - container.preFilled < 5 ? "text-red-500 font-bold" : "")}>
+                                                    <span className={cn(capacity - container.preFilled < 5 ? "text-amber-500 font-bold" : "")}>
                                                         {capacity - container.preFilled} Space
-                                                        {capacity - container.preFilled < 5 && " (Min 5 req.)"}
+                                                        {capacity - container.preFilled < 5 && " (Last spots!)"}
                                                     </span>
                                                 </div>
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
                                                     className="text-brand-blue font-bold px-0 h-auto hover:bg-transparent"
-                                                    disabled={capacity - container.preFilled < 5}
                                                     onClick={() => handleSelectContainer(container)}
                                                 >
                                                     Select &rarr;
@@ -673,15 +673,14 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                         <Slider
                                             value={[count]}
                                             max={remainingCapacity}
-                                            min={5}
+                                            min={remainingCapacity < 5 ? 1 : 5}
                                             step={1}
                                             onValueChange={(vals) => updateFormData({ palletCount: vals[0] })}
                                             className="py-4"
-                                            disabled={remainingCapacity < 5}
                                         />
                                         {remainingCapacity < 5 && (
-                                            <p className="text-[10px] text-red-500 font-bold mt-1">
-                                                Insufficient space for minimum 5 pallet booking.
+                                            <p className="text-[10px] text-amber-500 font-bold mt-1">
+                                                Only {remainingCapacity} spot{remainingCapacity !== 1 ? "s" : ""} left — minimum reduced to 1 pallet.
                                             </p>
                                         )}
                                     </div>

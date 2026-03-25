@@ -49,8 +49,8 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
 
     const nextStep = () => {
         if (step === 1) {
-            if (!formData.containerId || formData.palletCount < 5) {
-                toast.error("Minimum booking is 5 pallets.")
+            if (!formData.containerId || formData.palletCount < 1) {
+                toast.error("Please select at least 1 pallet.")
                 return
             }
         }
