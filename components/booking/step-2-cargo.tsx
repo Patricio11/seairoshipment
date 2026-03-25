@@ -150,7 +150,8 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
         setLoadingContainers(true)
         setViewStage("pick")
         try {
-            const res = await fetch(`/api/containers?route=${route}`)
+            const salesRateTypeId = formData.salesRateTypeId || "srs"
+            const res = await fetch(`/api/containers?route=${route}&salesRateTypeId=${salesRateTypeId}`)
             if (res.ok) {
                 const data = await res.json()
                 setAvailableContainers(Array.isArray(data) ? data : [])
@@ -217,7 +218,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
         return "text-brand-blue"
     }
 
-    const isInitialComplete = formData.origin && formData.destination && formData.sailingScheduleId && formData.commodity && formData.temperature
+    const isInitialComplete = formData.salesRateTypeId && formData.origin && formData.destination && formData.sailingScheduleId && formData.commodity && formData.temperature
 
     // Selected product for info display
     const selectedProduct = products.find(p => String(p.id) === formData.commodity)
@@ -240,8 +241,48 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                         </div>
 
                         <div className="grid gap-8 p-6 bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-100 dark:border-slate-800">
+                            {/* Booking Type */}
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-2 text-brand-blue">
+                                    <Ship className="h-4 w-4" />
+                                    <span className="text-xs font-bold uppercase tracking-wider">Booking Type</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {[
+                                        { id: "srs", label: "Shared Reefer Services", short: "SRS", color: "brand-blue", ring: "ring-brand-blue", bg: "bg-blue-50 dark:bg-blue-900/20", border: "border-brand-blue", text: "text-brand-blue" },
+                                        { id: "scs", label: "Seairo Cargo Solutions", short: "SCS", color: "emerald-600", ring: "ring-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-900/20", border: "border-emerald-500", text: "text-emerald-600 dark:text-emerald-400" },
+                                    ].map((type) => {
+                                        const selected = formData.salesRateTypeId === type.id
+                                        return (
+                                            <button
+                                                key={type.id}
+                                                type="button"
+                                                onClick={() => updateFormData({ salesRateTypeId: type.id })}
+                                                className={`relative flex flex-col items-start gap-1 p-4 rounded-2xl border-2 transition-all text-left cursor-pointer
+                                                    ${selected
+                                                        ? `${type.bg} ${type.border} ring-2 ${type.ring} ring-offset-1`
+                                                        : "bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-700 hover:border-slate-300"
+                                                    }`}
+                                            >
+                                                <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${selected ? `${type.bg} ${type.text}` : "bg-slate-100 dark:bg-slate-800 text-slate-500"}`}>
+                                                    {type.short}
+                                                </span>
+                                                <span className={`text-sm font-bold ${selected ? type.text : "text-slate-700 dark:text-slate-300"}`}>
+                                                    {type.label}
+                                                </span>
+                                                {selected && (
+                                                    <span className={`absolute top-3 right-3 h-5 w-5 rounded-full flex items-center justify-center ${type.bg}`}>
+                                                        <Check className={`h-3 w-3 ${type.text}`} />
+                                                    </span>
+                                                )}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+
                             {/* Route Section */}
-                            <div className="space-y-4">
+                            <div className="space-y-4 pt-2 border-t border-slate-200 dark:border-slate-800">
                                 <div className="flex items-center gap-2 text-brand-blue">
                                     <MapPin className="h-4 w-4" />
                                     <span className="text-xs font-bold uppercase tracking-wider">Route Details</span>

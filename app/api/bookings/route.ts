@@ -135,6 +135,7 @@ export async function POST(request: NextRequest) {
             consigneeAddress,
             containerId: requestedContainerId,
             poNumber,
+            salesRateTypeId,
         } = body;
 
         if (!origin || !destination || !palletCount || palletCount < 5) {
@@ -146,7 +147,7 @@ export async function POST(request: NextRequest) {
 
         const route = `${origin}-${destination}`;
 
-        // Find an existing OPEN container for this route + sailing, or create one
+        // Find an existing OPEN container — only admins can create containers
         let containerId = requestedContainerId;
         let container;
 
@@ -160,7 +161,7 @@ export async function POST(request: NextRequest) {
         }
 
         if (!container) {
-            // Find open container for same route and sailing
+            // Find open container for same route, service type, and sailing
             const openContainers = await db
                 .select()
                 .from(containers)
@@ -168,6 +169,7 @@ export async function POST(request: NextRequest) {
                     and(
                         eq(containers.route, route),
                         eq(containers.status, "OPEN"),
+                        eq(containers.salesRateTypeId, salesRateTypeId || "srs"),
                         sailingScheduleId
                             ? eq(containers.sailingScheduleId, sailingScheduleId)
                             : undefined
@@ -179,25 +181,10 @@ export async function POST(request: NextRequest) {
                 container = openContainers[0];
                 containerId = container.id;
             } else {
-                // Create new container
-                containerId = `CNT-${nanoid(10)}`;
-                const [newContainer] = await db
-                    .insert(containers)
-                    .values({
-                        id: containerId,
-                        route,
-                        vessel: vessel || "TBD",
-                        voyageNumber: voyageNumber || null,
-                        sailingScheduleId: sailingScheduleId || null,
-                        type: "40FT",
-                        etd: etd ? new Date(etd) : null,
-                        eta: eta ? new Date(eta) : null,
-                        totalPallets: 0,
-                        maxCapacity: 20,
-                        status: "OPEN",
-                    })
-                    .returning();
-                container = newContainer;
+                return NextResponse.json(
+                    { error: "No containers are currently available for this route. Please contact us or check back later." },
+                    { status: 404 }
+                );
             }
         }
 
@@ -227,6 +214,7 @@ export async function POST(request: NextRequest) {
             temperature: temperature || null,
             consigneeName: consigneeName || null,
             consigneeAddress: consigneeAddress || null,
+            salesRateTypeId: salesRateTypeId || "srs",
             status: "PENDING",
         });
 

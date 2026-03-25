@@ -78,6 +78,7 @@ export interface BookingFormData {
     vessel: string;
     agreeToTerms: boolean;
     poNumber?: string;
+    salesRateTypeId?: string;
 }
 
 export interface ContainerSlot {

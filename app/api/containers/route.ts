@@ -19,7 +19,9 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // Get all OPEN containers for this route with remaining capacity >= 5
+        const salesRateTypeId = request.nextUrl.searchParams.get("salesRateTypeId") || "srs";
+
+        // Get all OPEN containers for this route + service type with remaining capacity >= 5
         const openContainers = await db
             .select()
             .from(containers)
@@ -27,6 +29,7 @@ export async function GET(request: NextRequest) {
                 and(
                     eq(containers.route, route),
                     eq(containers.status, "OPEN"),
+                    eq(containers.salesRateTypeId, salesRateTypeId),
                     sql`${containers.maxCapacity} - ${containers.totalPallets} >= 5`
                 )
             );

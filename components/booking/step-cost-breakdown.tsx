@@ -41,6 +41,7 @@ export function StepCostBreakdown({ formData, updateFormData, onQuoteLoaded }: S
                     origin: formData.origin,
                     destination: formData.destination,
                     palletCount: String(formData.palletCount),
+                    salesRateTypeId: formData.salesRateTypeId || "srs",
                 })
                 const res = await fetch(`/api/rates/quote?${params}`)
                 if (!res.ok) {

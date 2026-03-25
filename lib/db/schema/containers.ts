@@ -22,6 +22,7 @@ export const containers = pgTable("containers", {
     totalPallets: integer("total_pallets").default(0).notNull(),
     maxCapacity: integer("max_capacity").default(20).notNull(),
     status: containerStatusEnum("status").default("OPEN").notNull(),
+    salesRateTypeId: text("sales_rate_type_id").default("srs").notNull(),
     metashipOrderNo: text("metaship_order_no"),
     metashipReference: text("metaship_reference"),
     createdAt: timestamp("created_at").defaultNow().notNull(),

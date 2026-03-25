@@ -39,7 +39,8 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
         containerId: "",
         vessel: "",
         agreeToTerms: false,
-        poNumber: ""
+        poNumber: "",
+        salesRateTypeId: "",
     })
 
     const updateFormData = (data: Partial<BookingFormData>) => {
@@ -91,6 +92,7 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
                     consigneeAddress: formData.consigneeAddress,
                     containerId: formData.containerId,
                     poNumber: formData.poNumber || null,
+                    salesRateTypeId: formData.salesRateTypeId || "srs",
                 }),
             })
 

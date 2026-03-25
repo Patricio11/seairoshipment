@@ -21,6 +21,7 @@ export const palletAllocations = pgTable("pallet_allocations", {
     temperature: text("temperature"),
     consigneeName: text("consignee_name"),
     consigneeAddress: text("consignee_address"),
+    salesRateTypeId: text("sales_rate_type_id").default("srs"),
     status: allocationStatusEnum("status").default("PENDING").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),

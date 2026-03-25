@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
         if (error) return error;
 
         const body = await request.json();
-        const { route, vessel, voyageNumber, sailingScheduleId, type, etd, eta, maxCapacity } = body;
+        const { route, vessel, voyageNumber, sailingScheduleId, type, etd, eta, maxCapacity, salesRateTypeId } = body;
 
         if (!route || !vessel || !type) {
             return NextResponse.json(
@@ -85,6 +85,7 @@ export async function POST(request: NextRequest) {
                 totalPallets: 0,
                 maxCapacity: capacity,
                 status: "OPEN",
+                salesRateTypeId: salesRateTypeId || "srs",
             })
             .returning();
 

@@ -65,6 +65,7 @@ interface ContainerAllocation {
         grossWeight: string | null
         temperature: string | null
         consigneeName: string | null
+        salesRateTypeId: string | null
         status: string
     }
     userName: string | null
@@ -83,6 +84,7 @@ interface ContainerData {
     totalPallets: number
     maxCapacity: number
     status: string
+    salesRateTypeId: string
     metashipOrderNo: string | null
     metashipReference: string | null
     createdAt: string
@@ -118,6 +120,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export function AdminBookingsGrid() {
     const [searchTerm, setSearchTerm] = useState("")
+    const [rateTypeFilter, setRateTypeFilter] = useState<"all" | "srs" | "scs">("all")
     const [activeTab, setActiveTab] = useState("containers")
     const [containerData, setContainerData] = useState<ContainerData[]>([])
     const [loadingContainers, setLoadingContainers] = useState(false)
@@ -185,13 +188,18 @@ export function AdminBookingsGrid() {
         (b.client.toLowerCase().includes(searchTerm.toLowerCase()) || b.ref.includes(searchTerm))
     )
 
-    const filteredContainers = containerData.filter(c =>
-        c.route.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.vessel.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (c.metashipOrderNo && c.metashipOrderNo.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (c.voyageNumber && c.voyageNumber.toLowerCase().includes(searchTerm.toLowerCase()))
-    )
+    const filteredContainers = containerData.filter(c => {
+        const matchesSearch = (
+            c.route.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            c.vessel.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            c.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (c.metashipOrderNo && c.metashipOrderNo.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (c.voyageNumber && c.voyageNumber.toLowerCase().includes(searchTerm.toLowerCase()))
+        )
+        if (!matchesSearch) return false
+        if (rateTypeFilter === "all") return true
+        return c.allocations.some(a => (a.allocation.salesRateTypeId || "srs") === rateTypeFilter)
+    })
 
     return (
         <div className="space-y-6">
@@ -209,14 +217,35 @@ export function AdminBookingsGrid() {
                         </TabsTrigger>
                     </TabsList>
 
-                    <div className="relative flex-1 max-w-sm">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-                        <Input
-                            placeholder="Search client, ref or vessel..."
-                            className="pl-10 h-10 bg-slate-950 border-slate-800 text-white focus:ring-1 focus:ring-slate-700"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <div className="relative flex-1 min-w-[180px] max-w-sm">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                            <Input
+                                placeholder="Search client, ref or vessel..."
+                                className="pl-10 h-10 bg-slate-950 border-slate-800 text-white focus:ring-1 focus:ring-slate-700"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex items-center gap-1 bg-slate-950 border border-slate-800 rounded-lg p-1">
+                            {(["all", "srs", "scs"] as const).map((t) => (
+                                <button
+                                    key={t}
+                                    onClick={() => setRateTypeFilter(t)}
+                                    className={`px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all ${
+                                        rateTypeFilter === t
+                                            ? t === "srs"
+                                                ? "bg-blue-600 text-white"
+                                                : t === "scs"
+                                                    ? "bg-emerald-600 text-white"
+                                                    : "bg-slate-700 text-white"
+                                            : "text-slate-400 hover:text-slate-200"
+                                    }`}
+                                >
+                                    {t === "all" ? "All" : t.toUpperCase()}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
@@ -253,6 +282,13 @@ export function AdminBookingsGrid() {
                                                     {container.route}
                                                     <Badge className={STATUS_COLORS[container.status] || STATUS_COLORS.OPEN}>
                                                         {container.status.replace("_", " ")}
+                                                    </Badge>
+                                                    <Badge className={
+                                                        (container.salesRateTypeId || "srs") === "scs"
+                                                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 font-mono text-[10px] uppercase"
+                                                            : "bg-blue-500/10 text-blue-400 border-blue-500/20 font-mono text-[10px] uppercase"
+                                                    }>
+                                                        {container.salesRateTypeId || "srs"}
                                                     </Badge>
                                                 </h3>
                                                 <p className="text-slate-500 text-sm font-medium">
@@ -387,13 +423,22 @@ export function AdminBookingsGrid() {
                                                                 )}
                                                             </TableCell>
                                                             <TableCell className="text-center">
-                                                                <Badge className={
-                                                                    alloc.allocation.status === "CONFIRMED"
-                                                                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                                                                        : "bg-slate-500/10 text-slate-400 border-slate-500/20"
-                                                                }>
-                                                                    {alloc.allocation.status}
-                                                                </Badge>
+                                                                <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                                                                    <Badge className={
+                                                                        alloc.allocation.status === "CONFIRMED"
+                                                                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                                                            : "bg-slate-500/10 text-slate-400 border-slate-500/20"
+                                                                    }>
+                                                                        {alloc.allocation.status}
+                                                                    </Badge>
+                                                                    <Badge className={
+                                                                        (alloc.allocation.salesRateTypeId || "srs") === "scs"
+                                                                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 font-mono text-[10px]"
+                                                                            : "bg-blue-500/10 text-blue-400 border-blue-500/20 font-mono text-[10px]"
+                                                                    }>
+                                                                        {(alloc.allocation.salesRateTypeId || "srs").toUpperCase()}
+                                                                    </Badge>
+                                                                </div>
                                                             </TableCell>
                                                         </TableRow>
                                                     ))}
@@ -724,13 +769,22 @@ export function AdminBookingsGrid() {
                                                         </TableCell>
                                                         <TableCell className="text-xs text-slate-400">{alloc.allocation.consigneeName || "—"}</TableCell>
                                                         <TableCell className="text-center">
-                                                            <Badge className={
-                                                                alloc.allocation.status === "CONFIRMED"
-                                                                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                                                                    : "bg-slate-500/10 text-slate-400 border-slate-500/20"
-                                                            }>
-                                                                {alloc.allocation.status}
-                                                            </Badge>
+                                                            <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                                                                <Badge className={
+                                                                    alloc.allocation.status === "CONFIRMED"
+                                                                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                                                        : "bg-slate-500/10 text-slate-400 border-slate-500/20"
+                                                                }>
+                                                                    {alloc.allocation.status}
+                                                                </Badge>
+                                                                <Badge className={
+                                                                    (alloc.allocation.salesRateTypeId || "srs") === "scs"
+                                                                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 font-mono text-[10px]"
+                                                                        : "bg-blue-500/10 text-blue-400 border-blue-500/20 font-mono text-[10px]"
+                                                                }>
+                                                                    {(alloc.allocation.salesRateTypeId || "srs").toUpperCase()}
+                                                                </Badge>
+                                                            </div>
                                                         </TableCell>
                                                     </TableRow>
                                                 ))}
