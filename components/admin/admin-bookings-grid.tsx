@@ -24,6 +24,9 @@ import {
     Eye,
     Thermometer,
     Weight,
+    FileText,
+    Download,
+    User,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -118,6 +121,15 @@ const STATUS_COLORS: Record<string, string> = {
     DELIVERED: "bg-slate-500/10 text-slate-400 border-slate-500/20",
 }
 
+interface ClientDoc {
+    id: string
+    originalName: string
+    type: string
+    status: string
+    url: string | null
+    uploadedAt: string
+}
+
 export function AdminBookingsGrid() {
     const [searchTerm, setSearchTerm] = useState("")
     const [rateTypeFilter, setRateTypeFilter] = useState<"all" | "srs" | "scs">("all")
@@ -128,6 +140,8 @@ export function AdminBookingsGrid() {
     const [creatingBooking, setCreatingBooking] = useState(false)
     const [copiedId, setCopiedId] = useState<string | null>(null)
     const [detailDialog, setDetailDialog] = useState<ContainerData | null>(null)
+    const [clientDialog, setClientDialog] = useState<{ alloc: ContainerAllocation; docs: ClientDoc[] } | null>(null)
+    const [loadingClientDocs, setLoadingClientDocs] = useState(false)
 
     const copyToClipboard = (text: string, id: string) => {
         navigator.clipboard.writeText(text)
@@ -156,6 +170,20 @@ export function AdminBookingsGrid() {
             fetchContainers()
         }
     }, [activeTab, fetchContainers])
+
+    const openClientDialog = async (alloc: ContainerAllocation) => {
+        setLoadingClientDocs(true)
+        setClientDialog({ alloc, docs: [] })
+        try {
+            const res = await fetch(`/api/admin/allocations/${alloc.allocation.id}/documents`)
+            const docs: ClientDoc[] = res.ok ? await res.json() : []
+            setClientDialog({ alloc, docs })
+        } catch {
+            setClientDialog({ alloc, docs: [] })
+        } finally {
+            setLoadingClientDocs(false)
+        }
+    }
 
     const handleCreateMetaShipBooking = async (container: ContainerData) => {
         setCreatingBooking(true)
@@ -398,8 +426,18 @@ export function AdminBookingsGrid() {
                                                 </TableHeader>
                                                 <TableBody>
                                                     {container.allocations.map((alloc) => (
-                                                        <TableRow key={alloc.allocation.id} className="border-slate-800 hover:bg-slate-900/40">
-                                                            <TableCell className="text-slate-300 font-medium">{alloc.userName || "—"}</TableCell>
+                                                        <TableRow
+                                                            key={alloc.allocation.id}
+                                                            className="border-slate-800 hover:bg-slate-900/40 cursor-pointer"
+                                                            onClick={() => openClientDialog(alloc)}
+                                                            title="View client details"
+                                                        >
+                                                            <TableCell className="text-slate-300 font-medium">
+                                                                <div className="flex items-center gap-1.5">
+                                                                    {alloc.userName || "—"}
+                                                                    <Eye className="h-3 w-3 text-slate-600 group-hover:text-slate-400" />
+                                                                </div>
+                                                            </TableCell>
                                                             <TableCell className="font-mono text-xs text-slate-400">{alloc.accountNumber || "—"}</TableCell>
                                                             <TableCell>
                                                                 <div className="flex flex-col">
@@ -583,7 +621,7 @@ export function AdminBookingsGrid() {
             {/* Booking Detail View Dialog */}
             <Dialog open={!!detailDialog} onOpenChange={() => setDetailDialog(null)}>
                 <DialogContent
-                    className="bg-slate-950 border-slate-800 text-white max-w-2xl max-h-[85vh] overflow-y-auto"
+                    className="bg-slate-950 border-slate-800 text-white sm:max-w-[60rem] max-h-[85vh] overflow-y-auto"
                     onInteractOutside={(e) => e.preventDefault()}
                     onEscapeKeyDown={(e) => e.preventDefault()}
                 >
@@ -906,6 +944,132 @@ export function AdminBookingsGrid() {
                             )}
                         </Button>
                     </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Client Detail Dialog */}
+            <Dialog open={!!clientDialog} onOpenChange={() => setClientDialog(null)}>
+                <DialogContent className="bg-slate-950 border-slate-800 text-white max-w-lg max-h-[85vh] overflow-y-auto">
+                    {clientDialog && (
+                        <>
+                            <DialogHeader>
+                                <DialogTitle className="flex items-center gap-3">
+                                    <div className="h-9 w-9 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                                        <User className="h-4 w-4 text-blue-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-white font-black">{clientDialog.alloc.userName || "Unknown Client"}</p>
+                                        {clientDialog.alloc.userEmail && (
+                                            <p className="text-slate-500 text-xs font-normal mt-0.5">{clientDialog.alloc.userEmail}</p>
+                                        )}
+                                    </div>
+                                </DialogTitle>
+                                <DialogDescription className="text-slate-500 text-xs">
+                                    Allocation ID: <span className="font-mono text-slate-400">{clientDialog.alloc.allocation.id}</span>
+                                    {clientDialog.alloc.accountNumber && (
+                                        <> · Account: <span className="font-mono text-slate-400">{clientDialog.alloc.accountNumber}</span></>
+                                    )}
+                                </DialogDescription>
+                            </DialogHeader>
+
+                            <div className="space-y-4 mt-2">
+                                {/* Booking type + status */}
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <Badge className={
+                                        clientDialog.alloc.allocation.status === "CONFIRMED"
+                                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                            : "bg-slate-500/10 text-slate-400 border-slate-500/20"
+                                    }>
+                                        {clientDialog.alloc.allocation.status}
+                                    </Badge>
+                                    <Badge className={
+                                        (clientDialog.alloc.allocation.salesRateTypeId || "srs") === "scs"
+                                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 font-mono"
+                                            : "bg-blue-500/10 text-blue-400 border-blue-500/20 font-mono"
+                                    }>
+                                        {(clientDialog.alloc.allocation.salesRateTypeId || "srs").toUpperCase()}
+                                    </Badge>
+                                </div>
+
+                                {/* Cargo details */}
+                                <div className="bg-slate-900 rounded-xl border border-slate-800 divide-y divide-slate-800">
+                                    <div className="px-4 py-2.5 flex items-center justify-between">
+                                        <span className="text-xs text-slate-500 font-semibold">Product</span>
+                                        <div className="text-right">
+                                            <p className="text-sm text-white font-bold">{clientDialog.alloc.allocation.commodityName || "—"}</p>
+                                            {clientDialog.alloc.allocation.hsCode && (
+                                                <p className="text-[10px] text-slate-500 font-mono">HS: {clientDialog.alloc.allocation.hsCode}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="px-4 py-2.5 flex items-center justify-between">
+                                        <span className="text-xs text-slate-500 font-semibold">Pallets</span>
+                                        <span className="text-2xl font-black text-white">{clientDialog.alloc.allocation.palletCount}</span>
+                                    </div>
+                                    <div className="px-4 py-2.5 flex items-center justify-between">
+                                        <span className="text-xs text-slate-500 font-semibold">Temperature</span>
+                                        <span className={`text-sm font-bold ${clientDialog.alloc.allocation.temperature === "frozen" ? "text-blue-400" : clientDialog.alloc.allocation.temperature === "chilled" ? "text-cyan-400" : "text-slate-500"}`}>
+                                            {clientDialog.alloc.allocation.temperature === "frozen" ? "-18°C (Frozen)" : clientDialog.alloc.allocation.temperature === "chilled" ? "+5°C (Chilled)" : "—"}
+                                        </span>
+                                    </div>
+                                    <div className="px-4 py-2.5 flex items-center justify-between">
+                                        <span className="text-xs text-slate-500 font-semibold">Nett Weight</span>
+                                        <span className="text-sm text-slate-300 font-mono">{clientDialog.alloc.allocation.nettWeight ? `${clientDialog.alloc.allocation.nettWeight} kg` : "—"}</span>
+                                    </div>
+                                    <div className="px-4 py-2.5 flex items-center justify-between">
+                                        <span className="text-xs text-slate-500 font-semibold">Gross Weight</span>
+                                        <span className="text-sm text-slate-300 font-mono">{clientDialog.alloc.allocation.grossWeight ? `${clientDialog.alloc.allocation.grossWeight} kg` : "—"}</span>
+                                    </div>
+                                    <div className="px-4 py-2.5 flex items-center justify-between">
+                                        <span className="text-xs text-slate-500 font-semibold">Consignee</span>
+                                        <span className="text-sm text-slate-300 text-right max-w-[200px]">{clientDialog.alloc.allocation.consigneeName || "—"}</span>
+                                    </div>
+                                </div>
+
+                                {/* Documents */}
+                                <div>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 mb-2 flex items-center gap-1">
+                                        <FileText className="h-3 w-3" /> Documents Submitted
+                                    </p>
+                                    {loadingClientDocs ? (
+                                        <div className="flex items-center gap-2 py-4 text-slate-500 text-sm">
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                            Loading documents...
+                                        </div>
+                                    ) : clientDialog.docs.length === 0 ? (
+                                        <div className="py-4 text-center text-slate-600 text-sm border border-slate-800 rounded-xl">
+                                            No documents submitted yet
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            {clientDialog.docs.map((doc) => (
+                                                <div key={doc.id} className="flex items-center gap-3 p-3 rounded-xl border border-slate-800 bg-slate-900">
+                                                    <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                                                        <FileText className="h-4 w-4 text-blue-400" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm text-white font-medium truncate">{doc.originalName}</p>
+                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                            <span className="text-[10px] text-slate-500 font-mono uppercase">{doc.type.replace("_", " ")}</span>
+                                                            <span className="text-[10px] text-slate-700">·</span>
+                                                            <span className={`text-[10px] font-bold uppercase ${doc.status === "APPROVED" ? "text-emerald-400" : doc.status === "REJECTED" ? "text-red-400" : "text-amber-400"}`}>
+                                                                {doc.status}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    {doc.url && (
+                                                        <a href={doc.url} target="_blank" rel="noreferrer" className="shrink-0 h-7 w-7 rounded-lg border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-500 transition-colors">
+                                                            <Download className="h-3.5 w-3.5" />
+                                                        </a>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </DialogContent>
             </Dialog>
         </div>
