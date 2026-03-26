@@ -25,6 +25,9 @@ export async function uploadFile(
     storagePath: StoragePath,
     customFileName?: string
 ): Promise<UploadResult> {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        return { success: false, error: 'Document storage is not configured.' };
+    }
     try {
         const fileName = customFileName || generateUniqueFileName(file.name);
         const filePath = `${storagePath}/${fileName}`;
