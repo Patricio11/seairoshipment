@@ -18,9 +18,9 @@ export function IndustryHero() {
     const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0])
 
     const stats = [
-        { icon: Ship, value: '-18°C', label: 'Temperature Controlled', color: 'from-brand-blue to-sky-400' },
-        { icon: Thermometer, value: '100%', label: 'TIVE IoT Monitored', color: 'from-brand-blue to-brand-orange' },
-        { icon: MapPin, value: '200+', label: 'Global Destinations', color: 'from-brand-orange to-amber-400' },
+        { icon: Ship, value: '-18°C', label: 'Temperature Controlled', iconBg: 'bg-brand-blue', textColor: 'text-brand-blue' },
+        { icon: Thermometer, value: '100%', label: 'TIVE IoT Monitored', iconBg: 'bg-brand-orange', textColor: 'text-brand-orange' },
+        { icon: MapPin, value: '200+', label: 'Global Destinations', iconBg: 'bg-brand-blue', textColor: 'text-brand-blue' },
     ]
 
     return (
@@ -62,14 +62,14 @@ export function IndustryHero() {
                             <br />
                             <span className="relative inline-block">
                                 {/* Brand Color Gradient */}
-                                <span className="bg-gradient-to-r from-brand-blue via-brand-orange to-brand-silver bg-clip-text text-transparent">
+                                <span className="text-brand-orange">
                                     for Cold Chain
                                 </span>
                                 <motion.div
                                     initial={{ scaleX: 0 }}
                                     animate={{ scaleX: 1 }}
                                     transition={{ duration: 1, delay: 0.5 }}
-                                    className="absolute -bottom-2 left-0 h-1 w-full origin-left rounded-full bg-gradient-to-r from-brand-blue to-brand-orange"
+                                    className="absolute -bottom-2 left-0 h-1 w-full origin-left rounded-full bg-brand-orange"
                                 />
                             </span>
                         </h1>
@@ -87,7 +87,7 @@ export function IndustryHero() {
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => setIsAuthOpen(true)}
-                                className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-brand-blue to-brand-orange px-10 py-5 font-display text-lg font-bold text-white shadow-2xl shadow-brand-blue/40"
+                                className="group relative overflow-hidden rounded-xl bg-brand-blue px-10 py-5 font-display text-lg font-bold text-white shadow-2xl shadow-brand-blue/40 hover:bg-brand-blue/90"
                             >
                                 <span className="relative z-10 flex items-center justify-center gap-2">
                                     Book Your First Shipment
@@ -108,16 +108,16 @@ export function IndustryHero() {
                                     onHoverEnd={() => setHoveredStat(null)}
                                     className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl transition-all hover:bg-white/10"
                                 >
-                                    <div className={`mb-3 inline-flex rounded-xl bg-gradient-to-br ${stat.color} p-3`}>
+                                    <div className={`mb-3 inline-flex rounded-xl ${stat.iconBg} p-3`}>
                                         <stat.icon className="h-6 w-6 text-white" strokeWidth={2.5} />
                                     </div>
-                                    <div className={`font-display text-4xl font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`}>
+                                    <div className={`font-display text-4xl font-bold ${stat.textColor}`}>
                                         {stat.value}
                                     </div>
                                     <div className="mt-1 text-sm font-semibold text-slate-400">{stat.label}</div>
 
                                     {/* Hover Glow */}
-                                    <div className={`absolute inset-0 bg-gradient-to-r ${stat.color} opacity-0 blur-2xl transition-opacity duration-500 ${hoveredStat === index ? 'opacity-20' : ''}`} />
+                                    <div className={`absolute inset-0 ${stat.iconBg} opacity-0 blur-2xl transition-opacity duration-500 ${hoveredStat === index ? 'opacity-20' : ''}`} />
                                 </motion.div>
                             ))}
                         </div>

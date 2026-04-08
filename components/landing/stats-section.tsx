@@ -9,25 +9,29 @@ const stats = [
         icon: Package,
         value: '50K+',
         label: 'Pallets Shipped Annually',
-        gradient: 'from-brand-blue to-brand-orange',
+        iconBg: 'bg-brand-blue',
+        textColor: 'text-brand-blue',
     },
     {
         icon: TrendingUp,
         value: '99.8%',
         label: 'On-Time Delivery Rate',
-        gradient: 'from-brand-orange to-brand-silver',
+        iconBg: 'bg-brand-orange',
+        textColor: 'text-brand-orange',
     },
     {
         icon: ThermometerSnowflake,
         value: '-18°C',
         label: 'Perfect Cold Chain Maintained',
-        gradient: 'from-brand-silver to-brand-blue',
+        iconBg: 'bg-brand-blue',
+        textColor: 'text-brand-blue',
     },
     {
         icon: Clock,
         value: '24/7',
         label: 'Live Support & Monitoring',
-        gradient: 'from-brand-blue to-brand-orange',
+        iconBg: 'bg-brand-orange',
+        textColor: 'text-brand-orange',
     },
 ]
 
@@ -54,7 +58,7 @@ export function StatsSection() {
                             <div className="relative overflow-hidden rounded-2xl border-2 border-slate-100 bg-white p-8 text-center shadow-sm transition-all hover:border-brand-blue/20 hover:shadow-xl">
                                 {/* Icon */}
                                 <div className="mx-auto mb-4 inline-flex items-center justify-center">
-                                    <div className={`rounded-xl bg-gradient-to-br ${stat.gradient} p-3 shadow-lg`}>
+                                    <div className={`rounded-xl ${stat.iconBg} p-3 shadow-lg`}>
                                         <stat.icon className="h-6 w-6 text-white" strokeWidth={2.5} />
                                     </div>
                                 </div>
@@ -64,7 +68,7 @@ export function StatsSection() {
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={isInView ? { opacity: 1, y: 0 } : {}}
                                     transition={{ duration: 0.6, delay: index * 0.1 + 0.2 }}
-                                    className={`font-display text-5xl font-bold bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent`}
+                                    className={`font-display text-5xl font-bold ${stat.textColor}`}
                                 >
                                     {stat.value}
                                 </motion.div>

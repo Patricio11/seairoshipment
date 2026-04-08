@@ -63,7 +63,7 @@ export function ContactSection() {
 
                         <h2 className="font-display text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">
                             Ready to streamline your <br />
-                            <span className="bg-gradient-to-r from-brand-blue to-brand-orange bg-clip-text text-transparent">
+                            <span className="text-brand-blue">
                                 cold chain logistics?
                             </span>
                         </h2>
@@ -155,7 +155,7 @@ export function ContactSection() {
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
                                     disabled={formState !== 'idle'}
-                                    className="w-full rounded-xl bg-gradient-to-r from-brand-blue to-brand-orange px-8 py-4 font-display text-lg font-bold text-white shadow-lg shadow-brand-blue/25 transition-all hover:shadow-brand-blue/40 disabled:opacity-70"
+                                    className="w-full rounded-xl bg-brand-blue px-8 py-4 font-display text-lg font-bold text-white shadow-lg shadow-brand-blue/25 transition-all hover:bg-brand-blue/90 hover:shadow-brand-blue/40 disabled:opacity-70"
                                 >
                                     {formState === 'idle' ? (
                                         <span className="flex items-center justify-center gap-2">

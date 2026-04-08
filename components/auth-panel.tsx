@@ -241,7 +241,7 @@ export function AuthPanel({ isOpen, onClose, initialMode = 'login' }: AuthPanelP
                                         whileTap={{ scale: 0.98 }}
                                         type="submit"
                                         disabled={isLoading}
-                                        className="w-full rounded-xl bg-gradient-to-r from-brand-blue to-brand-orange py-4 font-display text-lg font-semibold text-white shadow-lg shadow-brand-blue/50 transition-shadow hover:shadow-brand-blue/75 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="w-full rounded-xl bg-brand-blue py-4 font-display text-lg font-semibold text-white shadow-lg shadow-brand-blue/50 transition-all hover:bg-brand-blue/90 hover:shadow-brand-blue/75 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {isLoading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
                                     </motion.button>

@@ -89,7 +89,7 @@ export function IndustryFeatures() {
                         >
                             <div className="relative h-full rounded-2xl border-2 border-slate-100 bg-white p-8 shadow-sm transition-all duration-300 hover:border-brand-blue/30 hover:shadow-xl">
                                 {/* Icon */}
-                                <div className="mb-5 inline-flex items-center justify-center rounded-xl bg-gradient-to-br from-brand-blue to-brand-orange p-3 shadow-lg shadow-brand-blue/20">
+                                <div className="mb-5 inline-flex items-center justify-center rounded-xl bg-brand-blue p-3 shadow-lg shadow-brand-blue/20">
                                     <feature.icon className="h-6 w-6 text-white" strokeWidth={2.5} />
                                 </div>
 
