@@ -55,7 +55,7 @@ export function TestimonialsSection() {
                     transition={{ duration: 0.6 }}
                     className="text-center"
                 >
-                    <div className="mb-4 inline-block rounded-full bg-purple-50 px-4 py-2 text-sm font-bold text-purple-700">
+                    <div className="mb-4 inline-block rounded-full bg-brand-orange/10 px-4 py-2 text-sm font-bold text-brand-orange">
                         Customer Success Stories
                     </div>
                     <h2 className="font-display text-4xl font-bold tracking-tight text-slate-900 lg:text-5xl">
@@ -80,7 +80,7 @@ export function TestimonialsSection() {
                             <div className="relative rounded-2xl border-2 border-slate-200 bg-white p-12 shadow-xl">
                                 {/* Quote Icon */}
                                 <div className="absolute -top-6 left-12">
-                                    <div className="rounded-xl bg-gradient-to-br from-brand-blue to-brand-green p-4 shadow-lg">
+                                    <div className="rounded-xl bg-gradient-to-br from-brand-blue to-brand-orange p-4 shadow-lg">
                                         <Quote className="h-7 w-7 text-white" />
                                     </div>
                                 </div>
@@ -109,7 +109,7 @@ export function TestimonialsSection() {
 
                                 {/* Author */}
                                 <div className="mt-8 flex items-center gap-4">
-                                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-brand-blue to-brand-green text-3xl shadow-lg">
+                                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-brand-blue to-brand-orange text-3xl shadow-lg">
                                         {testimonials[currentIndex].image}
                                     </div>
                                     <div>
@@ -131,7 +131,7 @@ export function TestimonialsSection() {
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
                             onClick={prev}
-                            className="rounded-full border-2 border-slate-200 bg-white p-3 shadow-sm transition-all hover:border-blue-300 hover:shadow-md"
+                            className="rounded-full border-2 border-slate-200 bg-white p-3 shadow-sm transition-all hover:border-brand-blue/40 hover:shadow-md"
                         >
                             <ChevronLeft className="h-6 w-6 text-slate-600" />
                         </motion.button>
@@ -143,7 +143,7 @@ export function TestimonialsSection() {
                                     key={index}
                                     onClick={() => setCurrentIndex(index)}
                                     className={`h-2 rounded-full transition-all ${index === currentIndex
-                                        ? 'w-8 bg-gradient-to-r from-brand-blue to-brand-green'
+                                        ? 'w-8 bg-gradient-to-r from-brand-blue to-brand-orange'
                                         : 'w-2 bg-slate-300 hover:bg-slate-400'
                                         }`}
                                 />
@@ -154,7 +154,7 @@ export function TestimonialsSection() {
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
                             onClick={next}
-                            className="rounded-full border-2 border-slate-200 bg-white p-3 shadow-sm transition-all hover:border-blue-300 hover:shadow-md"
+                            className="rounded-full border-2 border-slate-200 bg-white p-3 shadow-sm transition-all hover:border-brand-blue/40 hover:shadow-md"
                         >
                             <ChevronRight className="h-6 w-6 text-slate-600" />
                         </motion.button>

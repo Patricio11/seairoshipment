@@ -26,15 +26,15 @@ export function ContactSection() {
             icon: Mail,
             title: 'Email Us',
             details: ['bookings@seairo.com', 'support@seairo.com'],
-            color: 'text-brand-green',
-            bg: 'bg-brand-green/10'
+            color: 'text-brand-orange',
+            bg: 'bg-brand-orange/10'
         },
         {
             icon: Phone,
             title: 'Call Us',
             details: ['+27 (0) 21 555 0123', '24/7 Ops: +27 (0) 82 555 0199'],
-            color: 'text-teal-500',
-            bg: 'bg-teal-500/10'
+            color: 'text-brand-blue',
+            bg: 'bg-brand-blue/10'
         }
     ]
 
@@ -53,17 +53,17 @@ export function ContactSection() {
                         viewport={{ once: true }}
                         transition={{ duration: 0.8 }}
                     >
-                        <div className="mb-10 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-sm font-semibold text-blue-600">
+                        <div className="mb-10 inline-flex items-center gap-2 rounded-full border border-brand-blue/30 bg-brand-blue/10 px-4 py-1.5 text-sm font-semibold text-brand-blue">
                             <span className="relative flex h-2 w-2">
-                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75"></span>
-                                <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-500"></span>
+                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-blue opacity-75"></span>
+                                <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-blue"></span>
                             </span>
                             We are online
                         </div>
 
                         <h2 className="font-display text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">
                             Ready to streamline your <br />
-                            <span className="bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600 bg-clip-text text-transparent">
+                            <span className="bg-gradient-to-r from-brand-blue to-brand-orange bg-clip-text text-transparent">
                                 cold chain logistics?
                             </span>
                         </h2>
@@ -113,7 +113,7 @@ export function ContactSection() {
                                             id="first-name"
                                             type="text"
                                             required
-                                            className="w-full rounded-xl border border-slate-200 bg-white/50 px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+                                            className="w-full rounded-xl border border-slate-200 bg-white/50 px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-blue focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-blue/10"
                                             placeholder="Jane"
                                         />
                                     </div>
@@ -123,7 +123,7 @@ export function ContactSection() {
                                             id="last-name"
                                             type="text"
                                             required
-                                            className="w-full rounded-xl border border-slate-200 bg-white/50 px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+                                            className="w-full rounded-xl border border-slate-200 bg-white/50 px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-blue focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-blue/10"
                                             placeholder="Doe"
                                         />
                                     </div>
@@ -135,7 +135,7 @@ export function ContactSection() {
                                         id="email"
                                         type="email"
                                         required
-                                        className="w-full rounded-xl border border-slate-200 bg-white/50 px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+                                        className="w-full rounded-xl border border-slate-200 bg-white/50 px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-blue focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-blue/10"
                                         placeholder="jane@company.com"
                                     />
                                 </div>
@@ -146,7 +146,7 @@ export function ContactSection() {
                                         id="message"
                                         rows={4}
                                         required
-                                        className="w-full resize-none rounded-xl border border-slate-200 bg-white/50 px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+                                        className="w-full resize-none rounded-xl border border-slate-200 bg-white/50 px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-blue focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-blue/10"
                                         placeholder="Tell us about your shipping needs..."
                                     />
                                 </div>
@@ -155,7 +155,7 @@ export function ContactSection() {
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
                                     disabled={formState !== 'idle'}
-                                    className="w-full rounded-xl bg-gradient-to-r from-brand-blue to-brand-green px-8 py-4 font-display text-lg font-bold text-white shadow-lg shadow-brand-blue/25 transition-all hover:shadow-brand-blue/40 disabled:opacity-70"
+                                    className="w-full rounded-xl bg-gradient-to-r from-brand-blue to-brand-orange px-8 py-4 font-display text-lg font-bold text-white shadow-lg shadow-brand-blue/25 transition-all hover:shadow-brand-blue/40 disabled:opacity-70"
                                 >
                                     {formState === 'idle' ? (
                                         <span className="flex items-center justify-center gap-2">
@@ -171,8 +171,8 @@ export function ContactSection() {
                         </div>
 
                         {/* Decor elements */}
-                        <div className="absolute -right-8 -top-8 -z-10 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl" />
-                        <div className="absolute -bottom-8 -left-8 -z-10 h-64 w-64 rounded-full bg-cyan-500/20 blur-3xl" />
+                        <div className="absolute -right-8 -top-8 -z-10 h-64 w-64 rounded-full bg-brand-blue/20 blur-3xl" />
+                        <div className="absolute -bottom-8 -left-8 -z-10 h-64 w-64 rounded-full bg-brand-orange/20 blur-3xl" />
                     </motion.div>
                 </div>
             </div>

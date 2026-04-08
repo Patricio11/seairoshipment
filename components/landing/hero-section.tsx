@@ -18,9 +18,9 @@ export function IndustryHero() {
     const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0])
 
     const stats = [
-        { icon: Ship, value: '-18°C', label: 'Temperature Controlled', color: 'from-blue-500 to-cyan-500' },
-        { icon: Thermometer, value: '100%', label: 'TIVE IoT Monitored', color: 'from-cyan-500 to-teal-500' },
-        { icon: MapPin, value: '200+', label: 'Global Destinations', color: 'from-teal-500 to-emerald-500' },
+        { icon: Ship, value: '-18°C', label: 'Temperature Controlled', color: 'from-brand-blue to-sky-400' },
+        { icon: Thermometer, value: '100%', label: 'TIVE IoT Monitored', color: 'from-brand-blue to-brand-orange' },
+        { icon: MapPin, value: '200+', label: 'Global Destinations', color: 'from-brand-orange to-amber-400' },
     ]
 
     return (
@@ -62,14 +62,14 @@ export function IndustryHero() {
                             <br />
                             <span className="relative inline-block">
                                 {/* Brand Color Gradient */}
-                                <span className="bg-gradient-to-r from-brand-blue via-brand-green to-brand-silver bg-clip-text text-transparent">
+                                <span className="bg-gradient-to-r from-brand-blue via-brand-orange to-brand-silver bg-clip-text text-transparent">
                                     for Cold Chain
                                 </span>
                                 <motion.div
                                     initial={{ scaleX: 0 }}
                                     animate={{ scaleX: 1 }}
                                     transition={{ duration: 1, delay: 0.5 }}
-                                    className="absolute -bottom-2 left-0 h-1 w-full origin-left rounded-full bg-gradient-to-r from-brand-blue to-brand-green"
+                                    className="absolute -bottom-2 left-0 h-1 w-full origin-left rounded-full bg-gradient-to-r from-brand-blue to-brand-orange"
                                 />
                             </span>
                         </h1>
@@ -87,7 +87,7 @@ export function IndustryHero() {
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => setIsAuthOpen(true)}
-                                className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-brand-blue to-brand-green px-10 py-5 font-display text-lg font-bold text-white shadow-2xl shadow-brand-blue/40"
+                                className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-brand-blue to-brand-orange px-10 py-5 font-display text-lg font-bold text-white shadow-2xl shadow-brand-blue/40"
                             >
                                 <span className="relative z-10 flex items-center justify-center gap-2">
                                     Book Your First Shipment

@@ -87,9 +87,9 @@ export function IndustryFeatures() {
                             transition={{ duration: 0.6, delay: index * 0.1 }}
                             className="group relative"
                         >
-                            <div className="relative h-full rounded-2xl border-2 border-slate-100 bg-white p-8 shadow-sm transition-all duration-300 hover:border-blue-200 hover:shadow-xl">
+                            <div className="relative h-full rounded-2xl border-2 border-slate-100 bg-white p-8 shadow-sm transition-all duration-300 hover:border-brand-blue/30 hover:shadow-xl">
                                 {/* Icon */}
-                                <div className="mb-5 inline-flex items-center justify-center rounded-xl bg-gradient-to-br from-brand-blue to-brand-green p-3 shadow-lg shadow-brand-blue/20">
+                                <div className="mb-5 inline-flex items-center justify-center rounded-xl bg-gradient-to-br from-brand-blue to-brand-orange p-3 shadow-lg shadow-brand-blue/20">
                                     <feature.icon className="h-6 w-6 text-white" strokeWidth={2.5} />
                                 </div>
 
@@ -114,7 +114,7 @@ export function IndustryFeatures() {
                                 </p>
 
                                 {/* Hover Border Effect */}
-                                <div className="absolute inset-0 rounded-2xl opacity-0 ring-2 ring-inset ring-blue-400 transition-opacity duration-300 group-hover:opacity-100" />
+                                <div className="absolute inset-0 rounded-2xl opacity-0 ring-2 ring-inset ring-brand-blue transition-opacity duration-300 group-hover:opacity-100" />
                             </div>
                         </motion.div>
                     ))}
@@ -134,7 +134,7 @@ export function IndustryFeatures() {
                         {['MSC', 'Maersk', 'CMA CGM', 'TIVE', 'Savino'].map((partner) => (
                             <div
                                 key={partner}
-                                className="font-display text-xl font-bold text-slate-300 transition-colors hover:text-blue-600"
+                                className="font-display text-xl font-bold text-slate-300 transition-colors hover:text-brand-blue"
                             >
                                 {partner}
                             </div>

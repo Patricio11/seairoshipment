@@ -82,7 +82,7 @@ export function Header() {
                             </button>
                             <button
                                 onClick={() => openAuth('signup')}
-                                className="rounded-xl bg-gradient-to-r from-brand-blue to-brand-green px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand-blue/30 transition-all hover:shadow-brand-blue/50"
+                                className="rounded-xl bg-gradient-to-r from-brand-blue to-brand-orange px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand-blue/30 transition-all hover:shadow-brand-blue/50"
                             >
                                 Get Started
                             </button>
@@ -134,7 +134,7 @@ export function Header() {
                                             setIsMobileMenuOpen(false)
                                             openAuth('signup')
                                         }}
-                                        className="block w-full rounded-xl bg-gradient-to-r from-brand-blue to-brand-green px-4 py-3 text-center text-sm font-bold text-white"
+                                        className="block w-full rounded-xl bg-gradient-to-r from-brand-blue to-brand-orange px-4 py-3 text-center text-sm font-bold text-white"
                                     >
                                         Get Started
                                     </button>

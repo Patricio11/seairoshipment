@@ -9,13 +9,13 @@ const stats = [
         icon: Package,
         value: '50K+',
         label: 'Pallets Shipped Annually',
-        gradient: 'from-brand-blue to-brand-green',
+        gradient: 'from-brand-blue to-brand-orange',
     },
     {
         icon: TrendingUp,
         value: '99.8%',
         label: 'On-Time Delivery Rate',
-        gradient: 'from-brand-green to-brand-silver',
+        gradient: 'from-brand-orange to-brand-silver',
     },
     {
         icon: ThermometerSnowflake,
@@ -27,7 +27,7 @@ const stats = [
         icon: Clock,
         value: '24/7',
         label: 'Live Support & Monitoring',
-        gradient: 'from-brand-blue to-brand-green',
+        gradient: 'from-brand-blue to-brand-orange',
     },
 ]
 
@@ -38,7 +38,7 @@ export function StatsSection() {
     return (
         <section ref={ref} className="relative overflow-hidden bg-white py-20 lg:py-24">
             {/* Subtle background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-cyan-50/50" />
+            <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/5 to-brand-orange/5" />
 
             <div className="relative z-10 mx-auto max-w-7xl px-6">
                 <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
@@ -51,7 +51,7 @@ export function StatsSection() {
                             whileHover={{ y: -5, transition: { duration: 0.2 } }}
                             className="group relative"
                         >
-                            <div className="relative overflow-hidden rounded-2xl border-2 border-slate-100 bg-white p-8 text-center shadow-sm transition-all hover:border-blue-100 hover:shadow-xl">
+                            <div className="relative overflow-hidden rounded-2xl border-2 border-slate-100 bg-white p-8 text-center shadow-sm transition-all hover:border-brand-blue/20 hover:shadow-xl">
                                 {/* Icon */}
                                 <div className="mx-auto mb-4 inline-flex items-center justify-center">
                                     <div className={`rounded-xl bg-gradient-to-br ${stat.gradient} p-3 shadow-lg`}>

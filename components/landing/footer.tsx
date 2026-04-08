@@ -63,7 +63,7 @@ export function Footer() {
                         {/* Contact Info */}
                         <div className="mt-6 space-y-3 text-sm text-slate-600">
                             <div className="flex items-center gap-2">
-                                <MapPin className="h-4 w-4 text-blue-600" />
+                                <MapPin className="h-4 w-4 text-brand-blue" />
                                 <span>Cape Town, South Africa</span>
                             </div>
                             {/* <div className="flex items-center gap-2">
@@ -71,7 +71,7 @@ export function Footer() {
                                 <span>+27 21 XXX XXXX</span>
                             </div> */}
                             <div className="flex items-center gap-2">
-                                <Mail className="h-4 w-4 text-blue-600" />
+                                <Mail className="h-4 w-4 text-brand-orange" />
                                 <span>hello@seairocargo.com</span>
                             </div>
                         </div>
@@ -84,7 +84,7 @@ export function Footer() {
                                     href={social.href}
                                     whileHover={{ scale: 1.1, y: -2 }}
                                     whileTap={{ scale: 0.9 }}
-                                    className="rounded-lg border border-slate-200 bg-slate-50 p-2 transition-all hover:border-blue-300 hover:bg-blue-50"
+                                    className="rounded-lg border border-slate-200 bg-slate-50 p-2 transition-all hover:border-brand-blue/40 hover:bg-brand-blue/5"
                                     aria-label={social.label}
                                 >
                                     <social.icon className="h-5 w-5 text-slate-600" />
@@ -103,7 +103,7 @@ export function Footer() {
                                 <li key={link.name}>
                                     <Link
                                         href={link.href}
-                                        className="text-sm text-slate-600 transition-colors hover:text-blue-600"
+                                        className="text-sm text-slate-600 transition-colors hover:text-brand-blue"
                                     >
                                         {link.name}
                                     </Link>
@@ -121,7 +121,7 @@ export function Footer() {
                                 <li key={link.name}>
                                     <Link
                                         href={link.href}
-                                        className="text-sm text-slate-600 transition-colors hover:text-blue-600"
+                                        className="text-sm text-slate-600 transition-colors hover:text-brand-blue"
                                     >
                                         {link.name}
                                     </Link>
@@ -139,7 +139,7 @@ export function Footer() {
                                 <li key={link.name}>
                                     <Link
                                         href={link.href}
-                                        className="text-sm text-slate-600 transition-colors hover:text-blue-600"
+                                        className="text-sm text-slate-600 transition-colors hover:text-brand-blue"
                                     >
                                         {link.name}
                                     </Link>
@@ -164,7 +164,7 @@ export function Footer() {
             </div>
 
             {/* Subtle gradient line */}
-            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-400/50 to-transparent" />
+            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand-blue/50 to-transparent" />
         </footer>
     )
 }

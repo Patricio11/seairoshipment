@@ -63,7 +63,7 @@ export function ProcessTimeline() {
                 {/* Timeline */}
                 <div className="relative mt-20">
                     {/* Connecting Line - Desktop */}
-                    <div className="absolute left-1/2 top-12 bottom-12 hidden w-1 -translate-x-1/2 bg-gradient-to-b from-brand-blue via-brand-green to-emerald-500 lg:block" />
+                    <div className="absolute left-1/2 top-12 bottom-12 hidden w-1 -translate-x-1/2 bg-gradient-to-b from-brand-blue via-brand-orange to-emerald-500 lg:block" />
 
                     {/* Steps */}
                     <div className="space-y-16 lg:space-y-24">
@@ -81,7 +81,7 @@ export function ProcessTimeline() {
                                     <div className="rounded-2xl border-2 border-slate-200 bg-white p-8 shadow-lg">
                                         {/* Step Number & Timeline */}
                                         <div className={`mb-4 flex items-center gap-3 ${index % 2 === 0 ? 'lg:justify-end' : 'lg:justify-start'}`}>
-                                            <span className="rounded-full bg-gradient-to-r from-brand-blue to-brand-green px-4 py-1.5 text-sm font-bold text-white">
+                                            <span className="rounded-full bg-gradient-to-r from-brand-blue to-brand-orange px-4 py-1.5 text-sm font-bold text-white">
                                                 {step.timeline}
                                             </span>
                                             <span className="font-display text-5xl font-bold text-slate-100">
@@ -110,11 +110,11 @@ export function ProcessTimeline() {
                                 <div className="relative flex-shrink-0 lg:absolute lg:left-1/2 lg:-translate-x-1/2">
                                     <motion.div
                                         whileHover={{ scale: 1.15, rotate: 10 }}
-                                        className="relative z-10 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-blue to-brand-green shadow-2xl shadow-brand-blue/40"
+                                        className="relative z-10 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-blue to-brand-orange shadow-2xl shadow-brand-blue/40"
                                     >
                                         <step.icon className="h-9 w-9 text-white" strokeWidth={2.5} />
                                     </motion.div>
-                                    <div className="absolute inset-0 animate-ping rounded-2xl bg-blue-400 opacity-20" />
+                                    <div className="absolute inset-0 animate-ping rounded-2xl bg-brand-blue opacity-20" />
                                 </div>
 
                                 {/* Spacer for Desktop */}
