@@ -133,7 +133,7 @@ export default function BookingsPage() {
                 </div>
                 <Button
                     onClick={onOpen}
-                    className="h-12 px-6 bg-brand-blue hover:bg-blue-700 text-white font-bold rounded-2xl shadow-xl shadow-blue-500/20 transition-all active:scale-95 flex items-center gap-2"
+                    className="h-12 px-6 bg-brand-blue hover:bg-brand-blue/90 text-white font-bold rounded-2xl shadow-xl shadow-brand-blue/20 transition-all active:scale-95 flex items-center gap-2"
                 >
                     <Plus className="h-5 w-5" />
                     New Booking
@@ -219,7 +219,7 @@ export default function BookingsPage() {
                             </p>
                         </div>
                         {bookings.length === 0 && (
-                            <Button onClick={onOpen} className="bg-brand-blue hover:bg-blue-700 font-bold rounded-xl mt-2">
+                            <Button onClick={onOpen} className="bg-brand-blue hover:bg-brand-blue/90 font-bold rounded-xl mt-2">
                                 <Plus className="h-4 w-4 mr-2" />
                                 New Booking
                             </Button>

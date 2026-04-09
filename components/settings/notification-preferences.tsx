@@ -105,7 +105,7 @@ export function NotificationPreferences() {
                                             <div className={`
                                                 h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-300
                                                 ${isEnabled
-                                                    ? "bg-brand-blue text-white shadow-lg shadow-blue-500/30 scale-100"
+                                                    ? "bg-brand-blue text-white shadow-lg shadow-brand-blue/30 scale-100"
                                                     : "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 hover:bg-slate-300 dark:hover:bg-slate-700"}
                                             `}>
                                                 {channel === 'email' && <Mail className="h-5 w-5" />}

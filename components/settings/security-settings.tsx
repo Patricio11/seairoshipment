@@ -127,7 +127,7 @@ export function SecuritySettings() {
                                     <motion.div
                                         animate={{ top: ["10%", "90%", "10%"] }}
                                         transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                                        className="absolute left-2 right-2 h-0.5 bg-brand-blue shadow-[0_0_10px_2px_rgba(59,130,246,0.5)]"
+                                        className="absolute left-2 right-2 h-0.5 bg-brand-blue shadow-[0_0_10px_2px_rgba(0,154,222,0.5)]"
                                     />
                                 </div>
                             )}

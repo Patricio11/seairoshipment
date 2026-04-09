@@ -83,7 +83,7 @@ export function UploadDialog() {
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-                <Button className="bg-brand-blue hover:bg-blue-700">
+                <Button className="bg-brand-blue hover:bg-brand-blue/90">
                     <UploadCloud className="mr-2 h-4 w-4" />
                     Upload Document
                 </Button>

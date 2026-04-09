@@ -48,11 +48,11 @@ export function SettingsShell({ children }: SettingsShellProps) {
                                 {activeTab === tab.id && (
                                     <motion.div
                                         layoutId="activeTab"
-                                        className="absolute inset-0 bg-brand-blue rounded-2xl shadow-lg shadow-blue-500/30"
+                                        className="absolute inset-0 bg-brand-blue rounded-2xl shadow-lg shadow-brand-blue/30"
                                         transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                                     />
                                 )}
-                                <tab.icon className={cn("h-5 w-5 relative z-10", activeTab === tab.id ? "text-blue-100" : "text-slate-400")} />
+                                <tab.icon className={cn("h-5 w-5 relative z-10", activeTab === tab.id ? "text-white" : "text-slate-400")} />
                                 <span className="relative z-10">{tab.label}</span>
                             </button>
                         ))}

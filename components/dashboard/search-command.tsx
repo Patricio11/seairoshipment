@@ -78,7 +78,7 @@ export function SearchCommand() {
                             <CommandShortcut>⌘S</CommandShortcut>
                         </CommandItem>
                         <CommandItem>
-                            <Container className="mr-2 h-4 w-4 text-brand-green" />
+                            <Container className="mr-2 h-4 w-4 text-emerald-500" />
                             <span>REF-2024-089 (Delivered)</span>
                         </CommandItem>
                         <CommandItem>

@@ -14,7 +14,7 @@ export default function DashboardPage() {
                 <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Dashboard</h2>
                 <div className="flex items-center gap-2">
                     <Button
-                        className="bg-brand-blue hover:bg-blue-700"
+                        className="bg-brand-blue hover:bg-brand-blue/90"
                         onClick={onOpen}
                     >
                         <Plus className="mr-2 h-4 w-4" />

@@ -59,7 +59,7 @@ export function DashboardHeader() {
                         <Button variant="ghost" className="relative h-9 w-9 rounded-full ring-2 ring-white/50 dark:ring-slate-800/50">
                             <Avatar className="h-9 w-9">
                                 <AvatarImage src={user?.image || ""} alt={displayName} />
-                                <AvatarFallback className="bg-gradient-to-br from-brand-blue to-brand-green text-white">{initials}</AvatarFallback>
+                                <AvatarFallback className="bg-brand-blue text-white">{initials}</AvatarFallback>
                             </Avatar>
                         </Button>
                     </DropdownMenuTrigger>

@@ -523,7 +523,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                             </div>
 
                             <Button
-                                className="h-14 text-lg font-bold bg-brand-blue hover:bg-blue-700 shadow-xl shadow-blue-500/20 rounded-2xl transition-all active:scale-[0.98]"
+                                className="h-14 text-lg font-bold bg-brand-blue hover:bg-brand-blue/90 shadow-xl shadow-brand-blue/20 rounded-2xl transition-all active:scale-[0.98]"
                                 disabled={!isInitialComplete}
                                 onClick={handleViewAvailability}
                             >

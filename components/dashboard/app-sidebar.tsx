@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -52,13 +53,14 @@ export function AppSidebar({ className, isCollapsed, setIsCollapsed }: SidebarPr
             >
                 {/* Sidebar Header */}
                 <div className={cn("flex h-16 items-center px-6 border-b border-slate-200/50 dark:border-slate-800/50", isCollapsed ? "justify-center px-0" : "justify-between")}>
-                    <Link href="/dashboard" className={cn("flex items-center gap-2", isCollapsed && "hidden")}>
-                        <div className="h-8 w-8 rounded-lg bg-brand-blue flex items-center justify-center">
-                            <span className="text-white font-bold text-lg">S</span>
-                        </div>
-                        <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-brand-blue to-brand-green">
-                            SEAIRO
-                        </span>
+                    <Link href="/dashboard" className={cn("flex items-center", isCollapsed && "hidden")}>
+                        <Image
+                            src="/seairo-logo.png"
+                            alt="Seairo Cargo Solutions"
+                            width={140}
+                            height={46}
+                            className="h-9 w-auto"
+                        />
                     </Link>
                     <Link href="/dashboard" className={cn("flex items-center justify-center", !isCollapsed && "hidden")}>
                         <div className="h-8 w-8 rounded-lg bg-brand-blue flex items-center justify-center">
@@ -195,7 +197,7 @@ export function AppSidebar({ className, isCollapsed, setIsCollapsed }: SidebarPr
                     {!isCollapsed && (
                         <div className="mt-6 rounded-xl bg-slate-100 p-4 dark:bg-slate-800/50">
                             <div className="flex items-center gap-3">
-                                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-brand-blue to-brand-green flex items-center justify-center text-white font-bold text-xs ring-2 ring-white dark:ring-slate-900">
+                                <div className="h-8 w-8 rounded-full bg-brand-blue flex items-center justify-center text-white font-bold text-xs ring-2 ring-white dark:ring-slate-900">
                                     {initials}
                                 </div>
                                 <div className="flex flex-col overflow-hidden">

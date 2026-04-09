@@ -98,7 +98,7 @@ export function CompanyProfileForm() {
                 <div className="pt-6 flex justify-end">
                     <Button
                         disabled={isLoading}
-                        className="bg-brand-blue hover:bg-blue-700 text-white min-w-[140px] h-12 rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all active:scale-95"
+                        className="bg-brand-blue hover:bg-brand-blue/90 text-white min-w-[140px] h-12 rounded-xl font-bold shadow-lg shadow-brand-blue/20 transition-all active:scale-95"
                     >
                         {isLoading ? (
                             <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

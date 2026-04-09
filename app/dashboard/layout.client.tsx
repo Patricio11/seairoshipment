@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import { AppSidebar } from "@/components/dashboard/app-sidebar"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -33,12 +34,13 @@ export function DashboardLayoutClient({
 
                 {/* Mobile Header Override for Menu Trigger */}
                 <div className="md:hidden sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200/50 px-4 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-lg bg-brand-blue flex items-center justify-center">
-                            <span className="text-white font-bold text-lg">S</span>
-                        </div>
-                        <span className="font-bold text-slate-900">SEAIRO</span>
-                    </div>
+                    <Image
+                        src="/seairo-logo.png"
+                        alt="Seairo Cargo Solutions"
+                        width={120}
+                        height={40}
+                        className="h-8 w-auto"
+                    />
                     <Sheet>
                         <SheetTrigger asChild>
                             <Button variant="ghost" size="icon">

@@ -19,7 +19,7 @@ export default function ShipmentsPage() {
                         <Filter className="mr-2 h-4 w-4" />
                         Filter
                     </Button>
-                    <Button className="bg-brand-blue hover:bg-blue-700">
+                    <Button className="bg-brand-blue hover:bg-brand-blue/90">
                         <Plus className="mr-2 h-4 w-4" />
                         New Shipment
                     </Button>

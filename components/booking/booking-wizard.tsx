@@ -198,7 +198,7 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
                         <Button
                             onClick={nextStep}
                             disabled={step === 2 && !costBreakdown}
-                            className="bg-brand-blue hover:bg-blue-700 min-w-[100px] sm:min-w-[120px] text-sm sm:text-base h-9 sm:h-10 font-bold"
+                            className="bg-brand-blue hover:bg-brand-blue/90 min-w-[100px] sm:min-w-[120px] text-sm sm:text-base h-9 sm:h-10 font-bold"
                         >
                             Next Stage
                             <ChevronRight className="ml-1 sm:ml-2 h-4 w-4" />
