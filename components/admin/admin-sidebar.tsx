@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { motion } from "framer-motion"
 import {
     LayoutDashboard,
@@ -118,9 +119,15 @@ export function AdminSidebar() {
             {/* Header */}
             <div className="h-16 flex items-center px-6 border-b border-slate-900 justify-between">
                 {!isCollapsed && (
-                    <div className="flex items-center gap-2">
-                        <div className="h-6 w-6 rounded bg-red-600 flex items-center justify-center font-black text-[10px] tracking-tighter">SRS</div>
-                        <span className="font-mono font-bold tracking-widest text-sm text-slate-400">ADMIN<span className="text-red-600">OS</span></span>
+                    <div className="flex items-center gap-3">
+                        <Image
+                            src="/seairo-logo.png"
+                            alt="Seairo"
+                            width={100}
+                            height={33}
+                            className="h-7 w-auto brightness-0 invert"
+                        />
+                        <span className="font-mono font-bold tracking-widest text-[10px] text-brand-orange uppercase">Admin</span>
                     </div>
                 )}
                 <Button
@@ -208,9 +215,9 @@ export function AdminSidebar() {
                             )}
                         >
                             {isActive && (
-                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-600 rounded-r-full" />
+                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-orange rounded-r-full" />
                             )}
-                            <link.icon className={cn("h-5 w-5 shrink-0 transition-colors", isActive ? "text-red-500" : "text-slate-500 group-hover:text-white")} />
+                            <link.icon className={cn("h-5 w-5 shrink-0 transition-colors", isActive ? "text-brand-orange" : "text-slate-500 group-hover:text-white")} />
                             {!isCollapsed && (
                                 <span className={cn("text-xs font-bold uppercase tracking-wider", isActive ? "text-white" : "")}>
                                     {link.label}
@@ -248,9 +255,9 @@ export function AdminSidebar() {
                                 )}
                             >
                                 {isActive && (
-                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-600 rounded-r-full" />
+                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-orange rounded-r-full" />
                                 )}
-                                <link.icon className={cn("h-5 w-5 shrink-0 transition-colors", isActive ? "text-red-500" : "text-slate-500 group-hover:text-white")} />
+                                <link.icon className={cn("h-5 w-5 shrink-0 transition-colors", isActive ? "text-brand-orange" : "text-slate-500 group-hover:text-white")} />
                                 {!isCollapsed && (
                                     <span className={cn("text-xs font-bold uppercase tracking-wider", isActive ? "text-white" : "")}>
                                         {link.label}

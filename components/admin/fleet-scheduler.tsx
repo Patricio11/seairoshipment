@@ -340,7 +340,7 @@ export function FleetScheduler() {
                         />
                     </div>
                     <Button
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-9"
+                        className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold h-9"
                         onClick={handleOpenCreate}
                     >
                         <Plus className="mr-2 h-4 w-4" /> Create Container
@@ -681,7 +681,7 @@ export function FleetScheduler() {
                             <Button type="button" variant="ghost" onClick={() => setDialogOpen(false)} className="text-slate-400 hover:text-white hover:bg-slate-900">
                                 CANCEL
                             </Button>
-                            <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white font-black px-8">
+                            <Button type="submit" disabled={saving} className="bg-brand-blue hover:bg-brand-blue/90 text-white font-black px-8">
                                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                                 {saving ? "SAVING..." : editingContainer ? "UPDATE CONTAINER" : "CREATE CONTAINER"}
                             </Button>

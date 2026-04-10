@@ -297,7 +297,7 @@ export function CreateOceanFreightDialog({
                 <DialogTrigger asChild>{trigger}</DialogTrigger>
             ) : (
                 <DialogTrigger asChild>
-                    <Button className="bg-brand-blue hover:bg-blue-700 text-white font-bold h-10 shadow-lg shadow-blue-900/20">
+                    <Button className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold h-10 shadow-lg shadow-blue-900/20">
                         <Plus className="mr-2 h-4 w-4" /> New Freight Rate
                     </Button>
                 </DialogTrigger>
@@ -565,7 +565,7 @@ export function CreateOceanFreightDialog({
                         <Button
                             type="submit"
                             disabled={loading}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-black px-8"
+                            className="bg-brand-blue hover:bg-brand-blue/90 text-white font-black px-8"
                         >
                             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                             {loading ? "SAVING..." : isEditMode ? "UPDATE FREIGHT RATE" : "SAVE FREIGHT RATE"}

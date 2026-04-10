@@ -257,7 +257,7 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                             {initialData.active ? "Active" : "Inactive"}
                         </Badge>
                     )}
-                    <Button onClick={handleSave} className="bg-brand-blue hover:bg-blue-700">
+                    <Button onClick={handleSave} className="bg-brand-blue hover:bg-brand-blue/90">
                         <Save className="mr-2 h-4 w-4" />
                         Save Rate Card
                     </Button>

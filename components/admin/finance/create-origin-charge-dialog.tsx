@@ -91,7 +91,7 @@ export function CreateOriginChargeDialog() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="bg-brand-blue hover:bg-blue-700">
+                <Button className="bg-brand-blue hover:bg-brand-blue/90">
                     <Plus className="mr-2 h-4 w-4" />
                     New Rate Card
                 </Button>
@@ -246,7 +246,7 @@ export function CreateOriginChargeDialog() {
                         <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                             Cancel
                         </Button>
-                        <Button type="submit" className="bg-brand-blue hover:bg-blue-700" disabled={loading}>
+                        <Button type="submit" className="bg-brand-blue hover:bg-brand-blue/90" disabled={loading}>
                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Create & Continue
                         </Button>

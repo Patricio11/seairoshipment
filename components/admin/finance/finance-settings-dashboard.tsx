@@ -213,7 +213,7 @@ export function FinanceSettingsDashboard() {
                 </div>
 
                 <div className="flex justify-end pt-4">
-                    <Button className="bg-brand-blue hover:bg-blue-700" onClick={handleUpdateSettings}>
+                    <Button className="bg-brand-blue hover:bg-brand-blue/90" onClick={handleUpdateSettings}>
                         Save Finance Settings
                     </Button>
                 </div>

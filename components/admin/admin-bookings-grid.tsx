@@ -263,7 +263,7 @@ export function AdminBookingsGrid() {
                                     className={`px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all ${
                                         rateTypeFilter === t
                                             ? t === "srs"
-                                                ? "bg-blue-600 text-white"
+                                                ? "bg-brand-blue text-white"
                                                 : t === "scs"
                                                     ? "bg-emerald-600 text-white"
                                                     : "bg-slate-700 text-white"
@@ -522,7 +522,7 @@ export function AdminBookingsGrid() {
                                             )}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-8">
+                                            <Button size="sm" className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold h-8">
                                                 Review
                                             </Button>
                                         </TableCell>
