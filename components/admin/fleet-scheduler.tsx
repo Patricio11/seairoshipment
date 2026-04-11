@@ -302,23 +302,23 @@ export function FleetScheduler() {
         }
     }
 
-    const handleCreateMetaShipBooking = async (container: ContainerData) => {
+    const handleCreateMetaShipOrder = async (container: ContainerData) => {
         setCreatingBooking(true)
         try {
             const res = await fetch(`/api/admin/containers/${container.id}/book`, { method: "POST" })
             const data = await res.json()
             if (!res.ok) {
-                toast.error(data.error || "Failed to create MetaShip booking")
+                toast.error(data.error || "Failed to create MetaShip order")
                 return
             }
-            toast.success("MetaShip Booking Created!", {
+            toast.success("MetaShip Order Created!", {
                 description: `Order #${data.orderNo} — Log in to MetaShip to confirm.`,
                 duration: 8000,
             })
             setBookingDialog(null)
             fetchContainers()
         } catch {
-            toast.error("Failed to create MetaShip booking")
+            toast.error("Failed to create MetaShip order")
         } finally {
             setCreatingBooking(false)
         }
@@ -427,7 +427,7 @@ export function FleetScheduler() {
                                                 onClick={() => setBookingDialog(container)}
                                             >
                                                 <Ship className="mr-2 h-4 w-4" />
-                                                Create MetaShip Booking
+                                                Create MetaShip Order
                                             </Button>
                                         )}
 
@@ -502,7 +502,7 @@ export function FleetScheduler() {
                                     {container.totalPallets >= 15 && !container.metashipOrderNo && (
                                         <div className="flex items-center gap-1 mt-2 text-amber-400 text-xs font-bold">
                                             <AlertTriangle className="h-3 w-3" />
-                                            Threshold reached — ready for MetaShip booking
+                                            Threshold reached — ready for MetaShip order
                                         </div>
                                     )}
                                 </div>
@@ -755,7 +755,7 @@ export function FleetScheduler() {
                             {/* MetaShip Reference */}
                             {detailDialog.metashipOrderNo && (
                                 <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4">
-                                    <p className="text-[10px] font-bold uppercase text-emerald-400/60 mb-2">MetaShip Booking</p>
+                                    <p className="text-[10px] font-bold uppercase text-emerald-400/60 mb-2">MetaShip Order</p>
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <p className="text-emerald-400 font-black text-lg">Order #{detailDialog.metashipOrderNo}</p>
@@ -961,13 +961,13 @@ export function FleetScheduler() {
                 </DialogContent>
             </Dialog>
 
-            {/* MetaShip Booking Confirmation Dialog */}
+            {/* MetaShip Order Confirmation Dialog */}
             <Dialog open={!!bookingDialog} onOpenChange={() => setBookingDialog(null)}>
                 <DialogContent className="bg-slate-950 border-slate-800 text-white max-w-lg">
                     <DialogHeader>
-                        <DialogTitle className="text-xl font-black">Create MetaShip Booking</DialogTitle>
+                        <DialogTitle className="text-xl font-black">Create MetaShip Order</DialogTitle>
                         <DialogDescription className="text-slate-400">
-                            This will create a consolidated booking in MetaShip for all client allocations on this container.
+                            This will create a consolidated order in MetaShip for all client allocations on this container.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -1020,7 +1020,7 @@ export function FleetScheduler() {
                             <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 flex items-start gap-2">
                                 <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
                                 <p className="text-xs text-amber-300">
-                                    After creating the booking, log in to MetaShip to review and confirm it.
+                                    After creating the order, log in to MetaShip to review, attach documents, and confirm it.
                                 </p>
                             </div>
                         </div>
@@ -1031,7 +1031,7 @@ export function FleetScheduler() {
                         <Button
                             className="bg-amber-600 hover:bg-amber-700 font-bold"
                             disabled={creatingBooking}
-                            onClick={() => bookingDialog && handleCreateMetaShipBooking(bookingDialog)}
+                            onClick={() => bookingDialog && handleCreateMetaShipOrder(bookingDialog)}
                         >
                             {creatingBooking ? (
                                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...</>

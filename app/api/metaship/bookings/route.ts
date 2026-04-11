@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/server";
-import { createMetaShipBooking } from "@/lib/metaship";
+import { createMetaShipOrder, uploadMetaShipDocument } from "@/lib/metaship";
+import type { MetaShipDocumentType } from "@/lib/metaship";
 
 export async function POST(request: NextRequest) {
     try {
@@ -24,16 +25,18 @@ export async function POST(request: NextRequest) {
             eta,
             voyageNumber,
             containers,
+            documents,
         } = body;
 
         if (!portOfLoadValue || !portOfDischargeValue || !etd || !containers?.length) {
             return NextResponse.json(
-                { error: "Missing required booking fields" },
+                { error: "Missing required order fields" },
                 { status: 400 }
             );
         }
 
-        const result = await createMetaShipBooking({
+        // Create order in MetaShip (instead of booking)
+        const result = await createMetaShipOrder({
             portOfLoadValue,
             portOfLoadCity: portOfLoadCity || "",
             portOfDischargeValue,
@@ -48,11 +51,36 @@ export async function POST(request: NextRequest) {
             containers,
         });
 
-        return NextResponse.json(result);
+        // Upload documents to the order if any were provided
+        const uploadedDocs: Array<{ name: string; success: boolean; error?: string }> = [];
+        if (documents?.length && result.data?.orderNo) {
+            // Extract orderId from systemReference or orderNo
+            // The orderId for document upload is an integer
+            for (const doc of documents as Array<{ file: string; name: string; mimeType: string; type?: string }>) {
+                try {
+                    await uploadMetaShipDocument({
+                        file: doc.file,
+                        name: doc.name,
+                        mimeType: doc.mimeType,
+                        type: (doc.type as MetaShipDocumentType) || "SHIPMENT_DOCUMENT",
+                        orderId: parseInt(result.data.systemReference) || undefined,
+                    });
+                    uploadedDocs.push({ name: doc.name, success: true });
+                } catch (err) {
+                    uploadedDocs.push({
+                        name: doc.name,
+                        success: false,
+                        error: err instanceof Error ? err.message : "Upload failed",
+                    });
+                }
+            }
+        }
+
+        return NextResponse.json({ ...result, uploadedDocs });
     } catch (error: unknown) {
-        console.error("MetaShip create booking error:", error);
+        console.error("MetaShip create order error:", error);
         const message =
-            error instanceof Error ? error.message : "Failed to create MetaShip booking";
+            error instanceof Error ? error.message : "Failed to create MetaShip order";
         return NextResponse.json({ error: message }, { status: 500 });
     }
 }

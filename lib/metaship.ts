@@ -1,4 +1,4 @@
-const METASHIP_BASE_URL = "https://api.metaship.ai";
+const METASHIP_BASE_URL = "https://api.v3.metaship.ai";
 
 // Module-level token cache
 let cachedToken: string | null = null;
@@ -137,14 +137,30 @@ export interface MetaShipBookingPayload {
 }
 
 /**
- * Create a booking in MetaShip with the consolidated container data.
- * Endpoint: POST /public/v2/booking (singular)
+ * Create a booking request in MetaShip.
+ * Endpoint: POST /public/v2/booking
  */
 export async function createMetaShipBooking(payload: MetaShipBookingPayload) {
     return metaShipPost<{
         message: string;
         data: { orderNo: string; systemReference: string };
-    }>("/public/v2/booking", {
+    }>("/public/v2/booking", buildBookingBody(payload));
+}
+
+/**
+ * Create an order in MetaShip (preferred over booking).
+ * Orders appear in MetaShip's order management view for review before sending.
+ * Endpoint: POST /public/v2/order
+ */
+export async function createMetaShipOrder(payload: MetaShipBookingPayload) {
+    return metaShipPost<{
+        message: string;
+        data: { orderNo: string; systemReference: string };
+    }>("/public/v2/order", buildBookingBody(payload));
+}
+
+function buildBookingBody(payload: MetaShipBookingPayload) {
+    return {
         movementType: "EXPORT",
         serviceType: "FCL",
         modeOfTransport: "OCEAN",
@@ -173,5 +189,43 @@ export async function createMetaShipBooking(payload: MetaShipBookingPayload) {
             containerTypeCode: c.containerTypeCode,
             products: c.products,
         })),
-    });
+    };
+}
+
+/**
+ * Upload a document to a MetaShip order.
+ * The file is sent as base64. MetaShip stores it in S3 and returns a presigned URL.
+ * Endpoint: POST /public/v2/order/document
+ */
+export interface MetaShipDocumentUpload {
+    file: string;            // base64-encoded file content
+    name: string;            // filename e.g. "ACC123_invoice.pdf"
+    mimeType: string;        // e.g. "application/pdf"
+    type: MetaShipDocumentType;
+    orderId?: number;        // from order creation response
+    bookingId?: number;      // from booking creation response
+    bookingContainerId?: number;
+}
+
+export type MetaShipDocumentType =
+    | "DOCUMENTATION_PACK"
+    | "PACKING_LIST"
+    | "COMMERCIAL_INVOICE"
+    | "INVOICE"
+    | "SUPPLIER_INVOICE"
+    | "SHIPMENT_DOCUMENT";
+
+export async function uploadMetaShipDocument(payload: MetaShipDocumentUpload) {
+    return metaShipPost<{
+        message: string;
+        result: {
+            id: string;
+            name: string;
+            size: number;
+            mimeType: string;
+            type: string;
+            url: string;
+            createdAt: string;
+        };
+    }>("/public/v2/order/document", payload as unknown as Record<string, unknown>);
 }
