@@ -59,7 +59,7 @@ async function seed() {
         .insert(salesRateTypes)
         .values([
             { id: "srs", code: "SRS", name: "Shared Reefer Services", description: "SRS consolidation service for refrigerated cargo", active: true },
-            { id: "scs", code: "SCS", name: "Seairo Cargo Solutions", description: "Full container load (FCL) premium service", active: true },
+            { id: "scs", code: "SCS", name: "Shared Container Service", description: "Shared container service for consolidated cargo", active: true },
         ])
         .onConflictDoNothing();
 

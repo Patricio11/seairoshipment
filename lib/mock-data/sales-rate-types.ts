@@ -13,8 +13,8 @@ export const MOCK_SALES_RATE_TYPES: SalesRateType[] = [
     {
         id: 'scs',
         code: 'SCS',
-        name: 'Seairo Cargo Solutions',
-        description: 'Full container load (FCL) premium service',
+        name: 'Shared Container Service',
+        description: 'Shared container service for consolidated cargo',
         active: true,
         createdAt: '2024-01-01T00:00:00Z',
         updatedAt: '2024-01-01T00:00:00Z'

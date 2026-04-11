@@ -251,7 +251,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                 <div className="grid grid-cols-2 gap-3">
                                     {[
                                         { id: "srs", label: "Shared Reefer Services", short: "SRS", color: "brand-blue", ring: "ring-brand-blue", bg: "bg-blue-50 dark:bg-blue-900/20", border: "border-brand-blue", text: "text-brand-blue" },
-                                        { id: "scs", label: "Seairo Cargo Solutions", short: "SCS", color: "emerald-600", ring: "ring-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-900/20", border: "border-emerald-500", text: "text-emerald-600 dark:text-emerald-400" },
+                                        { id: "scs", label: "Shared Container Service", short: "SCS", color: "emerald-600", ring: "ring-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-900/20", border: "border-emerald-500", text: "text-emerald-600 dark:text-emerald-400" },
                                     ].map((type) => {
                                         const selected = formData.salesRateTypeId === type.id
                                         return (
