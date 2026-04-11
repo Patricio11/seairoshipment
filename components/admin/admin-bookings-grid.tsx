@@ -234,13 +234,13 @@ export function AdminBookingsGrid() {
             <Tabs defaultValue="containers" onValueChange={setActiveTab} className="w-full">
                 <div className="flex flex-col sm:flex-row justify-between gap-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
                     <TabsList className="bg-slate-950 border border-slate-800">
-                        <TabsTrigger value="containers" className="data-[state=active]:bg-slate-800 text-xs font-bold uppercase tracking-wider">
+                        <TabsTrigger value="containers" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400 text-xs font-bold uppercase tracking-wider">
                             Containers
                         </TabsTrigger>
-                        <TabsTrigger value="requests" className="data-[state=active]:bg-slate-800 text-xs font-bold uppercase tracking-wider">
+                        <TabsTrigger value="requests" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400 text-xs font-bold uppercase tracking-wider">
                             Pending Requests
                         </TabsTrigger>
-                        <TabsTrigger value="shipments" className="data-[state=active]:bg-slate-800 text-xs font-bold uppercase tracking-wider">
+                        <TabsTrigger value="shipments" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400 text-xs font-bold uppercase tracking-wider">
                             Live Shipments
                         </TabsTrigger>
                     </TabsList>

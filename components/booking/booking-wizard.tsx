@@ -114,8 +114,10 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
                     files.map(async (file) => {
                         const prefixedName = `${accountPrefix}_${file.name}`
                         const result = await uploadFile(file, STORAGE_PATHS.BOOKING_DOCUMENTS, prefixedName)
-                        if (!result.success || !result.url) return
-                        await fetch(`/api/bookings/${data.allocationId}/documents`, {
+                        if (!result.success || !result.url) {
+                            throw new Error(result.error || "Upload failed")
+                        }
+                        const docRes = await fetch(`/api/bookings/${data.allocationId}/documents`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({
@@ -125,11 +127,15 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
                                 type: "OTHER",
                             }),
                         })
+                        if (!docRes.ok) throw new Error("Failed to save document record")
                     })
                 )
-                const failed = uploadResults.filter(r => r.status === "rejected").length
-                if (failed > 0) {
-                    toast.warning(`${files.length - failed}/${files.length} documents uploaded. ${failed} failed — you can re-upload from your bookings page.`)
+                const failedResults = uploadResults.filter(r => r.status === "rejected")
+                if (failedResults.length === files.length) {
+                    const reason = failedResults[0].status === "rejected" ? failedResults[0].reason?.message : ""
+                    toast.error(`Document upload failed: ${reason || "Storage not configured. Please contact support."}`)
+                } else if (failedResults.length > 0) {
+                    toast.warning(`${files.length - failedResults.length}/${files.length} documents uploaded. ${failedResults.length} failed.`)
                 }
             }
 
