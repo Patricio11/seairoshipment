@@ -1,4 +1,5 @@
 import { pgTable, text, timestamp, integer, pgEnum } from "drizzle-orm/pg-core";
+import { containerTypes } from "./container-types";
 
 export const containerStatusEnum = pgEnum("container_status", [
     "OPEN",
@@ -17,6 +18,7 @@ export const containers = pgTable("containers", {
     voyageNumber: text("voyage_number"),
     sailingScheduleId: text("sailing_schedule_id"),
     type: containerTypeEnum("type").default("40FT").notNull(),
+    containerTypeId: text("container_type_id").references(() => containerTypes.id),
     etd: timestamp("etd"),
     eta: timestamp("eta"),
     totalPallets: integer("total_pallets").default(0).notNull(),

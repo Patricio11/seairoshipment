@@ -81,6 +81,8 @@ interface ContainerData {
     vessel: string
     voyageNumber: string | null
     type: string
+    containerTypeId: string | null
+    containerTypeName: string | null
     etd: string | null
     eta: string | null
     totalPallets: number
@@ -100,12 +102,21 @@ interface LocationOption {
     type: string
 }
 
+interface ContainerTypeOption {
+    id: string
+    displayName: string
+    size: string
+    type: string
+    maxPallets: number
+    active: boolean
+}
+
 interface ContainerForm {
     origin: string
     destination: string
     vessel: string
     voyageNumber: string
-    type: "20FT" | "40FT"
+    containerTypeId: string
     etd: string
     eta: string
     maxCapacity: number
@@ -124,7 +135,7 @@ const EMPTY_FORM: ContainerForm = {
     destination: "",
     vessel: "",
     voyageNumber: "",
-    type: "40FT",
+    containerTypeId: "40ft-reefer-hc",
     etd: "",
     eta: "",
     maxCapacity: 20,
@@ -161,6 +172,7 @@ export function FleetScheduler() {
     // Locations for route selection
     const [originLocations, setOriginLocations] = useState<LocationOption[]>([])
     const [destinationLocations, setDestinationLocations] = useState<LocationOption[]>([])
+    const [containerTypeOptions, setContainerTypeOptions] = useState<ContainerTypeOption[]>([])
 
     const fetchContainers = useCallback(async () => {
         setLoading(true)
@@ -178,19 +190,21 @@ export function FleetScheduler() {
 
     useEffect(() => {
         fetchContainers()
-        async function fetchLocations() {
+        async function fetchLocationsAndTypes() {
             try {
-                const [origRes, destRes] = await Promise.all([
+                const [origRes, destRes, ctRes] = await Promise.all([
                     fetch("/api/admin/locations?type=ORIGIN"),
                     fetch("/api/admin/locations?type=DESTINATION"),
+                    fetch("/api/admin/container-types"),
                 ])
                 if (origRes.ok) setOriginLocations(await origRes.json())
                 if (destRes.ok) setDestinationLocations(await destRes.json())
+                if (ctRes.ok) setContainerTypeOptions(await ctRes.json())
             } catch {
-                console.error("Failed to fetch locations")
+                console.error("Failed to fetch locations/container types")
             }
         }
-        fetchLocations()
+        fetchLocationsAndTypes()
     }, [fetchContainers])
 
     const filteredContainers = containerData.filter(c =>
@@ -215,7 +229,7 @@ export function FleetScheduler() {
             destination: destination || "",
             vessel: container.vessel,
             voyageNumber: container.voyageNumber || "",
-            type: container.type as "20FT" | "40FT",
+            containerTypeId: container.containerTypeId || "40ft-reefer-hc",
             etd: container.etd ? new Date(container.etd).toISOString().split("T")[0] : "",
             eta: container.eta ? new Date(container.eta).toISOString().split("T")[0] : "",
             maxCapacity: container.maxCapacity,
@@ -244,17 +258,16 @@ export function FleetScheduler() {
                         route,
                         vessel: formData.vessel,
                         voyageNumber: formData.voyageNumber || null,
-                        type: formData.type,
+                        containerTypeId: formData.containerTypeId,
                         etd: formData.etd || null,
                         eta: formData.eta || null,
-                        maxCapacity: formData.maxCapacity,
                     }),
                 }
             )
 
             if (res.ok) {
                 toast.success(isEdit ? "Container Updated" : "Container Created", {
-                    description: `${route} — ${formData.vessel} (${formData.type})`,
+                    description: `${route} — ${formData.vessel} (${containerTypeOptions.find(c => c.id === formData.containerTypeId)?.displayName || formData.containerTypeId})`,
                 })
                 setDialogOpen(false)
                 fetchContainers()
@@ -311,11 +324,12 @@ export function FleetScheduler() {
         }
     }
 
-    const handleTypeChange = (val: "20FT" | "40FT") => {
+    const handleContainerTypeChange = (ctId: string) => {
+        const ct = containerTypeOptions.find(c => c.id === ctId)
         setFormData(prev => ({
             ...prev,
-            type: val,
-            maxCapacity: val === "20FT" ? 10 : 20,
+            containerTypeId: ctId,
+            maxCapacity: ct?.maxPallets || 20,
         }))
     }
 
@@ -384,7 +398,7 @@ export function FleetScheduler() {
                                                 </Badge>
                                             </h3>
                                             <p className="text-slate-500 text-sm font-medium">
-                                                {container.vessel} • {container.type} • {container.id}
+                                                {container.vessel} • {container.containerTypeName || container.type} • {container.id}
                                                 {container.voyageNumber && ` • V/${container.voyageNumber}`}
                                             </p>
                                             {(container.etd || container.eta) && (
@@ -632,13 +646,16 @@ export function FleetScheduler() {
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-1.5">
                                     <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Container Type</Label>
-                                    <Select value={formData.type} onValueChange={handleTypeChange}>
+                                    <Select value={formData.containerTypeId} onValueChange={handleContainerTypeChange}>
                                         <SelectTrigger className="bg-slate-900 border-slate-800 h-9 text-sm">
-                                            <SelectValue />
+                                            <SelectValue placeholder="Select type" />
                                         </SelectTrigger>
                                         <SelectContent className="bg-slate-900 border-slate-800 text-white">
-                                            <SelectItem value="40FT">40FT Reefer</SelectItem>
-                                            <SelectItem value="20FT">20FT Reefer</SelectItem>
+                                            {containerTypeOptions.filter(ct => ct.active).map(ct => (
+                                                <SelectItem key={ct.id} value={ct.id}>
+                                                    {ct.displayName}
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -648,8 +665,8 @@ export function FleetScheduler() {
                                         type="number"
                                         min={1}
                                         value={formData.maxCapacity}
-                                        onChange={(e) => setFormData({ ...formData, maxCapacity: parseInt(e.target.value) || 0 })}
-                                        className="bg-slate-900 border-slate-800 h-9 text-sm font-mono"
+                                        readOnly
+                                        className="bg-slate-950 border-slate-800 h-9 text-sm font-mono text-slate-400"
                                     />
                                 </div>
                             </div>

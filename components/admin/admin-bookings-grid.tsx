@@ -82,6 +82,8 @@ interface ContainerData {
     vessel: string
     voyageNumber: string | null
     type: string
+    containerTypeId: string | null
+    containerTypeName: string | null
     etd: string | null
     eta: string | null
     totalPallets: number
@@ -320,7 +322,7 @@ export function AdminBookingsGrid() {
                                                     </Badge>
                                                 </h3>
                                                 <p className="text-slate-500 text-sm font-medium">
-                                                    {container.vessel} • {container.type} • {container.id}
+                                                    {container.vessel} • {container.containerTypeName || container.type} • {container.id}
                                                     {container.voyageNumber && <> • Voyage: {container.voyageNumber}</>}
                                                 </p>
                                                 {(container.etd || container.eta) && (

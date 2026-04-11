@@ -126,14 +126,13 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
     }, [formData.origin, formData.destination, fetchSchedules])
 
     const selectedContainer = availableContainers.find(c => c.id === formData.containerId)
-    const containerCapacity = selectedContainer ? (selectedContainer.type === "20FT" ? 10 : 20) : 20
+    const containerCapacity = selectedContainer?.maxCapacity || 20
 
     const count = formData.palletCount || 0
     const remainingCapacity = selectedContainer ? containerCapacity - selectedContainer.preFilled : 20
 
     const handleSelectContainer = (container: ContainerSlot) => {
-        const capacity = container.type === "20FT" ? 10 : 20
-        const available = capacity - container.preFilled
+        const available = container.maxCapacity - container.preFilled
 
         const minPallets = available < 5 ? 1 : 5
         const initialCount = Math.max(minPallets, Math.min(count || minPallets, available))
@@ -573,7 +572,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                         ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                             {availableContainers.map((container) => {
-                                const capacity = container.type === "20FT" ? 10 : 20
+                                const capacity = container.maxCapacity
                                 return (
                                     <motion.div
                                         key={container.id}

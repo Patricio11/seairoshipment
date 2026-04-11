@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/server";
 import { db } from "@/lib/db";
-import { containers, palletAllocations, user } from "@/lib/db/schema";
+import { containers, palletAllocations, user, containerTypes } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
@@ -10,15 +10,19 @@ export async function GET() {
         const { error } = await requireAdmin();
         if (error) return error;
 
-        // Get all containers with their allocations
+        // Get all containers with their allocations + container type display name
         const allContainers = await db
-            .select()
+            .select({
+                container: containers,
+                containerTypeName: containerTypes.displayName,
+            })
             .from(containers)
+            .leftJoin(containerTypes, eq(containers.containerTypeId, containerTypes.id))
             .orderBy(desc(containers.createdAt));
 
         // For each container, get allocations with user info
         const containersWithAllocations = await Promise.all(
-            allContainers.map(async (container) => {
+            allContainers.map(async ({ container, containerTypeName }) => {
                 const allocations = await db
                     .select({
                         allocation: palletAllocations,
@@ -32,6 +36,7 @@ export async function GET() {
 
                 return {
                     ...container,
+                    containerTypeName,
                     allocations,
                 };
             })
@@ -52,24 +57,31 @@ export async function POST(request: NextRequest) {
         if (error) return error;
 
         const body = await request.json();
-        const { route, vessel, voyageNumber, sailingScheduleId, type, etd, eta, maxCapacity, salesRateTypeId } = body;
+        const { route, vessel, voyageNumber, sailingScheduleId, containerTypeId, etd, eta, salesRateTypeId } = body;
 
-        if (!route || !vessel || !type) {
+        if (!route || !vessel || !containerTypeId) {
             return NextResponse.json(
                 { error: "Route, vessel, and container type are required" },
                 { status: 400 }
             );
         }
 
-        if (!["20FT", "40FT"].includes(type)) {
-            return NextResponse.json(
-                { error: "Container type must be 20FT or 40FT" },
-                { status: 400 }
-            );
+        // Look up the container type to get size + maxPallets + reefer/dry
+        const [ct] = await db
+            .select()
+            .from(containerTypes)
+            .where(eq(containerTypes.id, containerTypeId))
+            .limit(1);
+
+        if (!ct) {
+            return NextResponse.json({ error: "Invalid container type" }, { status: 400 });
         }
 
+        // Derive salesRateTypeId from container type: REEFER → srs, DRY → scs
+        const derivedSalesRateTypeId = salesRateTypeId || (ct.type === "DRY" ? "scs" : "srs");
+        const sizeEnum = ct.size as "20FT" | "40FT";
+
         const id = `CNT-${nanoid(10)}`;
-        const capacity = maxCapacity || (type === "20FT" ? 10 : 20);
 
         const [newContainer] = await db
             .insert(containers)
@@ -79,13 +91,14 @@ export async function POST(request: NextRequest) {
                 vessel,
                 voyageNumber: voyageNumber || null,
                 sailingScheduleId: sailingScheduleId || null,
-                type,
+                type: sizeEnum,
+                containerTypeId,
                 etd: etd ? new Date(etd) : null,
                 eta: eta ? new Date(eta) : null,
                 totalPallets: 0,
-                maxCapacity: capacity,
+                maxCapacity: ct.maxPallets,
                 status: "OPEN",
-                salesRateTypeId: salesRateTypeId || "srs",
+                salesRateTypeId: derivedSalesRateTypeId,
             })
             .returning();
 

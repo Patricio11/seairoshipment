@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/server";
 import { db } from "@/lib/db";
-import { containers, palletAllocations } from "@/lib/db/schema";
+import { containers, palletAllocations, containerTypes } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function PUT(
@@ -33,13 +33,15 @@ export async function PUT(
         if (body.sailingScheduleId !== undefined) updates.sailingScheduleId = body.sailingScheduleId || null;
         if (body.etd !== undefined) updates.etd = body.etd ? new Date(body.etd) : null;
         if (body.eta !== undefined) updates.eta = body.eta ? new Date(body.eta) : null;
-        if (body.maxCapacity !== undefined) updates.maxCapacity = body.maxCapacity;
-        if (body.type !== undefined) {
-            if (!["20FT", "40FT"].includes(body.type)) {
-                return NextResponse.json({ error: "Container type must be 20FT or 40FT" }, { status: 400 });
-            }
-            updates.type = body.type;
+        if (body.containerTypeId !== undefined) {
+            const [ct] = await db.select().from(containerTypes).where(eq(containerTypes.id, body.containerTypeId)).limit(1);
+            if (!ct) return NextResponse.json({ error: "Invalid container type" }, { status: 400 });
+            updates.containerTypeId = ct.id;
+            updates.type = ct.size;
+            updates.maxCapacity = ct.maxPallets;
+            updates.salesRateTypeId = ct.type === "DRY" ? "scs" : "srs";
         }
+        if (body.maxCapacity !== undefined && body.containerTypeId === undefined) updates.maxCapacity = body.maxCapacity;
 
         const [updated] = await db
             .update(containers)

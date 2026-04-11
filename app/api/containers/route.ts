@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
             id: c.id,
             vessel: c.vessel,
             preFilled: c.totalPallets,
+            maxCapacity: c.maxCapacity,
             date: c.etd
                 ? new Date(c.etd).toLocaleDateString("en-US", { month: "short", day: "2-digit" })
                 : "TBD",

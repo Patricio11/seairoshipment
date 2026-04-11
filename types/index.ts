@@ -86,6 +86,7 @@ export interface ContainerSlot {
     id: string;
     vessel: string;
     preFilled: number;
+    maxCapacity: number;
     date: string;
     type: "20FT" | "40FT";
 }
