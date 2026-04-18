@@ -96,7 +96,42 @@ interface ContainerData {
     allocations: ContainerAllocation[]
 }
 
-// Mock legacy data for requests/shipments tabs
+interface PendingRequest {
+    allocation: {
+        id: string
+        palletCount: number
+        productId: string | null
+        commodityName: string | null
+        hsCode: string | null
+        nettWeight: string | null
+        grossWeight: string | null
+        temperature: string | null
+        consigneeName: string | null
+        consigneeAddress: string | null
+        salesRateTypeId: string | null
+        status: string
+        createdAt: string
+    }
+    container: {
+        id: string
+        route: string
+        vessel: string
+        etd: string | null
+        maxCapacity: number
+        totalPallets: number
+        salesRateTypeId: string
+    } | null
+    user: {
+        id: string
+        name: string | null
+        email: string
+        accountNumber: string | null
+    } | null
+    depositStatus: string
+    depositInvoiceId: string | null
+}
+
+// Mock legacy data for shipments tab (will be replaced in future work)
 const MOCK_BOOKINGS = [
     { id: "BKG-001", client: "Global Fruits", ref: "SRS-9921", vessel: "MSC Orchestra", route: "ZACPT-NLRTM", etd: "Oct 28", status: "PENDING_DEPOSIT", depositPaid: false, type: "REQUEST" },
     { id: "BKG-002", client: "Oceanic Seafoods", ref: "SRS-9842", vessel: "Maersk Line 2", route: "ZADUR-SGSIN", etd: "Oct 30", status: "PENDING_CONFIRMATION", depositPaid: true, type: "REQUEST" },
@@ -146,6 +181,17 @@ export function AdminBookingsGrid() {
     const [loadingClientDocs, setLoadingClientDocs] = useState(false)
     const [viewDoc, setViewDoc] = useState<ClientDoc | null>(null)
 
+    // Pending requests (real data)
+    const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([])
+    const [loadingPending, setLoadingPending] = useState(false)
+    const [reviewRequest, setReviewRequest] = useState<PendingRequest | null>(null)
+    const [reviewDocs, setReviewDocs] = useState<ClientDoc[]>([])
+    const [loadingReviewDocs, setLoadingReviewDocs] = useState(false)
+    const [approving, setApproving] = useState(false)
+    const [rejecting, setRejecting] = useState(false)
+    const [rejectReason, setRejectReason] = useState("")
+    const [showRejectForm, setShowRejectForm] = useState(false)
+
     const copyToClipboard = (text: string, id: string) => {
         navigator.clipboard.writeText(text)
         setCopiedId(id)
@@ -168,11 +214,85 @@ export function AdminBookingsGrid() {
         }
     }, [])
 
+    const fetchPendingRequests = useCallback(async () => {
+        setLoadingPending(true)
+        try {
+            const res = await fetch("/api/admin/allocations/pending")
+            if (res.ok) setPendingRequests(await res.json())
+        } catch {
+            console.error("Failed to fetch pending requests")
+        } finally {
+            setLoadingPending(false)
+        }
+    }, [])
+
     useEffect(() => {
         if (activeTab === "containers") {
             fetchContainers()
+        } else if (activeTab === "requests") {
+            fetchPendingRequests()
         }
-    }, [activeTab, fetchContainers])
+    }, [activeTab, fetchContainers, fetchPendingRequests])
+
+    const openReviewDialog = async (req: PendingRequest) => {
+        setReviewRequest(req)
+        setShowRejectForm(false)
+        setRejectReason("")
+        setLoadingReviewDocs(true)
+        setReviewDocs([])
+        try {
+            const res = await fetch(`/api/admin/allocations/${req.allocation.id}/documents`)
+            if (res.ok) setReviewDocs(await res.json())
+        } catch {
+            console.error("Failed to load documents")
+        } finally {
+            setLoadingReviewDocs(false)
+        }
+    }
+
+    const handleApprove = async () => {
+        if (!reviewRequest) return
+        setApproving(true)
+        try {
+            const res = await fetch(`/api/admin/allocations/${reviewRequest.allocation.id}/approve`, { method: "POST" })
+            const data = await res.json()
+            if (!res.ok) {
+                toast.error(data.error || "Failed to approve")
+                return
+            }
+            toast.success("Request Approved", { description: `Allocation added to container (${data.newTotalPallets} pallets total).` })
+            setReviewRequest(null)
+            fetchPendingRequests()
+        } catch {
+            toast.error("Failed to approve request")
+        } finally {
+            setApproving(false)
+        }
+    }
+
+    const handleReject = async () => {
+        if (!reviewRequest) return
+        setRejecting(true)
+        try {
+            const res = await fetch(`/api/admin/allocations/${reviewRequest.allocation.id}/reject`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ reason: rejectReason.trim() || null }),
+            })
+            const data = await res.json()
+            if (!res.ok) {
+                toast.error(data.error || "Failed to reject")
+                return
+            }
+            toast.success("Request Rejected")
+            setReviewRequest(null)
+            fetchPendingRequests()
+        } catch {
+            toast.error("Failed to reject request")
+        } finally {
+            setRejecting(false)
+        }
+    }
 
     const openClientDialog = async (alloc: ContainerAllocation) => {
         setLoadingClientDocs(true)
@@ -495,45 +615,74 @@ export function AdminBookingsGrid() {
 
                 {/* PENDING REQUESTS TAB */}
                 <TabsContent value="requests" className="mt-6">
-                    <div className="rounded-xl border border-slate-800 overflow-hidden bg-slate-950/30">
-                        <Table>
-                            <TableHeader className="bg-slate-900">
-                                <TableRow className="hover:bg-transparent border-slate-800">
-                                    <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Reference</TableHead>
-                                    <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Client Request</TableHead>
-                                    <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Vessel / Route</TableHead>
-                                    <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-center">40% Deposit</TableHead>
-                                    <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-right">Action</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredMockData.map((item) => (
-                                    <TableRow key={item.id} className="border-slate-800 hover:bg-slate-900/40">
-                                        <TableCell className="font-mono text-white font-bold">{item.ref}</TableCell>
-                                        <TableCell className="text-slate-300 font-medium">{item.client}</TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col gap-1">
-                                                <span className="text-xs text-white uppercase font-bold">{item.vessel}</span>
-                                                <span className="text-[10px] text-slate-500">{item.route}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-center">
-                                            {item.depositPaid ? (
-                                                <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">PAID</Badge>
-                                            ) : (
-                                                <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20">PENDING</Badge>
-                                            )}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Button size="sm" className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold h-8">
-                                                Review
-                                            </Button>
-                                        </TableCell>
+                    {loadingPending ? (
+                        <div className="flex items-center justify-center py-20 text-slate-500">
+                            <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading pending requests...
+                        </div>
+                    ) : pendingRequests.length === 0 ? (
+                        <div className="text-center py-20 text-slate-500 border border-slate-800 rounded-xl bg-slate-950/30">
+                            <PackageCheck className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                            <p className="font-bold">No pending requests</p>
+                            <p className="text-sm mt-1">New booking requests from clients will appear here for review.</p>
+                        </div>
+                    ) : (
+                        <div className="rounded-xl border border-slate-800 overflow-hidden bg-slate-950/30">
+                            <Table>
+                                <TableHeader className="bg-slate-900">
+                                    <TableRow className="hover:bg-transparent border-slate-800">
+                                        <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Reference</TableHead>
+                                        <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Client</TableHead>
+                                        <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Product</TableHead>
+                                        <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-center">Pallets</TableHead>
+                                        <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Vessel / Route</TableHead>
+                                        <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-center">Deposit</TableHead>
+                                        <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-right">Action</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
+                                </TableHeader>
+                                <TableBody>
+                                    {pendingRequests.filter(r => {
+                                        if (rateTypeFilter !== "all" && r.container?.salesRateTypeId !== rateTypeFilter) return false
+                                        if (!searchTerm) return true
+                                        const q = searchTerm.toLowerCase()
+                                        return r.user?.name?.toLowerCase().includes(q) ||
+                                            r.user?.email.toLowerCase().includes(q) ||
+                                            r.container?.vessel.toLowerCase().includes(q) ||
+                                            r.allocation.id.toLowerCase().includes(q)
+                                    }).map((r) => (
+                                        <TableRow key={r.allocation.id} className="border-slate-800 hover:bg-slate-900/40">
+                                            <TableCell className="font-mono text-white font-bold text-xs">{r.allocation.id}</TableCell>
+                                            <TableCell className="text-slate-300">
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span className="text-sm font-medium text-white">{r.user?.name || "—"}</span>
+                                                    <span className="text-[10px] text-slate-500 font-mono">{r.user?.accountNumber || r.user?.email || ""}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-slate-300 text-sm">{r.allocation.commodityName || "—"}</TableCell>
+                                            <TableCell className="text-center text-white font-mono font-bold">{r.allocation.palletCount}</TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span className="text-xs text-white font-bold">{r.container?.vessel || "—"}</span>
+                                                    <span className="text-[10px] text-slate-500">{r.container?.route}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                {r.depositStatus === "PAID" ? (
+                                                    <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">PAID</Badge>
+                                                ) : (
+                                                    <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20">PENDING</Badge>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <Button size="sm" className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold h-8" onClick={() => openReviewDialog(r)}>
+                                                    Review
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    )}
                 </TabsContent>
 
                 {/* LIVE SHIPMENTS TAB */}
@@ -1086,6 +1235,185 @@ export function AdminBookingsGrid() {
                                     )}
                                 </div>
                             </div>
+                        </>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Review Request Modal */}
+            <Dialog open={!!reviewRequest} onOpenChange={(open) => { if (!open) setReviewRequest(null) }}>
+                <DialogContent className="sm:max-w-[720px] max-h-[90vh] overflow-y-auto bg-slate-950 border-slate-800 text-white">
+                    {reviewRequest && (
+                        <>
+                            <DialogHeader>
+                                <DialogTitle className="text-xl font-black flex items-center gap-2">
+                                    <PackageCheck className="h-5 w-5 text-brand-blue" /> Review Booking Request
+                                </DialogTitle>
+                                <DialogDescription className="text-slate-400 font-mono text-[10px] uppercase tracking-widest">
+                                    Allocation: {reviewRequest.allocation.id}
+                                </DialogDescription>
+                            </DialogHeader>
+
+                            <div className="space-y-4 py-2">
+                                {/* Client + rate type */}
+                                <div className="flex items-center justify-between p-4 rounded-xl border border-slate-800 bg-slate-900/50">
+                                    <div>
+                                        <p className="text-sm font-black text-white">{reviewRequest.user?.name || "Unknown Client"}</p>
+                                        <p className="text-xs text-slate-500 mt-0.5">{reviewRequest.user?.email}</p>
+                                        {reviewRequest.user?.accountNumber && (
+                                            <p className="text-[10px] font-mono text-slate-500 mt-0.5">Account: {reviewRequest.user.accountNumber}</p>
+                                        )}
+                                    </div>
+                                    <Badge className={reviewRequest.container?.salesRateTypeId === "scs" ? "bg-emerald-500/20 text-emerald-400 border-none" : "bg-blue-500/20 text-blue-400 border-none"}>
+                                        {reviewRequest.container?.salesRateTypeId?.toUpperCase() || "SRS"}
+                                    </Badge>
+                                </div>
+
+                                {/* Cargo details grid */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/50">
+                                        <p className="text-[10px] font-bold uppercase text-slate-500">Product</p>
+                                        <p className="text-sm font-bold text-white mt-1">{reviewRequest.allocation.commodityName || "—"}</p>
+                                        {reviewRequest.allocation.hsCode && (
+                                            <p className="text-[10px] font-mono text-slate-500 mt-0.5">HS: {reviewRequest.allocation.hsCode}</p>
+                                        )}
+                                    </div>
+                                    <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/50">
+                                        <p className="text-[10px] font-bold uppercase text-slate-500">Pallets</p>
+                                        <p className="text-xl font-black text-white mt-0.5">{reviewRequest.allocation.palletCount}</p>
+                                    </div>
+                                    <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/50">
+                                        <p className="text-[10px] font-bold uppercase text-slate-500">Temperature</p>
+                                        <p className="text-sm font-bold text-brand-blue mt-1">{reviewRequest.allocation.temperature || "—"}</p>
+                                    </div>
+                                    <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/50">
+                                        <p className="text-[10px] font-bold uppercase text-slate-500">Nett / Gross Weight</p>
+                                        <p className="text-sm font-bold text-white mt-1">
+                                            {reviewRequest.allocation.nettWeight || "—"} / {reviewRequest.allocation.grossWeight || "—"} kg
+                                        </p>
+                                    </div>
+                                    <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/50 col-span-2">
+                                        <p className="text-[10px] font-bold uppercase text-slate-500">Consignee</p>
+                                        <p className="text-sm font-bold text-white mt-1">{reviewRequest.allocation.consigneeName || "—"}</p>
+                                        {reviewRequest.allocation.consigneeAddress && (
+                                            <p className="text-xs text-slate-400 mt-0.5">{reviewRequest.allocation.consigneeAddress}</p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Container info */}
+                                <div className="p-4 rounded-xl border border-slate-800 bg-slate-900/30">
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 mb-2 flex items-center gap-1">
+                                        <Ship className="h-3 w-3" /> Target Container
+                                    </p>
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-sm font-black text-white">{reviewRequest.container?.vessel}</p>
+                                            <p className="text-xs text-slate-500">{reviewRequest.container?.route}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[10px] font-bold uppercase text-slate-500">Current Capacity</p>
+                                            <p className="text-sm font-mono font-bold text-white mt-0.5">
+                                                {reviewRequest.container?.totalPallets}/{reviewRequest.container?.maxCapacity}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Deposit status */}
+                                <div className="flex items-center justify-between p-4 rounded-xl border border-slate-800 bg-slate-900/30">
+                                    <div className="flex items-center gap-2">
+                                        <CreditCard className="h-4 w-4 text-slate-500" />
+                                        <span className="text-xs font-bold text-slate-400 uppercase">40% Deposit Status</span>
+                                    </div>
+                                    {reviewRequest.depositStatus === "PAID" ? (
+                                        <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">PAID</Badge>
+                                    ) : (
+                                        <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/20">PENDING</Badge>
+                                    )}
+                                </div>
+
+                                {/* Documents */}
+                                <div>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 mb-2 flex items-center gap-1">
+                                        <FileText className="h-3 w-3" /> Submitted Documents
+                                    </p>
+                                    {loadingReviewDocs ? (
+                                        <div className="flex items-center gap-2 py-3 text-slate-500 text-sm">
+                                            <Loader2 className="h-4 w-4 animate-spin" /> Loading...
+                                        </div>
+                                    ) : reviewDocs.length === 0 ? (
+                                        <div className="py-3 text-center text-slate-600 text-sm border border-slate-800 rounded-xl">
+                                            No documents submitted
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            {reviewDocs.map((doc) => (
+                                                <div key={doc.id} className="flex items-center gap-3 p-3 rounded-xl border border-slate-800 bg-slate-900">
+                                                    <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                                                        <FileText className="h-4 w-4 text-brand-blue" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm text-white font-medium truncate">{doc.originalName}</p>
+                                                        <p className="text-[10px] text-slate-500 uppercase font-mono mt-0.5">{doc.type.replace("_", " ")}</p>
+                                                    </div>
+                                                    {doc.url && (
+                                                        <div className="flex items-center gap-1.5 shrink-0">
+                                                            <button onClick={() => setViewDoc(doc)} className="h-7 w-7 rounded-lg border border-slate-700 flex items-center justify-center text-slate-400 hover:text-brand-blue hover:border-brand-blue" title="View">
+                                                                <Eye className="h-3.5 w-3.5" />
+                                                            </button>
+                                                            <a href={doc.url} target="_blank" rel="noreferrer" className="h-7 w-7 rounded-lg border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-500" title="Download">
+                                                                <Download className="h-3.5 w-3.5" />
+                                                            </a>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Rejection reason form */}
+                                {showRejectForm && (
+                                    <div className="p-4 rounded-xl border border-red-500/30 bg-red-950/20">
+                                        <label className="text-[10px] font-bold uppercase text-red-400 mb-2 block">Rejection Reason (optional)</label>
+                                        <textarea
+                                            value={rejectReason}
+                                            onChange={(e) => setRejectReason(e.target.value)}
+                                            rows={3}
+                                            placeholder="Explain why this request is being rejected..."
+                                            className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-red-500"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            <DialogFooter className="gap-2 flex-col sm:flex-row">
+                                <Button variant="ghost" onClick={() => setReviewRequest(null)} className="text-slate-400 hover:text-white hover:bg-slate-900">
+                                    Cancel
+                                </Button>
+                                {!showRejectForm ? (
+                                    <>
+                                        <Button onClick={() => setShowRejectForm(true)} variant="outline" className="border-red-500/50 text-red-400 hover:bg-red-950/30 hover:text-red-300 font-bold">
+                                            Reject
+                                        </Button>
+                                        <Button onClick={handleApprove} disabled={approving} className="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6">
+                                            {approving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Check className="h-4 w-4 mr-2" />}
+                                            {approving ? "Approving..." : "Approve"}
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Button variant="ghost" onClick={() => { setShowRejectForm(false); setRejectReason("") }} className="text-slate-400 hover:text-white">
+                                            Back
+                                        </Button>
+                                        <Button onClick={handleReject} disabled={rejecting} className="bg-red-600 hover:bg-red-700 text-white font-black px-6">
+                                            {rejecting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                                            {rejecting ? "Rejecting..." : "Confirm Rejection"}
+                                        </Button>
+                                    </>
+                                )}
+                            </DialogFooter>
                         </>
                     )}
                 </DialogContent>

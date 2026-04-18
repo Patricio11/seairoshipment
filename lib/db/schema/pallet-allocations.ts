@@ -23,6 +23,7 @@ export const palletAllocations = pgTable("pallet_allocations", {
     consigneeAddress: text("consignee_address"),
     salesRateTypeId: text("sales_rate_type_id").default("srs"),
     status: allocationStatusEnum("status").default("PENDING").notNull(),
+    rejectionReason: text("rejection_reason"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

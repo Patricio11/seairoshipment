@@ -188,8 +188,20 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Check capacity
-        const remaining = container.maxCapacity - container.totalPallets;
+        // Check capacity — factor in BOTH confirmed (container.totalPallets) and
+        // pending allocations so container can't be overbooked.
+        const pendingAllocs = await db
+            .select()
+            .from(palletAllocations)
+            .where(
+                and(
+                    eq(palletAllocations.containerId, container.id),
+                    eq(palletAllocations.status, "PENDING")
+                )
+            );
+        const pendingPallets = pendingAllocs.reduce((sum, a) => sum + (a.palletCount || 0), 0);
+        const reserved = container.totalPallets + pendingPallets;
+        const remaining = container.maxCapacity - reserved;
         const minRequired = remaining < 5 ? 1 : 5;
         if (palletCount < minRequired) {
             return NextResponse.json(
@@ -197,15 +209,17 @@ export async function POST(request: NextRequest) {
                 { status: 400 }
             );
         }
-        const newTotal = container.totalPallets + palletCount;
+        const newTotal = reserved + palletCount;
         if (newTotal > container.maxCapacity) {
             return NextResponse.json(
-                { error: `Container only has ${remaining} pallet space${remaining !== 1 ? "s" : ""} remaining` },
+                { error: `Container only has ${remaining} pallet space${remaining !== 1 ? "s" : ""} remaining (including pending requests)` },
                 { status: 400 }
             );
         }
 
-        // Create pallet allocation
+        // Create pallet allocation — starts as PENDING, does NOT count toward container capacity
+        // until admin approves (CONFIRMED). This prevents the container from filling up with
+        // requests that haven't been verified yet.
         const allocationId = `ALC-${nanoid(10)}`;
         await db.insert(palletAllocations).values({
             id: allocationId,
@@ -224,27 +238,18 @@ export async function POST(request: NextRequest) {
             status: "PENDING",
         });
 
-        // Update container total pallets
-        await db
-            .update(containers)
-            .set({
-                totalPallets: newTotal,
-                updatedAt: new Date(),
-                status: newTotal >= 15 ? "THRESHOLD_REACHED" : "OPEN",
-            })
-            .where(eq(containers.id, containerId!));
+        // Note: container.totalPallets is NOT updated here — it only reflects CONFIRMED allocations.
+        // The admin must approve this request in the Pending Requests tab for it to count.
 
-        // If threshold reached (15 pallets), create admin notification
-        if (newTotal >= 15 && container.totalPallets < 15) {
-            await db.insert(adminNotifications).values({
-                id: `NTF-${nanoid(10)}`,
-                type: "CONTAINER_THRESHOLD",
-                title: "Container Ready for Booking",
-                message: `Container on route ${route} (${container.vessel}) has reached ${newTotal} pallets. Ready to create MetaShip booking.`,
-                containerId: containerId!,
-                isRead: false,
-            });
-        }
+        // Notify admin of new pending request
+        await db.insert(adminNotifications).values({
+            id: `NTF-${nanoid(10)}`,
+            type: "BOOKING_CREATED",
+            title: "New Booking Request",
+            message: `New ${palletCount}-pallet booking request on route ${route} (${container.vessel}). Awaiting review.`,
+            containerId: containerId!,
+            isRead: false,
+        });
 
         // Generate booking reference
         const bookingRef = `SRS-${nanoid(6).toUpperCase()}`;
