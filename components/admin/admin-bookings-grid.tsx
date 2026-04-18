@@ -144,6 +144,7 @@ export function AdminBookingsGrid() {
     const [detailDialog, setDetailDialog] = useState<ContainerData | null>(null)
     const [clientDialog, setClientDialog] = useState<{ alloc: ContainerAllocation; docs: ClientDoc[] } | null>(null)
     const [loadingClientDocs, setLoadingClientDocs] = useState(false)
+    const [viewDoc, setViewDoc] = useState<ClientDoc | null>(null)
 
     const copyToClipboard = (text: string, id: string) => {
         navigator.clipboard.writeText(text)
@@ -1060,9 +1061,24 @@ export function AdminBookingsGrid() {
                                                         </div>
                                                     </div>
                                                     {doc.url && (
-                                                        <a href={doc.url} target="_blank" rel="noreferrer" className="shrink-0 h-7 w-7 rounded-lg border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-500 transition-colors">
-                                                            <Download className="h-3.5 w-3.5" />
-                                                        </a>
+                                                        <div className="flex items-center gap-1.5 shrink-0">
+                                                            <button
+                                                                onClick={() => setViewDoc(doc)}
+                                                                className="h-7 w-7 rounded-lg border border-slate-700 flex items-center justify-center text-slate-400 hover:text-brand-blue hover:border-brand-blue transition-colors"
+                                                                title="View document"
+                                                            >
+                                                                <Eye className="h-3.5 w-3.5" />
+                                                            </button>
+                                                            <a
+                                                                href={doc.url}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                                className="h-7 w-7 rounded-lg border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-500 transition-colors"
+                                                                title="Download document"
+                                                            >
+                                                                <Download className="h-3.5 w-3.5" />
+                                                            </a>
+                                                        </div>
                                                     )}
                                                 </div>
                                             ))}
@@ -1072,6 +1088,93 @@ export function AdminBookingsGrid() {
                             </div>
                         </>
                     )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Document Viewer Modal (A4) */}
+            <Dialog open={!!viewDoc} onOpenChange={() => setViewDoc(null)}>
+                <DialogContent className="sm:max-w-[900px] h-[90vh] bg-slate-950 border-slate-800 text-white p-0 flex flex-col gap-0" onInteractOutside={(e) => e.preventDefault()}>
+                    <DialogHeader className="px-6 py-4 border-b border-slate-800 shrink-0">
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3 min-w-0">
+                                <div className="h-10 w-10 rounded-lg bg-brand-blue/10 flex items-center justify-center shrink-0">
+                                    <FileText className="h-5 w-5 text-brand-blue" />
+                                </div>
+                                <div className="min-w-0">
+                                    <DialogTitle className="text-sm font-black truncate">{viewDoc?.originalName}</DialogTitle>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className="text-[10px] text-slate-500 font-mono uppercase">{viewDoc?.type.replace("_", " ")}</span>
+                                        <span className="text-[10px] text-slate-700">·</span>
+                                        <span className={`text-[10px] font-bold uppercase ${viewDoc?.status === "APPROVED" ? "text-emerald-400" : viewDoc?.status === "REJECTED" ? "text-red-400" : "text-amber-400"}`}>
+                                            {viewDoc?.status}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            {viewDoc?.url && (
+                                <a
+                                    href={viewDoc.url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    download={viewDoc.originalName}
+                                    className="shrink-0 h-9 px-4 rounded-lg bg-brand-blue hover:bg-brand-blue/90 text-white text-xs font-bold flex items-center gap-2 transition-colors"
+                                >
+                                    <Download className="h-3.5 w-3.5" /> Download
+                                </a>
+                            )}
+                        </div>
+                    </DialogHeader>
+
+                    <div className="flex-1 overflow-auto bg-slate-900 p-6 flex items-start justify-center">
+                        {viewDoc?.url && (() => {
+                            const name = viewDoc.originalName.toLowerCase()
+                            const isPdf = name.endsWith(".pdf")
+                            const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(name)
+
+                            if (isPdf) {
+                                return (
+                                    <iframe
+                                        src={viewDoc.url}
+                                        title={viewDoc.originalName}
+                                        className="w-full h-full bg-white rounded shadow-2xl"
+                                        style={{ aspectRatio: "1 / 1.414", minHeight: "100%", maxWidth: "800px" }}
+                                    />
+                                )
+                            }
+                            if (isImage) {
+                                return (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                        src={viewDoc.url}
+                                        alt={viewDoc.originalName}
+                                        className="max-w-full max-h-full object-contain bg-white rounded shadow-2xl"
+                                        style={{ maxWidth: "800px" }}
+                                    />
+                                )
+                            }
+                            // Unsupported type
+                            return (
+                                <div className="flex flex-col items-center justify-center text-center py-12">
+                                    <div className="h-16 w-16 rounded-2xl bg-slate-800 flex items-center justify-center mb-4">
+                                        <FileText className="h-8 w-8 text-slate-500" />
+                                    </div>
+                                    <p className="text-white font-bold">Preview not available</p>
+                                    <p className="text-slate-500 text-sm mt-1 max-w-sm">
+                                        This file type can&apos;t be previewed inline. Download the file to view it.
+                                    </p>
+                                    <a
+                                        href={viewDoc.url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        download={viewDoc.originalName}
+                                        className="mt-6 h-9 px-6 rounded-lg bg-brand-blue hover:bg-brand-blue/90 text-white text-xs font-bold flex items-center gap-2"
+                                    >
+                                        <Download className="h-3.5 w-3.5" /> Download File
+                                    </a>
+                                </div>
+                            )
+                        })()}
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>
