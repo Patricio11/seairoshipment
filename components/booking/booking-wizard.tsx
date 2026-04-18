@@ -11,6 +11,7 @@ import { toast } from "sonner"
 import type { BookingFormData, CostBreakdown } from "@/types"
 import { bookingModalStore } from "@/hooks/use-booking-modal"
 import { useAuth } from "@/lib/auth/client"
+import { uploadFile, STORAGE_PATHS } from "@/lib/supabase"
 
 const STEP_LABELS = ["Cargo & Route", "Cost & Payment", "Confirm Booking"]
 const TOTAL_STEPS = 3
@@ -105,27 +106,35 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
                 return
             }
 
-            // Upload documents via server-side endpoint (bypasses RLS using service key)
+            // Upload documents via Supabase storage (client-side, like recon_v2)
             const files = formData.files || []
             let uploadedCount = 0
             let failedCount = 0
             let firstErrorMessage = ""
             if (files.length > 0 && data.allocationId) {
+                const accountPrefix = user?.accountNumber || "UNVERIFIED"
                 console.log(`[booking] Uploading ${files.length} document(s) for allocation ${data.allocationId}`)
                 const uploadResults = await Promise.allSettled(
                     files.map(async (file) => {
-                        const fd = new FormData()
-                        fd.append("file", file)
-                        fd.append("type", "OTHER")
-                        const res = await fetch(`/api/bookings/${data.allocationId}/upload`, {
-                            method: "POST",
-                            body: fd,
-                        })
-                        if (!res.ok) {
-                            const err = await res.json().catch(() => ({}))
-                            throw new Error(err.error || `Upload failed (${res.status})`)
+                        const prefixedName = `${accountPrefix}_${file.name}`
+                        const result = await uploadFile(file, STORAGE_PATHS.BOOKING_DOCUMENTS, prefixedName)
+                        if (!result.success || !result.url) {
+                            throw new Error(result.error || "Upload failed")
                         }
-                        return await res.json()
+                        const docRes = await fetch(`/api/bookings/${data.allocationId}/documents`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                originalName: prefixedName,
+                                storedName: result.path,
+                                url: result.url,
+                                type: "OTHER",
+                            }),
+                        })
+                        if (!docRes.ok) {
+                            const err = await docRes.json().catch(() => ({}))
+                            throw new Error(err.error || `Failed to save document record (${docRes.status})`)
+                        }
                     })
                 )
                 uploadedCount = uploadResults.filter(r => r.status === "fulfilled").length
