@@ -90,6 +90,7 @@ export async function GET() {
                 etd: container.etd,
                 eta: container.eta,
                 containerStatus: container.status,
+                rejectionReason: allocation.rejectionReason || null,
                 depositStatus: invGroup?.deposit?.status || null,
                 balanceStatus: invGroup?.balance?.status || null,
                 depositAmount: invGroup?.deposit?.amountZAR || null,

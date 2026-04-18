@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/server";
 import { db } from "@/lib/db";
-import { palletAllocations, containers, adminNotifications } from "@/lib/db/schema";
+import { palletAllocations, containers, adminNotifications, clientNotifications } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
@@ -69,7 +69,18 @@ export async function POST(
             })
             .where(eq(containers.id, container.id));
 
-        // Notify when threshold first crossed
+        // Notify the client
+        await db.insert(clientNotifications).values({
+            id: `CNT-${nanoid(10)}`,
+            userId: alloc.userId,
+            type: "BOOKING_APPROVED",
+            title: "Booking Request Approved",
+            message: `Your booking request for ${alloc.palletCount} pallet${alloc.palletCount === 1 ? "" : "s"} on ${container.vessel} has been approved and is now confirmed.`,
+            allocationId: id,
+            isRead: false,
+        });
+
+        // Notify admin when threshold first crossed
         if (newTotal >= 15 && container.totalPallets < 15) {
             await db.insert(adminNotifications).values({
                 id: `NTF-${nanoid(10)}`,

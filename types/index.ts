@@ -150,6 +150,7 @@ export interface ClientBooking {
     depositAmount: string | null;
     balanceAmount: string | null;
     totalAmount: string | null;
+    rejectionReason?: string | null;
     createdAt: string;
 }
 

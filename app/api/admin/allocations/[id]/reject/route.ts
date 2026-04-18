@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/server";
 import { db } from "@/lib/db";
-import { palletAllocations } from "@/lib/db/schema";
+import { palletAllocations, clientNotifications } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { nanoid } from "nanoid";
 
 export async function POST(
     request: NextRequest,
@@ -38,6 +39,19 @@ export async function POST(
                 updatedAt: new Date(),
             })
             .where(eq(palletAllocations.id, id));
+
+        // Create notification for the client
+        await db.insert(clientNotifications).values({
+            id: `CNT-${nanoid(10)}`,
+            userId: alloc.userId,
+            type: "BOOKING_REJECTED",
+            title: "Booking Request Rejected",
+            message: reason
+                ? `Your booking request (${id}) was rejected. Reason: ${reason}`
+                : `Your booking request (${id}) was rejected. Please contact support for details.`,
+            allocationId: id,
+            isRead: false,
+        });
 
         return NextResponse.json({ success: true });
     } catch (err) {

@@ -296,6 +296,11 @@ export default function BookingsPage() {
                                                 <Badge className={cn("rounded-lg px-2.5 py-1 text-[10px] font-black tracking-wider border-none", statusCfg.className)}>
                                                     {statusCfg.label}
                                                 </Badge>
+                                                {booking.status === "CANCELLED" && booking.rejectionReason && (
+                                                    <p className="text-[10px] text-red-500 dark:text-red-400 mt-1.5 max-w-[160px] leading-tight" title={booking.rejectionReason}>
+                                                        {booking.rejectionReason}
+                                                    </p>
+                                                )}
                                             </td>
                                             <td className="px-6 py-5 text-right">
                                                 <DropdownMenu>
