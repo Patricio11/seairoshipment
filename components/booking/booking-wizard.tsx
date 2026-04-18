@@ -10,7 +10,6 @@ import { Step3Docs } from "./step-3-docs"
 import { toast } from "sonner"
 import type { BookingFormData, CostBreakdown } from "@/types"
 import { bookingModalStore } from "@/hooks/use-booking-modal"
-import { uploadFile, STORAGE_PATHS } from "@/lib/supabase"
 import { useAuth } from "@/lib/auth/client"
 
 const STEP_LABELS = ["Cargo & Route", "Cost & Payment", "Confirm Booking"]
@@ -106,47 +105,65 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
                 return
             }
 
-            // Upload documents if any were attached
+            // Upload documents via server-side endpoint (bypasses RLS using service key)
             const files = formData.files || []
+            let uploadedCount = 0
+            let failedCount = 0
+            let firstErrorMessage = ""
             if (files.length > 0 && data.allocationId) {
-                const accountPrefix = user?.accountNumber || "UNVERIFIED"
+                console.log(`[booking] Uploading ${files.length} document(s) for allocation ${data.allocationId}`)
                 const uploadResults = await Promise.allSettled(
                     files.map(async (file) => {
-                        const prefixedName = `${accountPrefix}_${file.name}`
-                        const result = await uploadFile(file, STORAGE_PATHS.BOOKING_DOCUMENTS, prefixedName)
-                        if (!result.success || !result.url) {
-                            throw new Error(result.error || "Upload failed")
-                        }
-                        const docRes = await fetch(`/api/bookings/${data.allocationId}/documents`, {
+                        const fd = new FormData()
+                        fd.append("file", file)
+                        fd.append("type", "OTHER")
+                        const res = await fetch(`/api/bookings/${data.allocationId}/upload`, {
                             method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                originalName: prefixedName,
-                                storedName: result.path,
-                                url: result.url,
-                                type: "OTHER",
-                            }),
+                            body: fd,
                         })
-                        if (!docRes.ok) throw new Error("Failed to save document record")
+                        if (!res.ok) {
+                            const err = await res.json().catch(() => ({}))
+                            throw new Error(err.error || `Upload failed (${res.status})`)
+                        }
+                        return await res.json()
                     })
                 )
-                const failedResults = uploadResults.filter(r => r.status === "rejected")
-                if (failedResults.length === files.length) {
-                    const reason = failedResults[0].status === "rejected" ? failedResults[0].reason?.message : ""
-                    toast.error(`Document upload failed: ${reason || "Storage not configured. Please contact support."}`)
-                } else if (failedResults.length > 0) {
-                    toast.warning(`${files.length - failedResults.length}/${files.length} documents uploaded. ${failedResults.length} failed.`)
+                uploadedCount = uploadResults.filter(r => r.status === "fulfilled").length
+                failedCount = uploadResults.filter(r => r.status === "rejected").length
+                const firstRejected = uploadResults.find(r => r.status === "rejected")
+                if (firstRejected && firstRejected.status === "rejected") {
+                    firstErrorMessage = firstRejected.reason?.message || "Unknown error"
+                    console.error(`[booking] ${failedCount} upload(s) failed. First error:`, firstErrorMessage)
                 }
             }
 
-            toast.success("Booking Submitted Successfully!", {
-                description: `Reference: ${data.bookingReference} | Container pallets: ${data.totalPallets}/20`,
-                duration: 5000,
-                className: "text-base p-4",
-            })
+            // Show a single outcome toast
+            if (files.length === 0) {
+                toast.success("Booking Submitted Successfully!", {
+                    description: `Reference: ${data.bookingReference} | ${data.totalPallets} pallet(s)`,
+                    duration: 5000,
+                })
+            } else if (uploadedCount === files.length) {
+                toast.success("Booking Submitted Successfully!", {
+                    description: `Reference: ${data.bookingReference} | ${uploadedCount} document(s) uploaded`,
+                    duration: 5000,
+                })
+            } else if (uploadedCount > 0) {
+                toast.warning("Booking submitted, but some documents failed", {
+                    description: `${uploadedCount}/${files.length} documents uploaded. Error: ${firstErrorMessage}`,
+                    duration: 8000,
+                })
+            } else {
+                toast.error("Booking submitted, but documents failed to upload", {
+                    description: `Reason: ${firstErrorMessage}. Please re-upload from your bookings page.`,
+                    duration: 10000,
+                })
+            }
+
             bookingModalStore.triggerRefresh()
             onSuccess?.()
-        } catch {
+        } catch (err) {
+            console.error("[booking] Submit failed:", err)
             toast.error("Failed to submit booking. Please try again.")
         } finally {
             setSubmitting(false)
