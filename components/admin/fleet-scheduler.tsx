@@ -105,8 +105,8 @@ interface ContainerData {
     type: string
     containerTypeId: string | null
     containerTypeName: string | null
-    productId: string | null
-    productName: string | null
+    categoryId: string | null
+    categoryName: string | null
     temperature: string | null
     etd: string | null
     eta: string | null
@@ -150,12 +150,16 @@ interface SailingOption {
     active: boolean
 }
 
-interface ProductOption {
+interface CategoryOption {
     id: string
     name: string
-    hsCode: string
-    category: string | null
+    description: string | null
+    salesRateTypeId: "srs" | "scs"
+    allowedTemperatures: Array<"frozen" | "chilled" | "ambient">
+    requiredDocuments: string[]
     active: boolean
+    productCount: number
+    containerCount: number
 }
 
 interface ContainerForm {
@@ -164,7 +168,7 @@ interface ContainerForm {
     sailingId: string
     containerTypeId: string
     temperature: "frozen" | "chilled" | "ambient" | ""
-    productId: string
+    categoryId: string
     maxCapacity: number
 }
 
@@ -182,7 +186,7 @@ const EMPTY_FORM: ContainerForm = {
     sailingId: "",
     containerTypeId: "40ft-reefer-hc",
     temperature: "",
-    productId: "",
+    categoryId: "",
     maxCapacity: 20,
 }
 
@@ -219,8 +223,8 @@ export function FleetScheduler() {
     const [destinationLocations, setDestinationLocations] = useState<LocationOption[]>([])
     const [containerTypeOptions, setContainerTypeOptions] = useState<ContainerTypeOption[]>([])
     const [sailingOptions, setSailingOptions] = useState<SailingOption[]>([])
-    const [productOptions, setProductOptions] = useState<ProductOption[]>([])
-    const [productSearch, setProductSearch] = useState("")
+    const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([])
+    const [categorySearch, setCategorySearch] = useState("")
 
     const fetchContainers = useCallback(async () => {
         setLoading(true)
@@ -240,18 +244,18 @@ export function FleetScheduler() {
         fetchContainers()
         async function fetchReferenceData() {
             try {
-                const [origRes, destRes, ctRes, sailRes, prodRes] = await Promise.all([
+                const [origRes, destRes, ctRes, sailRes, catRes] = await Promise.all([
                     fetch("/api/admin/locations?type=ORIGIN"),
                     fetch("/api/admin/locations?type=DESTINATION"),
                     fetch("/api/admin/container-types"),
                     fetch("/api/admin/sailings"),
-                    fetch("/api/admin/products"),
+                    fetch("/api/admin/product-categories"),
                 ])
                 if (origRes.ok) setOriginLocations(await origRes.json())
                 if (destRes.ok) setDestinationLocations(await destRes.json())
                 if (ctRes.ok) setContainerTypeOptions(await ctRes.json())
                 if (sailRes.ok) setSailingOptions(await sailRes.json())
-                if (prodRes.ok) setProductOptions(await prodRes.json())
+                if (catRes.ok) setCategoryOptions(await catRes.json())
             } catch {
                 console.error("Failed to fetch reference data")
             }
@@ -282,7 +286,7 @@ export function FleetScheduler() {
             sailingId: container.sailingId || "",
             containerTypeId: container.containerTypeId || "40ft-reefer-hc",
             temperature: (container.temperature as "frozen" | "chilled" | "ambient" | null) || "",
-            productId: container.productId || "",
+            categoryId: container.categoryId || "",
             maxCapacity: container.maxCapacity,
         })
         setDialogOpen(true)
@@ -302,8 +306,8 @@ export function FleetScheduler() {
             toast.error("Select a temperature")
             return
         }
-        if (!formData.productId) {
-            toast.error("Select a product")
+        if (!formData.categoryId) {
+            toast.error("Select a category")
             return
         }
 
@@ -322,7 +326,7 @@ export function FleetScheduler() {
                         sailingId: formData.sailingId,
                         containerTypeId: formData.containerTypeId,
                         temperature: formData.temperature,
-                        productId: formData.productId,
+                        categoryId: formData.categoryId,
                     }),
                 }
             )
@@ -332,8 +336,8 @@ export function FleetScheduler() {
                     description: (() => {
                         const sailing = sailingOptions.find(s => s.id === formData.sailingId)
                         const ctName = containerTypeOptions.find(c => c.id === formData.containerTypeId)?.displayName || "—"
-                        const prodName = productOptions.find(p => p.id === formData.productId)?.name || "—"
-                        return `${route} — ${sailing?.vesselName || "—"} · ${ctName} · ${prodName}`
+                        const catName = categoryOptions.find(c => c.id === formData.categoryId)?.name || "—"
+                        return `${route} — ${sailing?.vesselName || "—"} · ${ctName} · ${catName}`
                     })(),
                 })
                 setDialogOpen(false)
@@ -405,6 +409,24 @@ export function FleetScheduler() {
                 containerTypeId: ctId,
                 maxCapacity: ct?.maxPallets || 20,
                 temperature: nextTemp,
+                // Category scope changes with service type — clear to force re-pick
+                categoryId: "",
+            }
+        })
+    }
+
+    const handleCategoryChange = (catId: string) => {
+        const cat = categoryOptions.find(c => c.id === catId)
+        setFormData(prev => {
+            // If current temp isn't allowed by this category, clear it
+            const stillAllowed = !prev.temperature || (cat?.allowedTemperatures || []).includes(prev.temperature as "frozen" | "chilled" | "ambient")
+            // If category has only one allowed temp, auto-select it
+            const autoTemp: "frozen" | "chilled" | "ambient" | "" =
+                cat && cat.allowedTemperatures.length === 1 ? cat.allowedTemperatures[0] : ""
+            return {
+                ...prev,
+                categoryId: catId,
+                temperature: !stillAllowed ? autoTemp : prev.temperature,
             }
         })
     }
@@ -414,13 +436,27 @@ export function FleetScheduler() {
     }
 
     const selectedContainerType = containerTypeOptions.find(c => c.id === formData.containerTypeId)
+
+    // Category filtering: only categories matching the service type derived from the container type
+    const derivedSalesRateType: "srs" | "scs" | null =
+        selectedContainerType?.type === "DRY" ? "scs" :
+        selectedContainerType?.type === "REEFER" ? "srs" : null
+
+    const selectedCategory = categoryOptions.find(c => c.id === formData.categoryId)
+
+    // Container-type-level temperature constraints
+    const containerTypeTemps: Array<"frozen" | "chilled" | "ambient"> =
+        selectedContainerType?.type === "DRY" ? ["ambient"] : ["frozen", "chilled"]
+
+    // Final allowed temperatures = intersection of container type + category.allowedTemperatures
+    const categoryTemps = selectedCategory?.allowedTemperatures || containerTypeTemps
     const temperatureOptions: Array<{ value: "frozen" | "chilled" | "ambient"; label: string }> =
-        selectedContainerType?.type === "DRY"
-            ? [{ value: "ambient", label: "+18°C (Ambient)" }]
-            : [
-                { value: "frozen", label: "-18°C (Frozen)" },
-                { value: "chilled", label: "+5°C (Chilled)" },
-            ]
+        containerTypeTemps
+            .filter(t => categoryTemps.includes(t))
+            .map(t => ({
+                value: t,
+                label: t === "frozen" ? "-18°C (Frozen)" : t === "chilled" ? "+5°C (Chilled)" : "+18°C (Ambient)",
+            }))
 
     // Sailings filtered to the currently selected route
     const availableSailings = sailingOptions.filter(s =>
@@ -428,14 +464,13 @@ export function FleetScheduler() {
         s.portOfDischargeValue === formData.destination
     )
 
-    const filteredProductOptions = productOptions
-        .filter(p => p.active)
-        .filter(p => {
-            if (!productSearch) return true
-            const q = productSearch.toLowerCase()
-            return p.name.toLowerCase().includes(q) ||
-                p.hsCode.toLowerCase().includes(q) ||
-                p.category?.toLowerCase().includes(q)
+    const filteredCategoryOptions = categoryOptions
+        .filter(c => c.active)
+        .filter(c => derivedSalesRateType ? c.salesRateTypeId === derivedSalesRateType : true)
+        .filter(c => {
+            if (!categorySearch) return true
+            const q = categorySearch.toLowerCase()
+            return c.name.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q)
         })
         .slice(0, 200)
 
@@ -512,9 +547,9 @@ export function FleetScheduler() {
                                                         {container.temperature === "frozen" ? "-18°C" : container.temperature === "chilled" ? "+5°C" : "+18°C"}
                                                     </Badge>
                                                 )}
-                                                {container.productName && (
+                                                {container.categoryName && (
                                                     <Badge className="bg-emerald-500/15 text-emerald-400 border-none text-[10px]">
-                                                        <Apple className="h-3 w-3 mr-1" /> {container.productName}
+                                                        <Apple className="h-3 w-3 mr-1" /> {container.categoryName}
                                                     </Badge>
                                                 )}
                                             </h3>
@@ -837,9 +872,9 @@ export function FleetScheduler() {
                                 )}
                             </div>
 
-                            {/* Step 5: Product */}
+                            {/* Step 5: Category */}
                             <div className="border-t border-slate-800/50 pt-4">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">5. Product</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">5. Category</p>
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <Button
@@ -850,9 +885,9 @@ export function FleetScheduler() {
                                         >
                                             <span className="flex items-center gap-2 min-w-0">
                                                 <Apple className="h-3.5 w-3.5 text-slate-500 shrink-0" />
-                                                {formData.productId
-                                                    ? (productOptions.find(p => p.id === formData.productId)?.name || "…")
-                                                    : <span className="text-slate-500">Select a product…</span>}
+                                                {formData.categoryId
+                                                    ? (categoryOptions.find(c => c.id === formData.categoryId)?.name || "…")
+                                                    : <span className="text-slate-500">Select a category…</span>}
                                             </span>
                                             <ChevronsUpDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
                                         </Button>
@@ -860,40 +895,45 @@ export function FleetScheduler() {
                                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-slate-900 border-slate-800" align="start">
                                         <Command className="bg-slate-900">
                                             <CommandInput
-                                                placeholder="Search product or HS code…"
-                                                value={productSearch}
-                                                onValueChange={setProductSearch}
+                                                placeholder="Search category…"
+                                                value={categorySearch}
+                                                onValueChange={setCategorySearch}
                                                 className="text-white"
                                             />
                                             <CommandList className="max-h-[240px]">
                                                 <CommandEmpty>
-                                                    {productOptions.length === 0
-                                                        ? "No products synced. Go to Products page and sync."
-                                                        : "No products match."}
+                                                    {categoryOptions.length === 0
+                                                        ? "No categories yet. Create one in Admin → Categories."
+                                                        : derivedSalesRateType
+                                                            ? `No ${derivedSalesRateType.toUpperCase()} categories match.`
+                                                            : "Pick a container type first."}
                                                 </CommandEmpty>
                                                 <CommandGroup>
-                                                    {filteredProductOptions.map(p => (
+                                                    {filteredCategoryOptions.map(c => (
                                                         <CommandItem
-                                                            key={p.id}
-                                                            value={`${p.name} ${p.hsCode}`}
+                                                            key={c.id}
+                                                            value={`${c.name} ${c.description || ""}`}
                                                             onSelect={() => {
-                                                                setFormData(prev => ({ ...prev, productId: p.id }))
-                                                                setProductSearch("")
+                                                                handleCategoryChange(c.id)
+                                                                setCategorySearch("")
                                                             }}
                                                             className="text-white"
                                                         >
                                                             <Check
                                                                 className={cn(
                                                                     "mr-2 h-3.5 w-3.5",
-                                                                    formData.productId === p.id ? "opacity-100" : "opacity-0"
+                                                                    formData.categoryId === c.id ? "opacity-100" : "opacity-0"
                                                                 )}
                                                             />
-                                                            <div className="flex flex-col">
-                                                                <span className="font-semibold">{p.name}</span>
-                                                                {(p.hsCode || p.category) && (
-                                                                    <span className="text-[10px] text-slate-400 font-mono">
-                                                                        {p.hsCode}{p.hsCode && p.category ? " · " : ""}{p.category}
+                                                            <div className="flex flex-col flex-1 min-w-0">
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <span className="font-semibold">{c.name}</span>
+                                                                    <span className="text-[9px] font-mono text-slate-500 uppercase">
+                                                                        {c.allowedTemperatures.join("·")}
                                                                     </span>
+                                                                </div>
+                                                                {c.description && (
+                                                                    <span className="text-[10px] text-slate-400 truncate">{c.description}</span>
                                                                 )}
                                                             </div>
                                                         </CommandItem>
@@ -903,6 +943,13 @@ export function FleetScheduler() {
                                         </Command>
                                     </PopoverContent>
                                 </Popover>
+                                {selectedCategory && (
+                                    <p className="text-[10px] text-slate-500 mt-1.5">
+                                        <span className="text-slate-400">{selectedCategory.productCount} product{selectedCategory.productCount === 1 ? "" : "s"}</span>
+                                        {" · "}
+                                        <span className="text-slate-400">{selectedCategory.requiredDocuments.length} required doc{selectedCategory.requiredDocuments.length === 1 ? "" : "s"}</span>
+                                    </p>
+                                )}
                             </div>
                         </div>
 
