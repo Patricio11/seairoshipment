@@ -72,17 +72,22 @@ Restructure the booking flow so that a container is **locked to a single product
 - [x] Add both pages to admin sidebar navigation (icons: Apple for Products, Anchor for Sailings)
 - [ ] Verify stats update after sync (deferred — will confirm once user does a real sync)
 
-### Phase 3 — Container creation cascade ⏳ TODO
+### Phase 3 — Container creation cascade ✅ DONE
 
-- [ ] Rewrite "Create Container" dialog in fleet-scheduler.tsx
-- [ ] Cascading field order: Route → Sailing (filtered) → Container Type → Temperature (constrained by reefer/dry) → Product → Save
-- [ ] Sailing dropdown shows only sailings on the chosen route from our `sailings` table
-- [ ] Vessel, voyage, ETD, ETA auto-fill from selected sailing (read-only)
-- [ ] Temperature options: reefer → [frozen, chilled], dry → [ambient]
-- [ ] Product searchable dropdown (from `products` table, active only)
-- [ ] Admin POST `/api/admin/containers` now requires sailingId, productId, temperature
-- [ ] Validate: sailing.portOfLoadValue === route origin AND sailing.portOfDischargeValue === route destination
-- [ ] Show product + temperature badges on container cards in fleet list
+- [x] Rewrite "Create Container" dialog in fleet-scheduler.tsx
+- [x] Cascading field order: 1. Route → 2. Sailing (filtered) → 3. Container Type → 4. Temperature (constrained by reefer/dry) → 5. Product
+- [x] Sailing dropdown shows only sailings on the chosen route. Shows vessel, voyage, ETD inline.
+- [x] Vessel, voyage, ETD, ETA auto-fill from selected sailing server-side
+- [x] Temperature: three buttons (frozen / chilled / ambient). Disabled ones greyed out. Dry container auto-selects ambient. Reefer clears ambient when switched from dry.
+- [x] Product: searchable combobox (Command + Popover). Searches by name or HS code. Shows HS code + category in results. Limit 200.
+- [x] Admin POST `/api/admin/containers` now requires sailingId, productId, temperature (validates all and rejects bad combos). Vessel/voyage/ETD/ETA are derived from sailing server-side.
+- [x] PUT /api/admin/containers/[id] accepts the same fields on edit
+- [x] Validates: sailing.portOfLoadValue === route origin AND sailing.portOfDischargeValue === route destination
+- [x] Validates: temperature matches container category (reefer → frozen|chilled, dry → ambient)
+- [x] Validates: product exists and is active
+- [x] Container cards now show product + temperature badges (emerald for product, sky/amber for cold/ambient)
+- [x] GET /api/admin/containers now joins products + sailings so list shows productName, sailingVessel, sailingVoyage
+- [x] Empty-state message when a route has no synced sailings yet — tells admin to sync first
 
 ### Phase 4 — Client booking rewrite ⏳ TODO
 

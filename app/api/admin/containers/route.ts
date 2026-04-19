@@ -1,28 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/server";
 import { db } from "@/lib/db";
-import { containers, palletAllocations, user, containerTypes } from "@/lib/db/schema";
+import { containers, palletAllocations, user, containerTypes, sailings, products } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
+
+type Temperature = "frozen" | "chilled" | "ambient";
 
 export async function GET() {
     try {
         const { error } = await requireAdmin();
         if (error) return error;
 
-        // Get all containers with their allocations + container type display name
+        // Get all containers with their allocations + container type display name + product + sailing
         const allContainers = await db
             .select({
                 container: containers,
                 containerTypeName: containerTypes.displayName,
+                productName: products.name,
+                sailingVessel: sailings.vesselName,
+                sailingVoyage: sailings.voyageNumber,
             })
             .from(containers)
             .leftJoin(containerTypes, eq(containers.containerTypeId, containerTypes.id))
+            .leftJoin(products, eq(containers.productId, products.id))
+            .leftJoin(sailings, eq(containers.sailingId, sailings.id))
             .orderBy(desc(containers.createdAt));
 
         // For each container, get allocations with user info
         const containersWithAllocations = await Promise.all(
-            allContainers.map(async ({ container, containerTypeName }) => {
+            allContainers.map(async ({ container, containerTypeName, productName, sailingVessel, sailingVoyage }) => {
                 const allocations = await db
                     .select({
                         allocation: palletAllocations,
@@ -37,6 +44,9 @@ export async function GET() {
                 return {
                     ...container,
                     containerTypeName,
+                    productName,
+                    sailingVessel,
+                    sailingVoyage,
                     allocations,
                 };
             })
@@ -57,30 +67,77 @@ export async function POST(request: NextRequest) {
         if (error) return error;
 
         const body = await request.json();
-        const { route, vessel, voyageNumber, sailingScheduleId, containerTypeId, etd, eta, salesRateTypeId } = body;
+        const {
+            route,
+            containerTypeId,
+            sailingId,
+            productId,
+            temperature,
+            salesRateTypeId,
+        } = body;
 
-        if (!route || !vessel || !containerTypeId) {
+        if (!route || !containerTypeId || !sailingId || !productId || !temperature) {
             return NextResponse.json(
-                { error: "Route, vessel, and container type are required" },
+                { error: "Route, container type, sailing, product, and temperature are all required" },
                 { status: 400 }
             );
         }
 
-        // Look up the container type to get size + maxPallets + reefer/dry
+        // Validate container type
         const [ct] = await db
             .select()
             .from(containerTypes)
             .where(eq(containerTypes.id, containerTypeId))
             .limit(1);
-
         if (!ct) {
             return NextResponse.json({ error: "Invalid container type" }, { status: 400 });
         }
 
-        // Derive salesRateTypeId from container type: REEFER → srs, DRY → scs
+        // Validate temperature matches container type (reefer → frozen|chilled, dry → ambient)
+        const validTemps: Record<string, Temperature[]> = {
+            REEFER: ["frozen", "chilled"],
+            DRY: ["ambient"],
+        };
+        const allowedTemps = validTemps[ct.type] || [];
+        if (!allowedTemps.includes(temperature as Temperature)) {
+            return NextResponse.json(
+                { error: `Temperature "${temperature}" is not valid for a ${ct.type} container. Allowed: ${allowedTemps.join(", ")}` },
+                { status: 400 }
+            );
+        }
+
+        // Validate sailing exists and matches the route
+        const [sailing] = await db
+            .select()
+            .from(sailings)
+            .where(eq(sailings.id, sailingId))
+            .limit(1);
+        if (!sailing) {
+            return NextResponse.json({ error: "Invalid sailing" }, { status: 400 });
+        }
+        const [originCode, destCode] = route.split("-");
+        if (sailing.portOfLoadValue !== originCode || sailing.portOfDischargeValue !== destCode) {
+            return NextResponse.json(
+                { error: `Sailing route (${sailing.portOfLoadValue}→${sailing.portOfDischargeValue}) does not match container route (${originCode}→${destCode})` },
+                { status: 400 }
+            );
+        }
+
+        // Validate product exists and is active
+        const [product] = await db
+            .select()
+            .from(products)
+            .where(eq(products.id, productId))
+            .limit(1);
+        if (!product) {
+            return NextResponse.json({ error: "Invalid product" }, { status: 400 });
+        }
+        if (!product.active) {
+            return NextResponse.json({ error: "Product is inactive — reactivate it first" }, { status: 400 });
+        }
+
         const derivedSalesRateTypeId = salesRateTypeId || (ct.type === "DRY" ? "scs" : "srs");
         const sizeEnum = ct.size as "20FT" | "40FT";
-
         const id = `CNT-${nanoid(10)}`;
 
         const [newContainer] = await db
@@ -88,13 +145,16 @@ export async function POST(request: NextRequest) {
             .values({
                 id,
                 route,
-                vessel,
-                voyageNumber: voyageNumber || null,
-                sailingScheduleId: sailingScheduleId || null,
+                vessel: sailing.vesselName,
+                voyageNumber: sailing.voyageNumber || null,
+                sailingScheduleId: sailing.metashipId,
+                sailingId: sailing.id,
                 type: sizeEnum,
                 containerTypeId,
-                etd: etd ? new Date(etd) : null,
-                eta: eta ? new Date(eta) : null,
+                productId: product.id,
+                temperature: temperature as Temperature,
+                etd: sailing.etd,
+                eta: sailing.eta,
                 totalPallets: 0,
                 maxCapacity: ct.maxPallets,
                 status: "OPEN",

@@ -22,6 +22,11 @@ import {
     Thermometer,
     Weight,
     MapPin,
+    Anchor,
+    Snowflake,
+    Sun,
+    Apple,
+    ChevronsUpDown,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -56,7 +61,21 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 interface ContainerAllocation {
     allocation: {
@@ -80,9 +99,15 @@ interface ContainerData {
     route: string
     vessel: string
     voyageNumber: string | null
+    sailingId: string | null
+    sailingVessel: string | null
+    sailingVoyage: string | null
     type: string
     containerTypeId: string | null
     containerTypeName: string | null
+    productId: string | null
+    productName: string | null
+    temperature: string | null
     etd: string | null
     eta: string | null
     totalPallets: number
@@ -111,14 +136,35 @@ interface ContainerTypeOption {
     active: boolean
 }
 
+interface SailingOption {
+    id: string
+    vesselName: string
+    voyageNumber: string
+    portOfLoadValue: string
+    portOfLoadCity: string
+    portOfDischargeValue: string
+    portOfDischargeCity: string
+    etd: string
+    eta: string | null
+    serviceType: string | null
+    active: boolean
+}
+
+interface ProductOption {
+    id: string
+    name: string
+    hsCode: string
+    category: string | null
+    active: boolean
+}
+
 interface ContainerForm {
     origin: string
     destination: string
-    vessel: string
-    voyageNumber: string
+    sailingId: string
     containerTypeId: string
-    etd: string
-    eta: string
+    temperature: "frozen" | "chilled" | "ambient" | ""
+    productId: string
     maxCapacity: number
 }
 
@@ -133,11 +179,10 @@ const STATUS_COLORS: Record<string, string> = {
 const EMPTY_FORM: ContainerForm = {
     origin: "",
     destination: "",
-    vessel: "",
-    voyageNumber: "",
+    sailingId: "",
     containerTypeId: "40ft-reefer-hc",
-    etd: "",
-    eta: "",
+    temperature: "",
+    productId: "",
     maxCapacity: 20,
 }
 
@@ -173,6 +218,9 @@ export function FleetScheduler() {
     const [originLocations, setOriginLocations] = useState<LocationOption[]>([])
     const [destinationLocations, setDestinationLocations] = useState<LocationOption[]>([])
     const [containerTypeOptions, setContainerTypeOptions] = useState<ContainerTypeOption[]>([])
+    const [sailingOptions, setSailingOptions] = useState<SailingOption[]>([])
+    const [productOptions, setProductOptions] = useState<ProductOption[]>([])
+    const [productSearch, setProductSearch] = useState("")
 
     const fetchContainers = useCallback(async () => {
         setLoading(true)
@@ -190,21 +238,25 @@ export function FleetScheduler() {
 
     useEffect(() => {
         fetchContainers()
-        async function fetchLocationsAndTypes() {
+        async function fetchReferenceData() {
             try {
-                const [origRes, destRes, ctRes] = await Promise.all([
+                const [origRes, destRes, ctRes, sailRes, prodRes] = await Promise.all([
                     fetch("/api/admin/locations?type=ORIGIN"),
                     fetch("/api/admin/locations?type=DESTINATION"),
                     fetch("/api/admin/container-types"),
+                    fetch("/api/admin/sailings"),
+                    fetch("/api/admin/products"),
                 ])
                 if (origRes.ok) setOriginLocations(await origRes.json())
                 if (destRes.ok) setDestinationLocations(await destRes.json())
                 if (ctRes.ok) setContainerTypeOptions(await ctRes.json())
+                if (sailRes.ok) setSailingOptions(await sailRes.json())
+                if (prodRes.ok) setProductOptions(await prodRes.json())
             } catch {
-                console.error("Failed to fetch locations/container types")
+                console.error("Failed to fetch reference data")
             }
         }
-        fetchLocationsAndTypes()
+        fetchReferenceData()
     }, [fetchContainers])
 
     const filteredContainers = containerData.filter(c =>
@@ -227,11 +279,10 @@ export function FleetScheduler() {
         setFormData({
             origin: origin || "",
             destination: destination || "",
-            vessel: container.vessel,
-            voyageNumber: container.voyageNumber || "",
+            sailingId: container.sailingId || "",
             containerTypeId: container.containerTypeId || "40ft-reefer-hc",
-            etd: container.etd ? new Date(container.etd).toISOString().split("T")[0] : "",
-            eta: container.eta ? new Date(container.eta).toISOString().split("T")[0] : "",
+            temperature: (container.temperature as "frozen" | "chilled" | "ambient" | null) || "",
+            productId: container.productId || "",
             maxCapacity: container.maxCapacity,
         })
         setDialogOpen(true)
@@ -239,8 +290,20 @@ export function FleetScheduler() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!formData.origin || !formData.destination || !formData.vessel) {
-            toast.error("Origin, destination, and vessel are required")
+        if (!formData.origin || !formData.destination) {
+            toast.error("Origin and destination are required")
+            return
+        }
+        if (!formData.sailingId) {
+            toast.error("Select a sailing")
+            return
+        }
+        if (!formData.temperature) {
+            toast.error("Select a temperature")
+            return
+        }
+        if (!formData.productId) {
+            toast.error("Select a product")
             return
         }
 
@@ -256,18 +319,22 @@ export function FleetScheduler() {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         route,
-                        vessel: formData.vessel,
-                        voyageNumber: formData.voyageNumber || null,
+                        sailingId: formData.sailingId,
                         containerTypeId: formData.containerTypeId,
-                        etd: formData.etd || null,
-                        eta: formData.eta || null,
+                        temperature: formData.temperature,
+                        productId: formData.productId,
                     }),
                 }
             )
 
             if (res.ok) {
                 toast.success(isEdit ? "Container Updated" : "Container Created", {
-                    description: `${route} — ${formData.vessel} (${containerTypeOptions.find(c => c.id === formData.containerTypeId)?.displayName || formData.containerTypeId})`,
+                    description: (() => {
+                        const sailing = sailingOptions.find(s => s.id === formData.sailingId)
+                        const ctName = containerTypeOptions.find(c => c.id === formData.containerTypeId)?.displayName || "—"
+                        const prodName = productOptions.find(p => p.id === formData.productId)?.name || "—"
+                        return `${route} — ${sailing?.vesselName || "—"} · ${ctName} · ${prodName}`
+                    })(),
                 })
                 setDialogOpen(false)
                 fetchContainers()
@@ -329,12 +396,48 @@ export function FleetScheduler() {
 
     const handleContainerTypeChange = (ctId: string) => {
         const ct = containerTypeOptions.find(c => c.id === ctId)
-        setFormData(prev => ({
-            ...prev,
-            containerTypeId: ctId,
-            maxCapacity: ct?.maxPallets || 20,
-        }))
+        setFormData(prev => {
+            const nextTemp: "frozen" | "chilled" | "ambient" | "" = ct?.type === "DRY"
+                ? "ambient"
+                : (prev.temperature === "ambient" ? "" : prev.temperature)
+            return {
+                ...prev,
+                containerTypeId: ctId,
+                maxCapacity: ct?.maxPallets || 20,
+                temperature: nextTemp,
+            }
+        })
     }
+
+    const handleRouteChange = (field: "origin" | "destination", value: string) => {
+        setFormData(prev => ({ ...prev, [field]: value, sailingId: "" }))
+    }
+
+    const selectedContainerType = containerTypeOptions.find(c => c.id === formData.containerTypeId)
+    const temperatureOptions: Array<{ value: "frozen" | "chilled" | "ambient"; label: string }> =
+        selectedContainerType?.type === "DRY"
+            ? [{ value: "ambient", label: "+18°C (Ambient)" }]
+            : [
+                { value: "frozen", label: "-18°C (Frozen)" },
+                { value: "chilled", label: "+5°C (Chilled)" },
+            ]
+
+    // Sailings filtered to the currently selected route
+    const availableSailings = sailingOptions.filter(s =>
+        s.portOfLoadValue === formData.origin &&
+        s.portOfDischargeValue === formData.destination
+    )
+
+    const filteredProductOptions = productOptions
+        .filter(p => p.active)
+        .filter(p => {
+            if (!productSearch) return true
+            const q = productSearch.toLowerCase()
+            return p.name.toLowerCase().includes(q) ||
+                p.hsCode.toLowerCase().includes(q) ||
+                p.category?.toLowerCase().includes(q)
+        })
+        .slice(0, 200)
 
     return (
         <div className="space-y-6">
@@ -394,11 +497,26 @@ export function FleetScheduler() {
                                             <Container className="h-6 w-6" />
                                         </div>
                                         <div>
-                                            <h3 className="text-lg font-black text-white flex items-center gap-2">
+                                            <h3 className="text-lg font-black text-white flex items-center gap-2 flex-wrap">
                                                 {container.route}
                                                 <Badge className={STATUS_COLORS[container.status] || STATUS_COLORS.OPEN}>
                                                     {container.status.replace("_", " ")}
                                                 </Badge>
+                                                {container.temperature && (
+                                                    <Badge className={
+                                                        container.temperature === "ambient"
+                                                            ? "bg-amber-500/15 text-amber-400 border-none text-[10px]"
+                                                            : "bg-sky-500/15 text-sky-400 border-none text-[10px]"
+                                                    }>
+                                                        {container.temperature === "ambient" ? <Sun className="h-3 w-3 mr-1" /> : <Snowflake className="h-3 w-3 mr-1" />}
+                                                        {container.temperature === "frozen" ? "-18°C" : container.temperature === "chilled" ? "+5°C" : "+18°C"}
+                                                    </Badge>
+                                                )}
+                                                {container.productName && (
+                                                    <Badge className="bg-emerald-500/15 text-emerald-400 border-none text-[10px]">
+                                                        <Apple className="h-3 w-3 mr-1" /> {container.productName}
+                                                    </Badge>
+                                                )}
                                             </h3>
                                             <p className="text-slate-500 text-sm font-medium">
                                                 {container.vessel} • {container.containerTypeName || container.type} • {container.id}
@@ -593,62 +711,73 @@ export function FleetScheduler() {
                         </DialogHeader>
 
                         <div className="space-y-4 py-6 border-y border-slate-800/50 my-4">
-                            {/* Route */}
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Origin Port</Label>
-                                    <Select value={formData.origin} onValueChange={(v) => setFormData({ ...formData, origin: v })}>
-                                        <SelectTrigger className="bg-slate-900 border-slate-800 h-9 text-sm">
-                                            <SelectValue placeholder="Select Origin" />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-slate-900 border-slate-800 text-white">
-                                            {originLocations.map(loc => (
-                                                <SelectItem key={loc.id} value={loc.code}>{loc.name} ({loc.code})</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Destination Port</Label>
-                                    <Select value={formData.destination} onValueChange={(v) => setFormData({ ...formData, destination: v })}>
-                                        <SelectTrigger className="bg-slate-900 border-slate-800 h-9 text-sm">
-                                            <SelectValue placeholder="Select Destination" />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-slate-900 border-slate-800 text-white">
-                                            {destinationLocations.map(loc => (
-                                                <SelectItem key={loc.id} value={loc.code}>{loc.name} ({loc.code})</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-
-                            {/* Vessel + Voyage */}
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Vessel Name</Label>
-                                    <Input
-                                        value={formData.vessel}
-                                        onChange={(e) => setFormData({ ...formData, vessel: e.target.value })}
-                                        placeholder="MSC Orchestra"
-                                        className="bg-slate-900 border-slate-800 h-9 text-sm"
-                                    />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Voyage Number</Label>
-                                    <Input
-                                        value={formData.voyageNumber}
-                                        onChange={(e) => setFormData({ ...formData, voyageNumber: e.target.value })}
-                                        placeholder="Optional"
-                                        className="bg-slate-900 border-slate-800 h-9 text-sm"
-                                    />
+                            {/* Step 1: Route */}
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">1. Route</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Origin Port</Label>
+                                        <Select value={formData.origin} onValueChange={(v) => handleRouteChange("origin", v)}>
+                                            <SelectTrigger className="bg-slate-900 border-slate-800 h-9 text-sm">
+                                                <SelectValue placeholder="Select origin" />
+                                            </SelectTrigger>
+                                            <SelectContent className="bg-slate-900 border-slate-800 text-white">
+                                                {originLocations.map(loc => (
+                                                    <SelectItem key={loc.id} value={loc.code}>{loc.name} ({loc.code})</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Destination Port</Label>
+                                        <Select value={formData.destination} onValueChange={(v) => handleRouteChange("destination", v)}>
+                                            <SelectTrigger className="bg-slate-900 border-slate-800 h-9 text-sm">
+                                                <SelectValue placeholder="Select destination" />
+                                            </SelectTrigger>
+                                            <SelectContent className="bg-slate-900 border-slate-800 text-white">
+                                                {destinationLocations.map(loc => (
+                                                    <SelectItem key={loc.id} value={loc.code}>{loc.name} ({loc.code})</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Type + Capacity */}
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Container Type</Label>
+                            {/* Step 2: Sailing */}
+                            <div className="border-t border-slate-800/50 pt-4">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">2. Sailing</p>
+                                {!formData.origin || !formData.destination ? (
+                                    <p className="text-xs text-slate-500 italic">Select origin + destination first.</p>
+                                ) : availableSailings.length === 0 ? (
+                                    <p className="text-xs text-amber-400">
+                                        No sailings available for this route. Go to <span className="font-mono">Sailings</span> and sync from MetaShip.
+                                    </p>
+                                ) : (
+                                    <Select value={formData.sailingId} onValueChange={(v) => setFormData({ ...formData, sailingId: v })}>
+                                        <SelectTrigger className="bg-slate-900 border-slate-800 h-9 text-sm">
+                                            <SelectValue placeholder={`Pick from ${availableSailings.length} sailing${availableSailings.length === 1 ? "" : "s"}`} />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-slate-900 border-slate-800 text-white max-h-[280px]">
+                                            {availableSailings.map(s => (
+                                                <SelectItem key={s.id} value={s.id}>
+                                                    <div className="flex items-center gap-2">
+                                                        <Anchor className="h-3 w-3 text-slate-500" />
+                                                        <span className="font-bold">{s.vesselName}</span>
+                                                        {s.voyageNumber && <span className="text-[10px] font-mono text-slate-500">· V{s.voyageNumber}</span>}
+                                                        <span className="text-[10px] text-slate-500">· ETD {new Date(s.etd).toLocaleDateString()}</span>
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            </div>
+
+                            {/* Step 3: Container Type */}
+                            <div className="border-t border-slate-800/50 pt-4">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">3. Container Type</p>
+                                <div className="grid grid-cols-2 gap-3">
                                     <Select value={formData.containerTypeId} onValueChange={handleContainerTypeChange}>
                                         <SelectTrigger className="bg-slate-900 border-slate-800 h-9 text-sm">
                                             <SelectValue placeholder="Select type" />
@@ -661,39 +790,119 @@ export function FleetScheduler() {
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Max Capacity (Pallets)</Label>
                                     <Input
                                         type="number"
                                         min={1}
                                         value={formData.maxCapacity}
                                         readOnly
                                         className="bg-slate-950 border-slate-800 h-9 text-sm font-mono text-slate-400"
+                                        placeholder="Max pallets"
                                     />
                                 </div>
                             </div>
 
-                            {/* Dates */}
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">ETD (Departure)</Label>
-                                    <Input
-                                        type="date"
-                                        value={formData.etd}
-                                        onChange={(e) => setFormData({ ...formData, etd: e.target.value })}
-                                        className="bg-slate-900 border-slate-800 h-9 text-sm"
-                                    />
+                            {/* Step 4: Temperature */}
+                            <div className="border-t border-slate-800/50 pt-4">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">4. Temperature</p>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {(["frozen", "chilled", "ambient"] as const).map(t => {
+                                        const allowed = temperatureOptions.some(o => o.value === t)
+                                        const selected = formData.temperature === t
+                                        const icon = t === "ambient" ? <Sun className="h-3.5 w-3.5" /> : <Snowflake className="h-3.5 w-3.5" />
+                                        const label = t === "frozen" ? "-18°C Frozen" : t === "chilled" ? "+5°C Chilled" : "+18°C Ambient"
+                                        return (
+                                            <button
+                                                key={t}
+                                                type="button"
+                                                disabled={!allowed}
+                                                onClick={() => setFormData({ ...formData, temperature: t })}
+                                                className={cn(
+                                                    "flex items-center justify-center gap-1.5 h-9 rounded-lg border text-xs font-bold transition-all",
+                                                    !allowed && "border-slate-800 text-slate-600 cursor-not-allowed opacity-40",
+                                                    allowed && !selected && "border-slate-700 text-slate-400 hover:border-brand-blue hover:text-white",
+                                                    selected && "border-brand-blue bg-brand-blue/15 text-brand-blue"
+                                                )}
+                                            >
+                                                {icon} {label}
+                                            </button>
+                                        )
+                                    })}
                                 </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">ETA (Arrival)</Label>
-                                    <Input
-                                        type="date"
-                                        value={formData.eta}
-                                        onChange={(e) => setFormData({ ...formData, eta: e.target.value })}
-                                        className="bg-slate-900 border-slate-800 h-9 text-sm"
-                                    />
-                                </div>
+                                {selectedContainerType && (
+                                    <p className="text-[10px] text-slate-500 mt-1.5">
+                                        {selectedContainerType.type === "DRY"
+                                            ? "Dry containers only carry ambient cargo."
+                                            : "Reefer containers can carry frozen or chilled cargo."}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Step 5: Product */}
+                            <div className="border-t border-slate-800/50 pt-4">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">5. Product</p>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            role="combobox"
+                                            className="w-full justify-between bg-slate-900 border-slate-800 h-9 text-sm text-white hover:bg-slate-900 hover:text-white font-normal"
+                                        >
+                                            <span className="flex items-center gap-2 min-w-0">
+                                                <Apple className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+                                                {formData.productId
+                                                    ? (productOptions.find(p => p.id === formData.productId)?.name || "…")
+                                                    : <span className="text-slate-500">Select a product…</span>}
+                                            </span>
+                                            <ChevronsUpDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-slate-900 border-slate-800" align="start">
+                                        <Command className="bg-slate-900">
+                                            <CommandInput
+                                                placeholder="Search product or HS code…"
+                                                value={productSearch}
+                                                onValueChange={setProductSearch}
+                                                className="text-white"
+                                            />
+                                            <CommandList className="max-h-[240px]">
+                                                <CommandEmpty>
+                                                    {productOptions.length === 0
+                                                        ? "No products synced. Go to Products page and sync."
+                                                        : "No products match."}
+                                                </CommandEmpty>
+                                                <CommandGroup>
+                                                    {filteredProductOptions.map(p => (
+                                                        <CommandItem
+                                                            key={p.id}
+                                                            value={`${p.name} ${p.hsCode}`}
+                                                            onSelect={() => {
+                                                                setFormData(prev => ({ ...prev, productId: p.id }))
+                                                                setProductSearch("")
+                                                            }}
+                                                            className="text-white"
+                                                        >
+                                                            <Check
+                                                                className={cn(
+                                                                    "mr-2 h-3.5 w-3.5",
+                                                                    formData.productId === p.id ? "opacity-100" : "opacity-0"
+                                                                )}
+                                                            />
+                                                            <div className="flex flex-col">
+                                                                <span className="font-semibold">{p.name}</span>
+                                                                {(p.hsCode || p.category) && (
+                                                                    <span className="text-[10px] text-slate-400 font-mono">
+                                                                        {p.hsCode}{p.hsCode && p.category ? " · " : ""}{p.category}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
                             </div>
                         </div>
 

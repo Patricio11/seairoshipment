@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/server";
 import { db } from "@/lib/db";
-import { containers, palletAllocations, containerTypes } from "@/lib/db/schema";
+import { containers, palletAllocations, containerTypes, sailings, products } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+
+type Temperature = "frozen" | "chilled" | "ambient";
 
 export async function PUT(
     request: NextRequest,
@@ -28,11 +30,9 @@ export async function PUT(
         const updates: Record<string, unknown> = { updatedAt: new Date() };
 
         if (body.route !== undefined) updates.route = body.route;
-        if (body.vessel !== undefined) updates.vessel = body.vessel;
-        if (body.voyageNumber !== undefined) updates.voyageNumber = body.voyageNumber || null;
-        if (body.sailingScheduleId !== undefined) updates.sailingScheduleId = body.sailingScheduleId || null;
-        if (body.etd !== undefined) updates.etd = body.etd ? new Date(body.etd) : null;
-        if (body.eta !== undefined) updates.eta = body.eta ? new Date(body.eta) : null;
+
+        // Container type change: also updates size, maxCapacity, salesRateTypeId
+        let containerCategory: "REEFER" | "DRY" | null = null;
         if (body.containerTypeId !== undefined) {
             const [ct] = await db.select().from(containerTypes).where(eq(containerTypes.id, body.containerTypeId)).limit(1);
             if (!ct) return NextResponse.json({ error: "Invalid container type" }, { status: 400 });
@@ -40,8 +40,66 @@ export async function PUT(
             updates.type = ct.size;
             updates.maxCapacity = ct.maxPallets;
             updates.salesRateTypeId = ct.type === "DRY" ? "scs" : "srs";
+            containerCategory = ct.type as "REEFER" | "DRY";
+        } else if (existing.containerTypeId) {
+            const [ct] = await db.select().from(containerTypes).where(eq(containerTypes.id, existing.containerTypeId)).limit(1);
+            if (ct) containerCategory = ct.type as "REEFER" | "DRY";
         }
-        if (body.maxCapacity !== undefined && body.containerTypeId === undefined) updates.maxCapacity = body.maxCapacity;
+
+        // Sailing change: auto-fills vessel, voyage, etd, eta
+        if (body.sailingId !== undefined) {
+            if (body.sailingId) {
+                const [sailing] = await db.select().from(sailings).where(eq(sailings.id, body.sailingId)).limit(1);
+                if (!sailing) return NextResponse.json({ error: "Invalid sailing" }, { status: 400 });
+                const effectiveRoute = (updates.route as string) || existing.route;
+                const [originCode, destCode] = effectiveRoute.split("-");
+                if (sailing.portOfLoadValue !== originCode || sailing.portOfDischargeValue !== destCode) {
+                    return NextResponse.json(
+                        { error: `Sailing route (${sailing.portOfLoadValue}→${sailing.portOfDischargeValue}) does not match container route (${originCode}→${destCode})` },
+                        { status: 400 }
+                    );
+                }
+                updates.sailingId = sailing.id;
+                updates.vessel = sailing.vesselName;
+                updates.voyageNumber = sailing.voyageNumber || null;
+                updates.sailingScheduleId = sailing.metashipId;
+                updates.etd = sailing.etd;
+                updates.eta = sailing.eta;
+            } else {
+                updates.sailingId = null;
+            }
+        }
+
+        // Product change
+        if (body.productId !== undefined) {
+            if (body.productId) {
+                const [product] = await db.select().from(products).where(eq(products.id, body.productId)).limit(1);
+                if (!product) return NextResponse.json({ error: "Invalid product" }, { status: 400 });
+                updates.productId = product.id;
+            } else {
+                updates.productId = null;
+            }
+        }
+
+        // Temperature change (validate against container category)
+        if (body.temperature !== undefined) {
+            if (body.temperature) {
+                const validTemps: Record<string, Temperature[]> = {
+                    REEFER: ["frozen", "chilled"],
+                    DRY: ["ambient"],
+                };
+                const allowed = containerCategory ? validTemps[containerCategory] : [];
+                if (!allowed.includes(body.temperature as Temperature)) {
+                    return NextResponse.json(
+                        { error: `Temperature "${body.temperature}" is not valid for this container. Allowed: ${allowed.join(", ")}` },
+                        { status: 400 }
+                    );
+                }
+                updates.temperature = body.temperature;
+            } else {
+                updates.temperature = null;
+            }
+        }
 
         const [updated] = await db
             .update(containers)
