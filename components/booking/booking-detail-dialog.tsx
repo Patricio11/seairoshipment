@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import {
     Dialog,
     DialogContent,
@@ -18,9 +19,11 @@ import {
     ArrowRight,
     CreditCard,
     User,
+    FileText,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { ClientBooking } from "@/types"
+import { AllocationDocs, type AllocationDoc } from "@/components/admin/allocation-docs"
 
 interface BookingDetailDialogProps {
     booking: ClientBooking | null
@@ -59,6 +62,31 @@ function formatCurrency(amount: string | null) {
 }
 
 export function BookingDetailDialog({ booking, open, onOpenChange }: BookingDetailDialogProps) {
+    const [docs, setDocs] = useState<AllocationDoc[]>([])
+    const [loadingDocs, setLoadingDocs] = useState(false)
+    const [viewDoc, setViewDoc] = useState<AllocationDoc | null>(null)
+
+    useEffect(() => {
+        if (!booking || !open) return
+        let cancelled = false
+        const load = async () => {
+            setLoadingDocs(true)
+            try {
+                const res = await fetch(`/api/bookings/${booking.id}/documents`)
+                if (!res.ok) return
+                const data = await res.json()
+                const flat = Array.isArray(data) ? data : (data.flat || [])
+                if (!cancelled) setDocs(flat)
+            } catch {
+                // ignore
+            } finally {
+                if (!cancelled) setLoadingDocs(false)
+            }
+        }
+        load()
+        return () => { cancelled = true }
+    }, [booking, open])
+
     if (!booking) return null
 
     const statusConfig = STATUS_CONFIG[booking.status] || STATUS_CONFIG.PENDING
@@ -222,8 +250,63 @@ export function BookingDetailDialog({ booking, open, onOpenChange }: BookingDeta
                             </div>
                         )}
                     </div>
+
+                    {/* Documents */}
+                    <Separator />
+                    <div>
+                        <div className="flex items-center gap-2 mb-3">
+                            <FileText className="h-4 w-4 text-brand-blue" />
+                            <p className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">Documents</p>
+                        </div>
+                        <AllocationDocs docs={docs} loading={loadingDocs} onView={setViewDoc} />
+                    </div>
                 </div>
             </DialogContent>
+
+            {/* Document viewer overlay */}
+            {viewDoc && (
+                <Dialog open={!!viewDoc} onOpenChange={(v) => { if (!v) setViewDoc(null) }}>
+                    <DialogContent className="sm:max-w-[900px] h-[90vh] p-0 flex flex-col gap-0">
+                        <DialogHeader className="px-6 py-4 border-b shrink-0">
+                            <DialogTitle className="text-sm font-black truncate">{viewDoc.originalName}</DialogTitle>
+                            {viewDoc.metashipDownloadUrl && (
+                                <p className="text-[10px] text-slate-500 mt-1">MetaShip download links expire after 15 minutes — reopen this view to get a fresh link.</p>
+                            )}
+                        </DialogHeader>
+                        <div className="flex-1 overflow-auto bg-slate-100 dark:bg-slate-900 p-4 flex items-start justify-center">
+                            {(viewDoc.metashipDownloadUrl || viewDoc.url) && /\.pdf$/i.test(viewDoc.originalName) ? (
+                                <iframe
+                                    src={viewDoc.metashipDownloadUrl || viewDoc.url || ""}
+                                    title={viewDoc.originalName}
+                                    className="w-full h-full bg-white rounded shadow-2xl"
+                                    style={{ aspectRatio: "1 / 1.414", minHeight: "100%", maxWidth: "800px" }}
+                                />
+                            ) : (viewDoc.metashipDownloadUrl || viewDoc.url) && /\.(jpg|jpeg|png|gif|webp)$/i.test(viewDoc.originalName) ? (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img
+                                    src={viewDoc.metashipDownloadUrl || viewDoc.url || ""}
+                                    alt={viewDoc.originalName}
+                                    className="max-w-full max-h-full object-contain bg-white rounded shadow-2xl"
+                                    style={{ maxWidth: "800px" }}
+                                />
+                            ) : (
+                                <div className="py-12 text-center">
+                                    <FileText className="h-12 w-12 mx-auto opacity-40 mb-3" />
+                                    <p className="font-bold">Preview not available</p>
+                                    <a
+                                        href={viewDoc.metashipDownloadUrl || viewDoc.url || "#"}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="mt-4 inline-block px-4 py-2 rounded-lg bg-brand-blue text-white font-bold text-xs"
+                                    >
+                                        Download
+                                    </a>
+                                </div>
+                            )}
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            )}
         </Dialog>
     )
 }

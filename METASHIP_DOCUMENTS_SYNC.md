@@ -89,80 +89,81 @@ Clients see the authoritative MetaShip version.
 
 ## Phases
 
-### Phase A — Schema + MetaShip API client ⏳ TODO
+### Phase A — Schema + MetaShip API client ✅ DONE
 
-- [ ] Add enum: `document_source` with values `CLIENT_UPLOAD`, `METASHIP_SHARED`, `METASHIP_CLIENT`
-- [ ] Add columns to `documents`:
-  - [ ] `source` (enum, default CLIENT_UPLOAD)
-  - [ ] `metashipDocumentId` (integer, nullable)
-  - [ ] `metashipReference` (text, nullable — e.g. "COO-2026-0142")
-  - [ ] `metashipDownloadUrl` (text, nullable — cached signed URL)
-  - [ ] `metashipUrlExpiresAt` (timestamp, nullable)
-- [ ] Make `allocationId` explicitly nullable if not already (shared docs have no allocation)
-- [ ] Push schema via `npm run db:push`
-- [ ] Add to `lib/metaship.ts`:
-  - [ ] `getMetaShipShipmentDocuments(systemReference)` — list
-  - [ ] `getMetaShipShipmentDocument(systemReference, documentId)` — single, for URL refresh
-  - [ ] Typed response interfaces
+- [x] Add enum: `document_source` with values `CLIENT_UPLOAD`, `METASHIP_SHARED`, `METASHIP_CLIENT`
+- [x] Add columns to `documents`:
+  - [x] `source` (enum, default CLIENT_UPLOAD)
+  - [x] `metashipDocumentId` (integer, nullable)
+  - [x] `metashipReference` (text, nullable — e.g. "COO-2026-0142")
+  - [x] `metashipDownloadUrl` (text, nullable — cached signed URL)
+  - [x] `metashipUrlExpiresAt` (timestamp, nullable)
+- [x] Make `allocationId` explicitly nullable (shared docs have no allocation)
+- [x] Schema pushed via direct SQL (additive-only)
+- [x] `lib/metaship.ts` additions:
+  - [x] `getMetaShipShipmentDocuments(systemReference)` — list
+  - [x] `getMetaShipShipmentDocument(systemReference, documentId)` — single, for URL refresh
+  - [x] `MetaShipShipmentDocument` interface
 
-### Phase B — Admin sync endpoint ⏳ TODO
+### Phase B — Admin sync endpoint ✅ DONE
 
-- [ ] `POST /api/admin/containers/[id]/sync-documents`
-  - [ ] Load container, verify `metashipReference` exists (else 400)
-  - [ ] Load allocations on this container + their users' account numbers
-  - [ ] Call MetaShip GET list endpoint
-  - [ ] For each MetaShip doc:
-    - [ ] Search for an account number substring match in `name` or `reference`
-    - [ ] If matched → `source=METASHIP_CLIENT`, `allocationId` set
-    - [ ] If not → `source=METASHIP_SHARED`, `allocationId=null`, `containerId` tracked via a new column or via naming convention
-  - [ ] Upsert by `metashipDocumentId` (if exists, update; else insert)
-  - [ ] Cache `metashipDownloadUrl` + `metashipUrlExpiresAt`
-  - [ ] Return summary: `{ total, matched, shared, inserted, updated }`
+- [x] `POST /api/admin/containers/[id]/sync-documents`
+  - [x] Loads container, verifies `metashipReference` exists (else 400)
+  - [x] Loads allocations on this container + their users' account numbers
+  - [x] Calls MetaShip GET list endpoint
+  - [x] For each MetaShip doc:
+    - [x] Searches for account number substring match in `name` or `reference`
+    - [x] If matched → `source=METASHIP_CLIENT`, `allocationId` set
+    - [x] If not → `source=METASHIP_SHARED`, `allocationId=null`, `containerId` set
+  - [x] Upserts by `(containerId, metashipDocumentId)`
+  - [x] Caches `metashipDownloadUrl` + `metashipUrlExpiresAt`
+  - [x] Returns summary: `{ total, matched, shared, inserted, updated }`
+- [x] `documents.containerId` (text, nullable, FK → containers.id) added
 
-  **Consideration:** for shared docs, we currently require `allocationId`. Options:
-  - (a) Relax `allocationId` to nullable and add `containerId` column to `documents`
-  - (b) Create one row per allocation on the container, each pointing to the same MetaShip doc ID (higher row count but simpler queries)
-  - Decision: **(a)** — cleaner data model; add `containerId` FK to documents
+### Phase C — Admin UI ✅ DONE
 
-- [ ] Tracked column addition: `documents.containerId` (text, nullable, FK → containers.id)
+- [x] "Sync Documents from MetaShip" button in container detail dialog (below MetaShip Order panel, only when `metashipOrderNo` present)
+- [x] Loading state with spinner (`syncingDocs` state)
+- [x] Success/failure toasts with summary counts
 
-### Phase C — Admin UI ⏳ TODO
+### Phase D — Display per-allocation (admin + client) ✅ DONE
 
-- [ ] In admin bookings grid container detail dialog, next to "MetaShip Order" section:
-  - [ ] Add "Sync Documents from MetaShip" button (visible only if container has `metashipOrderNo`)
-  - [ ] Loading state with spinner
-  - [ ] Success toast with summary `"Synced {N} docs — {M} matched to clients, {S} container-level"`
-  - [ ] Failure toast with error reason
+**Shared component:** `components/admin/allocation-docs.tsx` — reused by both admin + client.
+Three sections: Finalised by MetaShip (emerald) / Container Documents (sky) /
+Client Uploads-drafts (slate, collapsed behind toggle when finalised versions exist).
 
-### Phase D — Display per-allocation (admin + client) ⏳ TODO
+**Admin:**
+- [x] `admin-bookings-grid.tsx` client allocation popup uses `<AllocationDocs/>`
+- [x] GET `/api/admin/allocations/[id]/documents` returns `{ flat, clientUploads, finalisedFromMetaShip, containerDocuments }`
 
-**Admin — client allocation popup (in bookings grid):**
-- [ ] Fetch MetaShip-finalised + shared docs for the allocation
-- [ ] Render 3 sections:
-  - [ ] "Finalised by MetaShip" (METASHIP_CLIENT matched to this allocation)
-  - [ ] "Container Documents" (METASHIP_SHARED for this container)
-  - [ ] "Your Uploads (drafts)" — hidden behind a "Show drafts" toggle
-- [ ] Each doc shows: name, reference (MetaShip), documentCode, View + Download
+**Client:**
+- [x] `booking-detail-dialog.tsx` fetches + renders `<AllocationDocs/>` with inline viewer
+- [x] `resubmit-booking-dialog.tsx` updated to unwrap `{ clientUploads }` response
+- [x] GET `/api/bookings/[allocationId]/documents` returns same grouped shape
 
-**Client — bookings page detail / resubmit dialog / ad-hoc viewer:**
-- [ ] Same three sections, clients can only View (not edit)
-- [ ] On the bookings list, show a badge "Documents available" once sync completes
+### Phase E — Signed URL refresh ✅ DONE
 
-### Phase E — Signed URL refresh ⏳ TODO
+- [x] `POST /api/admin/documents/[id]/refresh-url`
+  - [x] Reads doc → calls MetaShip single-doc endpoint → updates cached URL + expiry
+  - [x] Returns fresh `{ downloadUrl, expiresAt }`
+- [x] Client-side: `openViewDoc` checks expiry in admin grid; if within 2 min, refreshes first
 
-- [ ] `POST /api/admin/documents/[id]/refresh-url` (or GET with proper auth)
-  - [ ] Reads doc → calls MetaShip single-doc endpoint → updates cached URL + expiry
-  - [ ] Returns fresh `{ downloadUrl, expiresAt }`
-- [ ] Client-side: before showing View, check expiry; if within 2 min, refresh first
-- [ ] Add a note on the modal: "Download links expire in 15 minutes"
+### Phase F — Polish + QA ⏳ IN PROGRESS
 
-### Phase F — Polish + QA ⏳ TODO
+**Code polish (done in this pass):**
+- [x] Client GET route surfaces `metashipDownloadUrl` (selects full row)
+- [x] Client GET route guards against null `containerId` (avoids bad `OR`)
+- [x] "Download links expire in 15 minutes" note on client view modal (shown when doc is from MetaShip)
+- [x] Full typecheck passes (`tsc --noEmit`)
 
-- [ ] End-to-end test: create order → go to MetaShip → add a test doc prefixed with client account number → sync → confirm it lands on the right client
-- [ ] Test shared doc: same sync → doc without account number → confirm it shows for all clients
-- [ ] Test re-sync: second run just updates URLs, doesn't duplicate rows
-- [ ] Test URL refresh after 15 min: view a doc, get fresh URL
-- [ ] Update `PRODUCT_SAILING_REFACTOR.md` or reference this new tracker where appropriate
+**Manual QA with live MetaShip (requires admin steps):**
+- [ ] E2E: create order → go to MetaShip → add a test doc prefixed with client account number → sync → confirm it lands on the right client
+- [ ] Shared doc: sync with a doc that has no account number → confirm it shows for every allocation on the container
+- [ ] Re-sync idempotency: second run should show `inserted:0, updated:N` and not create duplicate rows
+- [ ] URL refresh: view a doc, wait 15+ min, view again → admin path auto-refreshes via `/api/admin/documents/[id]/refresh-url`
+
+**Known gap (admin-only refresh):**
+- Client-side viewer currently shows whatever URL the DB has cached. If it's stale, the client should reopen after an admin re-sync. A client-facing refresh endpoint could be added later if needed; flagged but intentionally out of scope for this pass.
 
 ---
 

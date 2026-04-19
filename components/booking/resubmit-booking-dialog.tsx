@@ -70,7 +70,11 @@ export function ResubmitBookingDialog({ booking, open, onClose, onSuccess }: Res
             setLoadingDocs(true)
             try {
                 const res = await fetch(`/api/bookings/${booking.id}/documents`)
-                if (res.ok) setExistingDocs(await res.json())
+                if (res.ok) {
+                    const data = await res.json()
+                    // Resubmit only shows the client's own (draft) uploads, not MetaShip docs
+                    setExistingDocs(Array.isArray(data) ? data : (data.clientUploads || data.flat || []))
+                }
             } catch {
                 // ignore
             } finally {

@@ -2,9 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { documents, palletAllocations } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
+/**
+ * Returns the client's own documents for an allocation, plus any shared
+ * container-level MetaShip documents. Structure matches the admin endpoint
+ * so the same AllocationDocs component can render both.
+ */
 export async function GET(
     _request: NextRequest,
     { params }: { params: Promise<{ allocationId: string }> }
@@ -28,12 +33,25 @@ export async function GET(
             return NextResponse.json({ error: "Allocation not found" }, { status: 404 });
         }
 
-        const docs = await db
+        const rows = await db
             .select()
             .from(documents)
-            .where(eq(documents.allocationId, allocationId));
+            .where(
+                or(
+                    eq(documents.allocationId, allocationId),
+                    alloc.containerId ? and(
+                        eq(documents.containerId, alloc.containerId),
+                        eq(documents.source, "METASHIP_SHARED"),
+                    ) : undefined,
+                )
+            );
 
-        return NextResponse.json(docs);
+        return NextResponse.json({
+            flat: rows,
+            clientUploads: rows.filter(d => d.source === "CLIENT_UPLOAD"),
+            finalisedFromMetaShip: rows.filter(d => d.source === "METASHIP_CLIENT" && d.allocationId === allocationId),
+            containerDocuments: rows.filter(d => d.source === "METASHIP_SHARED"),
+        });
     } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to fetch documents";
         return NextResponse.json({ error: message }, { status: 500 });

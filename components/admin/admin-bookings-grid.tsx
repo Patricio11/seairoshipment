@@ -62,6 +62,7 @@ import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { documentLabel } from "@/lib/constants/document-types"
+import { AllocationDocs } from "./allocation-docs"
 
 interface ContainerAllocation {
     allocation: {
@@ -211,6 +212,13 @@ interface ClientDoc {
     originalName: string
     type: string
     documentCode: string | null
+    source: "CLIENT_UPLOAD" | "METASHIP_CLIENT" | "METASHIP_SHARED"
+    metashipDocumentId: number | null
+    metashipReference: string | null
+    metashipDownloadUrl: string | null
+    metashipUrlExpiresAt: string | null
+    allocationId: string | null
+    containerId: string | null
     status: string
     url: string | null
     uploadedAt: string
@@ -230,6 +238,36 @@ export function AdminBookingsGrid() {
     const [loadingClientDocs, setLoadingClientDocs] = useState(false)
     const [viewDoc, setViewDoc] = useState<ClientDoc | null>(null)
 
+    /**
+     * Open a document in the viewer. If it's a MetaShip doc with a URL that's
+     * expired or within 2 minutes of expiring, hit the refresh endpoint first
+     * so the iframe/img has a fresh signed URL.
+     */
+    const openViewDoc = async (doc: ClientDoc) => {
+        if (doc.metashipDocumentId && doc.metashipUrlExpiresAt) {
+            const expMs = new Date(doc.metashipUrlExpiresAt).getTime()
+            const stale = expMs - Date.now() < 2 * 60 * 1000
+            if (stale) {
+                try {
+                    const res = await fetch(`/api/admin/documents/${doc.id}/refresh-url`, { method: "POST" })
+                    if (res.ok) {
+                        const fresh = await res.json()
+                        setViewDoc({
+                            ...doc,
+                            metashipDownloadUrl: fresh.downloadUrl,
+                            metashipUrlExpiresAt: fresh.expiresAt,
+                            url: fresh.downloadUrl,
+                        })
+                        return
+                    }
+                } catch {
+                    // fall through with stale URL
+                }
+            }
+        }
+        setViewDoc(doc)
+    }
+
     // Pending requests (real data)
     const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([])
     const [loadingPending, setLoadingPending] = useState(false)
@@ -246,6 +284,7 @@ export function AdminBookingsGrid() {
     const [loadingReviewDocs, setLoadingReviewDocs] = useState(false)
     const [approving, setApproving] = useState(false)
     const [rejecting, setRejecting] = useState(false)
+    const [syncingDocs, setSyncingDocs] = useState(false)
     const [rejectReason, setRejectReason] = useState("")
     const [showRejectForm, setShowRejectForm] = useState(false)
 
@@ -357,7 +396,10 @@ export function AdminBookingsGrid() {
         setReviewDocs([])
         try {
             const res = await fetch(`/api/admin/allocations/${req.allocation.id}/documents`)
-            if (res.ok) setReviewDocs(await res.json())
+            if (res.ok) {
+                const data = await res.json()
+                setReviewDocs(Array.isArray(data) ? data : (data.flat || []))
+            }
         } catch {
             console.error("Failed to load documents")
         } finally {
@@ -414,7 +456,11 @@ export function AdminBookingsGrid() {
         setClientDialog({ alloc, docs: [] })
         try {
             const res = await fetch(`/api/admin/allocations/${alloc.allocation.id}/documents`)
-            const docs: ClientDoc[] = res.ok ? await res.json() : []
+            let docs: ClientDoc[] = []
+            if (res.ok) {
+                const data = await res.json()
+                docs = Array.isArray(data) ? data : (data.flat || [])
+            }
             setClientDialog({ alloc, docs })
         } catch {
             setClientDialog({ alloc, docs: [] })
@@ -449,6 +495,27 @@ export function AdminBookingsGrid() {
             toast.error("Failed to create MetaShip order")
         } finally {
             setCreatingBooking(false)
+        }
+    }
+
+    const handleSyncDocuments = async (container: ContainerData) => {
+        setSyncingDocs(true)
+        try {
+            const res = await fetch(`/api/admin/containers/${container.id}/sync-documents`, { method: "POST" })
+            const data = await res.json()
+            if (!res.ok) {
+                toast.error(data.error || "Failed to sync documents")
+                return
+            }
+            toast.success(`Synced ${data.total} documents`, {
+                description: `${data.matched} matched to clients · ${data.shared} shared · ${data.inserted} new, ${data.updated} refreshed`,
+                duration: 6000,
+            })
+            fetchContainers()
+        } catch {
+            toast.error("Failed to sync documents")
+        } finally {
+            setSyncingDocs(false)
         }
     }
 
@@ -1120,8 +1187,8 @@ export function AdminBookingsGrid() {
                         <div className="space-y-5 py-4">
                             {/* MetaShip Reference */}
                             {detailDialog.metashipOrderNo && (
-                                <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4">
-                                    <p className="text-[10px] font-bold uppercase text-emerald-400/60 mb-2">MetaShip Order</p>
+                                <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 space-y-3">
+                                    <p className="text-[10px] font-bold uppercase text-emerald-400/60">MetaShip Order</p>
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <p className="text-emerald-400 font-black text-lg">Order #{detailDialog.metashipOrderNo}</p>
@@ -1147,6 +1214,24 @@ export function AdminBookingsGrid() {
                                                 </button>
                                             )}
                                         </div>
+                                    </div>
+
+                                    {/* Sync Documents from MetaShip */}
+                                    <div className="flex items-center justify-between pt-3 border-t border-emerald-500/20">
+                                        <div>
+                                            <p className="text-xs text-emerald-200 font-bold">Shipment Documents</p>
+                                            <p className="text-[10px] text-emerald-400/60 mt-0.5">
+                                                Pull finalised documents from MetaShip. They&apos;re split per-client by account number.
+                                            </p>
+                                        </div>
+                                        <Button
+                                            onClick={() => handleSyncDocuments(detailDialog)}
+                                            disabled={syncingDocs}
+                                            className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold shrink-0"
+                                        >
+                                            {syncingDocs ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Download className="h-3.5 w-3.5 mr-1.5" />}
+                                            {syncingDocs ? "Syncing…" : "Sync Documents"}
+                                        </Button>
                                     </div>
                                 </div>
                             )}
@@ -1505,62 +1590,12 @@ export function AdminBookingsGrid() {
                                     </div>
                                 </div>
 
-                                {/* Documents */}
-                                <div>
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 mb-2 flex items-center gap-1">
-                                        <FileText className="h-3 w-3" /> Documents Submitted
-                                    </p>
-                                    {loadingClientDocs ? (
-                                        <div className="flex items-center gap-2 py-4 text-slate-500 text-sm">
-                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                            Loading documents...
-                                        </div>
-                                    ) : clientDialog.docs.length === 0 ? (
-                                        <div className="py-4 text-center text-slate-600 text-sm border border-slate-800 rounded-xl">
-                                            No documents submitted yet
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-2">
-                                            {clientDialog.docs.map((doc) => (
-                                                <div key={doc.id} className="flex items-center gap-3 p-3 rounded-xl border border-slate-800 bg-slate-900">
-                                                    <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
-                                                        <FileText className="h-4 w-4 text-blue-400" />
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-sm text-white font-medium truncate">{doc.originalName}</p>
-                                                        <div className="flex items-center gap-2 mt-0.5">
-                                                            <span className="text-[10px] text-slate-500 font-mono uppercase">{documentLabel(doc.documentCode) || doc.type.replace("_", " ")}</span>
-                                                            <span className="text-[10px] text-slate-700">·</span>
-                                                            <span className={`text-[10px] font-bold uppercase ${doc.status === "APPROVED" ? "text-emerald-400" : doc.status === "REJECTED" ? "text-red-400" : "text-amber-400"}`}>
-                                                                {doc.status}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    {doc.url && (
-                                                        <div className="flex items-center gap-1.5 shrink-0">
-                                                            <button
-                                                                onClick={() => setViewDoc(doc)}
-                                                                className="h-7 w-7 rounded-lg border border-slate-700 flex items-center justify-center text-slate-400 hover:text-brand-blue hover:border-brand-blue transition-colors"
-                                                                title="View document"
-                                                            >
-                                                                <Eye className="h-3.5 w-3.5" />
-                                                            </button>
-                                                            <a
-                                                                href={doc.url}
-                                                                target="_blank"
-                                                                rel="noreferrer"
-                                                                className="h-7 w-7 rounded-lg border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-500 transition-colors"
-                                                                title="Download document"
-                                                            >
-                                                                <Download className="h-3.5 w-3.5" />
-                                                            </a>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
+                                {/* Documents (grouped by source) */}
+                                <AllocationDocs
+                                    docs={clientDialog.docs}
+                                    loading={loadingClientDocs}
+                                    onView={openViewDoc}
+                                />
                             </div>
                         </>
                     )}
