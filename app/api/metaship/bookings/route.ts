@@ -53,9 +53,7 @@ export async function POST(request: NextRequest) {
 
         // Upload documents to the order if any were provided
         const uploadedDocs: Array<{ name: string; success: boolean; error?: string }> = [];
-        if (documents?.length && result.data?.orderNo) {
-            // Extract orderId from systemReference or orderNo
-            // The orderId for document upload is an integer
+        if (documents?.length && result.data?.id) {
             for (const doc of documents as Array<{ file: string; name: string; mimeType: string; type?: string }>) {
                 try {
                     await uploadMetaShipDocument({
@@ -63,7 +61,7 @@ export async function POST(request: NextRequest) {
                         name: doc.name,
                         mimeType: doc.mimeType,
                         type: (doc.type as MetaShipDocumentType) || "SHIPMENT_DOCUMENT",
-                        orderId: parseInt(result.data.systemReference) || undefined,
+                        orderId: result.data.id,
                     });
                     uploadedDocs.push({ name: doc.name, success: true });
                 } catch (err) {

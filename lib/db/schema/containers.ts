@@ -27,6 +27,7 @@ export const containers = pgTable("containers", {
     salesRateTypeId: text("sales_rate_type_id").default("srs").notNull(),
     metashipOrderNo: text("metaship_order_no"),
     metashipReference: text("metaship_reference"),
+    metashipOrderId: integer("metaship_order_id"),  // numeric id used for document upload
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -136,15 +136,21 @@ export interface MetaShipBookingPayload {
     }>;
 }
 
+export interface MetaShipOrderResponse {
+    message: string;
+    data: {
+        id: number;              // numeric order id — needed for document upload
+        orderNo: string;         // e.g. "LL000001"
+        systemReference: string; // UUID
+    };
+}
+
 /**
  * Create a booking request in MetaShip.
  * Endpoint: POST /public/v2/booking
  */
 export async function createMetaShipBooking(payload: MetaShipBookingPayload) {
-    return metaShipPost<{
-        message: string;
-        data: { orderNo: string; systemReference: string };
-    }>("/public/v2/booking", buildBookingBody(payload));
+    return metaShipPost<MetaShipOrderResponse>("/public/v2/booking", buildBookingBody(payload));
 }
 
 /**
@@ -153,10 +159,7 @@ export async function createMetaShipBooking(payload: MetaShipBookingPayload) {
  * Endpoint: POST /public/v2/order
  */
 export async function createMetaShipOrder(payload: MetaShipBookingPayload) {
-    return metaShipPost<{
-        message: string;
-        data: { orderNo: string; systemReference: string };
-    }>("/public/v2/order", buildBookingBody(payload));
+    return metaShipPost<MetaShipOrderResponse>("/public/v2/order", buildBookingBody(payload));
 }
 
 function buildBookingBody(payload: MetaShipBookingPayload) {

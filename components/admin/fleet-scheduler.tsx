@@ -311,9 +311,12 @@ export function FleetScheduler() {
                 toast.error(data.error || "Failed to create MetaShip order")
                 return
             }
+            const docSummary = data.documents
+                ? ` | ${data.documents.uploaded}/${data.documents.total} docs uploaded${data.documents.failed > 0 ? ` (${data.documents.failed} failed)` : ""}`
+                : ""
             toast.success("MetaShip Order Created!", {
-                description: `Order #${data.orderNo} — Log in to MetaShip to confirm.`,
-                duration: 8000,
+                description: `Order #${data.orderNo}${docSummary} — Log in to MetaShip to review.`,
+                duration: 10000,
             })
             setBookingDialog(null)
             fetchContainers()
