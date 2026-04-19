@@ -211,11 +211,15 @@ checklist and uploads each one tagged with its code.
 - [x] Booking detail popup shows documentLabel(doc.documentCode) — falls back to legacy type if null
 - [x] Document viewer modal header shows the doc label
 
-#### Tracker maintenance + cleanup
+#### Tracker maintenance + cleanup ✅ DONE
 
 - [x] Update this file at each milestone
-- [ ] Drop the legacy `products.category` (freeform string) column after categories are live
-- [ ] Drop the legacy `containers.product_id` column once we've verified nothing reads from it
+- [x] Drop the legacy `products.category` (freeform string) column
+- [x] Drop the legacy `containers.product_id` column
+- [x] Remove `category` freeform field from API responses (/api/admin/products and /api/bookings/options)
+- [x] Remove `category: products.category` select + PUT update
+- [x] Replace inline category editor in /admin/products with read-only category badge linking to /admin/categories (single source of truth for category assignment)
+- [x] Added Assigned/Unassigned filter tabs to Products page for quick triage
 
 ---
 

@@ -17,7 +17,6 @@ export const products = pgTable("products", {
     name: text("name").notNull(),
     hsCode: text("hs_code").default("").notNull(),
     description: text("description").default("").notNull(),
-    category: text("category"), // LEGACY freeform tag — superseded by categoryId
     categoryId: text("category_id").references(() => productCategories.id),
     active: boolean("active").default(true).notNull(),
     lastSyncedAt: timestamp("last_synced_at").defaultNow().notNull(),

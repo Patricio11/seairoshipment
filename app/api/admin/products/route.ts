@@ -1,19 +1,20 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/server";
 import { db } from "@/lib/db";
-import { products, containers } from "@/lib/db/schema";
+import { products, containers, productCategories } from "@/lib/db/schema";
 import { eq, sql, asc } from "drizzle-orm";
 
 /**
  * List all products in our DB (synced from MetaShip).
- * Includes a usage count — how many open/threshold containers reference this product.
+ * Each row includes:
+ *   - categoryName: display label for the assigned category (null if unassigned)
+ *   - containerCount: how many open/threshold containers use this product's category
  */
 export async function GET() {
     try {
         const { error } = await requireAdmin();
         if (error) return error;
 
-        // Left join with containers to count how many containers use each product
         const results = await db
             .select({
                 id: products.id,
@@ -21,7 +22,8 @@ export async function GET() {
                 name: products.name,
                 hsCode: products.hsCode,
                 description: products.description,
-                category: products.category,
+                categoryId: products.categoryId,
+                categoryName: productCategories.name,
                 active: products.active,
                 lastSyncedAt: products.lastSyncedAt,
                 updatedAt: products.updatedAt,
@@ -32,6 +34,7 @@ export async function GET() {
                 `.as("container_count"),
             })
             .from(products)
+            .leftJoin(productCategories, eq(products.categoryId, productCategories.id))
             .orderBy(asc(products.name));
 
         return NextResponse.json(results);
@@ -43,7 +46,8 @@ export async function GET() {
 }
 
 /**
- * Toggle active/inactive, update category or description for a product.
+ * Toggle active/inactive for a product.
+ * (Category assignment is done via /api/admin/product-categories/[id]/products.)
  */
 export async function PUT(request: Request) {
     try {
@@ -51,14 +55,13 @@ export async function PUT(request: Request) {
         if (error) return error;
 
         const body = await request.json();
-        const { id, category, active } = body;
+        const { id, active } = body;
 
         if (!id) {
             return NextResponse.json({ error: "Product id is required" }, { status: 400 });
         }
 
         const updates: Record<string, unknown> = { updatedAt: new Date() };
-        if (category !== undefined) updates.category = category;
         if (active !== undefined) updates.active = active;
 
         const [updated] = await db

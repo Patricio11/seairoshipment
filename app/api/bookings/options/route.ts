@@ -74,7 +74,6 @@ export async function GET(request: NextRequest) {
                 id: p.id,
                 name: p.name,
                 hsCode: p.hsCode,
-                category: p.category,
                 categoryId: p.categoryId,
                 categoryName: p.categoryId ? categoryMap.get(p.categoryId)?.name || null : null,
             }));

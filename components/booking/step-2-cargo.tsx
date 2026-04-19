@@ -49,7 +49,6 @@ interface ProductOption {
     id: string
     name: string
     hsCode: string
-    category: string | null          // legacy freeform tag (MetaShip type)
     categoryId: string | null        // category reference — the consolidation unit
     categoryName: string | null      // for display ("Frozen Seafood" etc.)
 }
@@ -261,7 +260,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                 commodity: product.id,
                 commodityName: product.name,
                 hsCode: product.hsCode,
-                commodityDescription: product.category || "",
+                commodityDescription: product.categoryName || "",
                 categoryId: product.categoryId || undefined,
                 categoryName: product.categoryName || undefined,
                 // Clear downstream — selecting a new product may change what temps/sailings are available
@@ -308,7 +307,6 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                 id: formData.commodity,
                 name: formData.commodityName || "",
                 hsCode: formData.hsCode || "",
-                category: formData.commodityDescription || null,
                 categoryId: formData.categoryId || null,
                 categoryName: formData.categoryName || null,
             }
@@ -651,16 +649,11 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                                         HS Code: <span className="font-mono font-bold text-brand-blue">{selectedProduct.hsCode}</span>
                                                     </p>
                                                 )}
-                                                {(formData.categoryName || selectedProduct.category) && (
+                                                {formData.categoryName && (
                                                     <p className="text-xs">
-                                                        {formData.categoryName && (
-                                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-bold text-[10px] uppercase tracking-wider">
-                                                                {formData.categoryName}
-                                                            </span>
-                                                        )}
-                                                        {!formData.categoryName && selectedProduct.category && (
-                                                            <span className="text-slate-500 uppercase font-mono">{selectedProduct.category}</span>
-                                                        )}
+                                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-bold text-[10px] uppercase tracking-wider">
+                                                            {formData.categoryName}
+                                                        </span>
                                                     </p>
                                                 )}
                                             </div>
