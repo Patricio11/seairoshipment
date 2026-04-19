@@ -17,28 +17,43 @@ export async function GET() {
         const { error } = await requireAdmin();
         if (error) return error;
 
-        const rows = await db
-            .select({
-                id: productCategories.id,
-                name: productCategories.name,
-                description: productCategories.description,
-                salesRateTypeId: productCategories.salesRateTypeId,
-                allowedTemperatures: productCategories.allowedTemperatures,
-                requiredDocuments: productCategories.requiredDocuments,
-                active: productCategories.active,
-                createdAt: productCategories.createdAt,
-                updatedAt: productCategories.updatedAt,
-                productCount: sql<number>`
-                    (SELECT COUNT(*) FROM ${products} WHERE ${products.categoryId} = ${productCategories.id})
-                `.as("product_count"),
-                containerCount: sql<number>`
-                    (SELECT COUNT(*) FROM ${containers}
-                     WHERE ${containers.categoryId} = ${productCategories.id}
-                     AND ${containers.status} IN ('OPEN','THRESHOLD_REACHED'))
-                `.as("container_count"),
-            })
+        const cats = await db
+            .select()
             .from(productCategories)
             .orderBy(asc(productCategories.salesRateTypeId), asc(productCategories.name));
+
+        // Count products per category (single query, grouped)
+        const productCountsRows = await db
+            .select({
+                categoryId: products.categoryId,
+                count: sql<number>`COUNT(*)::int`.as("count"),
+            })
+            .from(products)
+            .groupBy(products.categoryId);
+        const productCounts = new Map<string, number>();
+        for (const r of productCountsRows) {
+            if (r.categoryId) productCounts.set(r.categoryId, Number(r.count) || 0);
+        }
+
+        // Count open/threshold containers per category
+        const containerCountsRows = await db
+            .select({
+                categoryId: containers.categoryId,
+                count: sql<number>`COUNT(*)::int`.as("count"),
+            })
+            .from(containers)
+            .where(sql`${containers.status} IN ('OPEN','THRESHOLD_REACHED')`)
+            .groupBy(containers.categoryId);
+        const containerCounts = new Map<string, number>();
+        for (const r of containerCountsRows) {
+            if (r.categoryId) containerCounts.set(r.categoryId, Number(r.count) || 0);
+        }
+
+        const rows = cats.map(c => ({
+            ...c,
+            productCount: productCounts.get(c.id) || 0,
+            containerCount: containerCounts.get(c.id) || 0,
+        }));
 
         return NextResponse.json(rows);
     } catch (err) {
