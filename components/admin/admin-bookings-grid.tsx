@@ -27,6 +27,8 @@ import {
     FileText,
     Download,
     User,
+    ChevronDown,
+    X,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -56,7 +58,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 interface ContainerAllocation {
     allocation: {
@@ -134,6 +138,46 @@ interface PendingRequest {
     depositInvoiceId?: string | null
 }
 
+interface AdminContainerRequest {
+    request: {
+        id: string
+        userId: string
+        originCode: string
+        destinationCode: string
+        salesRateTypeId: string
+        productId: string | null
+        temperature: string | null
+        sailingId: string | null
+        palletCount: number
+        desiredEtd: string | null
+        commodityNotes: string | null
+        notes: string | null
+        status: string
+        adminResponse: string | null
+        fulfilledContainerId: string | null
+        createdAt: string
+        updatedAt: string
+    }
+    user: {
+        id: string | null
+        name: string | null
+        email: string | null
+        accountNumber: string | null
+    } | null
+    product: {
+        id: string | null
+        name: string | null
+        hsCode: string | null
+    } | null
+    sailing: {
+        id: string | null
+        vesselName: string | null
+        voyageNumber: string | null
+        etd: string | null
+        eta: string | null
+    } | null
+}
+
 // Mock legacy data for shipments tab (will be replaced in future work)
 const MOCK_BOOKINGS = [
     { id: "BKG-001", client: "Global Fruits", ref: "SRS-9921", vessel: "MSC Orchestra", route: "ZACPT-NLRTM", etd: "Oct 28", status: "PENDING_DEPOSIT", depositPaid: false, type: "REQUEST" },
@@ -189,6 +233,12 @@ export function AdminBookingsGrid() {
     const [loadingPending, setLoadingPending] = useState(false)
     const [cancelledRequests, setCancelledRequests] = useState<PendingRequest[]>([])
     const [loadingCancelled, setLoadingCancelled] = useState(false)
+    const [containerRequests, setContainerRequests] = useState<AdminContainerRequest[]>([])
+    const [loadingContainerRequests, setLoadingContainerRequests] = useState(false)
+    const [respondingRequest, setRespondingRequest] = useState<AdminContainerRequest | null>(null)
+    const [responseText, setResponseText] = useState("")
+    const [respondAction, setRespondAction] = useState<"FULFILLED" | "DECLINED" | "ACKNOWLEDGED" | null>(null)
+    const [responding, setResponding] = useState(false)
     const [reviewRequest, setReviewRequest] = useState<PendingRequest | null>(null)
     const [reviewDocs, setReviewDocs] = useState<ClientDoc[]>([])
     const [loadingReviewDocs, setLoadingReviewDocs] = useState(false)
@@ -243,6 +293,18 @@ export function AdminBookingsGrid() {
         }
     }, [])
 
+    const fetchContainerRequests = useCallback(async () => {
+        setLoadingContainerRequests(true)
+        try {
+            const res = await fetch("/api/admin/container-requests")
+            if (res.ok) setContainerRequests(await res.json())
+        } catch {
+            console.error("Failed to fetch container requests")
+        } finally {
+            setLoadingContainerRequests(false)
+        }
+    }, [])
+
     useEffect(() => {
         if (activeTab === "containers") {
             fetchContainers()
@@ -250,8 +312,40 @@ export function AdminBookingsGrid() {
             fetchPendingRequests()
         } else if (activeTab === "cancelled") {
             fetchCancelledRequests()
+        } else if (activeTab === "container-requests") {
+            fetchContainerRequests()
         }
-    }, [activeTab, fetchContainers, fetchPendingRequests, fetchCancelledRequests])
+    }, [activeTab, fetchContainers, fetchPendingRequests, fetchCancelledRequests, fetchContainerRequests])
+
+    const handleRespondToRequest = async () => {
+        if (!respondingRequest || !respondAction) return
+        setResponding(true)
+        try {
+            const res = await fetch(`/api/admin/container-requests/${respondingRequest.request.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    status: respondAction,
+                    adminResponse: responseText.trim() || null,
+                }),
+            })
+            const data = await res.json()
+            if (!res.ok) {
+                toast.error(data.error || "Failed to update request")
+                return
+            }
+            const actionLabel = respondAction === "FULFILLED" ? "Marked as fulfilled" : respondAction === "DECLINED" ? "Declined" : "Acknowledged"
+            toast.success(actionLabel, { description: "The client has been notified." })
+            setRespondingRequest(null)
+            setResponseText("")
+            setRespondAction(null)
+            fetchContainerRequests()
+        } catch {
+            toast.error("Failed to update request")
+        } finally {
+            setResponding(false)
+        }
+    }
 
     const openReviewDialog = async (req: PendingRequest) => {
         setReviewRequest(req)
@@ -387,6 +481,9 @@ export function AdminBookingsGrid() {
                         </TabsTrigger>
                         <TabsTrigger value="cancelled" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400 text-xs font-bold uppercase tracking-wider">
                             Cancelled Requests
+                        </TabsTrigger>
+                        <TabsTrigger value="container-requests" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400 text-xs font-bold uppercase tracking-wider">
+                            Container Requests
                         </TabsTrigger>
                         <TabsTrigger value="shipments" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400 text-xs font-bold uppercase tracking-wider">
                             Live Shipments
@@ -779,6 +876,134 @@ export function AdminBookingsGrid() {
                                             </TableCell>
                                         </TableRow>
                                     ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    )}
+                </TabsContent>
+
+                {/* CONTAINER REQUESTS TAB */}
+                <TabsContent value="container-requests" className="mt-6">
+                    {loadingContainerRequests ? (
+                        <div className="flex items-center justify-center py-20 text-slate-500">
+                            <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading container requests...
+                        </div>
+                    ) : containerRequests.length === 0 ? (
+                        <div className="text-center py-20 text-slate-500 border border-slate-800 rounded-xl bg-slate-950/30">
+                            <BoxSelect className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                            <p className="font-bold">No container requests</p>
+                            <p className="text-sm mt-1">When clients submit requests for container combos that don&apos;t exist yet, they appear here.</p>
+                        </div>
+                    ) : (
+                        <div className="rounded-xl border border-slate-800 overflow-hidden bg-slate-950/30">
+                            <Table>
+                                <TableHeader className="bg-slate-900">
+                                    <TableRow className="hover:bg-transparent border-slate-800">
+                                        <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Ref</TableHead>
+                                        <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Client</TableHead>
+                                        <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Route / Service</TableHead>
+                                        <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Product / Temp</TableHead>
+                                        <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-center">Pallets</TableHead>
+                                        <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Notes</TableHead>
+                                        <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-center">Status</TableHead>
+                                        <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-right">Action</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {containerRequests.filter(r => {
+                                        if (rateTypeFilter !== "all" && r.request.salesRateTypeId !== rateTypeFilter) return false
+                                        if (!searchTerm) return true
+                                        const q = searchTerm.toLowerCase()
+                                        return (r.user?.name?.toLowerCase().includes(q)) ||
+                                            (r.user?.email?.toLowerCase().includes(q)) ||
+                                            r.request.originCode.toLowerCase().includes(q) ||
+                                            r.request.destinationCode.toLowerCase().includes(q) ||
+                                            r.request.id.toLowerCase().includes(q)
+                                    }).map((r) => {
+                                        const statusColor = {
+                                            PENDING: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+                                            ACKNOWLEDGED: "bg-sky-500/10 text-sky-400 border-sky-500/20",
+                                            FULFILLED: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+                                            DECLINED: "bg-red-500/10 text-red-400 border-red-500/20",
+                                        }[r.request.status] || "bg-slate-500/10 text-slate-400"
+                                        const isTerminal = r.request.status === "FULFILLED" || r.request.status === "DECLINED"
+                                        return (
+                                            <TableRow key={r.request.id} className="border-slate-800 hover:bg-slate-900/40">
+                                                <TableCell className="font-mono text-white font-bold text-xs">{r.request.id}</TableCell>
+                                                <TableCell className="text-slate-300">
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <span className="text-sm font-medium text-white">{r.user?.name || "—"}</span>
+                                                        <span className="text-[10px] text-slate-500 font-mono">{r.user?.accountNumber || r.user?.email || ""}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <span className="text-xs text-white font-bold">{r.request.originCode} → {r.request.destinationCode}</span>
+                                                        <Badge className={r.request.salesRateTypeId === "scs" ? "bg-emerald-500/15 text-emerald-400 border-none text-[10px] w-fit" : "bg-blue-500/15 text-blue-400 border-none text-[10px] w-fit"}>
+                                                            {r.request.salesRateTypeId.toUpperCase()}
+                                                        </Badge>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <span className="text-xs text-white">{r.product?.name || r.request.commodityNotes || "—"}</span>
+                                                        {r.request.temperature && (
+                                                            <span className="text-[10px] text-slate-500">{r.request.temperature}</span>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-center text-white font-mono font-bold">{r.request.palletCount}</TableCell>
+                                                <TableCell className="max-w-[200px]">
+                                                    {r.request.notes ? (
+                                                        <p className="text-[10px] text-slate-400 leading-tight" title={r.request.notes}>{r.request.notes}</p>
+                                                    ) : (
+                                                        <span className="text-[10px] text-slate-600 italic">—</span>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <Badge className={statusColor}>{r.request.status}</Badge>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    {!isTerminal ? (
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button size="sm" variant="outline" className="h-8 border-slate-700 text-slate-300 hover:bg-slate-800 font-bold">
+                                                                    Respond <ChevronDown className="ml-1 h-3 w-3" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end" className="bg-slate-900 border-slate-800 text-white">
+                                                                {r.request.status === "PENDING" && (
+                                                                    <DropdownMenuItem onClick={() => { setRespondingRequest(r); setRespondAction("ACKNOWLEDGED"); setResponseText("") }}>
+                                                                        <Eye className="h-3.5 w-3.5 mr-2" /> Mark as reviewing
+                                                                    </DropdownMenuItem>
+                                                                )}
+                                                                <DropdownMenuItem
+                                                                    onClick={() => { setRespondingRequest(r); setRespondAction("FULFILLED"); setResponseText("") }}
+                                                                    className="text-emerald-400 focus:text-emerald-400"
+                                                                >
+                                                                    <Check className="h-3.5 w-3.5 mr-2" /> Mark as fulfilled
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem
+                                                                    onClick={() => { setRespondingRequest(r); setRespondAction("DECLINED"); setResponseText("") }}
+                                                                    className="text-red-400 focus:text-red-400"
+                                                                >
+                                                                    <X className="h-3.5 w-3.5 mr-2" /> Decline
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    ) : (
+                                                        r.request.adminResponse ? (
+                                                            <span className="text-[10px] text-slate-500 italic max-w-[140px] block truncate" title={r.request.adminResponse}>
+                                                                {r.request.adminResponse}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-[10px] text-slate-600">—</span>
+                                                        )
+                                                    )}
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })}
                                 </TableBody>
                             </Table>
                         </div>
@@ -1516,6 +1741,85 @@ export function AdminBookingsGrid() {
                             </DialogFooter>
                         </>
                     )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Respond to Container Request Dialog */}
+            <Dialog open={!!respondingRequest} onOpenChange={(v) => { if (!v) { setRespondingRequest(null); setRespondAction(null); setResponseText("") } }}>
+                <DialogContent className="sm:max-w-[480px] bg-slate-950 border-slate-800 text-white">
+                    <DialogHeader>
+                        <DialogTitle className="text-lg font-black">
+                            {respondAction === "FULFILLED" && "Mark Request as Fulfilled"}
+                            {respondAction === "DECLINED" && "Decline Request"}
+                            {respondAction === "ACKNOWLEDGED" && "Acknowledge Request"}
+                        </DialogTitle>
+                        <DialogDescription className="text-slate-400">
+                            {respondAction === "FULFILLED" && "The client will be notified that a container is now available for this combination."}
+                            {respondAction === "DECLINED" && "The client will be notified that this request can't be fulfilled."}
+                            {respondAction === "ACKNOWLEDGED" && "The client will be notified that their request is under review."}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {respondingRequest && (
+                        <div className="space-y-4 py-2">
+                            <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 text-xs space-y-1">
+                                <div className="flex justify-between">
+                                    <span className="text-slate-500">Ref</span>
+                                    <span className="font-mono font-bold">{respondingRequest.request.id}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-500">Client</span>
+                                    <span className="font-bold">{respondingRequest.user?.name || "—"}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-500">Route</span>
+                                    <span className="font-mono">{respondingRequest.request.originCode} → {respondingRequest.request.destinationCode}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-500">Pallets</span>
+                                    <span className="font-mono">{respondingRequest.request.palletCount}</span>
+                                </div>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                    Message to client {respondAction !== "ACKNOWLEDGED" && "(optional)"}
+                                </Label>
+                                <textarea
+                                    value={responseText}
+                                    onChange={(e) => setResponseText(e.target.value)}
+                                    rows={3}
+                                    placeholder={
+                                        respondAction === "FULFILLED"
+                                            ? "e.g. Container CNT-xxx is now open for booking on this route."
+                                            : respondAction === "DECLINED"
+                                                ? "e.g. No shipping line supports this route at the requested temperature..."
+                                                : ""
+                                    }
+                                    className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-brand-blue"
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    <DialogFooter className="gap-2">
+                        <Button variant="ghost" onClick={() => { setRespondingRequest(null); setRespondAction(null); setResponseText("") }} className="text-slate-400 hover:text-white hover:bg-slate-900">
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleRespondToRequest}
+                            disabled={responding}
+                            className={cn(
+                                "font-black px-6 text-white",
+                                respondAction === "FULFILLED" && "bg-emerald-600 hover:bg-emerald-700",
+                                respondAction === "DECLINED" && "bg-red-600 hover:bg-red-700",
+                                respondAction === "ACKNOWLEDGED" && "bg-sky-600 hover:bg-sky-700",
+                            )}
+                        >
+                            {responding ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                            {responding ? "Saving..." : "Confirm"}
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 

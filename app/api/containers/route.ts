@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/server";
 import { db } from "@/lib/db";
-import { containers } from "@/lib/db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { containers, products, sailings } from "@/lib/db/schema";
+import { eq, and, sql, inArray } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
     try {
@@ -20,30 +20,46 @@ export async function GET(request: NextRequest) {
         }
 
         const salesRateTypeId = request.nextUrl.searchParams.get("salesRateTypeId") || "srs";
+        const productId = request.nextUrl.searchParams.get("productId");
+        const temperature = request.nextUrl.searchParams.get("temperature");
+        const sailingId = request.nextUrl.searchParams.get("sailingId");
 
-        // Get all OPEN containers for this route + service type with remaining capacity >= 5
-        const openContainers = await db
-            .select()
+        const conditions = [
+            eq(containers.route, route),
+            eq(containers.salesRateTypeId, salesRateTypeId),
+            inArray(containers.status, ["OPEN", "THRESHOLD_REACHED"]),
+            sql`${containers.maxCapacity} - ${containers.totalPallets} >= 1`,
+        ];
+        if (productId) conditions.push(eq(containers.productId, productId));
+        if (temperature) conditions.push(eq(containers.temperature, temperature as "frozen" | "chilled" | "ambient"));
+        if (sailingId) conditions.push(eq(containers.sailingId, sailingId));
+
+        // Join products + sailings so we can display their names on the client
+        const rows = await db
+            .select({
+                container: containers,
+                productName: products.name,
+                sailingVessel: sailings.vesselName,
+                sailingVoyage: sailings.voyageNumber,
+            })
             .from(containers)
-            .where(
-                and(
-                    eq(containers.route, route),
-                    eq(containers.status, "OPEN"),
-                    eq(containers.salesRateTypeId, salesRateTypeId),
-                    sql`${containers.maxCapacity} - ${containers.totalPallets} >= 1`
-                )
-            );
+            .leftJoin(products, eq(containers.productId, products.id))
+            .leftJoin(sailings, eq(containers.sailingId, sailings.id))
+            .where(and(...conditions));
 
         // Map to ContainerSlot shape expected by the client booking UI
-        const slots = openContainers.map((c) => ({
+        const slots = rows.map(({ container: c, productName, sailingVessel, sailingVoyage }) => ({
             id: c.id,
-            vessel: c.vessel,
+            vessel: sailingVessel || c.vessel,
+            voyageNumber: sailingVoyage || c.voyageNumber,
             preFilled: c.totalPallets,
             maxCapacity: c.maxCapacity,
             date: c.etd
                 ? new Date(c.etd).toLocaleDateString("en-US", { month: "short", day: "2-digit" })
                 : "TBD",
             type: c.type as "20FT" | "40FT",
+            temperature: c.temperature,
+            productName,
         }));
 
         return NextResponse.json(slots);

@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { metaShipGet } from "@/lib/metaship";
 
+/**
+ * @deprecated Client UI should use /api/admin/products (admin-synced cache)
+ * or /api/bookings/options (cascading filtered options). This route now
+ * only proxies MetaShip's live catalogue and is kept for ad-hoc admin use.
+ */
 export async function GET() {
     try {
         // Fetch max 100 products (paginated response: { data: [...], total, start, end })

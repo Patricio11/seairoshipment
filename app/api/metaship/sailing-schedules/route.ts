@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { metaShipGet } from "@/lib/metaship";
 
+/**
+ * @deprecated Client UI should use /api/bookings/options which returns only
+ * sailings that have matching open containers. This route now only proxies
+ * MetaShip's live schedules and is kept for ad-hoc admin use.
+ */
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);

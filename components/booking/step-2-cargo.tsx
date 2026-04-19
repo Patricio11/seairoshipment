@@ -6,7 +6,7 @@ import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { motion, AnimatePresence } from "framer-motion"
-import { CheckCircle, Ship, ArrowLeft, ThermometerSnowflake, Boxes, MapPin, Loader2, Info, Anchor, Check, ChevronsUpDown } from "lucide-react"
+import { CheckCircle, Ship, ArrowLeft, ThermometerSnowflake, Boxes, MapPin, Loader2, Info, Anchor, Check, ChevronsUpDown, PackagePlus, Snowflake, Sun } from "lucide-react"
 import {
     Select,
     SelectContent,
@@ -29,7 +29,8 @@ import {
 } from "@/components/ui/command"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import type { BookingFormData, ContainerSlot, SailingSchedule, MetaShipProduct } from "@/types"
+import type { BookingFormData, ContainerSlot } from "@/types"
+import { RequestContainerDialog } from "./request-container-dialog"
 
 interface Step2Props {
     formData: BookingFormData
@@ -42,6 +43,36 @@ interface LocationOption {
     code: string
     country: string
     type: string
+}
+
+interface ProductOption {
+    id: string
+    name: string
+    hsCode: string
+    category: string | null
+}
+
+interface SailingOption {
+    id: string
+    vesselName: string
+    voyageNumber: string
+    etd: string
+    eta: string | null
+    transitTime: number | null
+    serviceType: string | null
+}
+
+interface BookingOptions {
+    products: ProductOption[]
+    temperatures: Array<"frozen" | "chilled" | "ambient">
+    sailings: SailingOption[]
+    totalContainers: number
+}
+
+const TEMP_LABELS: Record<string, { label: string; icon: typeof Snowflake }> = {
+    frozen: { label: "-18°C Frozen", icon: Snowflake },
+    chilled: { label: "+5°C Chilled", icon: Snowflake },
+    ambient: { label: "+18°C Ambient", icon: Sun },
 }
 
 export function Step2Cargo({ formData, updateFormData }: Step2Props) {
@@ -57,17 +88,18 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
     const [sailingOpen, setSailingOpen] = useState(false)
     const [productOpen, setProductOpen] = useState(false)
 
-    // MetaShip data
-    const [sailingSchedules, setSailingSchedules] = useState<SailingSchedule[]>([])
-    const [loadingSchedules, setLoadingSchedules] = useState(false)
-    const [products, setProducts] = useState<MetaShipProduct[]>([])
-    const [loadingProducts, setLoadingProducts] = useState(false)
+    // Cascading options from our DB (filtered to what has matching open containers)
+    const [options, setOptions] = useState<BookingOptions>({ products: [], temperatures: [], sailings: [], totalContainers: 0 })
+    const [loadingOptions, setLoadingOptions] = useState(false)
 
     // Real container data from DB
     const [availableContainers, setAvailableContainers] = useState<ContainerSlot[]>([])
     const [loadingContainers, setLoadingContainers] = useState(false)
 
-    // Fetch locations + products on mount
+    // Request-a-container modal
+    const [requestOpen, setRequestOpen] = useState(false)
+
+    // Fetch locations on mount
     useEffect(() => {
         async function fetchLocations() {
             try {
@@ -81,49 +113,53 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                 console.error("Failed to fetch locations")
             }
         }
-        async function fetchProducts() {
-            setLoadingProducts(true)
-            try {
-                const res = await fetch("/api/metaship/products")
-                if (res.ok) {
-                    const data = await res.json()
-                    setProducts(Array.isArray(data) ? data : data.data || [])
-                }
-            } catch {
-                console.error("Failed to fetch products")
-            } finally {
-                setLoadingProducts(false)
-            }
-        }
         fetchLocations()
-        fetchProducts()
     }, [])
 
-    // Fetch sailing schedules when both ports are selected
-    const fetchSchedules = useCallback(async (origin: string, destination: string) => {
-        if (!origin || !destination) return
-        setLoadingSchedules(true)
-        setSailingSchedules([])
+    // Fetch cascading options whenever route / product / temperature changes
+    const fetchOptions = useCallback(async (
+        origin: string,
+        destination: string,
+        salesRateTypeId: string,
+        productId?: string,
+        temperature?: string,
+    ) => {
+        if (!origin || !destination) {
+            setOptions({ products: [], temperatures: [], sailings: [], totalContainers: 0 })
+            return
+        }
+        setLoadingOptions(true)
         try {
-            const res = await fetch(
-                `/api/metaship/sailing-schedules?portOfLoadValue=${origin}&finalDestinationValue=${destination}`
-            )
+            const params = new URLSearchParams({
+                route: `${origin}-${destination}`,
+                salesRateTypeId,
+            })
+            if (productId) params.set("productId", productId)
+            if (temperature) params.set("temperature", temperature)
+            const res = await fetch(`/api/bookings/options?${params.toString()}`)
             if (res.ok) {
-                const data = await res.json()
-                setSailingSchedules(Array.isArray(data) ? data : data.data || [])
+                setOptions(await res.json())
+            } else {
+                setOptions({ products: [], temperatures: [], sailings: [], totalContainers: 0 })
             }
         } catch {
-            console.error("Failed to fetch sailing schedules")
+            setOptions({ products: [], temperatures: [], sailings: [], totalContainers: 0 })
         } finally {
-            setLoadingSchedules(false)
+            setLoadingOptions(false)
         }
     }, [])
 
     useEffect(() => {
         if (formData.origin && formData.destination) {
-            fetchSchedules(formData.origin, formData.destination)
+            fetchOptions(
+                formData.origin,
+                formData.destination,
+                formData.salesRateTypeId || "srs",
+                formData.commodity || undefined,
+                formData.temperature || undefined,
+            )
         }
-    }, [formData.origin, formData.destination, fetchSchedules])
+    }, [formData.origin, formData.destination, formData.salesRateTypeId, formData.commodity, formData.temperature, fetchOptions])
 
     const selectedContainer = availableContainers.find(c => c.id === formData.containerId)
     const containerCapacity = selectedContainer?.maxCapacity || 20
@@ -150,8 +186,14 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
         setLoadingContainers(true)
         setViewStage("pick")
         try {
-            const salesRateTypeId = formData.salesRateTypeId || "srs"
-            const res = await fetch(`/api/containers?route=${route}&salesRateTypeId=${salesRateTypeId}`)
+            const params = new URLSearchParams({
+                route,
+                salesRateTypeId: formData.salesRateTypeId || "srs",
+            })
+            if (formData.commodity) params.set("productId", formData.commodity)
+            if (formData.temperature) params.set("temperature", formData.temperature)
+            if (formData.sailingScheduleId) params.set("sailingId", formData.sailingScheduleId)
+            const res = await fetch(`/api/containers?${params.toString()}`)
             if (res.ok) {
                 const data = await res.json()
                 setAvailableContainers(Array.isArray(data) ? data : [])
@@ -166,6 +208,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
         }
     }
 
+    // When route changes, clear downstream selections (product/temp/sailing no longer apply)
     const handleOriginChange = (val: string) => {
         updateFormData({
             origin: val,
@@ -173,6 +216,11 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
             sailingScheduleId: undefined,
             voyageNumber: undefined,
             vesselName: undefined,
+            commodity: "",
+            commodityName: "",
+            hsCode: "",
+            commodityDescription: "",
+            temperature: "",
         })
     }
 
@@ -183,11 +231,16 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
             sailingScheduleId: undefined,
             voyageNumber: undefined,
             vesselName: undefined,
+            commodity: "",
+            commodityName: "",
+            hsCode: "",
+            commodityDescription: "",
+            temperature: "",
         })
     }
 
     const handleScheduleSelect = (scheduleId: string) => {
-        const schedule = sailingSchedules.find(s => s.id === scheduleId)
+        const schedule = options.sailings.find(s => s.id === scheduleId)
         if (schedule) {
             updateFormData({
                 sailingScheduleId: schedule.id,
@@ -200,15 +253,32 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
     }
 
     const handleProductSelect = (productId: string) => {
-        const product = products.find(p => String(p.id) === productId)
+        const product = options.products.find(p => p.id === productId)
         if (product) {
             updateFormData({
-                commodity: String(product.id),
+                commodity: product.id,
                 commodityName: product.name,
                 hsCode: product.hsCode,
-                commodityDescription: product.description,
+                commodityDescription: product.category || "",
+                // Clear downstream — selecting a new product may change what temps/sailings are available
+                temperature: "",
+                sailingScheduleId: undefined,
+                sailingDate: undefined,
+                voyageNumber: undefined,
+                vesselName: undefined,
             })
         }
+    }
+
+    const handleTemperatureSelect = (temp: string) => {
+        updateFormData({
+            temperature: temp,
+            // Clear sailing — changing temperature may change which sailings are available
+            sailingScheduleId: undefined,
+            sailingDate: undefined,
+            voyageNumber: undefined,
+            vesselName: undefined,
+        })
     }
 
     const getStatusColor = () => {
@@ -218,10 +288,29 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
         return "text-brand-blue"
     }
 
-    const isInitialComplete = formData.salesRateTypeId && formData.origin && formData.destination && formData.sailingScheduleId && formData.commodity && formData.temperature
+    const isInitialComplete = Boolean(
+        formData.salesRateTypeId &&
+        formData.origin &&
+        formData.destination &&
+        formData.commodity &&
+        formData.temperature &&
+        formData.sailingScheduleId
+    )
 
     // Selected product for info display
-    const selectedProduct = products.find(p => String(p.id) === formData.commodity)
+    const selectedProduct = options.products.find(p => p.id === formData.commodity) || (
+        formData.commodity
+            ? { id: formData.commodity, name: formData.commodityName || "", hsCode: formData.hsCode || "", category: formData.commodityDescription || null }
+            : undefined
+    )
+
+    // No-match flags for UX
+    const routeReady = Boolean(formData.origin && formData.destination && formData.salesRateTypeId)
+    const showNoProducts = routeReady && !loadingOptions && options.products.length === 0
+    const showNoTempsForProduct = routeReady && !!formData.commodity && !loadingOptions && options.temperatures.length === 0
+    const showNoSailingsForTemp = routeReady && !!formData.commodity && !!formData.temperature && !loadingOptions && options.sailings.length === 0
+
+    const showRequestCta = showNoProducts || showNoTempsForProduct || showNoSailingsForTemp
 
     return (
         <div className="space-y-6">
@@ -320,15 +409,19 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                     </div>
                                 </div>
 
-                                {/* Sailing Schedules from MetaShip */}
+                                {/* Sailing — from our synced sailings table, filtered by route + product + temperature */}
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-semibold">Next Available Sailings</Label>
-                                    {loadingSchedules ? (
+                                    <Label className="text-xs font-semibold">Sailing</Label>
+                                    {loadingOptions ? (
                                         <div className="flex items-center gap-2 h-12 px-3 bg-white dark:bg-slate-950 rounded-md border text-sm text-slate-500">
                                             <Loader2 className="h-4 w-4 animate-spin" />
-                                            Fetching sailing schedules...
+                                            Loading sailings...
                                         </div>
-                                    ) : sailingSchedules.length > 0 ? (
+                                    ) : !formData.temperature ? (
+                                        <div className="flex items-center gap-2 h-12 px-3 bg-white dark:bg-slate-950 rounded-md border text-sm text-slate-400">
+                                            Pick a product and temperature first
+                                        </div>
+                                    ) : options.sailings.length > 0 ? (
                                         <Popover open={sailingOpen} onOpenChange={setSailingOpen}>
                                             <PopoverTrigger asChild>
                                                 <Button
@@ -339,7 +432,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                                 >
                                                     {formData.sailingScheduleId ? (
                                                         (() => {
-                                                            const s = sailingSchedules.find(s => s.id === formData.sailingScheduleId)
+                                                            const s = options.sailings.find(s => s.id === formData.sailingScheduleId)
                                                             return s ? (
                                                                 <span className="flex items-center gap-2 truncate">
                                                                     <Anchor className="h-3.5 w-3.5 text-brand-blue shrink-0" />
@@ -348,21 +441,21 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                                                         ETD {new Date(s.etd).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
                                                                     </span>
                                                                 </span>
-                                                            ) : "Select sailing schedule"
+                                                            ) : "Select sailing"
                                                         })()
                                                     ) : (
-                                                        <span className="text-muted-foreground">Select sailing schedule</span>
+                                                        <span className="text-muted-foreground">Select sailing</span>
                                                     )}
                                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                 </Button>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
                                                 <Command>
-                                                    <CommandInput placeholder="Search vessel name or date..." />
+                                                    <CommandInput placeholder="Search vessel name..." />
                                                     <CommandList>
                                                         <CommandEmpty>No sailing found.</CommandEmpty>
                                                         <CommandGroup>
-                                                            {sailingSchedules.map((schedule) => (
+                                                            {options.sailings.map((schedule) => (
                                                                 <CommandItem
                                                                     key={schedule.id}
                                                                     value={`${schedule.vesselName} ${schedule.voyageNumber} ${new Date(schedule.etd).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`}
@@ -400,14 +493,10 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                                 </Command>
                                             </PopoverContent>
                                         </Popover>
-                                    ) : formData.origin && formData.destination ? (
-                                        <div className="flex items-center gap-2 h-12 px-3 bg-white dark:bg-slate-950 rounded-md border text-sm text-slate-500">
-                                            <Info className="h-4 w-4" />
-                                            No sailing schedules found for this route
-                                        </div>
                                     ) : (
-                                        <div className="flex items-center gap-2 h-12 px-3 bg-white dark:bg-slate-950 rounded-md border text-sm text-slate-400">
-                                            Select both ports to view available sailings
+                                        <div className="flex items-center gap-2 h-12 px-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 rounded-md text-sm text-amber-700 dark:text-amber-400">
+                                            <Info className="h-4 w-4 shrink-0" />
+                                            No sailings available for this product + temperature on this route.
                                         </div>
                                     )}
                                 </div>
@@ -422,10 +511,19 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label className="text-xs font-semibold">Product</Label>
-                                        {loadingProducts ? (
+                                        {loadingOptions && options.products.length === 0 ? (
                                             <div className="flex items-center gap-2 h-12 px-3 bg-white dark:bg-slate-950 rounded-md border text-sm text-slate-500">
                                                 <Loader2 className="h-4 w-4 animate-spin" />
                                                 Loading products...
+                                            </div>
+                                        ) : !routeReady ? (
+                                            <div className="flex items-center gap-2 h-12 px-3 bg-white dark:bg-slate-950 rounded-md border text-sm text-slate-400">
+                                                Pick a route first
+                                            </div>
+                                        ) : options.products.length === 0 ? (
+                                            <div className="flex items-center gap-2 h-12 px-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 rounded-md text-sm text-amber-700 dark:text-amber-400">
+                                                <Info className="h-4 w-4 shrink-0" />
+                                                No products available on this route
                                             </div>
                                         ) : (
                                             <Popover open={productOpen} onOpenChange={setProductOpen}>
@@ -438,10 +536,10 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                                     >
                                                         {formData.commodity ? (
                                                             <span className="truncate">
-                                                                {products.find(p => String(p.id) === formData.commodity)?.name || "Select Product"}
+                                                                {selectedProduct?.name || formData.commodityName || "Select product"}
                                                             </span>
                                                         ) : (
-                                                            <span className="text-muted-foreground">Select Product</span>
+                                                            <span className="text-muted-foreground">Select product</span>
                                                         )}
                                                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                     </Button>
@@ -452,12 +550,12 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                                         <CommandList>
                                                             <CommandEmpty>No product found.</CommandEmpty>
                                                             <CommandGroup>
-                                                                {products.map((product) => (
+                                                                {options.products.map((product) => (
                                                                     <CommandItem
                                                                         key={product.id}
                                                                         value={`${product.name} ${product.hsCode || ""}`}
                                                                         onSelect={() => {
-                                                                            handleProductSelect(String(product.id))
+                                                                            handleProductSelect(product.id)
                                                                             setProductOpen(false)
                                                                         }}
                                                                         className="cursor-pointer"
@@ -465,13 +563,15 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                                                         <Check
                                                                             className={cn(
                                                                                 "mr-2 h-4 w-4",
-                                                                                formData.commodity === String(product.id) ? "opacity-100" : "opacity-0"
+                                                                                formData.commodity === product.id ? "opacity-100" : "opacity-0"
                                                                             )}
                                                                         />
                                                                         <div className="flex flex-col">
                                                                             <span className="font-medium">{product.name}</span>
-                                                                            {product.hsCode && (
-                                                                                <span className="text-xs text-slate-500 font-mono">{product.hsCode}</span>
+                                                                            {(product.hsCode || product.category) && (
+                                                                                <span className="text-xs text-slate-500 font-mono">
+                                                                                    {product.hsCode}{product.hsCode && product.category ? " · " : ""}{product.category}
+                                                                                </span>
                                                                             )}
                                                                         </div>
                                                                     </CommandItem>
@@ -485,16 +585,35 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                     </div>
                                     <div className="space-y-2">
                                         <Label className="text-xs font-semibold">Temperature</Label>
-                                        <Select value={formData.temperature} onValueChange={(val) => updateFormData({ temperature: val })}>
-                                            <SelectTrigger className="w-full h-12 bg-white dark:bg-slate-950 font-medium">
-                                                <SelectValue placeholder="Select Mode" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="frozen">-18°C (Frozen)</SelectItem>
-                                                <SelectItem value="chilled">+5°C (Chilled)</SelectItem>
-                                                <SelectItem value="ambient">+18°C (Ambient)</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                        {!formData.commodity ? (
+                                            <div className="flex items-center gap-2 h-12 px-3 bg-white dark:bg-slate-950 rounded-md border text-sm text-slate-400">
+                                                Pick a product first
+                                            </div>
+                                        ) : options.temperatures.length === 0 ? (
+                                            <div className="flex items-center gap-2 h-12 px-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 rounded-md text-sm text-amber-700 dark:text-amber-400">
+                                                <Info className="h-4 w-4 shrink-0" />
+                                                No temperature options for this product
+                                            </div>
+                                        ) : (
+                                            <Select value={formData.temperature} onValueChange={handleTemperatureSelect}>
+                                                <SelectTrigger className="w-full h-12 bg-white dark:bg-slate-950 font-medium">
+                                                    <SelectValue placeholder="Select temperature" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {options.temperatures.map(t => {
+                                                        const Icon = TEMP_LABELS[t]?.icon || Snowflake
+                                                        return (
+                                                            <SelectItem key={t} value={t}>
+                                                                <span className="flex items-center gap-2">
+                                                                    <Icon className="h-3.5 w-3.5" />
+                                                                    {TEMP_LABELS[t]?.label || t}
+                                                                </span>
+                                                            </SelectItem>
+                                                        )
+                                                    })}
+                                                </SelectContent>
+                                            </Select>
+                                        )}
                                     </div>
                                 </div>
 
@@ -509,11 +628,13 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                             <Info className="h-4 w-4 text-brand-blue mt-0.5 shrink-0" />
                                             <div className="space-y-1">
                                                 <p className="text-sm font-bold text-slate-900 dark:text-white">{selectedProduct.name}</p>
-                                                <p className="text-xs text-slate-600 dark:text-slate-400">
-                                                    HS Code: <span className="font-mono font-bold text-brand-blue">{selectedProduct.hsCode}</span>
-                                                </p>
-                                                {selectedProduct.description && (
-                                                    <p className="text-xs text-slate-500">{selectedProduct.description}</p>
+                                                {selectedProduct.hsCode && (
+                                                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                                                        HS Code: <span className="font-mono font-bold text-brand-blue">{selectedProduct.hsCode}</span>
+                                                    </p>
+                                                )}
+                                                {selectedProduct.category && (
+                                                    <p className="text-xs text-slate-500 uppercase font-mono">{selectedProduct.category}</p>
                                                 )}
                                             </div>
                                         </div>
@@ -521,13 +642,51 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                 )}
                             </div>
 
-                            <Button
-                                className="h-14 text-lg font-bold bg-brand-blue hover:bg-brand-blue/90 shadow-xl shadow-brand-blue/20 rounded-2xl transition-all active:scale-[0.98]"
-                                disabled={!isInitialComplete}
-                                onClick={handleViewAvailability}
-                            >
-                                Check Container Availability
-                            </Button>
+                            {/* Action row: main CTA + request-a-container fallback */}
+                            <div className="space-y-3">
+                                <Button
+                                    className="w-full h-14 text-lg font-bold bg-brand-blue hover:bg-brand-blue/90 shadow-xl shadow-brand-blue/20 rounded-2xl transition-all active:scale-[0.98]"
+                                    disabled={!isInitialComplete}
+                                    onClick={handleViewAvailability}
+                                >
+                                    Check Container Availability
+                                </Button>
+
+                                {showRequestCta && (
+                                    <div className="p-4 rounded-2xl border-2 border-dashed border-amber-300 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-900/10">
+                                        <div className="flex items-start gap-3">
+                                            <PackagePlus className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-bold text-amber-900 dark:text-amber-200">
+                                                    No container matches this combination
+                                                </p>
+                                                <p className="text-xs text-amber-800/80 dark:text-amber-400/80 mt-1">
+                                                    You can request a container for this route — our team will reach out once one is available.
+                                                </p>
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                onClick={() => setRequestOpen(true)}
+                                                size="sm"
+                                                className="bg-amber-600 hover:bg-amber-700 text-white font-bold shrink-0"
+                                            >
+                                                Request a Container
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Always-visible secondary link for clients who want to request even when options exist */}
+                                {!showRequestCta && routeReady && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setRequestOpen(true)}
+                                        className="w-full text-xs text-slate-500 hover:text-brand-blue text-center font-medium"
+                                    >
+                                        Can&apos;t find what you need? <span className="underline">Request a container</span>
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </motion.div>
                 )}
@@ -566,8 +725,14 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                         ) : availableContainers.length === 0 ? (
                             <div className="text-center py-16">
                                 <Boxes className="h-12 w-12 mx-auto mb-3 text-slate-300 dark:text-slate-600" />
-                                <p className="font-bold text-slate-700 dark:text-slate-300">No containers available for this route yet</p>
-                                <p className="text-sm text-slate-500 mt-1">Contact us for availability or check back later.</p>
+                                <p className="font-bold text-slate-700 dark:text-slate-300">No containers available matching your criteria</p>
+                                <p className="text-sm text-slate-500 mt-1 mb-6">Submit a request and our team will open one for you.</p>
+                                <Button
+                                    onClick={() => setRequestOpen(true)}
+                                    className="bg-amber-600 hover:bg-amber-700 text-white font-bold"
+                                >
+                                    <PackagePlus className="h-4 w-4 mr-2" /> Request a Container
+                                </Button>
                             </div>
                         ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -738,6 +903,25 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Request Container Dialog */}
+            <RequestContainerDialog
+                open={requestOpen}
+                onClose={() => setRequestOpen(false)}
+                prefill={{
+                    originCode: formData.origin || "",
+                    destinationCode: formData.destination || "",
+                    salesRateTypeId: formData.salesRateTypeId || "srs",
+                    productId: formData.commodity || null,
+                    productName: formData.commodityName || null,
+                    temperature: formData.temperature || null,
+                    sailingId: formData.sailingScheduleId || null,
+                    sailingLabel: formData.vesselName
+                        ? `${formData.vesselName}${formData.voyageNumber ? ` · V${formData.voyageNumber}` : ""}`
+                        : null,
+                    palletCount: formData.palletCount || 5,
+                }}
+            />
         </div>
     )
 }

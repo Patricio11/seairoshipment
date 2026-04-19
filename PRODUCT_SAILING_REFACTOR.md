@@ -89,20 +89,26 @@ Restructure the booking flow so that a container is **locked to a single product
 - [x] GET /api/admin/containers now joins products + sailings so list shows productName, sailingVessel, sailingVoyage
 - [x] Empty-state message when a route has no synced sailings yet — tells admin to sync first
 
-### Phase 4 — Client booking rewrite ⏳ TODO
+### Phase 4 — Client booking rewrite ✅ DONE
 
-- [ ] New client API: `GET /api/bookings/options?route=X&salesRateTypeId=Y`
-  - Returns: `{ products: [...], temperatures: [...], sailings: [...] }`
-  - Each list filtered to items that have at least one open container matching all prior selections
-- [ ] Rewrite step-2-cargo.tsx: use /options endpoint, cascading filter
-- [ ] Remove direct calls to `/api/metaship/products` and `/api/metaship/sailing-schedules` from client UI
-- [ ] Update `/api/containers?route=X&salesRateTypeId=Y&productId=Z&temperature=W&sailingId=V` to filter all criteria
-- [ ] "Request a container" button when no match:
-  - [ ] Modal collecting: route, product, temperature, sailing, preferred dates, pallet count, notes
-  - [ ] New schema: `container_requests` table (id, userId, route, productId, temperature, desiredEtd, palletCount, notes, status, createdAt)
-  - [ ] POST /api/container-requests endpoint
-  - [ ] Admin notification on submit
-  - [ ] Admin tab "Container Requests" in bookings grid
+- [x] New client API: `GET /api/bookings/options?route=X&salesRateTypeId=Y[&productId=Z&temperature=W]`
+  - Returns: `{ products, temperatures, sailings, totalContainers }`
+  - Cascading filter: products list ignores productId/temperature; temperatures narrow by productId; sailings narrow by product+temp. Only values present on OPEN/THRESHOLD_REACHED containers with remaining capacity are returned.
+- [x] Rewrite step-2-cargo.tsx: uses `/api/bookings/options`, each selection re-fetches and clears downstream selections
+- [x] Removed client-side calls to `/api/metaship/products` and `/api/metaship/sailing-schedules`; those routes marked `@deprecated` but kept for admin use
+- [x] `/api/containers` now accepts productId, temperature, sailingId and filters by all. Joins products + sailings to return productName + sailingVessel in slots
+- [x] "Request a container" modal (RequestContainerDialog):
+  - Prefilled with whatever the client has selected so far (route, product, temp, sailing, pallet count)
+  - Fields: pallet count (required), desired ETD (optional), commodity notes (when no product selected), free-form notes
+  - Amber CTA banner appears when any cascading step returns 0 options
+  - Secondary "can't find what you need?" link always visible once route is picked
+  - Also shown in the no-match empty state on the container-pick stage
+- [x] `container_requests` schema + enum (PENDING / ACKNOWLEDGED / FULFILLED / DECLINED)
+- [x] `POST /api/container-requests` — client-facing endpoint. Creates admin notification + client confirmation notification. Returns { id }
+- [x] `GET /api/container-requests` — client lists own requests
+- [x] `GET /api/admin/container-requests` — admin list with user/product/sailing joins
+- [x] `PATCH /api/admin/container-requests/[id]` — admin updates status (ACKNOWLEDGED / FULFILLED / DECLINED) with optional message. Client gets BOOKING_APPROVED / BOOKING_REJECTED / GENERAL notification.
+- [x] Admin tab "Container Requests" in bookings grid with Respond dropdown (Mark as reviewing / Mark as fulfilled / Decline) → confirmation dialog with optional response text
 
 ### Phase 5 — Cleanup + Polish ⏳ TODO
 
