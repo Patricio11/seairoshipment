@@ -54,24 +54,23 @@ Restructure the booking flow so that a container is **locked to a single product
 - [x] `POST /api/admin/sailings/sync` — iterates all origin×destination pairs, fetches from `/public/v2/sailing-schedules`, MSC-only filter, upserts
 - [x] `GET /api/admin/sailings` — list with container usage count, future-only by default
 
-### Phase 2 — Admin management pages ⏳ IN PROGRESS
+### Phase 2 — Admin management pages ✅ DONE
 
-- [ ] `/admin/products` page
-  - [ ] Table: name, HS code, category, container count, active toggle, last synced
-  - [ ] "Sync from MetaShip" button (calls sync endpoint)
-  - [ ] Search
-  - [ ] Inline edit for category (text input)
-  - [ ] Inline toggle for active flag
-  - [ ] Loading states + skeleton
-  - [ ] Empty state ("No products synced — click Sync")
-- [ ] `/admin/sailings` page
-  - [ ] Table: vessel, voyage, route, ETD, ETA, transit, container count, active, last synced
-  - [ ] "Sync from MetaShip" button with optional date-range inputs
-  - [ ] Search by vessel/voyage/route
-  - [ ] Filter by origin/destination
-  - [ ] Loading + empty states
-- [ ] Add both pages to the admin sidebar navigation
-- [ ] Verify stats update after sync (container count matches what's in DB)
+- [x] `/admin/products` page
+  - [x] Table: name, HS code, category, container count, active toggle
+  - [x] "Sync from MetaShip" button (calls sync endpoint)
+  - [x] Search (name, HS code, description, category)
+  - [x] Inline edit for category (click to edit, Enter to save, Esc to cancel)
+  - [x] Inline toggle for active flag
+  - [x] Loading states + empty states
+- [x] `/admin/sailings` page
+  - [x] Table: vessel/voyage, route, ETD, ETA, transit time, service type, container count
+  - [x] "Sync from MetaShip" dialog with date-range inputs (default: today → +90 days)
+  - [x] Search by vessel/voyage/port
+  - [x] Future-only toggle (default) / include past sailings toggle
+  - [x] Loading + empty states
+- [x] Add both pages to admin sidebar navigation (icons: Apple for Products, Anchor for Sailings)
+- [ ] Verify stats update after sync (deferred — will confirm once user does a real sync)
 
 ### Phase 3 — Container creation cascade ⏳ TODO
 

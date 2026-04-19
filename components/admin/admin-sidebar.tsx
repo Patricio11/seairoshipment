@@ -15,7 +15,9 @@ import {
     LogOut,
     Menu,
     Bell,
-    X
+    X,
+    Apple,
+    Anchor,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
@@ -39,6 +41,8 @@ const ADMIN_LINKS = [
     { href: "/admin/finance", label: "Finance", icon: DollarSign },
     { href: "/admin/locations", label: "Locations", icon: MapPin },
     { href: "/admin/fleet", label: "Fleet & Containers", icon: Ship },
+    { href: "/admin/sailings", label: "Sailings", icon: Anchor },
+    { href: "/admin/products", label: "Products", icon: Apple },
     { href: "/admin/commodities", label: "Commodities", icon: Package },
     { href: "/admin/users", label: "User Vetting", icon: Users },
 ]
