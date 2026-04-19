@@ -16,6 +16,18 @@ import { uploadFile, STORAGE_PATHS } from "@/lib/supabase"
 const STEP_LABELS = ["Cargo & Route", "Cost & Payment", "Confirm Booking"]
 const TOTAL_STEPS = 3
 
+/** Map our specific document code to the legacy coarse enum on `documents.type`. */
+function mapDocCodeToLegacyType(code: string): "INVOICE" | "BOL" | "COA" | "PACKING_LIST" | "OTHER" {
+    switch (code) {
+        case "COMMERCIAL_INVOICE":
+        case "SUPPLIER_INVOICE": return "INVOICE"
+        case "BILL_OF_LADING": return "BOL"
+        case "COA": return "COA"
+        case "PACKING_LIST": return "PACKING_LIST"
+        default: return "OTHER"
+    }
+}
+
 export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
     const { user } = useAuth()
     const [step, setStep] = useState(1)
@@ -106,16 +118,21 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
                 return
             }
 
-            // Upload documents via Supabase storage (client-side, like recon_v2)
-            const files = formData.files || []
+            // Upload documents via Supabase storage
+            // Prefer fileEntries (with documentCode per file) — fall back to raw files with OTHER.
+            const fileEntries: Array<{ file: File; documentCode: string }> =
+                formData.fileEntries && formData.fileEntries.length > 0
+                    ? formData.fileEntries
+                    : (formData.files || []).map(f => ({ file: f, documentCode: "OTHER" }))
+            const files = fileEntries.map(e => e.file)
             let uploadedCount = 0
             let failedCount = 0
             let firstErrorMessage = ""
-            if (files.length > 0 && data.allocationId) {
+            if (fileEntries.length > 0 && data.allocationId) {
                 const accountPrefix = user?.accountNumber || "UNVERIFIED"
-                console.log(`[booking] Uploading ${files.length} document(s) for allocation ${data.allocationId}`)
+                console.log(`[booking] Uploading ${fileEntries.length} document(s) for allocation ${data.allocationId}`)
                 const uploadResults = await Promise.allSettled(
-                    files.map(async (file) => {
+                    fileEntries.map(async ({ file, documentCode }) => {
                         const prefixedName = `${accountPrefix}_${file.name}`
                         const result = await uploadFile(file, STORAGE_PATHS.BOOKING_DOCUMENTS, prefixedName)
                         if (!result.success || !result.url) {
@@ -128,7 +145,9 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
                                 originalName: prefixedName,
                                 storedName: result.path,
                                 url: result.url,
-                                type: "OTHER",
+                                // Map our doc code to the legacy coarse type for back-compat
+                                type: mapDocCodeToLegacyType(documentCode),
+                                documentCode,
                             }),
                         })
                         if (!docRes.ok) {
@@ -145,6 +164,8 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
                     console.error(`[booking] ${failedCount} upload(s) failed. First error:`, firstErrorMessage)
                 }
             }
+            // silence unused-var warning when fileEntries path is taken
+            void files
 
             // Show a single outcome toast
             if (files.length === 0) {

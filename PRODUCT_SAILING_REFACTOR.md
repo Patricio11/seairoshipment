@@ -139,13 +139,15 @@ checklist and uploads each one tagged with its code.
 - [x] `lib/constants/document-types.ts` — 17 predefined doc types with codes + labels + descriptions
 - [x] `documentLabel(code)` helper for rendering
 
-#### Seed data (to be done at end)
+#### Seed data
 
-- [ ] Seed 8 starter categories:
+- [x] `POST /api/admin/product-categories/seed` — idempotent endpoint
+- [x] Seeds 8 starter categories:
   - SRS: Frozen Seafood (frozen), Poultry (frozen), Meat (chilled+frozen),
     Dairy (chilled+frozen), Fruit (chilled)
   - SCS: Hunting Trophies (ambient), Wine & Spirits (ambient), Other Dry Mixed (ambient)
-- [ ] Each with the correct requiredDocuments list per Documents_needed_per_commodity.md
+- [x] Each with correct requiredDocuments per Documents_needed_per_commodity.md
+- [x] UI: "Seed 8 default categories" button shown on empty categories page
 
 #### APIs
 
@@ -181,25 +183,37 @@ checklist and uploads each one tagged with its code.
 
 #### Client UI
 
-- [ ] Update step-2-cargo:
-  - Product dropdown: each product shown has its category badge
-  - Only products with a category AND matching open containers appear
-  - Temperature options come from the category's allowedTemperatures filtered by available containers
-- [ ] Update step-3-docs:
-  - Render required-docs checklist from the product's category
-  - Each slot: doc label + description tooltip + upload button OR "uploaded" state with filename
-  - "Upload extra document" button for ad-hoc docs (saved with code=OTHER)
-  - Block submit if required docs missing (or warn)
-  - Show completion count ("4 of 8 required documents uploaded")
+- [x] Update step-2-cargo:
+  - Product dropdown: each product shown has its category badge (emerald pill)
+  - Products list already filtered via /api/bookings/options (categoryId-based)
+  - Selecting a product stores categoryId + categoryName on formData
+  - Product info card shows the category name prominently
+- [x] Update step-3-docs:
+  - New /api/bookings/category-docs endpoint returns the requiredDocuments for a category
+  - Rendered as a checklist: each slot shows doc label + description + Upload button
+  - When uploaded: green checkmark, filename + size shown, Replace + Remove buttons
+  - Separate "Other Documents (optional)" section for ad-hoc uploads
+  - Completion count "N/M uploaded" in header (green when 100%)
+  - Replaces the old drag-drop area entirely
+  - File state now includes documentCode per file; stored in formData.fileEntries
+
+#### Upload wiring
+
+- [x] booking-wizard reads formData.fileEntries (prefers over legacy files)
+- [x] Each document POST now includes documentCode alongside legacy type
+- [x] mapDocCodeToLegacyType() maps new codes to old enum for back-compat
+- [x] POST /api/bookings/[id]/documents saves documentCode
+- [x] POST /api/bookings/[id]/upload saves documentCode
 
 #### Admin review (display)
 
-- [ ] In the client popup on Bookings tab, show each doc with its `documentCode` label instead of generic type
-- [ ] Group docs by required vs other
+- [x] ClientDoc interface updated with documentCode field
+- [x] Booking detail popup shows documentLabel(doc.documentCode) — falls back to legacy type if null
+- [x] Document viewer modal header shows the doc label
 
 #### Tracker maintenance + cleanup
 
-- [ ] Update this file at each milestone
+- [x] Update this file at each milestone
 - [ ] Drop the legacy `products.category` (freeform string) column after categories are live
 - [ ] Drop the legacy `containers.product_id` column once we've verified nothing reads from it
 

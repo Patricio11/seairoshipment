@@ -120,6 +120,28 @@ export function CategoriesManager() {
     const [deleteDialog, setDeleteDialog] = useState<Category | null>(null)
     const [deleting, setDeleting] = useState(false)
 
+    // Seed
+    const [seeding, setSeeding] = useState(false)
+    const handleSeed = async () => {
+        setSeeding(true)
+        try {
+            const res = await fetch("/api/admin/product-categories/seed", { method: "POST" })
+            const data = await res.json()
+            if (!res.ok) {
+                toast.error(data.error || "Seed failed")
+                return
+            }
+            toast.success(`Seeded ${data.created} categor${data.created === 1 ? "y" : "ies"}`, {
+                description: data.skipped > 0 ? `${data.skipped} already existed and were skipped.` : undefined,
+            })
+            fetchCategories()
+        } catch {
+            toast.error("Seed failed")
+        } finally {
+            setSeeding(false)
+        }
+    }
+
     const fetchCategories = useCallback(async () => {
         setLoading(true)
         try {
@@ -584,8 +606,19 @@ export function CategoriesManager() {
                 <div className="text-center py-16 text-slate-500 border border-slate-800 rounded-xl bg-slate-950/30">
                     <Layers className="h-12 w-12 mx-auto mb-3 opacity-30" />
                     <p className="font-bold">No categories{search || serviceFilter !== "all" ? " match your filter" : " yet"}</p>
-                    {!search && serviceFilter === "all" && (
-                        <p className="text-sm mt-1">Click &quot;New Category&quot; to create your first one.</p>
+                    {!search && serviceFilter === "all" && categories.length === 0 && (
+                        <>
+                            <p className="text-sm mt-1 mb-4">Seed the 8 default categories (Frozen Seafood, Poultry, Meat, Dairy, Fruit, Hunting Trophies, Wine &amp; Spirits, Other Dry Mixed) or create your own.</p>
+                            <div className="flex items-center justify-center gap-2">
+                                <Button onClick={handleSeed} disabled={seeding} variant="outline" className="border-slate-700 text-slate-300 hover:bg-slate-800">
+                                    {seeding ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> : null}
+                                    Seed 8 default categories
+                                </Button>
+                                <Button onClick={openCreate} className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold">
+                                    <Plus className="mr-2 h-4 w-4" /> Create from scratch
+                                </Button>
+                            </div>
+                        </>
                     )}
                 </div>
             ) : (

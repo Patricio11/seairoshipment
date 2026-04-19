@@ -64,10 +64,12 @@ export interface BookingFormData {
     voyageNumber?: string;
     vesselName?: string;
     palletCount: number;
-    commodity: string;
+    commodity: string;           // product id
     commodityName?: string;
     hsCode?: string;
     commodityDescription?: string;
+    categoryId?: string;         // product's category id (derived, used by docs step)
+    categoryName?: string;       // for display
     nettWeight?: number;
     grossWeight?: number;
     temperature: string;
@@ -79,7 +81,8 @@ export interface BookingFormData {
     agreeToTerms: boolean;
     poNumber?: string;
     salesRateTypeId?: string;
-    files?: File[];
+    files?: File[];                                 // legacy — raw file list
+    fileEntries?: Array<{ file: File; documentCode: string }>;  // preferred — file + which required-doc slot it fills
 }
 
 export interface ContainerSlot {

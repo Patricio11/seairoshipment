@@ -49,7 +49,9 @@ interface ProductOption {
     id: string
     name: string
     hsCode: string
-    category: string | null
+    category: string | null          // legacy freeform tag (MetaShip type)
+    categoryId: string | null        // category reference — the consolidation unit
+    categoryName: string | null      // for display ("Frozen Seafood" etc.)
 }
 
 interface SailingOption {
@@ -260,6 +262,8 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                 commodityName: product.name,
                 hsCode: product.hsCode,
                 commodityDescription: product.category || "",
+                categoryId: product.categoryId || undefined,
+                categoryName: product.categoryName || undefined,
                 // Clear downstream — selecting a new product may change what temps/sailings are available
                 temperature: "",
                 sailingScheduleId: undefined,
@@ -300,7 +304,14 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
     // Selected product for info display
     const selectedProduct = options.products.find(p => p.id === formData.commodity) || (
         formData.commodity
-            ? { id: formData.commodity, name: formData.commodityName || "", hsCode: formData.hsCode || "", category: formData.commodityDescription || null }
+            ? {
+                id: formData.commodity,
+                name: formData.commodityName || "",
+                hsCode: formData.hsCode || "",
+                category: formData.commodityDescription || null,
+                categoryId: formData.categoryId || null,
+                categoryName: formData.categoryName || null,
+            }
             : undefined
     )
 
@@ -566,11 +577,18 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                                                                 formData.commodity === product.id ? "opacity-100" : "opacity-0"
                                                                             )}
                                                                         />
-                                                                        <div className="flex flex-col">
-                                                                            <span className="font-medium">{product.name}</span>
-                                                                            {(product.hsCode || product.category) && (
-                                                                                <span className="text-xs text-slate-500 font-mono">
-                                                                                    {product.hsCode}{product.hsCode && product.category ? " · " : ""}{product.category}
+                                                                        <div className="flex flex-col flex-1 min-w-0">
+                                                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                                                <span className="font-medium">{product.name}</span>
+                                                                                {product.categoryName && (
+                                                                                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-bold uppercase tracking-wider">
+                                                                                        {product.categoryName}
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                            {product.hsCode && (
+                                                                                <span className="text-xs text-slate-500 font-mono mt-0.5">
+                                                                                    HS {product.hsCode}
                                                                                 </span>
                                                                             )}
                                                                         </div>
@@ -633,8 +651,17 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                                         HS Code: <span className="font-mono font-bold text-brand-blue">{selectedProduct.hsCode}</span>
                                                     </p>
                                                 )}
-                                                {selectedProduct.category && (
-                                                    <p className="text-xs text-slate-500 uppercase font-mono">{selectedProduct.category}</p>
+                                                {(formData.categoryName || selectedProduct.category) && (
+                                                    <p className="text-xs">
+                                                        {formData.categoryName && (
+                                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-bold text-[10px] uppercase tracking-wider">
+                                                                {formData.categoryName}
+                                                            </span>
+                                                        )}
+                                                        {!formData.categoryName && selectedProduct.category && (
+                                                            <span className="text-slate-500 uppercase font-mono">{selectedProduct.category}</span>
+                                                        )}
+                                                    </p>
                                                 )}
                                             </div>
                                         </div>

@@ -61,6 +61,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { documentLabel } from "@/lib/constants/document-types"
 
 interface ContainerAllocation {
     allocation: {
@@ -209,6 +210,7 @@ interface ClientDoc {
     id: string
     originalName: string
     type: string
+    documentCode: string | null
     status: string
     url: string | null
     uploadedAt: string
@@ -1527,7 +1529,7 @@ export function AdminBookingsGrid() {
                                                     <div className="flex-1 min-w-0">
                                                         <p className="text-sm text-white font-medium truncate">{doc.originalName}</p>
                                                         <div className="flex items-center gap-2 mt-0.5">
-                                                            <span className="text-[10px] text-slate-500 font-mono uppercase">{doc.type.replace("_", " ")}</span>
+                                                            <span className="text-[10px] text-slate-500 font-mono uppercase">{documentLabel(doc.documentCode) || doc.type.replace("_", " ")}</span>
                                                             <span className="text-[10px] text-slate-700">·</span>
                                                             <span className={`text-[10px] font-bold uppercase ${doc.status === "APPROVED" ? "text-emerald-400" : doc.status === "REJECTED" ? "text-red-400" : "text-amber-400"}`}>
                                                                 {doc.status}
@@ -1680,7 +1682,7 @@ export function AdminBookingsGrid() {
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <p className="text-sm text-white font-medium truncate">{doc.originalName}</p>
-                                                        <p className="text-[10px] text-slate-500 uppercase font-mono mt-0.5">{doc.type.replace("_", " ")}</p>
+                                                        <p className="text-[10px] text-slate-500 uppercase font-mono mt-0.5">{documentLabel(doc.documentCode) || doc.type.replace("_", " ")}</p>
                                                     </div>
                                                     {doc.url && (
                                                         <div className="flex items-center gap-1.5 shrink-0">
@@ -1835,7 +1837,7 @@ export function AdminBookingsGrid() {
                                 <div className="min-w-0">
                                     <DialogTitle className="text-sm font-black truncate">{viewDoc?.originalName}</DialogTitle>
                                     <div className="flex items-center gap-2 mt-1">
-                                        <span className="text-[10px] text-slate-500 font-mono uppercase">{viewDoc?.type.replace("_", " ")}</span>
+                                        <span className="text-[10px] text-slate-500 font-mono uppercase">{viewDoc ? (documentLabel(viewDoc.documentCode) || viewDoc.type.replace("_", " ")) : ""}</span>
                                         <span className="text-[10px] text-slate-700">·</span>
                                         <span className={`text-[10px] font-bold uppercase ${viewDoc?.status === "APPROVED" ? "text-emerald-400" : viewDoc?.status === "REJECTED" ? "text-red-400" : "text-amber-400"}`}>
                                             {viewDoc?.status}

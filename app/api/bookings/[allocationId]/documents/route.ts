@@ -110,7 +110,7 @@ export async function POST(
         }
 
         const body = await request.json();
-        const { originalName, storedName, url, type } = body;
+        const { originalName, storedName, url, type, documentCode } = body;
 
         if (!originalName || !url) {
             return NextResponse.json({ error: "originalName and url are required" }, { status: 400 });
@@ -125,6 +125,7 @@ export async function POST(
             originalName,
             storedName: storedName || originalName,
             type: type || "OTHER",
+            documentCode: documentCode || null,
             url,
             status: "PENDING",
         });
