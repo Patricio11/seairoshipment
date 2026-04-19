@@ -8,3 +8,5 @@ export * from "./locations";
 export * from "./container-types";
 export * from "./sales-rate-types";
 export * from "./rate-tables";
+export * from "./products";
+export * from "./sailings";

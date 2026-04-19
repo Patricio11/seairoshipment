@@ -1,5 +1,7 @@
 import { pgTable, text, timestamp, integer, pgEnum } from "drizzle-orm/pg-core";
 import { containerTypes } from "./container-types";
+import { products } from "./products";
+import { sailings } from "./sailings";
 
 export const containerStatusEnum = pgEnum("container_status", [
     "OPEN",
@@ -11,14 +13,23 @@ export const containerStatusEnum = pgEnum("container_status", [
 
 export const containerTypeEnum = pgEnum("container_type", ["20FT", "40FT"]);
 
+export const temperatureEnum = pgEnum("temperature", [
+    "frozen",   // -18°C
+    "chilled",  // +5°C
+    "ambient",  // +18°C
+]);
+
 export const containers = pgTable("containers", {
     id: text("id").primaryKey(),
     route: text("route").notNull(), // e.g. "ZACPT-NLRTM"
     vessel: text("vessel").notNull(),
     voyageNumber: text("voyage_number"),
     sailingScheduleId: text("sailing_schedule_id"),
+    sailingId: text("sailing_id").references(() => sailings.id), // new: link to our sailings table
     type: containerTypeEnum("type").default("40FT").notNull(),
     containerTypeId: text("container_type_id").references(() => containerTypes.id),
+    productId: text("product_id").references(() => products.id), // product locked in at creation
+    temperature: temperatureEnum("temperature"), // cargo temperature regime for this container
     etd: timestamp("etd"),
     eta: timestamp("eta"),
     totalPallets: integer("total_pallets").default(0).notNull(),
