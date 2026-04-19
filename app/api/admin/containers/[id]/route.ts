@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/server";
 import { db } from "@/lib/db";
-import { containers, palletAllocations, containerTypes, sailings, products } from "@/lib/db/schema";
+import { containers, palletAllocations, containerTypes, sailings, productCategories } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 type Temperature = "frozen" | "chilled" | "ambient";
@@ -70,28 +70,40 @@ export async function PUT(
             }
         }
 
-        // Product change
-        if (body.productId !== undefined) {
-            if (body.productId) {
-                const [product] = await db.select().from(products).where(eq(products.id, body.productId)).limit(1);
-                if (!product) return NextResponse.json({ error: "Invalid product" }, { status: 400 });
-                updates.productId = product.id;
+        // Category change
+        let targetCategoryAllowedTemps: Temperature[] | null = null;
+        if (body.categoryId !== undefined) {
+            if (body.categoryId) {
+                const [cat] = await db.select().from(productCategories).where(eq(productCategories.id, body.categoryId)).limit(1);
+                if (!cat) return NextResponse.json({ error: "Invalid category" }, { status: 400 });
+                if (!cat.active) return NextResponse.json({ error: "Category is inactive" }, { status: 400 });
+                updates.categoryId = cat.id;
+                targetCategoryAllowedTemps = (cat.allowedTemperatures as Temperature[]) || [];
             } else {
-                updates.productId = null;
+                updates.categoryId = null;
             }
+        } else if (existing.categoryId) {
+            const [cat] = await db.select().from(productCategories).where(eq(productCategories.id, existing.categoryId)).limit(1);
+            if (cat) targetCategoryAllowedTemps = (cat.allowedTemperatures as Temperature[]) || [];
         }
 
-        // Temperature change (validate against container category)
+        // Temperature change — validate against container type AND category
         if (body.temperature !== undefined) {
             if (body.temperature) {
-                const validTemps: Record<string, Temperature[]> = {
+                const containerTypeTemps: Record<string, Temperature[]> = {
                     REEFER: ["frozen", "chilled"],
                     DRY: ["ambient"],
                 };
-                const allowed = containerCategory ? validTemps[containerCategory] : [];
-                if (!allowed.includes(body.temperature as Temperature)) {
+                const ctAllowed = containerCategory ? containerTypeTemps[containerCategory] : [];
+                if (!ctAllowed.includes(body.temperature as Temperature)) {
                     return NextResponse.json(
-                        { error: `Temperature "${body.temperature}" is not valid for this container. Allowed: ${allowed.join(", ")}` },
+                        { error: `Temperature "${body.temperature}" is not valid for this container type. Allowed: ${ctAllowed.join(", ")}` },
+                        { status: 400 }
+                    );
+                }
+                if (targetCategoryAllowedTemps && !targetCategoryAllowedTemps.includes(body.temperature as Temperature)) {
+                    return NextResponse.json(
+                        { error: `Temperature "${body.temperature}" is not allowed for this category. Allowed: ${targetCategoryAllowedTemps.join(", ")}` },
                         { status: 400 }
                     );
                 }

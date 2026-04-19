@@ -1,21 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/server";
 import { db } from "@/lib/db";
-import { containers, products, sailings } from "@/lib/db/schema";
+import { containers, products, sailings, productCategories } from "@/lib/db/schema";
 import { eq, and, inArray, sql } from "drizzle-orm";
 
 /**
- * Returns the cascading options a client can pick from for a booking.
- * Only values that have at least one OPEN or THRESHOLD_REACHED container
+ * Returns cascading options for a booking.
+ * Only values that have at least one OPEN / THRESHOLD_REACHED container
  * matching all prior selections are returned.
  *
  * Query params:
  *   - route (required)            e.g. "ZACPT-NLRTM"
  *   - salesRateTypeId (required)  e.g. "srs" | "scs"
- *   - productId (optional)        narrows temperatures + sailings
+ *   - productId (optional)        narrows temperatures + sailings (via category)
  *   - temperature (optional)      narrows sailings
  *
- * Response: { products, temperatures, sailings }
+ * Response:
+ *   {
+ *     products: [{ id, name, hsCode, category, categoryId, categoryName }],
+ *     temperatures: ["frozen" | "chilled" | "ambient"],
+ *     sailings: [{ id, vesselName, voyageNumber, etd, eta, transitTime, serviceType }],
+ *     totalContainers
+ *   }
  */
 export async function GET(request: NextRequest) {
     try {
@@ -39,42 +45,62 @@ export async function GET(request: NextRequest) {
             eq(containers.route, route),
             eq(containers.salesRateTypeId, salesRateTypeId),
             inArray(containers.status, ["OPEN", "THRESHOLD_REACHED"]),
-            // Must have remaining capacity
             sql`${containers.maxCapacity} - ${containers.totalPallets} >= 1`,
         );
 
-        // Pull all matching containers once; everything below is in-memory filtering.
         const matching = await db.select().from(containers).where(openFilter);
 
-        // Collect distinct productIds from matching containers
-        const productIds = Array.from(new Set(matching.map(c => c.productId).filter(Boolean))) as string[];
-        const productRows = productIds.length > 0
-            ? await db.select().from(products).where(inArray(products.id, productIds))
-            : [];
-        const productMap = new Map(productRows.map(p => [p.id, p]));
+        // Gather distinct categoryIds present in matching containers
+        const categoryIds = Array.from(new Set(matching.map(c => c.categoryId).filter(Boolean))) as string[];
 
-        const productList = productIds
-            .map(id => productMap.get(id))
-            .filter((p): p is NonNullable<typeof p> => !!p && p.active)
+        // Look up the categories + all active products assigned to them
+        const categoryRows = categoryIds.length > 0
+            ? await db.select().from(productCategories).where(inArray(productCategories.id, categoryIds))
+            : [];
+        const categoryMap = new Map(categoryRows.map(c => [c.id, c]));
+
+        const productRows = categoryIds.length > 0
+            ? await db.select().from(products).where(
+                and(
+                    inArray(products.categoryId, categoryIds),
+                    eq(products.active, true),
+                )
+            )
+            : [];
+
+        const productList = productRows
             .sort((a, b) => a.name.localeCompare(b.name))
             .map(p => ({
                 id: p.id,
                 name: p.name,
                 hsCode: p.hsCode,
                 category: p.category,
+                categoryId: p.categoryId,
+                categoryName: p.categoryId ? categoryMap.get(p.categoryId)?.name || null : null,
             }));
 
-        // Temperatures narrowed by product if provided
-        const afterProduct = productId
-            ? matching.filter(c => c.productId === productId)
+        // Narrow containers by product's category if productId provided
+        let productCategoryId: string | null = null;
+        if (productId) {
+            const [p] = await db
+                .select({ categoryId: products.categoryId })
+                .from(products)
+                .where(eq(products.id, productId))
+                .limit(1);
+            productCategoryId = p?.categoryId || null;
+        }
+
+        const afterProduct = productCategoryId
+            ? matching.filter(c => c.categoryId === productCategoryId)
             : matching;
+
         const tempSet = new Set(afterProduct.map(c => c.temperature).filter(Boolean));
         const temperatureList = Array.from(tempSet) as Array<"frozen" | "chilled" | "ambient">;
 
-        // Sailings narrowed by product + temperature if provided
         const afterTemp = temperature
             ? afterProduct.filter(c => c.temperature === temperature)
             : afterProduct;
+
         const sailingIds = Array.from(new Set(afterTemp.map(c => c.sailingId).filter(Boolean))) as string[];
         const sailingRows = sailingIds.length > 0
             ? await db.select().from(sailings).where(inArray(sailings.id, sailingIds))

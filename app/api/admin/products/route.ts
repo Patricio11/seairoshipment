@@ -27,7 +27,7 @@ export async function GET() {
                 updatedAt: products.updatedAt,
                 containerCount: sql<number>`
                     (SELECT COUNT(*) FROM ${containers}
-                     WHERE ${containers.productId} = ${products.id}
+                     WHERE ${containers.categoryId} = ${products.categoryId}
                      AND ${containers.status} IN ('OPEN','THRESHOLD_REACHED'))
                 `.as("container_count"),
             })

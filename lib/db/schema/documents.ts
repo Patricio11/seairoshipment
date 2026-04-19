@@ -22,7 +22,8 @@ export const documents = pgTable("documents", {
     userId: text("user_id").notNull().references(() => user.id),
     originalName: text("original_name").notNull(),
     storedName: text("stored_name").notNull(), // e.g. "ACC-1001_Invoice_SRS-9921.pdf"
-    type: documentTypeEnum("type").notNull(),
+    type: documentTypeEnum("type").notNull(),         // LEGACY coarse type (kept for back-compat)
+    documentCode: text("document_code"),              // NEW: specific doc type from DOCUMENT_TYPES enum (COMMERCIAL_INVOICE, PPECB_HEALTH_CERTIFICATE, etc.)
     url: text("url"),
     status: documentStatusEnum("status").default("PENDING").notNull(),
     uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),

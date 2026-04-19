@@ -11,3 +11,4 @@ export * from "./rate-tables";
 export * from "./products";
 export * from "./sailings";
 export * from "./container-requests";
+export * from "./product-categories";

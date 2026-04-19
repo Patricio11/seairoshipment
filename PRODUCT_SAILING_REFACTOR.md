@@ -110,14 +110,98 @@ Restructure the booking flow so that a container is **locked to a single product
 - [x] `PATCH /api/admin/container-requests/[id]` — admin updates status (ACKNOWLEDGED / FULFILLED / DECLINED) with optional message. Client gets BOOKING_APPROVED / BOOKING_REJECTED / GENERAL notification.
 - [x] Admin tab "Container Requests" in bookings grid with Respond dropdown (Mark as reviewing / Mark as fulfilled / Decline) → confirmation dialog with optional response text
 
-### Phase 5 — Cleanup + Polish ⏳ TODO
+### Phase 5 — Product Categories + Document checklist ⏳ IN PROGRESS
 
-- [ ] Deprecate `/api/metaship/products` (mark as legacy or remove)
-- [ ] Deprecate `/api/metaship/sailing-schedules` (mark as legacy or remove)
-- [ ] Sidebar icons for Products + Sailings pages
-- [ ] Optional: cron job to auto-sync products weekly, sailings daily
-- [ ] Update README / docs with new flow
-- [ ] QA walkthrough: admin full cycle + client full cycle
+**Why:** A container carrying "Hake" alone is too specific. Real consolidation
+works at the category level: "Frozen Seafood" accepts hake / squid / yellow tail
+all on the same reefer. Categories also drive the required-documents list —
+different cargo types need different export certs (PPECB for perishables,
+CITES for hunting trophies, SAWIS for wine, etc.).
+
+**Client still picks the specific product** (we need the HS code for the
+allocation). Category is purely server-side: product → category → containers
+that match. On step 3 (docs), the client sees the category's required-doc
+checklist and uploads each one tagged with its code.
+
+#### Schema
+
+- [x] New `product_categories` table: id, name, description, salesRateTypeId,
+  allowedTemperatures (jsonb string[]), requiredDocuments (jsonb string[]), active
+- [x] `products.categoryId` (nullable FK)
+- [x] Replace `containers.productId` with `containers.categoryId`
+  (kept legacy `product_id` column in DB; code no longer reads from it)
+- [x] `documents.documentCode` (new text column — stores specific doc code
+  like COMMERCIAL_INVOICE, PPECB_HEALTH_CERTIFICATE)
+- [x] DB push
+
+#### Constants
+
+- [x] `lib/constants/document-types.ts` — 17 predefined doc types with codes + labels + descriptions
+- [x] `documentLabel(code)` helper for rendering
+
+#### Seed data (to be done at end)
+
+- [ ] Seed 8 starter categories:
+  - SRS: Frozen Seafood (frozen), Poultry (frozen), Meat (chilled+frozen),
+    Dairy (chilled+frozen), Fruit (chilled)
+  - SCS: Hunting Trophies (ambient), Wine & Spirits (ambient), Other Dry Mixed (ambient)
+- [ ] Each with the correct requiredDocuments list per Documents_needed_per_commodity.md
+
+#### APIs
+
+- [ ] `GET /api/admin/product-categories` — list with assigned-product count + container-usage count
+- [ ] `POST /api/admin/product-categories` — create
+- [ ] `PATCH /api/admin/product-categories/[id]` — update name/description/temps/docs/active
+- [ ] `DELETE /api/admin/product-categories/[id]` — delete (reject if used by any container)
+- [ ] `GET /api/admin/product-categories/[id]` — detail with assigned products list
+- [ ] `POST /api/admin/product-categories/[id]/products` — bulk assign products
+- [ ] `DELETE /api/admin/product-categories/[id]/products` — bulk un-assign
+- [ ] Update `GET /api/admin/products` — container count now comes from category (containers with same categoryId)
+- [ ] Update `GET /api/admin/containers` — join product_categories instead of products; return categoryName
+- [ ] Update `POST /api/admin/containers` — require categoryId (replaces productId). Validate temperature is in category.allowedTemperatures.
+- [ ] Update `PATCH /api/admin/containers/[id]` — accept categoryId
+
+- [ ] Update `GET /api/bookings/options` — products list is now narrowed to "products in categories with matching open containers". Internally: containers → categoryIds → products with those categoryIds.
+- [ ] Update `GET /api/containers?productId=X...` — still filters by productId, but resolves to category server-side: looks up product.categoryId and filters containers.categoryId = that.
+
+- [ ] Update `POST /api/bookings` — validate the chosen product belongs to a category that matches the chosen container's category.
+- [ ] Update `POST /api/bookings/[id]/upload` & `POST /api/bookings/[id]/documents` — accept `documentCode` and save it.
+
+#### Admin UI
+
+- [ ] `/admin/categories` page (table view)
+  - Columns: Name, Service Type badge, Allowed temps (chips), Products count, Open containers count, Required docs count, Active toggle
+  - Create dialog: name, description, service type (auto-restricts temperature options — SCS locked to ambient), multi-select temps, multi-select required docs, active
+  - Row click → detail view with assigned products + "Add products" searchable multi-select
+- [ ] Add "Categories" entry to admin sidebar (between Products and Commodities)
+- [ ] Update fleet-scheduler Create Container dialog:
+  - Replace step 5 "Product" with step 5 "Category" (searchable dropdown)
+  - Step 4 "Temperature" options now constrained by selected category's allowedTemperatures
+  - Remove category-less products from any dropdown
+
+#### Client UI
+
+- [ ] Update step-2-cargo:
+  - Product dropdown: each product shown has its category badge
+  - Only products with a category AND matching open containers appear
+  - Temperature options come from the category's allowedTemperatures filtered by available containers
+- [ ] Update step-3-docs:
+  - Render required-docs checklist from the product's category
+  - Each slot: doc label + description tooltip + upload button OR "uploaded" state with filename
+  - "Upload extra document" button for ad-hoc docs (saved with code=OTHER)
+  - Block submit if required docs missing (or warn)
+  - Show completion count ("4 of 8 required documents uploaded")
+
+#### Admin review (display)
+
+- [ ] In the client popup on Bookings tab, show each doc with its `documentCode` label instead of generic type
+- [ ] Group docs by required vs other
+
+#### Tracker maintenance + cleanup
+
+- [ ] Update this file at each milestone
+- [ ] Drop the legacy `products.category` (freeform string) column after categories are live
+- [ ] Drop the legacy `containers.product_id` column once we've verified nothing reads from it
 
 ---
 

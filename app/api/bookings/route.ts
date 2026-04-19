@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/server";
 import { db } from "@/lib/db";
-import { containers, palletAllocations, adminNotifications, invoices } from "@/lib/db/schema";
+import { containers, palletAllocations, adminNotifications, invoices, products } from "@/lib/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { calculateQuote } from "@/lib/rates";
@@ -185,6 +185,32 @@ export async function POST(request: NextRequest) {
                 return NextResponse.json(
                     { error: "No containers are currently available for this route. Please contact us or check back later." },
                     { status: 404 }
+                );
+            }
+        }
+
+        // Validate the chosen product's category matches the container's category.
+        // This enforces the consolidation rule: a "Frozen Seafood" container only
+        // accepts products in that category.
+        if (productId && container.categoryId) {
+            const [productRow] = await db
+                .select({ categoryId: products.categoryId })
+                .from(products)
+                .where(eq(products.id, productId))
+                .limit(1);
+            if (!productRow) {
+                return NextResponse.json({ error: "Selected product not found" }, { status: 400 });
+            }
+            if (!productRow.categoryId) {
+                return NextResponse.json(
+                    { error: "Selected product is not assigned to any category — please choose a different product or contact support." },
+                    { status: 400 }
+                );
+            }
+            if (productRow.categoryId !== container.categoryId) {
+                return NextResponse.json(
+                    { error: "This product can't be shipped on the selected container (category mismatch). Please pick a different container." },
+                    { status: 400 }
                 );
             }
         }
