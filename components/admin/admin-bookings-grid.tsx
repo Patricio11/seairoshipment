@@ -110,15 +110,18 @@ interface PendingRequest {
         consigneeAddress: string | null
         salesRateTypeId: string | null
         status: string
+        rejectionReason?: string | null
         createdAt: string
+        updatedAt?: string
     }
     container: {
         id: string
         route: string
         vessel: string
         etd: string | null
-        maxCapacity: number
-        totalPallets: number
+        maxCapacity?: number
+        totalPallets?: number
+        status?: string
         salesRateTypeId: string
     } | null
     user: {
@@ -127,8 +130,8 @@ interface PendingRequest {
         email: string
         accountNumber: string | null
     } | null
-    depositStatus: string
-    depositInvoiceId: string | null
+    depositStatus?: string
+    depositInvoiceId?: string | null
 }
 
 // Mock legacy data for shipments tab (will be replaced in future work)
@@ -184,6 +187,8 @@ export function AdminBookingsGrid() {
     // Pending requests (real data)
     const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([])
     const [loadingPending, setLoadingPending] = useState(false)
+    const [cancelledRequests, setCancelledRequests] = useState<PendingRequest[]>([])
+    const [loadingCancelled, setLoadingCancelled] = useState(false)
     const [reviewRequest, setReviewRequest] = useState<PendingRequest | null>(null)
     const [reviewDocs, setReviewDocs] = useState<ClientDoc[]>([])
     const [loadingReviewDocs, setLoadingReviewDocs] = useState(false)
@@ -226,13 +231,27 @@ export function AdminBookingsGrid() {
         }
     }, [])
 
+    const fetchCancelledRequests = useCallback(async () => {
+        setLoadingCancelled(true)
+        try {
+            const res = await fetch("/api/admin/allocations/cancelled")
+            if (res.ok) setCancelledRequests(await res.json())
+        } catch {
+            console.error("Failed to fetch cancelled requests")
+        } finally {
+            setLoadingCancelled(false)
+        }
+    }, [])
+
     useEffect(() => {
         if (activeTab === "containers") {
             fetchContainers()
         } else if (activeTab === "requests") {
             fetchPendingRequests()
+        } else if (activeTab === "cancelled") {
+            fetchCancelledRequests()
         }
-    }, [activeTab, fetchContainers, fetchPendingRequests])
+    }, [activeTab, fetchContainers, fetchPendingRequests, fetchCancelledRequests])
 
     const openReviewDialog = async (req: PendingRequest) => {
         setReviewRequest(req)
@@ -365,6 +384,9 @@ export function AdminBookingsGrid() {
                         </TabsTrigger>
                         <TabsTrigger value="requests" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400 text-xs font-bold uppercase tracking-wider">
                             Pending Requests
+                        </TabsTrigger>
+                        <TabsTrigger value="cancelled" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400 text-xs font-bold uppercase tracking-wider">
+                            Cancelled Requests
                         </TabsTrigger>
                         <TabsTrigger value="shipments" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400 text-xs font-bold uppercase tracking-wider">
                             Live Shipments
@@ -679,6 +701,81 @@ export function AdminBookingsGrid() {
                                                 <Button size="sm" className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold h-8" onClick={() => openReviewDialog(r)}>
                                                     Review
                                                 </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    )}
+                </TabsContent>
+
+                {/* CANCELLED REQUESTS TAB */}
+                <TabsContent value="cancelled" className="mt-6">
+                    {loadingCancelled ? (
+                        <div className="flex items-center justify-center py-20 text-slate-500">
+                            <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading cancelled requests...
+                        </div>
+                    ) : cancelledRequests.length === 0 ? (
+                        <div className="text-center py-20 text-slate-500 border border-slate-800 rounded-xl bg-slate-950/30">
+                            <BoxSelect className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                            <p className="font-bold">No cancelled requests</p>
+                            <p className="text-sm mt-1">Rejected bookings will appear here. Clients can edit and resubmit them.</p>
+                        </div>
+                    ) : (
+                        <div className="rounded-xl border border-slate-800 overflow-hidden bg-slate-950/30">
+                            <Table>
+                                <TableHeader className="bg-slate-900">
+                                    <TableRow className="hover:bg-transparent border-slate-800">
+                                        <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Reference</TableHead>
+                                        <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Client</TableHead>
+                                        <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Product / Pallets</TableHead>
+                                        <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Vessel / Route</TableHead>
+                                        <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Rejection Reason</TableHead>
+                                        <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-right">Cancelled</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {cancelledRequests.filter(r => {
+                                        if (rateTypeFilter !== "all" && r.container?.salesRateTypeId !== rateTypeFilter) return false
+                                        if (!searchTerm) return true
+                                        const q = searchTerm.toLowerCase()
+                                        return r.user?.name?.toLowerCase().includes(q) ||
+                                            r.user?.email.toLowerCase().includes(q) ||
+                                            r.container?.vessel.toLowerCase().includes(q) ||
+                                            r.allocation.id.toLowerCase().includes(q)
+                                    }).map((r) => (
+                                        <TableRow key={r.allocation.id} className="border-slate-800 hover:bg-slate-900/40">
+                                            <TableCell className="font-mono text-white font-bold text-xs">{r.allocation.id}</TableCell>
+                                            <TableCell className="text-slate-300">
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span className="text-sm font-medium text-white">{r.user?.name || "—"}</span>
+                                                    <span className="text-[10px] text-slate-500 font-mono">{r.user?.accountNumber || r.user?.email || ""}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span className="text-sm text-white">{r.allocation.commodityName || "—"}</span>
+                                                    <span className="text-[10px] text-slate-500 font-mono">{r.allocation.palletCount} pallet{r.allocation.palletCount === 1 ? "" : "s"}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span className="text-xs text-white font-bold">{r.container?.vessel || "—"}</span>
+                                                    <span className="text-[10px] text-slate-500">{r.container?.route}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="max-w-[240px]">
+                                                {r.allocation.rejectionReason ? (
+                                                    <p className="text-xs text-red-400 leading-tight" title={r.allocation.rejectionReason}>
+                                                        {r.allocation.rejectionReason}
+                                                    </p>
+                                                ) : (
+                                                    <span className="text-[10px] text-slate-600 italic">No reason given</span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="text-right text-[10px] text-slate-500 font-mono">
+                                                {r.allocation.updatedAt ? new Date(r.allocation.updatedAt).toLocaleDateString() : "—"}
                                             </TableCell>
                                         </TableRow>
                                     ))}

@@ -15,6 +15,7 @@ import {
     FileText,
     Anchor,
     PackageCheck,
+    RotateCcw,
 } from "lucide-react"
 import { useBookingModal } from "@/hooks/use-booking-modal"
 import { Input } from "@/components/ui/input"
@@ -22,6 +23,7 @@ import { Badge } from "@/components/ui/badge"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { BookingDetailDialog } from "@/components/booking/booking-detail-dialog"
+import { ResubmitBookingDialog } from "@/components/booking/resubmit-booking-dialog"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -60,6 +62,8 @@ export default function BookingsPage() {
     const [statusFilter, setStatusFilter] = useState<string>("ALL")
     const [selectedBooking, setSelectedBooking] = useState<ClientBooking | null>(null)
     const [detailOpen, setDetailOpen] = useState(false)
+    const [resubmitBooking, setResubmitBooking] = useState<ClientBooking | null>(null)
+    const [bookingsKey, setBookingsKey] = useState(0)
 
     useEffect(() => {
         let cancelled = false
@@ -78,7 +82,7 @@ export default function BookingsPage() {
         }
         fetchBookings()
         return () => { cancelled = true }
-    }, [refreshKey])
+    }, [refreshKey, bookingsKey])
 
     const stats = useMemo(() => {
         const active = bookings.filter(b => !["CANCELLED", "DELIVERED"].includes(b.status)).length
@@ -296,10 +300,20 @@ export default function BookingsPage() {
                                                 <Badge className={cn("rounded-lg px-2.5 py-1 text-[10px] font-black tracking-wider border-none", statusCfg.className)}>
                                                     {statusCfg.label}
                                                 </Badge>
-                                                {booking.status === "CANCELLED" && booking.rejectionReason && (
-                                                    <p className="text-[10px] text-red-500 dark:text-red-400 mt-1.5 max-w-[160px] leading-tight" title={booking.rejectionReason}>
-                                                        {booking.rejectionReason}
-                                                    </p>
+                                                {booking.status === "CANCELLED" && (
+                                                    <>
+                                                        {booking.rejectionReason && (
+                                                            <p className="text-[10px] text-red-500 dark:text-red-400 mt-1.5 max-w-[160px] leading-tight" title={booking.rejectionReason}>
+                                                                {booking.rejectionReason}
+                                                            </p>
+                                                        )}
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); setResubmitBooking(booking) }}
+                                                            className="mt-1.5 text-[10px] font-bold text-brand-blue hover:underline flex items-center gap-1"
+                                                        >
+                                                            <RotateCcw className="h-3 w-3" /> Edit & Resubmit
+                                                        </button>
+                                                    </>
                                                 )}
                                             </td>
                                             <td className="px-6 py-5 text-right">
@@ -309,7 +323,7 @@ export default function BookingsPage() {
                                                             <Eye className="h-4 w-4" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="w-44">
+                                                    <DropdownMenuContent align="end" className="w-52">
                                                         <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleViewDetails(booking) }}>
                                                             <Anchor className="h-4 w-4 mr-2" />
                                                             View Details
@@ -318,6 +332,15 @@ export default function BookingsPage() {
                                                             <FileText className="h-4 w-4 mr-2" />
                                                             View Invoices
                                                         </DropdownMenuItem>
+                                                        {booking.status === "CANCELLED" && (
+                                                            <DropdownMenuItem
+                                                                onClick={(e) => { e.stopPropagation(); setResubmitBooking(booking) }}
+                                                                className="text-brand-blue focus:text-brand-blue font-semibold"
+                                                            >
+                                                                <RotateCcw className="h-4 w-4 mr-2" />
+                                                                Edit & Resubmit
+                                                            </DropdownMenuItem>
+                                                        )}
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </td>
@@ -343,6 +366,14 @@ export default function BookingsPage() {
                 booking={selectedBooking}
                 open={detailOpen}
                 onOpenChange={setDetailOpen}
+            />
+
+            {/* Edit & Resubmit Dialog */}
+            <ResubmitBookingDialog
+                booking={resubmitBooking}
+                open={!!resubmitBooking}
+                onClose={() => setResubmitBooking(null)}
+                onSuccess={() => setBookingsKey(k => k + 1)}
             />
         </div>
     )
