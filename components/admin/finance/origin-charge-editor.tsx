@@ -34,7 +34,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import { ArrowLeft, Plus, Trash2, Save, Calculator, Check, ChevronsUpDown, X } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Save, Calculator, Check, ChevronsUpDown, X, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import type { OriginChargeItem, ChargeType } from "@/lib/types/finance"
@@ -214,6 +214,7 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
 
             if (res.ok) {
                 toast.success("Origin charge rate card saved successfully!")
+                router.refresh()
                 router.push("/admin/finance/origin-charges")
             } else {
                 const data = await res.json()
@@ -257,9 +258,9 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                             {initialData.active ? "Active" : "Inactive"}
                         </Badge>
                     )}
-                    <Button onClick={handleSave} className="bg-brand-blue hover:bg-brand-blue/90">
-                        <Save className="mr-2 h-4 w-4" />
-                        Save Rate Card
+                    <Button onClick={handleSave} disabled={saving} className="bg-brand-blue hover:bg-brand-blue/90">
+                        {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                        {saving ? "Saving…" : "Save Rate Card"}
                     </Button>
                 </div>
             </div>

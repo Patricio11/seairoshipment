@@ -71,7 +71,7 @@ export function DestinationChargesList() {
 
     const fetchCharges = async () => {
         try {
-            const res = await fetch("/api/admin/destination-charges")
+            const res = await fetch("/api/admin/destination-charges", { cache: "no-store" })
             if (res.ok) setCharges(await res.json())
         } catch { /* silently fail */ } finally {
             setLoading(false)
@@ -79,8 +79,7 @@ export function DestinationChargesList() {
     }
 
     useEffect(() => {
-        const timeout = setTimeout(() => fetchCharges(), 0)
-        return () => clearTimeout(timeout)
+        fetchCharges()
     }, [])
 
     const filteredCharges = charges.filter((charge) => {

@@ -89,9 +89,9 @@ export function OriginChargesList() {
     const fetchCharges = async () => {
         try {
             const [chargesRes, containersRes, locationsRes] = await Promise.all([
-                fetch("/api/admin/origin-charges"),
-                fetch("/api/admin/container-types"),
-                fetch("/api/admin/locations?type=ORIGIN"),
+                fetch("/api/admin/origin-charges", { cache: "no-store" }),
+                fetch("/api/admin/container-types", { cache: "no-store" }),
+                fetch("/api/admin/locations?type=ORIGIN", { cache: "no-store" }),
             ])
             if (chargesRes.ok) setCharges(await chargesRes.json())
             if (containersRes.ok) setContainerTypesList(await containersRes.json())
@@ -102,8 +102,7 @@ export function OriginChargesList() {
     }
 
     useEffect(() => {
-        const timeout = setTimeout(fetchCharges, 0)
-        return () => clearTimeout(timeout)
+        fetchCharges()
     }, [])
 
     const handleDelete = async () => {

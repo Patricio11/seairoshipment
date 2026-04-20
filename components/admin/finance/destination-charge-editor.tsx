@@ -34,7 +34,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import { ArrowLeft, Plus, Trash2, Save, Calculator, Check, ChevronsUpDown, X, ArrowRightLeft } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Save, Calculator, Check, ChevronsUpDown, X, ArrowRightLeft, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import type { DestinationCharge, DestinationChargeItem } from "@/lib/types/finance"
@@ -215,6 +215,10 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
 
             if (res.ok) {
                 toast.success("Destination charge rate card saved successfully!")
+                // Invalidate the router cache for the list page, then navigate.
+                // Without refresh() the list can serve a stale snapshot for a tick
+                // and the user may think the save failed and re-submit — creating duplicates.
+                router.refresh()
                 router.push("/admin/finance/destination-charges")
             } else {
                 const data = await res.json()
@@ -260,9 +264,9 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
                             {initialData.active ? "Active" : "Inactive"}
                         </Badge>
                     )}
-                    <Button onClick={handleSave} className="bg-brand-blue hover:bg-brand-blue/90">
-                        <Save className="mr-2 h-4 w-4" />
-                        Save Rate Card
+                    <Button onClick={handleSave} disabled={saving} className="bg-brand-blue hover:bg-brand-blue/90">
+                        {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                        {saving ? "Saving…" : "Save Rate Card"}
                     </Button>
                 </div>
             </div>

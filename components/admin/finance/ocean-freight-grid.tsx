@@ -85,7 +85,7 @@ export function OceanFreightGrid() {
 
     const fetchRates = async () => {
         try {
-            const res = await fetch("/api/admin/ocean-freight")
+            const res = await fetch("/api/admin/ocean-freight", { cache: "no-store" })
             if (res.ok) {
                 const data = await res.json()
                 setRates(data)
@@ -101,8 +101,7 @@ export function OceanFreightGrid() {
     }
 
     useEffect(() => {
-        const timeout = setTimeout(() => fetchRates(), 0)
-        return () => clearTimeout(timeout)
+        fetchRates()
     }, [])
 
     // Group by country
