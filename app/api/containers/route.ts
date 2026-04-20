@@ -2,13 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { containers, products, productCategories, sailings } from "@/lib/db/schema";
-import { eq, and, sql, inArray } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 /**
  * Client-facing list of bookable containers.
  *
- * When a productId is supplied, we resolve its category server-side and match
- * containers on `categoryId` (the consolidation unit).
+ * Returns both:
+ *  - `containers`: full-match containers the user can book right away
+ *  - `excluded`: near-match containers on the same route + rate type that failed
+ *    one of the other filters, each tagged with a human reason so the UI can
+ *    tell the client *why* their pick isn't available.
  */
 export async function GET(request: NextRequest) {
     try {
@@ -32,6 +35,7 @@ export async function GET(request: NextRequest) {
 
         // Resolve productId → categoryId so we can filter on the consolidation unit
         let resolvedCategoryId: string | null = null;
+        let productMissingCategory = false;
         if (productId) {
             const [p] = await db
                 .select({ categoryId: products.categoryId })
@@ -39,21 +43,12 @@ export async function GET(request: NextRequest) {
                 .where(eq(products.id, productId))
                 .limit(1);
             resolvedCategoryId = p?.categoryId || null;
-            // If the product has no category → no containers match it
-            if (!resolvedCategoryId) return NextResponse.json([]);
+            if (!resolvedCategoryId) productMissingCategory = true;
         }
 
-        const conditions = [
-            eq(containers.route, route),
-            eq(containers.salesRateTypeId, salesRateTypeId),
-            inArray(containers.status, ["OPEN", "THRESHOLD_REACHED"]),
-            sql`${containers.maxCapacity} - ${containers.totalPallets} >= 1`,
-        ];
-        if (resolvedCategoryId) conditions.push(eq(containers.categoryId, resolvedCategoryId));
-        if (temperature) conditions.push(eq(containers.temperature, temperature as "frozen" | "chilled" | "ambient"));
-        if (sailingId) conditions.push(eq(containers.sailingId, sailingId));
-
-        const rows = await db
+        // Pull every candidate on the route + rate type, then filter in-memory so
+        // we can describe exactly which rule each exclusion tripped.
+        const baseRows = await db
             .select({
                 container: containers,
                 categoryName: productCategories.name,
@@ -63,29 +58,80 @@ export async function GET(request: NextRequest) {
             .from(containers)
             .leftJoin(productCategories, eq(containers.categoryId, productCategories.id))
             .leftJoin(sailings, eq(containers.sailingId, sailings.id))
-            .where(and(...conditions));
+            .where(and(
+                eq(containers.route, route),
+                eq(containers.salesRateTypeId, salesRateTypeId),
+            ));
 
-        const slots = rows.map(({ container: c, categoryName, sailingVessel, sailingVoyage }) => ({
-            id: c.id,
-            vessel: sailingVessel || c.vessel,
-            voyageNumber: sailingVoyage || c.voyageNumber,
-            preFilled: c.totalPallets,
-            maxCapacity: c.maxCapacity,
-            date: c.etd
-                ? new Date(c.etd).toLocaleDateString("en-US", { month: "short", day: "2-digit" })
-                : "TBD",
-            type: c.type as "20FT" | "40FT",
-            temperature: c.temperature,
-            categoryName,
-            // Keep productName in the shape for backwards compat with existing UI;
-            // will be replaced by categoryName on the frontend next.
-            productName: categoryName,
-        }));
+        const matches: Slot[] = [];
+        const excluded: Excluded[] = [];
 
-        return NextResponse.json(slots);
+        for (const row of baseRows) {
+            const c = row.container;
+            const reasons: string[] = [];
+
+            if (c.status !== "OPEN" && c.status !== "THRESHOLD_REACHED") {
+                reasons.push(c.status === "BOOKED" ? "Already booked with MetaShip" : `Status is ${c.status}`);
+            }
+            if (c.maxCapacity - c.totalPallets < 1) {
+                reasons.push("Container is full");
+            }
+            if (productMissingCategory) {
+                reasons.push("Selected product has no category — ask admin to assign one");
+            } else if (resolvedCategoryId && c.categoryId !== resolvedCategoryId) {
+                reasons.push(`Category mismatch — container accepts ${row.categoryName || "a different category"}`);
+            }
+            if (temperature && c.temperature !== temperature) {
+                reasons.push(`Temperature mismatch — container runs ${c.temperature || "unset"}, you picked ${temperature}`);
+            }
+            if (sailingId && c.sailingId !== sailingId) {
+                reasons.push("Sailing mismatch");
+            }
+
+            const slot: Slot = {
+                id: c.id,
+                vessel: row.sailingVessel || c.vessel,
+                voyageNumber: row.sailingVoyage || c.voyageNumber,
+                preFilled: c.totalPallets,
+                maxCapacity: c.maxCapacity,
+                date: c.etd
+                    ? new Date(c.etd).toLocaleDateString("en-US", { month: "short", day: "2-digit" })
+                    : "TBD",
+                type: c.type as "20FT" | "40FT",
+                temperature: c.temperature,
+                categoryName: row.categoryName,
+                productName: row.categoryName,
+            };
+
+            if (reasons.length === 0) {
+                matches.push(slot);
+            } else {
+                excluded.push({ ...slot, status: c.status, reasons });
+            }
+        }
+
+        return NextResponse.json({ containers: matches, excluded });
     } catch (error: unknown) {
         console.error("Get containers error:", error);
         const message = error instanceof Error ? error.message : "Failed to fetch containers";
         return NextResponse.json({ error: message }, { status: 500 });
     }
+}
+
+interface Slot {
+    id: string;
+    vessel: string;
+    voyageNumber: string | null;
+    preFilled: number;
+    maxCapacity: number;
+    date: string;
+    type: "20FT" | "40FT";
+    temperature: string | null;
+    categoryName: string | null;
+    productName: string | null;
+}
+
+interface Excluded extends Slot {
+    status: string;
+    reasons: string[];
 }

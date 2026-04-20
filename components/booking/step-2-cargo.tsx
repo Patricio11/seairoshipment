@@ -70,6 +70,14 @@ interface BookingOptions {
     totalContainers: number
 }
 
+interface ExcludedContainer extends ContainerSlot {
+    status: string
+    reasons: string[]
+    temperature: string | null
+    categoryName: string | null
+    voyageNumber: string | null
+}
+
 const TEMP_LABELS: Record<string, { label: string; icon: typeof Snowflake }> = {
     frozen: { label: "-18°C Frozen", icon: Snowflake },
     chilled: { label: "+5°C Chilled", icon: Snowflake },
@@ -95,6 +103,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
 
     // Real container data from DB
     const [availableContainers, setAvailableContainers] = useState<ContainerSlot[]>([])
+    const [excludedContainers, setExcludedContainers] = useState<ExcludedContainer[]>([])
     const [loadingContainers, setLoadingContainers] = useState(false)
 
     // Request-a-container modal
@@ -197,13 +206,22 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
             const res = await fetch(`/api/containers?${params.toString()}`)
             if (res.ok) {
                 const data = await res.json()
-                setAvailableContainers(Array.isArray(data) ? data : [])
+                // Supports both the new shape { containers, excluded } and the legacy array
+                if (Array.isArray(data)) {
+                    setAvailableContainers(data)
+                    setExcludedContainers([])
+                } else {
+                    setAvailableContainers(Array.isArray(data.containers) ? data.containers : [])
+                    setExcludedContainers(Array.isArray(data.excluded) ? data.excluded : [])
+                }
             } else {
                 setAvailableContainers([])
+                setExcludedContainers([])
             }
         } catch {
             console.error("Failed to fetch containers")
             setAvailableContainers([])
+            setExcludedContainers([])
         } finally {
             setLoadingContainers(false)
         }
@@ -743,16 +761,80 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                 Loading available containers...
                             </div>
                         ) : availableContainers.length === 0 ? (
-                            <div className="text-center py-16">
-                                <Boxes className="h-12 w-12 mx-auto mb-3 text-slate-300 dark:text-slate-600" />
-                                <p className="font-bold text-slate-700 dark:text-slate-300">No containers available matching your criteria</p>
-                                <p className="text-sm text-slate-500 mt-1 mb-6">Submit a request and our team will open one for you.</p>
-                                <Button
-                                    onClick={() => setRequestOpen(true)}
-                                    className="bg-amber-600 hover:bg-amber-700 text-white font-bold"
-                                >
-                                    <PackagePlus className="h-4 w-4 mr-2" /> Request a Container
-                                </Button>
+                            <div className="space-y-6">
+                                <div className="text-center py-10">
+                                    <Boxes className="h-12 w-12 mx-auto mb-3 text-slate-300 dark:text-slate-600" />
+                                    <p className="font-bold text-slate-700 dark:text-slate-300">
+                                        {excludedContainers.length > 0
+                                            ? "Nothing matches all your criteria"
+                                            : "No containers on this route yet"}
+                                    </p>
+                                    <p className="text-sm text-slate-500 mt-1 mb-6">
+                                        {excludedContainers.length > 0
+                                            ? "Adjust your product, temperature or sailing — or ask our team to open a new container."
+                                            : "Submit a request and our team will open one for you."}
+                                    </p>
+                                    <Button
+                                        onClick={() => setRequestOpen(true)}
+                                        className="bg-amber-600 hover:bg-amber-700 text-white font-bold"
+                                    >
+                                        <PackagePlus className="h-4 w-4 mr-2" /> Request a Container
+                                    </Button>
+                                </div>
+
+                                {excludedContainers.length > 0 && (
+                                    <div className="rounded-2xl border border-amber-200 dark:border-amber-900/30 bg-amber-50/50 dark:bg-amber-900/10 p-5">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                            <h4 className="text-xs font-black uppercase tracking-widest text-amber-700 dark:text-amber-300">
+                                                {excludedContainers.length} close {excludedContainers.length === 1 ? "match" : "matches"} excluded
+                                            </h4>
+                                        </div>
+                                        <p className="text-xs text-amber-700/80 dark:text-amber-300/80 mb-4">
+                                            These containers are on your route but don&apos;t match your current filters. Tap to copy the ID if you want our team to help.
+                                        </p>
+                                        <div className="space-y-2">
+                                            {excludedContainers.map((ex) => (
+                                                <div
+                                                    key={ex.id}
+                                                    className="rounded-xl bg-white dark:bg-slate-950 border border-amber-100 dark:border-amber-900/20 p-3"
+                                                >
+                                                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                                                        <div className="flex items-center gap-3 min-w-0">
+                                                            <div className="h-9 w-9 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center shrink-0">
+                                                                <Ship className="h-4 w-4 text-slate-500" />
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                                <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">
+                                                                    {ex.vessel}
+                                                                    {ex.voyageNumber && <span className="text-slate-400 font-mono ml-1.5">· {ex.voyageNumber}</span>}
+                                                                </p>
+                                                                <p className="text-[10px] text-slate-500 font-mono">
+                                                                    {ex.id} · {ex.type} · {ex.preFilled}/{ex.maxCapacity} pallets
+                                                                    {ex.temperature && <span> · {ex.temperature}</span>}
+                                                                    {ex.categoryName && <span> · {ex.categoryName}</span>}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-900">
+                                                            {ex.status}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-1.5 mt-2.5 pl-12">
+                                                        {ex.reasons.map((r, i) => (
+                                                            <span
+                                                                key={i}
+                                                                className="text-[10px] px-2 py-1 rounded-md bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-900/40 font-medium"
+                                                            >
+                                                                {r}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
