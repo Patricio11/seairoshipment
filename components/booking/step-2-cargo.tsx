@@ -436,97 +436,6 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                     </div>
                                 </div>
 
-                                {/* Sailing — from our synced sailings table, filtered by route + product + temperature */}
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-semibold">Sailing</Label>
-                                    {loadingOptions ? (
-                                        <div className="flex items-center gap-2 h-12 px-3 bg-white dark:bg-slate-950 rounded-md border text-sm text-slate-500">
-                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                            Loading sailings...
-                                        </div>
-                                    ) : !formData.temperature ? (
-                                        <div className="flex items-center gap-2 h-12 px-3 bg-white dark:bg-slate-950 rounded-md border text-sm text-slate-400">
-                                            Pick a product and temperature first
-                                        </div>
-                                    ) : options.sailings.length > 0 ? (
-                                        <Popover open={sailingOpen} onOpenChange={setSailingOpen}>
-                                            <PopoverTrigger asChild>
-                                                <Button
-                                                    variant="outline"
-                                                    role="combobox"
-                                                    aria-expanded={sailingOpen}
-                                                    className="w-full h-12 bg-white dark:bg-slate-950 font-medium justify-between"
-                                                >
-                                                    {formData.sailingScheduleId ? (
-                                                        (() => {
-                                                            const s = options.sailings.find(s => s.id === formData.sailingScheduleId)
-                                                            return s ? (
-                                                                <span className="flex items-center gap-2 truncate">
-                                                                    <Anchor className="h-3.5 w-3.5 text-brand-blue shrink-0" />
-                                                                    <span className="font-semibold">{s.vesselName}</span>
-                                                                    <span className="text-slate-500">
-                                                                        ETD {new Date(s.etd).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
-                                                                    </span>
-                                                                </span>
-                                                            ) : "Select sailing"
-                                                        })()
-                                                    ) : (
-                                                        <span className="text-muted-foreground">Select sailing</span>
-                                                    )}
-                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                                                <Command>
-                                                    <CommandInput placeholder="Search vessel name..." />
-                                                    <CommandList>
-                                                        <CommandEmpty>No sailing found.</CommandEmpty>
-                                                        <CommandGroup>
-                                                            {options.sailings.map((schedule) => (
-                                                                <CommandItem
-                                                                    key={schedule.id}
-                                                                    value={`${schedule.vesselName} ${schedule.voyageNumber} ${new Date(schedule.etd).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`}
-                                                                    onSelect={() => {
-                                                                        handleScheduleSelect(schedule.id)
-                                                                        setSailingOpen(false)
-                                                                    }}
-                                                                    className="cursor-pointer"
-                                                                >
-                                                                    <Check
-                                                                        className={cn(
-                                                                            "mr-2 h-4 w-4",
-                                                                            formData.sailingScheduleId === schedule.id ? "opacity-100" : "opacity-0"
-                                                                        )}
-                                                                    />
-                                                                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                                                                        <Anchor className="h-3.5 w-3.5 text-brand-blue shrink-0" />
-                                                                        <span className="font-semibold truncate">{schedule.vesselName}</span>
-                                                                        <span className="text-slate-500 text-xs shrink-0">
-                                                                            ETD {new Date(schedule.etd).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
-                                                                        </span>
-                                                                        <span className="text-xs text-slate-400 shrink-0">
-                                                                            {schedule.transitTime}d
-                                                                        </span>
-                                                                        {schedule.serviceType === "DIRECT" && (
-                                                                            <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded shrink-0">
-                                                                                Direct
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                </CommandItem>
-                                                            ))}
-                                                        </CommandGroup>
-                                                    </CommandList>
-                                                </Command>
-                                            </PopoverContent>
-                                        </Popover>
-                                    ) : (
-                                        <div className="flex items-center gap-2 h-12 px-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 rounded-md text-sm text-amber-700 dark:text-amber-400">
-                                            <Info className="h-4 w-4 shrink-0" />
-                                            No sailings available for this product + temperature on this route.
-                                        </div>
-                                    )}
-                                </div>
                             </div>
 
                             {/* Cargo Section */}
@@ -678,6 +587,104 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                         </div>
                                     </motion.div>
                                 )}
+                            </div>
+
+                            {/* Sailing — shown after product + temperature so we can filter sailings correctly */}
+                            <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                                <div className="flex items-center gap-2 text-brand-blue">
+                                    <Anchor className="h-4 w-4" />
+                                    <span className="text-xs font-bold uppercase tracking-wider">Sailing</span>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-semibold">Select a vessel</Label>
+                                    {loadingOptions ? (
+                                        <div className="flex items-center gap-2 h-12 px-3 bg-white dark:bg-slate-950 rounded-md border text-sm text-slate-500">
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                            Loading sailings...
+                                        </div>
+                                    ) : !formData.temperature ? (
+                                        <div className="flex items-center gap-2 h-12 px-3 bg-white dark:bg-slate-950 rounded-md border text-sm text-slate-400">
+                                            Pick a product and temperature first
+                                        </div>
+                                    ) : options.sailings.length > 0 ? (
+                                        <Popover open={sailingOpen} onOpenChange={setSailingOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    role="combobox"
+                                                    aria-expanded={sailingOpen}
+                                                    className="w-full h-12 bg-white dark:bg-slate-950 font-medium justify-between"
+                                                >
+                                                    {formData.sailingScheduleId ? (
+                                                        (() => {
+                                                            const s = options.sailings.find(s => s.id === formData.sailingScheduleId)
+                                                            return s ? (
+                                                                <span className="flex items-center gap-2 truncate">
+                                                                    <Anchor className="h-3.5 w-3.5 text-brand-blue shrink-0" />
+                                                                    <span className="font-semibold">{s.vesselName}</span>
+                                                                    <span className="text-slate-500">
+                                                                        ETD {new Date(s.etd).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                                                                    </span>
+                                                                </span>
+                                                            ) : "Select sailing"
+                                                        })()
+                                                    ) : (
+                                                        <span className="text-muted-foreground">Select sailing</span>
+                                                    )}
+                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                                                <Command>
+                                                    <CommandInput placeholder="Search vessel name..." />
+                                                    <CommandList>
+                                                        <CommandEmpty>No sailing found.</CommandEmpty>
+                                                        <CommandGroup>
+                                                            {options.sailings.map((schedule) => (
+                                                                <CommandItem
+                                                                    key={schedule.id}
+                                                                    value={`${schedule.vesselName} ${schedule.voyageNumber} ${new Date(schedule.etd).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`}
+                                                                    onSelect={() => {
+                                                                        handleScheduleSelect(schedule.id)
+                                                                        setSailingOpen(false)
+                                                                    }}
+                                                                    className="cursor-pointer"
+                                                                >
+                                                                    <Check
+                                                                        className={cn(
+                                                                            "mr-2 h-4 w-4",
+                                                                            formData.sailingScheduleId === schedule.id ? "opacity-100" : "opacity-0"
+                                                                        )}
+                                                                    />
+                                                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                                        <Anchor className="h-3.5 w-3.5 text-brand-blue shrink-0" />
+                                                                        <span className="font-semibold truncate">{schedule.vesselName}</span>
+                                                                        <span className="text-slate-500 text-xs shrink-0">
+                                                                            ETD {new Date(schedule.etd).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                                                                        </span>
+                                                                        <span className="text-xs text-slate-400 shrink-0">
+                                                                            {schedule.transitTime}d
+                                                                        </span>
+                                                                        {schedule.serviceType === "DIRECT" && (
+                                                                            <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded shrink-0">
+                                                                                Direct
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </CommandItem>
+                                                            ))}
+                                                        </CommandGroup>
+                                                    </CommandList>
+                                                </Command>
+                                            </PopoverContent>
+                                        </Popover>
+                                    ) : (
+                                        <div className="flex items-center gap-2 h-12 px-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 rounded-md text-sm text-amber-700 dark:text-amber-400">
+                                            <Info className="h-4 w-4 shrink-0" />
+                                            No sailings available for this product + temperature on this route.
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Action row: main CTA + request-a-container fallback */}
