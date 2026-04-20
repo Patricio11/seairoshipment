@@ -148,6 +148,13 @@ export interface ClientBooking {
     etd: string | null;
     eta: string | null;
     containerStatus: string;
+    containerId?: string;
+    trackingStatus?: "NONE" | "SUBSCRIBED" | "FAILED" | "UNSUBSCRIBED" | null;
+    metashipOrderNo?: string | null;
+    lastEventDescription?: string | null;
+    lastEventAt?: string | null;
+    lastPositionLat?: number | null;
+    lastPositionLng?: number | null;
     depositStatus: string | null;
     balanceStatus: string | null;
     depositAmount: string | null;

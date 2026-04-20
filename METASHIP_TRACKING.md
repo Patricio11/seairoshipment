@@ -162,18 +162,24 @@ subscribe once and receive webhook pushes for every milestone.
 - [x] Expandable event log per card (all events with mode-of-transport colouring)
 - [ ] Import holds panel — deferred; will wire if MetaShip pushes `importHolds` through the webhook payload
 
-### Phase E — Client page merge (Bookings + Shipments) ⏳ TODO
+### Phase E — Client tracking page ✅ DONE
 
-- [ ] Delete `/dashboard/shipments` route + kanban components (leave a redirect to `/dashboard/bookings` for 1 release cycle)
-- [ ] Redesign `/dashboard/bookings` as the unified page. Creative direction:
-  - **Hero strip** — "Your cargo, live" — one-line-per-active-container with vessel, ETA countdown, progress % from latest event, location. Clickable cards.
-  - **Tabs stay** (All / Pending / Confirmed / Sailing / Delivered), but each row is now **expandable**: click to reveal tracking timeline + map + documents + milestones inline (no modal jumps)
-  - **Timeline component** — horizontal on desktop, vertical on mobile. Nodes for each milestone: Booked → Confirmed → Gate-in at POL → Loaded → At Sea → Arrived POD → Delivered. Completed = solid, current = pulsing, future = faded.
-  - **Countdown to ETA** — "Arrives in 4 days, 11 hours" with a relative-time refresh
-  - **Mini map** — vessel position with the shipping route drawn between POL and POD
-  - **Document shortcuts** — reuse the already-built `AllocationDocs` component inline
-  - **Notifications toggle** — "Email me on milestone events" per-booking
-- [ ] API: `GET /api/bookings/[allocationId]/tracking` returns `{ container, events[], position, importHolds, milestones[] }`
+**Decision reversed mid-phase:** user tried the merged-into-Bookings approach, found it cluttered, asked for a dedicated tracking page instead. Bookings page reverted to its original lifecycle-list design; all tracking lives at `/dashboard/shipments`.
+
+- [x] New `/dashboard/shipments` page ([app/dashboard/shipments/page.tsx](app/dashboard/shipments/page.tsx)) — focused tracking experience:
+  - Header with Radar icon + pulsing live dot when any shipment is active
+  - Stat pills: Active / Awaiting / Delivered counts
+  - Tabbed list (Live / Awaiting / Delivered) with search
+  - Per-shipment cards that expand in-place to reveal `ClientTrackingPanel`
+  - Auto-opens first live shipment on load
+  - Live-time ETA countdown per card (d/h, turns amber inside 48 h)
+- [x] Empty states per tab — friendly guidance about where shipments come from
+- [x] Client-scoped API: `GET /api/bookings/[allocationId]/tracking` ([route.ts](app/api/bookings/[allocationId]/tracking/route.ts)) returns `{ container, events[] }` with ownership check
+- [x] Reusable `ClientTrackingPanel` ([components/tracking/client-tracking-panel.tsx](components/tracking/client-tracking-panel.tsx)) — wraps `TrackingTimeline` + `TrackingRoute` + `TrackingEventLog`
+- [x] Nav: "Bookings" + "Live Tracking" (Radar icon) as two separate entries
+- [x] Bookings page restored to its original clean lifecycle list — no tracking clutter
+- [x] Deleted `LiveCargoStrip` (merged-page artifact, no longer used)
+- [ ] Per-booking notifications toggle — deferred to Phase F
 
 ### Phase F — Email notifications ⏳ TODO
 

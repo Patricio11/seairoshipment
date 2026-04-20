@@ -3,7 +3,7 @@
 import {
     LayoutDashboard,
     PlusCircle,
-    Package,
+    Radar,
     FileText,
     CreditCard,
     Settings,
@@ -24,9 +24,9 @@ export const navItems = [
         icon: PlusCircle,
     },
     {
-        title: "My Shipments",
+        title: "Live Tracking",
         url: "/dashboard/shipments",
-        icon: Package,
+        icon: Radar,
     },
     {
         title: "Documents",

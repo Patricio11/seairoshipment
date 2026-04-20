@@ -42,7 +42,6 @@ export function LiveShipmentCard({ containerId, route, vessel, voyageNumber, sta
 
     useEffect(() => {
         let cancelled = false
-        setLoading(true)
         fetch(`/api/admin/tracking/${containerId}`)
             .then(r => r.json())
             .then(d => {
