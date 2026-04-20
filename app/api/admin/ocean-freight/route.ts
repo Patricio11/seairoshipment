@@ -85,6 +85,10 @@ export async function POST(request: NextRequest) {
             buyFreightUSD, buyBafUSD, buyIspsUSD, buyOtherSurchargesUSD, buyRcgUSD,
         } = body;
 
+        if (!salesRateTypeId) {
+            return NextResponse.json({ error: "salesRateTypeId is required (srs or scs)" }, { status: 400 });
+        }
+
         // Compute sell totals
         const freight = Number(freightUSD) || 0;
         const baf = Number(bafUSD) || 0;
@@ -109,7 +113,7 @@ export async function POST(request: NextRequest) {
             .insert(oceanFreightRates)
             .values({
                 id,
-                salesRateTypeId: salesRateTypeId || "srs",
+                salesRateTypeId,
                 origin,
                 destinationCountry,
                 destinationPort,

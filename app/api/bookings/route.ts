@@ -289,7 +289,21 @@ export async function POST(request: NextRequest) {
         const bookingRef = `SRS-${nanoid(6).toUpperCase()}`;
 
         // Generate invoices (60% deposit + 40% balance)
-        const quote = await calculateQuote(origin, destination, palletCount, body.salesRateTypeId || "srs");
+        // Rate resolver needs both the service type (SRS/SCS) and the container type
+        // so per-equipment pricing flows through end-to-end.
+        if (!container.containerTypeId) {
+            return NextResponse.json(
+                { error: "Container has no container-type assigned — admin must set one before bookings can be priced" },
+                { status: 422 }
+            );
+        }
+        const quote = await calculateQuote(
+            origin,
+            destination,
+            palletCount,
+            body.salesRateTypeId || "srs",
+            container.containerTypeId,
+        );
         const year = new Date().getFullYear();
         const routeLabel = `${quote.originName} → ${quote.destinationName}`;
 

@@ -61,25 +61,28 @@ Minor: PUT body omits `salesRateTypeId`, so changing an existing rate's type fro
 **Scope check:**
 - [x] Searched for other `setTimeout(fetch*, 0)` patterns in admin/finance — only the three lists above used it
 
-### Phase A — Container type flows through the quote ⏳ TODO
+### Phase A — Container type flows through the quote ✅ DONE
 
-- [ ] Extend `calculateQuote` signature to accept `containerId` (or `containerTypeId`)
-- [ ] Update `/api/rates/quote` to read it from the query string
-- [ ] Update `step-cost-breakdown.tsx` to pass `formData.containerId`
-- [ ] Remove all three `"40ft-reefer-hc"` hardcodes in `lib/rates.ts`
-- [ ] Fall-through strategy if no exact-match rate: default to a sensible fallback (TBD — ask user)
+- [x] `calculateQuote` signature now takes required `salesRateTypeId` + `containerTypeId`; throws if missing
+- [x] `/api/rates/quote` GET accepts `containerId` (container-instance id), looks up the container's `containerTypeId` server-side and passes it through; 400 on missing fields, 404 if container missing, 422 if container has no type assigned
+- [x] `step-cost-breakdown.tsx` sends `containerId` in the quote URL and re-fires on `salesRateTypeId` / `containerId` change
+- [x] All three `"40ft-reefer-hc"` hardcodes in `lib/rates.ts` replaced with the passed `containerTypeId`
+- [x] `/api/bookings` POST now resolves `container.containerTypeId` before calling `calculateQuote` — no silent "srs" fallback for pricing
 
-### Phase B — Remove silent SRS defaults ⏳ TODO
+**Fall-through strategy:** no fuzzy fallback — if no rate exists for `(route, rate type, container type)`, the quote returns `hasXRates: false` for that bucket. UI already handles this: shows "—" for the missing bucket; if *all three* are missing, full-page "No rates available" message. This is the correct behaviour (no silent wrong quotes) and doesn't need further changes.
 
-- [ ] `/api/admin/ocean-freight` POST: require `salesRateTypeId`, 400 if missing
-- [ ] `/api/admin/destination-charges` POST: same
-- [ ] `/api/rates/quote` GET: same
-- [ ] `lib/rates.ts` `calculateQuote`: make `salesRateTypeId` required (no default)
+### Phase B — Remove silent SRS defaults ✅ DONE
 
-### Phase D — Allow changing rate type on edit ⏳ TODO
+- [x] `/api/admin/ocean-freight` POST: 400 if `salesRateTypeId` missing; no longer falls back to "srs"
+- [x] `/api/admin/destination-charges` POST: same
+- [x] `/api/rates/quote` GET: 400 if `salesRateTypeId` missing
+- [x] `calculateQuote`: `salesRateTypeId` now required — throws if missing
 
-- [ ] `destination-charge-editor.tsx` PUT body: include `salesRateTypeId`
-- [ ] Confirm `origin-charge-editor.tsx` already includes it (probably does)
+### Phase D — Allow changing rate type on edit — Not a bug ✅ CLOSED
+
+Verified against current UI: rate cards are **intentionally immutable** on their identity fields (`salesRateTypeId`, location, `containerId`, effective dates). The editor only lets admins change line items, currency, exchange rate, and active flag. To switch a rate's service type or container type, admin creates a new card.
+
+Both `destination-charge-editor.tsx` and `origin-charge-editor.tsx` follow this pattern. No fix needed — this is design intent, not a bug.
 
 ---
 

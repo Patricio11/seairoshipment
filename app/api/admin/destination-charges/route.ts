@@ -80,12 +80,16 @@ export async function POST(request: NextRequest) {
             buyExchangeRateToZAR, effectiveFrom, effectiveTo, active, items,
         } = body;
 
+        if (!salesRateTypeId) {
+            return NextResponse.json({ error: "salesRateTypeId is required (srs or scs)" }, { status: 400 });
+        }
+
         const id = customId || `dc-${nanoid(8)}`;
         const [created] = await db
             .insert(destinationCharges)
             .values({
                 id,
-                salesRateTypeId: salesRateTypeId || "srs",
+                salesRateTypeId,
                 destinationId,
                 destinationName,
                 destinationPortCode,

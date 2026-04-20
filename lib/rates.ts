@@ -41,8 +41,15 @@ export async function calculateQuote(
     originCode: string,
     destinationCode: string,
     palletCount: number,
-    salesRateTypeId: string = "srs"
+    salesRateTypeId: string,
+    containerTypeId: string,
 ): Promise<CostBreakdownResult> {
+    if (!salesRateTypeId) {
+        throw new Error("salesRateTypeId is required");
+    }
+    if (!containerTypeId) {
+        throw new Error("containerTypeId is required");
+    }
     // Derive IDs the same way the admin forms do
     const originId = deriveShortId(originCode);       // e.g. "ZACPT" → "cpt"
 
@@ -77,7 +84,7 @@ export async function calculateQuote(
             .where(
                 and(
                     eq(originCharges.originId, originId),
-                    eq(originCharges.containerId, "40ft-reefer-hc"),
+                    eq(originCharges.containerId, containerTypeId),
                     eq(originCharges.salesRateTypeId, salesRateTypeId),
                     eq(originCharges.active, true)
                 )
@@ -118,7 +125,7 @@ export async function calculateQuote(
             .where(
                 and(
                     eq(oceanFreightRates.destinationPortCode, destinationCode),
-                    eq(oceanFreightRates.containerId, "40ft-reefer-hc"),
+                    eq(oceanFreightRates.containerId, containerTypeId),
                     eq(oceanFreightRates.salesRateTypeId, salesRateTypeId),
                     eq(oceanFreightRates.active, true)
                 )
@@ -142,7 +149,7 @@ export async function calculateQuote(
             .where(
                 and(
                     eq(destinationCharges.destinationPortCode, destinationCode),
-                    eq(destinationCharges.containerId, "40ft-reefer-hc"),
+                    eq(destinationCharges.containerId, containerTypeId),
                     eq(destinationCharges.salesRateTypeId, salesRateTypeId),
                     eq(destinationCharges.active, true)
                 )

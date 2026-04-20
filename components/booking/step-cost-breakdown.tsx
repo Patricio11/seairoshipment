@@ -30,6 +30,16 @@ export function StepCostBreakdown({ formData, updateFormData, onQuoteLoaded }: S
             setLoading(false)
             return
         }
+        if (!formData.containerId) {
+            setError("Pick a container before we can quote — rates depend on container type.")
+            setLoading(false)
+            return
+        }
+        if (!formData.salesRateTypeId) {
+            setError("Select a service type (SRS or SCS) before quoting.")
+            setLoading(false)
+            return
+        }
 
         let cancelled = false
 
@@ -41,7 +51,8 @@ export function StepCostBreakdown({ formData, updateFormData, onQuoteLoaded }: S
                     origin: formData.origin,
                     destination: formData.destination,
                     palletCount: String(formData.palletCount),
-                    salesRateTypeId: formData.salesRateTypeId || "srs",
+                    salesRateTypeId: formData.salesRateTypeId!,
+                    containerId: formData.containerId,
                 })
                 const res = await fetch(`/api/rates/quote?${params}`)
                 if (!res.ok) {
@@ -65,7 +76,7 @@ export function StepCostBreakdown({ formData, updateFormData, onQuoteLoaded }: S
         fetchQuote()
         return () => { cancelled = true }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [formData.origin, formData.destination, formData.palletCount])
+    }, [formData.origin, formData.destination, formData.palletCount, formData.salesRateTypeId, formData.containerId])
 
     if (loading) {
         return (
