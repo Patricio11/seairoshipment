@@ -277,3 +277,104 @@ export async function getMetaShipShipmentDocument(
         `/public/v2/shipments/${encodeURIComponent(systemReference)}/documents/${encodeURIComponent(String(documentId))}`
     );
 }
+
+/* -------------------------------------------------------------------------- */
+/* Tracking                                                                    */
+/* -------------------------------------------------------------------------- */
+
+export interface MetaShipTrackingEvent {
+    date: string;
+    description: string;
+    eventType: "EQUIPMENT" | "TRANSPORT" | "AIS" | string;
+    typeCode: string;
+    type: string;
+    location?: string | null;
+    facilityCode?: string | null;
+    facilityCodeProvider?: string | null;
+    lat?: number | null;
+    lng?: number | null;
+    modeOfTransport?: "TRUCK" | "VESSEL" | "RAIL" | "BARGE" | null;
+    isActual?: boolean;
+    isEmpty?: boolean;
+    vesselName?: string | null;
+    vesselIMO?: string | null;
+    voyage?: string | null;
+    registrationNo?: string | null;
+    id?: string | number | null;
+}
+
+export interface MetaShipTrackingHold {
+    holdTypeCode: string;
+    holdTypeDescription: string;
+    holdStatus: string;
+    appliedBy?: string | null;
+    appliedDateTime?: string | null;
+    releasedBy?: string | null;
+    releasedDateTime?: string | null;
+    referenceId?: string | null;
+    purpose?: string | null;
+}
+
+export interface MetaShipTrackingResponse {
+    id: string;
+    containerNo: string;
+    bookingNo?: string | null;
+    billOfLadingNo?: string | null;
+    scac?: string | null;
+    status: string;
+    position?: { type: "Point"; coordinates: [number, number] } | null;
+    positionLastUpdated?: string | null;
+    positionType?: "VESSEL" | "AIS" | "TRUCK" | null;
+    importHolds?: {
+        status: string;
+        appliedDate?: string | null;
+        releasedDate?: string | null;
+        lastObserved?: string | null;
+        holds: MetaShipTrackingHold[];
+    } | null;
+    events: MetaShipTrackingEvent[];
+}
+
+export interface MetaShipSubscribeTrackingBody {
+    containerNo?: string;
+    billOfLadingNo?: string;
+    bookingNo?: string;
+    scac?: string;
+    pol?: string;
+    pod?: string;
+    finalDestination?: string;
+    initialETD?: string;
+    initialETA?: string;
+    customerReference?: string;
+    ownerReference?: string;
+    registrationNo?: string;
+    waypoints?: Array<{ locode?: string; lat: number; lng: number; radiusMeters: number; label?: string }>;
+}
+
+export interface MetaShipSubscribeTrackingResponse {
+    message: string;
+    subscriptionId: string;
+}
+
+/**
+ * Subscribe a container for real-time tracking.
+ * MetaShip will push events to our organisation-level webhook URL.
+ * Requires scope: tracking:write
+ */
+export async function subscribeTracking(body: MetaShipSubscribeTrackingBody) {
+    return metaShipPost<MetaShipSubscribeTrackingResponse>(
+        "/public/v2/tracking/subscribe",
+        body as unknown as Record<string, unknown>,
+    );
+}
+
+/**
+ * Snapshot current tracking state for a container (position + full event log).
+ * Used for first-open seeding and the daily reconcile cron.
+ * Requires scope: tracking:read
+ */
+export async function getTracking(containerNo: string) {
+    return metaShipGet<MetaShipTrackingResponse>(
+        `/public/v2/tracking/${encodeURIComponent(containerNo)}`,
+    );
+}

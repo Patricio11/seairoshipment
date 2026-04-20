@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, doublePrecision, pgEnum } from "drizzle-orm/pg-core";
 import { containerTypes } from "./container-types";
 import { sailings } from "./sailings";
 import { productCategories } from "./product-categories";
@@ -9,6 +9,13 @@ export const containerStatusEnum = pgEnum("container_status", [
     "BOOKED",
     "SAILING",
     "DELIVERED",
+]);
+
+export const trackingSubscriptionStatusEnum = pgEnum("tracking_subscription_status", [
+    "NONE",
+    "SUBSCRIBED",
+    "FAILED",
+    "UNSUBSCRIBED",
 ]);
 
 export const containerTypeEnum = pgEnum("container_type", ["20FT", "40FT"]);
@@ -39,6 +46,16 @@ export const containers = pgTable("containers", {
     metashipOrderNo: text("metaship_order_no"),
     metashipReference: text("metaship_reference"),
     metashipOrderId: integer("metaship_order_id"),  // numeric id used for document upload
+    metashipTrackingSubscriptionId: text("metaship_tracking_subscription_id"),
+    metashipContainerNo: text("metaship_container_no"), // ISO 6346 — populated from first tracking event
+    trackingStatus: trackingSubscriptionStatusEnum("tracking_status").default("NONE").notNull(),
+    lastPositionLat: doublePrecision("last_position_lat"),
+    lastPositionLng: doublePrecision("last_position_lng"),
+    lastPositionType: text("last_position_type"), // VESSEL | AIS | TRUCK
+    lastPositionAt: timestamp("last_position_at"),
+    lastEventType: text("last_event_type"),
+    lastEventAt: timestamp("last_event_at"),
+    lastEventDescription: text("last_event_description"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

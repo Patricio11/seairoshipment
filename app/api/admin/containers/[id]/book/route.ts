@@ -3,7 +3,8 @@ import { requireAdmin } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { containers, palletAllocations, adminNotifications, locations, documents } from "@/lib/db/schema";
 import { eq, inArray } from "drizzle-orm";
-import { createMetaShipOrder, uploadMetaShipDocument, type MetaShipDocumentType } from "@/lib/metaship";
+import { createMetaShipOrder, uploadMetaShipDocument, subscribeTracking, getTracking, type MetaShipDocumentType } from "@/lib/metaship";
+import { syncTrackingEvents } from "@/lib/tracking/sync";
 import { nanoid } from "nanoid";
 
 /**
@@ -124,6 +125,75 @@ export async function POST(
             })
             .where(eq(containers.id, containerId));
 
+        // 1b. AUTO-SUBSCRIBE TO TRACKING — non-fatal: if this fails we still
+        // return order success; admin can retry via the manual subscribe endpoint.
+        let trackingResult: {
+            subscribed: boolean;
+            subscriptionId?: string;
+            containerNo?: string;
+            seededEvents?: number;
+            error?: string;
+        } = { subscribed: false };
+        try {
+            const subRes = await subscribeTracking({
+                bookingNo: systemReference,
+                pol: originCode,
+                pod: destinationCode,
+                finalDestination: destinationCode,
+                initialETD: container.etd?.toISOString(),
+                initialETA: container.eta?.toISOString(),
+                customerReference: container.id,
+                ownerReference: orderNo,
+            });
+
+            // Subscribe response includes containerNo (ISO 6346) when MetaShip has already resolved it
+            const resolvedContainerNo = (subRes as unknown as { containerNo?: string }).containerNo || null;
+
+            await db
+                .update(containers)
+                .set({
+                    metashipTrackingSubscriptionId: subRes.subscriptionId,
+                    metashipContainerNo: resolvedContainerNo,
+                    trackingStatus: "SUBSCRIBED",
+                    updatedAt: new Date(),
+                })
+                .where(eq(containers.id, containerId));
+
+            trackingResult = { subscribed: true, subscriptionId: subRes.subscriptionId, containerNo: resolvedContainerNo ?? undefined };
+
+            // Seed events immediately from GET if we have the containerNo
+            if (resolvedContainerNo) {
+                try {
+                    const snapshot = await getTracking(resolvedContainerNo);
+                    const position = snapshot.position && Array.isArray(snapshot.position.coordinates)
+                        ? {
+                            lat: snapshot.position.coordinates[1],
+                            lng: snapshot.position.coordinates[0],
+                            type: snapshot.positionType ?? null,
+                            at: snapshot.positionLastUpdated ?? null,
+                        }
+                        : null;
+                    const sync = await syncTrackingEvents({
+                        containerId,
+                        containerNo: resolvedContainerNo,
+                        events: snapshot.events ?? [],
+                        position,
+                    });
+                    trackingResult.seededEvents = sync.inserted;
+                } catch (seedErr) {
+                    console.warn("[tracking] seed snapshot failed", seedErr);
+                }
+            }
+        } catch (trackErr) {
+            const message = trackErr instanceof Error ? trackErr.message : "subscribe failed";
+            console.warn("[tracking] auto-subscribe failed", message);
+            await db
+                .update(containers)
+                .set({ trackingStatus: "FAILED", updatedAt: new Date() })
+                .where(eq(containers.id, containerId));
+            trackingResult = { subscribed: false, error: message };
+        }
+
         // 2. UPLOAD DOCUMENTS — collect documents from all confirmed allocations
         const allocIds = confirmedAllocations.map(a => a.id);
         const allDocs = allocIds.length > 0
@@ -193,6 +263,7 @@ export async function POST(
             orderId,
             orderNo,
             systemReference,
+            tracking: trackingResult,
             documents: {
                 total: allDocs.length,
                 uploaded: uploadedCount,

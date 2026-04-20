@@ -5,12 +5,9 @@ import { motion, AnimatePresence } from "framer-motion"
 import {
     Search,
     Ship,
-    MoreVertical,
     CreditCard,
     Container,
     MapPin,
-    Anchor,
-    Truck,
     PackageCheck,
     BoxSelect,
     Loader2,
@@ -46,8 +43,6 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
@@ -63,6 +58,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { documentLabel } from "@/lib/constants/document-types"
 import { AllocationDocs } from "./allocation-docs"
+import { LiveShipmentCard } from "@/components/tracking/live-shipment-card"
 
 interface ContainerAllocation {
     allocation: {
@@ -98,6 +94,8 @@ interface ContainerData {
     salesRateTypeId: string
     metashipOrderNo: string | null
     metashipReference: string | null
+    trackingStatus?: "NONE" | "SUBSCRIBED" | "FAILED" | "UNSUBSCRIBED" | null
+    metashipContainerNo?: string | null
     createdAt: string
     allocations: ContainerAllocation[]
 }
@@ -179,25 +177,6 @@ interface AdminContainerRequest {
         eta: string | null
     } | null
 }
-
-// Mock legacy data for shipments tab (will be replaced in future work)
-const MOCK_BOOKINGS = [
-    { id: "BKG-001", client: "Global Fruits", ref: "SRS-9921", vessel: "MSC Orchestra", route: "ZACPT-NLRTM", etd: "Oct 28", status: "PENDING_DEPOSIT", depositPaid: false, type: "REQUEST" },
-    { id: "BKG-002", client: "Oceanic Seafoods", ref: "SRS-9842", vessel: "Maersk Line 2", route: "ZADUR-SGSIN", etd: "Oct 30", status: "PENDING_CONFIRMATION", depositPaid: true, type: "REQUEST" },
-    { id: "SHP-2024-001", client: "Cape Citrus", ref: "SRS-9111", vessel: "COSCO Shipping", route: "ZACPT-GBLND", etd: "Nov 02", status: "AT_SEA", depositPaid: true, type: "SHIPMENT", progress: 65 },
-    { id: "SHP-2024-004", client: "Tech Imports SA", ref: "SRS-8822", vessel: "Evergreen Elite", route: "NLRTM-ZACPT", etd: "Sep 15", status: "ARRIVED", depositPaid: true, type: "SHIPMENT", progress: 100 },
-]
-
-const SHIPMENT_MILESTONES = [
-    { id: 'BOOKING_PLACED', label: 'Booked', icon: BoxSelect },
-    { id: 'DEPOSIT_PAID', label: 'Deposit', icon: CreditCard },
-    { id: 'CONTAINER_RELEASED', label: 'Released', icon: Container },
-    { id: 'GATE_IN', label: 'Gate In', icon: Truck },
-    { id: 'VESSEL_LOADED', label: 'Loaded', icon: Anchor },
-    { id: 'AT_SEA', label: 'Sailing', icon: Ship },
-    { id: 'ARRIVAL_POD', label: 'Arrived', icon: MapPin },
-    { id: 'DELIVERED', label: 'Delivered', icon: PackageCheck },
-]
 
 const STATUS_COLORS: Record<string, string> = {
     OPEN: "bg-blue-500/10 text-blue-400 border-blue-500/20",
@@ -285,6 +264,8 @@ export function AdminBookingsGrid() {
     const [approving, setApproving] = useState(false)
     const [rejecting, setRejecting] = useState(false)
     const [syncingDocs, setSyncingDocs] = useState(false)
+    const [refreshingTracking, setRefreshingTracking] = useState(false)
+    const [subscribingTracking, setSubscribingTracking] = useState(false)
     const [rejectReason, setRejectReason] = useState("")
     const [showRejectForm, setShowRejectForm] = useState(false)
 
@@ -485,8 +466,13 @@ export function AdminBookingsGrid() {
             const docSummary = data.documents
                 ? ` | ${data.documents.uploaded}/${data.documents.total} docs uploaded${data.documents.failed > 0 ? ` (${data.documents.failed} failed)` : ""}`
                 : ""
+            const trackingSummary = data.tracking?.subscribed
+                ? ` | Tracking: active${data.tracking.seededEvents ? ` (${data.tracking.seededEvents} events)` : ""}`
+                : data.tracking?.error
+                    ? ` | Tracking subscribe failed — use the Retry button`
+                    : ""
             toast.success("MetaShip Order Created!", {
-                description: `Order #${data.orderNo}${docSummary} — Log in to MetaShip to review.`,
+                description: `Order #${data.orderNo}${docSummary}${trackingSummary} — Log in to MetaShip to review.`,
                 duration: 10000,
             })
             setBookingDialog(null)
@@ -519,10 +505,47 @@ export function AdminBookingsGrid() {
         }
     }
 
-    const filteredMockData = MOCK_BOOKINGS.filter(b =>
-        (activeTab === 'requests' ? b.type === 'REQUEST' : b.type === 'SHIPMENT') &&
-        (b.client.toLowerCase().includes(searchTerm.toLowerCase()) || b.ref.includes(searchTerm))
-    )
+    const handleSubscribeTracking = async (container: ContainerData) => {
+        setSubscribingTracking(true)
+        try {
+            const res = await fetch(`/api/admin/containers/${container.id}/subscribe-tracking`, { method: "POST" })
+            const data = await res.json()
+            if (!res.ok) {
+                toast.error(data.error || "Subscribe failed")
+                return
+            }
+            toast.success("Tracking subscribed", {
+                description: `${data.containerNo ? `Container ${data.containerNo} · ` : ""}${data.seededEvents} events seeded`,
+                duration: 6000,
+            })
+            fetchContainers()
+        } catch {
+            toast.error("Subscribe failed")
+        } finally {
+            setSubscribingTracking(false)
+        }
+    }
+
+    const handleRefreshTracking = async (container: ContainerData) => {
+        setRefreshingTracking(true)
+        try {
+            const res = await fetch(`/api/admin/tracking/${container.id}/refresh`, { method: "POST" })
+            const data = await res.json()
+            if (!res.ok) {
+                toast.error(data.error || "Failed to refresh tracking")
+                return
+            }
+            toast.success(`Tracking refreshed — ${data.total} events`, {
+                description: `${data.inserted} new · ${data.skipped} already seen${data.statusChanged ? ` · status → ${data.statusChanged}` : ""}${data.holds > 0 ? ` · ${data.holds} customs hold(s)` : ""}`,
+                duration: 6000,
+            })
+            fetchContainers()
+        } catch {
+            toast.error("Failed to refresh tracking")
+        } finally {
+            setRefreshingTracking(false)
+        }
+    }
 
     const filteredContainers = containerData.filter(c => {
         const matchesSearch = (
@@ -1081,86 +1104,45 @@ export function AdminBookingsGrid() {
 
                 {/* LIVE SHIPMENTS TAB */}
                 <TabsContent value="shipments" className="mt-6 space-y-4">
-                    <AnimatePresence>
-                        {filteredMockData.map((item, i) => (
-                            <motion.div
-                                key={item.id}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: i * 0.05 }}
-                                className="bg-slate-900 border border-slate-800 rounded-xl p-6 hover:border-slate-700 transition-all"
-                            >
-                                <div className="flex flex-col lg:flex-row gap-6 justify-between items-start lg:items-center mb-6">
-                                    <div className="flex items-center gap-4">
-                                        <div className="h-12 w-12 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center border border-blue-500/20">
-                                            <Ship className="h-6 w-6" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-lg font-black text-white flex items-center gap-2">
-                                                {item.ref}
-                                                <Badge variant="outline" className="text-[10px] border-slate-700 text-slate-400">{item.status.replace('_', ' ')}</Badge>
-                                            </h3>
-                                            <p className="text-slate-500 text-sm font-medium">{item.client} • {item.vessel}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-2">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="outline" className="border-slate-700 bg-slate-950 text-slate-300 font-bold hover:text-white">
-                                                    Update Status
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent className="bg-slate-950 border-slate-800 text-white w-56">
-                                                <DropdownMenuLabel>Select Milestone</DropdownMenuLabel>
-                                                <DropdownMenuSeparator className="bg-slate-800" />
-                                                {SHIPMENT_MILESTONES.map((m) => (
-                                                    <DropdownMenuItem key={m.id} className="focus:bg-slate-900 focus:text-white cursor-pointer gap-2">
-                                                        <m.icon className="h-4 w-4 text-slate-500" />
-                                                        {m.label}
-                                                    </DropdownMenuItem>
-                                                ))}
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                        <Button size="icon" variant="ghost" className="text-slate-500 hover:text-white">
-                                            <MoreVertical className="h-4 w-4" />
-                                        </Button>
-                                    </div>
+                    {(() => {
+                        const liveContainers = filteredContainers.filter(c =>
+                            c.trackingStatus === "SUBSCRIBED" || c.trackingStatus === "FAILED"
+                        )
+                        if (loadingContainers) {
+                            return (
+                                <div className="flex items-center justify-center py-20 text-slate-500">
+                                    <Loader2 className="h-6 w-6 animate-spin mr-2" /> Loading live shipments...
                                 </div>
-
-                                {/* Live Tracker Visual */}
-                                <div className="relative pt-6 pb-2 px-2">
-                                    <div className="absolute top-1/2 left-0 right-0 h-1 bg-slate-800 -translate-y-1/2 rounded-full" />
-                                    <motion.div
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${item.progress}%` }}
-                                        transition={{ duration: 1, delay: 0.2 }}
-                                        className="absolute top-1/2 left-0 h-1 bg-blue-500 -translate-y-1/2 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                            )
+                        }
+                        if (liveContainers.length === 0) {
+                            return (
+                                <div className="text-center py-20 text-slate-500">
+                                    <Ship className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                                    <p className="font-bold">No live shipments yet</p>
+                                    <p className="text-sm mt-1">Shipments appear here once a MetaShip order is created and tracking is subscribed.</p>
+                                </div>
+                            )
+                        }
+                        return (
+                            <AnimatePresence>
+                                {liveContainers.map(container => (
+                                    <LiveShipmentCard
+                                        key={container.id}
+                                        containerId={container.id}
+                                        route={container.route}
+                                        vessel={container.vessel}
+                                        voyageNumber={container.voyageNumber}
+                                        status={container.status}
+                                        trackingStatus={container.trackingStatus}
+                                        etd={container.etd}
+                                        eta={container.eta}
+                                        metashipOrderNo={container.metashipOrderNo}
                                     />
-                                    <div className="relative flex justify-between">
-                                        {SHIPMENT_MILESTONES.filter((_, idx) => idx % 2 === 0).map((milestone, idx) => {
-                                            const isActive = idx * 22 <= (item.progress || 0)
-                                            return (
-                                                <div key={milestone.id} className="flex flex-col items-center gap-3">
-                                                    <div className={`
-                                                        h-8 w-8 rounded-full border-2 flex items-center justify-center bg-slate-950 transition-colors duration-500
-                                                        ${isActive
-                                                            ? "border-blue-500 text-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)] scale-110"
-                                                            : "border-slate-800 text-slate-700"}
-                                                    `}>
-                                                        <milestone.icon className="h-3 w-3" />
-                                                    </div>
-                                                    <span className={`text-[10px] font-bold uppercase transition-colors ${isActive ? "text-blue-400" : "text-slate-700"}`}>
-                                                        {milestone.label}
-                                                    </span>
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
+                                ))}
+                            </AnimatePresence>
+                        )
+                    })()}
                 </TabsContent>
             </Tabs>
 
@@ -1232,6 +1214,48 @@ export function AdminBookingsGrid() {
                                             {syncingDocs ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Download className="h-3.5 w-3.5 mr-1.5" />}
                                             {syncingDocs ? "Syncing…" : "Sync Documents"}
                                         </Button>
+                                    </div>
+
+                                    {/* Tracking — subscribe retry if not active, otherwise refresh */}
+                                    <div className="flex items-center justify-between pt-3 border-t border-emerald-500/20">
+                                        <div>
+                                            <p className="text-xs text-emerald-200 font-bold flex items-center gap-2">
+                                                Live Tracking
+                                                {detailDialog.trackingStatus === "SUBSCRIBED" && (
+                                                    <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[9px] uppercase">Active</Badge>
+                                                )}
+                                                {detailDialog.trackingStatus === "FAILED" && (
+                                                    <Badge className="bg-red-500/20 text-red-300 border-red-500/30 text-[9px] uppercase">Failed — retry</Badge>
+                                                )}
+                                                {(!detailDialog.trackingStatus || detailDialog.trackingStatus === "NONE") && (
+                                                    <Badge className="bg-slate-600/40 text-slate-300 border-slate-600/40 text-[9px] uppercase">Not subscribed</Badge>
+                                                )}
+                                            </p>
+                                            <p className="text-[10px] text-emerald-400/60 mt-0.5">
+                                                {detailDialog.trackingStatus === "SUBSCRIBED"
+                                                    ? "MetaShip pushes events via webhook. Refresh to pull latest state manually."
+                                                    : "Subscribe the container so MetaShip pushes tracking events."}
+                                            </p>
+                                        </div>
+                                        {detailDialog.trackingStatus === "SUBSCRIBED" ? (
+                                            <Button
+                                                onClick={() => handleRefreshTracking(detailDialog)}
+                                                disabled={refreshingTracking}
+                                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shrink-0"
+                                            >
+                                                {refreshingTracking ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Ship className="h-3.5 w-3.5 mr-1.5" />}
+                                                {refreshingTracking ? "Refreshing…" : "Refresh Tracking"}
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                onClick={() => handleSubscribeTracking(detailDialog)}
+                                                disabled={subscribingTracking}
+                                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shrink-0"
+                                            >
+                                                {subscribingTracking ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Ship className="h-3.5 w-3.5 mr-1.5" />}
+                                                {subscribingTracking ? "Subscribing…" : "Subscribe Tracking"}
+                                            </Button>
+                                        )}
                                     </div>
                                 </div>
                             )}
