@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/server";
 import { db } from "@/lib/db";
-import { containers, palletAllocations, adminNotifications, locations, documents } from "@/lib/db/schema";
+import { containers, palletAllocations, adminNotifications, locations, documents, products } from "@/lib/db/schema";
 import { eq, inArray } from "drizzle-orm";
 import { createMetaShipOrder, uploadMetaShipDocument, subscribeTracking, getTracking, type MetaShipDocumentType } from "@/lib/metaship";
 import { syncTrackingEvents } from "@/lib/tracking/sync";
@@ -78,9 +78,35 @@ export async function POST(
         const originCountry = originCode.slice(0, 2);
         const destinationCountry = destinationCode.slice(0, 2);
 
-        // Map each confirmed allocation to a product entry
-        const products = confirmedAllocations.map((alloc) => ({
-            productId: alloc.productId ? parseInt(alloc.productId, 10) : 0,
+        // Resolve each allocation's internal productId (e.g. "prd-161") to MetaShip's
+        // numeric id (161). MetaShip's /public/v2/order rejects missing/null productIds
+        // with "invalid type: Option value, expected a number".
+        const allocProductIds = Array.from(
+            new Set(confirmedAllocations.map(a => a.productId).filter(Boolean) as string[]),
+        );
+        const productRows = allocProductIds.length > 0
+            ? await db.select({ id: products.id, metashipId: products.metashipId })
+                .from(products)
+                .where(inArray(products.id, allocProductIds))
+            : [];
+        const metashipIdByInternalId = new Map(productRows.map(p => [p.id, p.metashipId]));
+
+        const missingProductAllocs = confirmedAllocations.filter(
+            a => !a.productId || !metashipIdByInternalId.has(a.productId),
+        );
+        if (missingProductAllocs.length > 0) {
+            return NextResponse.json(
+                {
+                    error: `Cannot create MetaShip order — ${missingProductAllocs.length} allocation(s) have no matching MetaShip product. Ensure every confirmed allocation has a synced product assigned.`,
+                    allocationIds: missingProductAllocs.map(a => a.id),
+                },
+                { status: 400 },
+            );
+        }
+
+        // Map each confirmed allocation to a product entry (productId is the MetaShip numeric id)
+        const productEntries = confirmedAllocations.map((alloc) => ({
+            productId: metashipIdByInternalId.get(alloc.productId!)!,
             nettWeight: alloc.nettWeight ? parseFloat(alloc.nettWeight) : 0,
             grossWeight: alloc.grossWeight ? parseFloat(alloc.grossWeight) : 0,
             pallets: alloc.palletCount,
@@ -106,7 +132,7 @@ export async function POST(
             containers: [
                 {
                     containerTypeCode,
-                    products,
+                    products: productEntries,
                 },
             ],
         });
