@@ -123,11 +123,14 @@ export interface MetaShipBookingPayload {
         sealNo?: string;
         products: Array<{
             productId: number;
-            nettWeight: number;
-            grossWeight: number;
+            // Weights + unit counts are nullable per the spec — send null when the
+            // allocation doesn't carry the value rather than 0 (which MetaShip stores
+            // as a literal zero and surfaces as a "Fix Discrepancies" item).
+            nettWeight: number | null;
+            grossWeight: number | null;
             pallets: number;
-            quantity: number;
-            volume?: number;
+            quantity: number | null;
+            volume?: number | null;
             batchNumber?: string;
             industrial?: boolean;
             organic?: boolean;
@@ -159,7 +162,24 @@ export async function createMetaShipBooking(payload: MetaShipBookingPayload) {
  * Endpoint: POST /public/v2/order
  */
 export async function createMetaShipOrder(payload: MetaShipBookingPayload) {
-    return metaShipPost<MetaShipOrderResponse>("/public/v2/order", buildBookingBody(payload));
+    const body = buildBookingBody(payload);
+    console.log("[metaship] order create — outgoing payload:", JSON.stringify({
+        endpoint: "/public/v2/order",
+        containers: body.containers,
+        route: `${body.portOfLoadValue} → ${body.portOfDischargeValue}`,
+        voyageNumber: body.voyageNumber,
+        etd: body.etd,
+        eta: body.eta,
+    }, null, 2));
+    const result = await metaShipPost<MetaShipOrderResponse>("/public/v2/order", body);
+    console.log("[metaship] order endpoint response:", {
+        endpoint: "/public/v2/order",
+        message: result.message,
+        orderId: result.data?.id,
+        orderNo: result.data?.orderNo,
+        systemReference: result.data?.systemReference,
+    });
+    return result;
 }
 
 function buildBookingBody(payload: MetaShipBookingPayload) {

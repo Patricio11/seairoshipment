@@ -266,6 +266,7 @@ export function AdminBookingsGrid() {
     const [syncingDocs, setSyncingDocs] = useState(false)
     const [refreshingTracking, setRefreshingTracking] = useState(false)
     const [subscribingTracking, setSubscribingTracking] = useState(false)
+    const [uploadingDocsToMs, setUploadingDocsToMs] = useState(false)
     const [rejectReason, setRejectReason] = useState("")
     const [showRejectForm, setShowRejectForm] = useState(false)
 
@@ -502,6 +503,36 @@ export function AdminBookingsGrid() {
             toast.error("Failed to sync documents")
         } finally {
             setSyncingDocs(false)
+        }
+    }
+
+    const handleUploadDocsToMetaShip = async (container: ContainerData) => {
+        setUploadingDocsToMs(true)
+        try {
+            const res = await fetch(`/api/admin/containers/${container.id}/upload-documents`, { method: "POST" })
+            const data = await res.json()
+            if (!res.ok) {
+                toast.error(data.error || "Failed to upload documents to MetaShip")
+                return
+            }
+            if (data.total === 0) {
+                toast("No client-uploaded documents found", {
+                    description: "Confirm allocations have documents attached, then try again.",
+                    duration: 6000,
+                })
+                return
+            }
+            const failedDetail = data.failed > 0
+                ? ` · ${data.failed} failed (check server logs)`
+                : ""
+            toast.success(`Uploaded ${data.uploaded}/${data.total} document(s)`, {
+                description: `Pushed to MetaShip order #${data.orderNo}${failedDetail}`,
+                duration: 8000,
+            })
+        } catch {
+            toast.error("Failed to upload documents to MetaShip")
+        } finally {
+            setUploadingDocsToMs(false)
         }
     }
 
@@ -1196,6 +1227,24 @@ export function AdminBookingsGrid() {
                                                 </button>
                                             )}
                                         </div>
+                                    </div>
+
+                                    {/* Push client-uploaded docs to the existing MetaShip order */}
+                                    <div className="flex items-center justify-between pt-3 border-t border-emerald-500/20">
+                                        <div>
+                                            <p className="text-xs text-emerald-200 font-bold">Re-upload Documents to MetaShip</p>
+                                            <p className="text-[10px] text-emerald-400/60 mt-0.5">
+                                                Push every client-uploaded document on confirmed allocations to this order. Safe to retry.
+                                            </p>
+                                        </div>
+                                        <Button
+                                            onClick={() => handleUploadDocsToMetaShip(detailDialog)}
+                                            disabled={uploadingDocsToMs}
+                                            className="bg-amber-600 hover:bg-amber-700 text-white font-bold shrink-0"
+                                        >
+                                            {uploadingDocsToMs ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <FileText className="h-3.5 w-3.5 mr-1.5" />}
+                                            {uploadingDocsToMs ? "Uploading…" : "Upload Docs"}
+                                        </Button>
                                     </div>
 
                                     {/* Sync Documents from MetaShip */}
