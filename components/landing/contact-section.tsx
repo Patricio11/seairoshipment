@@ -18,7 +18,7 @@ export function ContactSection() {
         {
             icon: MapPin,
             title: 'Global HQ',
-            details: ['V&A Waterfront, Cape Town', 'South Africa, 8001'],
+            details: ['Cape Town', 'South Africa, 8001'],
             color: 'text-brand-blue',
             bg: 'bg-brand-blue/10'
         },
@@ -32,7 +32,7 @@ export function ContactSection() {
         {
             icon: Phone,
             title: 'Call Us',
-            details: ['+27 (0) 21 555 0123', '24/7 Ops: +27 (0) 82 555 0199'],
+            details: ['24/7: +27 (0) 72 261 7325'],
             color: 'text-brand-blue',
             bg: 'bg-brand-blue/10'
         }

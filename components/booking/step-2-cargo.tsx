@@ -302,6 +302,28 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
         })
     }
 
+    const handleRateTypeSelect = (rateTypeId: string) => {
+        // SCS = Shared Container Service = dry container; temperature is fixed (no reefer regime).
+        // SRS = Shared Reefer Services; client must pick frozen / chilled / ambient.
+        const isDry = rateTypeId === "scs"
+        updateFormData({
+            salesRateTypeId: rateTypeId,
+            // For dry containers we lock temperature to "ambient" (the closest enum to "dry"),
+            // so downstream filters still match without forcing the user to pick.
+            temperature: isDry ? "ambient" : "",
+            // Cascading clears — rate-type change can flip which products/sailings are available
+            commodity: "",
+            commodityName: "",
+            hsCode: "",
+            categoryId: undefined,
+            categoryName: undefined,
+            sailingScheduleId: undefined,
+            sailingDate: undefined,
+            voyageNumber: undefined,
+            vesselName: undefined,
+        })
+    }
+
     const getStatusColor = () => {
         if (count === 0) return "text-slate-500"
         if (count < 5) return "text-amber-500"
@@ -373,7 +395,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                             <button
                                                 key={type.id}
                                                 type="button"
-                                                onClick={() => updateFormData({ salesRateTypeId: type.id })}
+                                                onClick={() => handleRateTypeSelect(type.id)}
                                                 className={`relative flex flex-col items-start gap-1 p-4 rounded-2xl border-2 transition-all text-left cursor-pointer
                                                     ${selected
                                                         ? `${type.bg} ${type.border} ring-2 ${type.ring} ring-offset-1`
@@ -528,7 +550,15 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                     </div>
                                     <div className="space-y-2">
                                         <Label className="text-xs font-semibold">Temperature</Label>
-                                        {!formData.commodity ? (
+                                        {formData.salesRateTypeId === "scs" ? (
+                                            // Dry containers don't have a temperature regime — lock the field so clients
+                                            // can't pick a reefer setting on a non-reefer container.
+                                            <div className="flex items-center gap-2 h-12 px-3 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-md text-sm text-slate-600 dark:text-slate-300 font-medium cursor-not-allowed">
+                                                <Sun className="h-3.5 w-3.5 text-slate-500" />
+                                                Dry
+                                                <span className="ml-auto text-[10px] uppercase tracking-wider text-slate-400">Locked · SCS</span>
+                                            </div>
+                                        ) : !formData.commodity ? (
                                             <div className="flex items-center gap-2 h-12 px-3 bg-white dark:bg-slate-950 rounded-md border text-sm text-slate-400">
                                                 Pick a product first
                                             </div>
