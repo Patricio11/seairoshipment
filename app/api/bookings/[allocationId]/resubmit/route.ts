@@ -96,6 +96,26 @@ export async function PUT(
         if (body.temperature !== undefined) updates.temperature = body.temperature;
         if (body.consigneeName !== undefined) updates.consigneeName = body.consigneeName;
         if (body.consigneeAddress !== undefined) updates.consigneeAddress = body.consigneeAddress;
+        if (Array.isArray(body.collectionAddresses)) {
+            const cleaned = body.collectionAddresses
+                .map((a: unknown) => {
+                    if (!a || typeof a !== "object") return null;
+                    const row = a as { label?: unknown; address?: unknown };
+                    const address = typeof row.address === "string" ? row.address.trim() : "";
+                    if (!address) return null;
+                    const label = typeof row.label === "string" && row.label.trim() ? row.label.trim() : undefined;
+                    return label ? { label, address } : { address };
+                })
+                .filter((a: unknown): a is { label?: string; address: string } => a !== null)
+                .slice(0, 5);
+            if (cleaned.length === 0) {
+                return NextResponse.json(
+                    { error: "At least one collection / loading address is required" },
+                    { status: 400 }
+                );
+            }
+            updates.collectionAddresses = cleaned;
+        }
 
         await db
             .update(palletAllocations)

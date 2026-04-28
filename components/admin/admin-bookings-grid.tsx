@@ -70,6 +70,8 @@ interface ContainerAllocation {
         grossWeight: string | null
         temperature: string | null
         consigneeName: string | null
+        consigneeAddress?: string | null
+        collectionAddresses?: Array<{ label?: string; address: string }> | null
         salesRateTypeId: string | null
         status: string
     }
@@ -112,6 +114,7 @@ interface PendingRequest {
         temperature: string | null
         consigneeName: string | null
         consigneeAddress: string | null
+        collectionAddresses?: Array<{ label?: string; address: string }> | null
         salesRateTypeId: string | null
         status: string
         rejectionReason?: string | null
@@ -1663,6 +1666,36 @@ export function AdminBookingsGrid() {
                                     </div>
                                 </div>
 
+                                {/* Collection / Loading Addresses */}
+                                {clientDialog.alloc.allocation.collectionAddresses && clientDialog.alloc.allocation.collectionAddresses.length > 0 && (
+                                    <div className="rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-800">
+                                            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                                <MapPin className="h-3 w-3 text-brand-blue" />
+                                                Collection / Loading
+                                            </span>
+                                            <span className="text-[10px] font-mono text-slate-500">
+                                                {clientDialog.alloc.allocation.collectionAddresses.length} {clientDialog.alloc.allocation.collectionAddresses.length === 1 ? "point" : "points"}
+                                            </span>
+                                        </div>
+                                        <div className="divide-y divide-slate-800">
+                                            {clientDialog.alloc.allocation.collectionAddresses.map((row, i) => (
+                                                <div key={i} className="px-4 py-2.5 flex items-start gap-3">
+                                                    <span className="shrink-0 h-5 w-5 rounded bg-slate-800 text-slate-500 font-mono text-[10px] flex items-center justify-center mt-0.5">
+                                                        {i + 1}
+                                                    </span>
+                                                    <div className="min-w-0 flex-1">
+                                                        {row.label && (
+                                                            <p className="text-[10px] font-bold uppercase tracking-wider text-brand-blue mb-0.5">{row.label}</p>
+                                                        )}
+                                                        <p className="text-xs text-slate-300 break-words">{row.address}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Documents (grouped by source) */}
                                 <AllocationDocs
                                     docs={clientDialog.docs}
@@ -1734,6 +1767,26 @@ export function AdminBookingsGrid() {
                                             <p className="text-xs text-slate-400 mt-0.5">{reviewRequest.allocation.consigneeAddress}</p>
                                         )}
                                     </div>
+
+                                    {reviewRequest.allocation.collectionAddresses && reviewRequest.allocation.collectionAddresses.length > 0 && (
+                                        <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/50 col-span-2">
+                                            <p className="text-[10px] font-bold uppercase text-slate-500 flex items-center gap-1.5">
+                                                <MapPin className="h-3 w-3 text-brand-blue" />
+                                                Collection / Loading ({reviewRequest.allocation.collectionAddresses.length})
+                                            </p>
+                                            <div className="mt-2 space-y-1.5">
+                                                {reviewRequest.allocation.collectionAddresses.map((row, i) => (
+                                                    <div key={i} className="flex items-start gap-2 text-xs">
+                                                        <span className="shrink-0 h-4 w-4 rounded bg-slate-800 text-slate-500 font-mono text-[9px] flex items-center justify-center mt-0.5">{i + 1}</span>
+                                                        <div className="min-w-0 flex-1">
+                                                            {row.label && <span className="text-brand-blue font-bold uppercase tracking-wider text-[9px] mr-1.5">{row.label}</span>}
+                                                            <span className="text-slate-300">{row.address}</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Container info */}

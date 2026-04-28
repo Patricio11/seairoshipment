@@ -19,7 +19,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { AlertCircle, FileText, Loader2, RotateCcw, UploadCloud, X } from "lucide-react"
+import { AlertCircle, FileText, Loader2, RotateCcw, UploadCloud, X, MapPin, Plus } from "lucide-react"
 import { toast } from "sonner"
 import { uploadFile, STORAGE_PATHS } from "@/lib/supabase"
 import { useAuth } from "@/lib/auth/client"
@@ -50,6 +50,7 @@ export function ResubmitBookingDialog({ booking, open, onClose, onSuccess }: Res
     const [grossWeight, setGrossWeight] = useState("")
     const [consigneeName, setConsigneeName] = useState("")
     const [consigneeAddress, setConsigneeAddress] = useState("")
+    const [collectionAddresses, setCollectionAddresses] = useState<Array<{ label?: string; address: string }>>([{ address: "" }])
 
     const [existingDocs, setExistingDocs] = useState<ExistingDoc[]>([])
     const [newFiles, setNewFiles] = useState<File[]>([])
@@ -64,6 +65,11 @@ export function ResubmitBookingDialog({ booking, open, onClose, onSuccess }: Res
         setTemperature(booking.temperature || "")
         setConsigneeName(booking.consigneeName || "")
         setConsigneeAddress(booking.consigneeAddress || "")
+        setCollectionAddresses(
+            booking.collectionAddresses && booking.collectionAddresses.length > 0
+                ? booking.collectionAddresses
+                : [{ address: "" }],
+        )
         setNewFiles([])
 
         const fetchDocs = async () => {
@@ -109,7 +115,26 @@ export function ResubmitBookingDialog({ booking, open, onClose, onSuccess }: Res
         setNewFiles(prev => prev.filter((_, i) => i !== index))
     }
 
+    const MAX_COLLECTION_ADDRESSES = 5
+
+    const updateCollectionAddress = (index: number, patch: Partial<{ label: string; address: string }>) => {
+        setCollectionAddresses(prev => prev.map((row, i) => (i === index ? { ...row, ...patch } : row)))
+    }
+    const addCollectionAddress = () => {
+        setCollectionAddresses(prev => prev.length >= MAX_COLLECTION_ADDRESSES ? prev : [...prev, { address: "" }])
+    }
+    const removeCollectionAddress = (index: number) => {
+        setCollectionAddresses(prev => prev.length <= 1 ? prev : prev.filter((_, i) => i !== index))
+    }
+
     const handleSubmit = async () => {
+        const cleanCollectionAddresses = collectionAddresses
+            .map(a => ({ label: a.label?.trim() || undefined, address: a.address.trim() }))
+            .filter(a => a.address.length > 0)
+        if (cleanCollectionAddresses.length === 0) {
+            toast.error("Add at least one collection / loading address.")
+            return
+        }
         setSubmitting(true)
         try {
             // 1. Update allocation fields + status
@@ -124,6 +149,7 @@ export function ResubmitBookingDialog({ booking, open, onClose, onSuccess }: Res
                     grossWeight: grossWeight ? parseFloat(grossWeight) : null,
                     consigneeName,
                     consigneeAddress,
+                    collectionAddresses: cleanCollectionAddresses,
                 }),
             })
             if (!res.ok) {
@@ -267,6 +293,66 @@ export function ResubmitBookingDialog({ booking, open, onClose, onSuccess }: Res
                                 onChange={(e) => setConsigneeAddress(e.target.value)}
                                 placeholder="Delivery address"
                             />
+                        </div>
+
+                        {/* Collection / Loading addresses */}
+                        <div className="col-span-2 space-y-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 p-3">
+                            <div className="flex items-start justify-between gap-3">
+                                <div>
+                                    <Label className="text-xs font-bold flex items-center gap-1.5">
+                                        <MapPin className="h-3 w-3 text-brand-blue" />
+                                        Collection / Loading Address <span className="text-red-500">*</span>
+                                    </Label>
+                                    <p className="text-[10px] text-slate-500 mt-0.5">Up to {MAX_COLLECTION_ADDRESSES} pickup points.</p>
+                                </div>
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 shrink-0">
+                                    {collectionAddresses.length}/{MAX_COLLECTION_ADDRESSES}
+                                </span>
+                            </div>
+                            <div className="space-y-1.5">
+                                {collectionAddresses.map((row, i) => (
+                                    <div
+                                        key={i}
+                                        className="flex items-stretch gap-1.5 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-1.5"
+                                    >
+                                        <span className="shrink-0 self-center px-1.5 text-slate-400 font-mono text-[11px]">{i + 1}</span>
+                                        <div className="flex-1 grid grid-cols-1 sm:grid-cols-[110px_1fr] gap-1.5">
+                                            <Input
+                                                placeholder="Label (optional)"
+                                                value={row.label || ""}
+                                                onChange={(e) => updateCollectionAddress(i, { label: e.target.value })}
+                                                className="h-9 text-xs"
+                                            />
+                                            <Input
+                                                placeholder={i === 0 ? "Full pickup address" : "Another pickup address"}
+                                                value={row.address}
+                                                onChange={(e) => updateCollectionAddress(i, { address: e.target.value })}
+                                                className="h-9 text-xs"
+                                            />
+                                        </div>
+                                        {collectionAddresses.length > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => removeCollectionAddress(i)}
+                                                aria-label="Remove address"
+                                                className="shrink-0 self-stretch px-1.5 rounded-md text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors flex items-center justify-center"
+                                            >
+                                                <X className="h-3.5 w-3.5" />
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                            {collectionAddresses.length < MAX_COLLECTION_ADDRESSES && (
+                                <button
+                                    type="button"
+                                    onClick={addCollectionAddress}
+                                    className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-[11px] font-bold text-slate-500 hover:text-brand-blue hover:border-brand-blue transition-colors"
+                                >
+                                    <Plus className="h-3 w-3" />
+                                    Add another collection address
+                                </button>
+                            )}
                         </div>
                     </div>
 

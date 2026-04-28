@@ -141,6 +141,7 @@ export interface ClientBooking {
     temperature: string | null;
     consigneeName: string | null;
     consigneeAddress: string | null;
+    collectionAddresses?: Array<{ label?: string; address: string }>;
     vessel: string;
     voyageNumber: string | null;
     route: string;

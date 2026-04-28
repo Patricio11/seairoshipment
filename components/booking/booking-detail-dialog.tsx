@@ -209,6 +209,41 @@ export function BookingDetailDialog({ booking, open, onOpenChange }: BookingDeta
                         </div>
                     )}
 
+                    {/* Collection / Loading Addresses */}
+                    {booking.collectionAddresses && booking.collectionAddresses.length > 0 && (
+                        <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400">
+                                    <MapPin className="h-3.5 w-3.5" />
+                                    Collection / Loading
+                                </div>
+                                <span className="text-[10px] font-mono text-slate-400">
+                                    {booking.collectionAddresses.length} {booking.collectionAddresses.length === 1 ? "point" : "points"}
+                                </span>
+                            </div>
+                            <div className="space-y-2">
+                                {booking.collectionAddresses.map((row, i) => (
+                                    <div
+                                        key={i}
+                                        className="flex items-start gap-3 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2.5"
+                                    >
+                                        <span className="shrink-0 h-6 w-6 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 font-mono text-[11px] flex items-center justify-center">
+                                            {i + 1}
+                                        </span>
+                                        <div className="min-w-0 flex-1">
+                                            {row.label && (
+                                                <p className="text-[10px] font-bold uppercase tracking-wider text-brand-blue mb-0.5">
+                                                    {row.label}
+                                                </p>
+                                            )}
+                                            <p className="text-xs text-slate-700 dark:text-slate-300 break-words">{row.address}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     <Separator />
 
                     {/* Payment Status */}

@@ -82,6 +82,7 @@ export async function GET() {
                 temperature: allocation.temperature,
                 consigneeName: allocation.consigneeName,
                 consigneeAddress: allocation.consigneeAddress,
+                collectionAddresses: allocation.collectionAddresses ?? [],
                 vessel: container.vessel,
                 voyageNumber: container.voyageNumber,
                 route: container.route,
