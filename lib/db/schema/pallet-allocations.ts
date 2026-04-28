@@ -1,6 +1,11 @@
-import { pgTable, text, timestamp, integer, numeric, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, numeric, jsonb, pgEnum } from "drizzle-orm/pg-core";
 import { containers } from "./containers";
 import { user } from "./users";
+
+export interface CollectionAddress {
+    label?: string;
+    address: string;
+}
 
 export const allocationStatusEnum = pgEnum("allocation_status", [
     "PENDING",
@@ -21,6 +26,7 @@ export const palletAllocations = pgTable("pallet_allocations", {
     temperature: text("temperature"),
     consigneeName: text("consignee_name"),
     consigneeAddress: text("consignee_address"),
+    collectionAddresses: jsonb("collection_addresses").$type<CollectionAddress[]>(),
     salesRateTypeId: text("sales_rate_type_id").default("srs"),
     status: allocationStatusEnum("status").default("PENDING").notNull(),
     rejectionReason: text("rejection_reason"),

@@ -141,10 +141,32 @@ export async function POST(request: NextRequest) {
             temperature,
             consigneeName,
             consigneeAddress,
+            collectionAddresses,
             containerId: requestedContainerId,
             poNumber,
             salesRateTypeId,
         } = body;
+
+        // Sanitise collection addresses — at least 1 required, max 5, drop empties
+        const cleanCollectionAddresses: Array<{ label?: string; address: string }> = Array.isArray(collectionAddresses)
+            ? collectionAddresses
+                .map((a: unknown) => {
+                    if (!a || typeof a !== "object") return null;
+                    const row = a as { label?: unknown; address?: unknown };
+                    const address = typeof row.address === "string" ? row.address.trim() : "";
+                    if (!address) return null;
+                    const label = typeof row.label === "string" && row.label.trim() ? row.label.trim() : undefined;
+                    return label ? { label, address } : { address };
+                })
+                .filter((a): a is { label?: string; address: string } => a !== null)
+                .slice(0, 5)
+            : [];
+        if (cleanCollectionAddresses.length === 0) {
+            return NextResponse.json(
+                { error: "At least one collection / loading address is required" },
+                { status: 400 }
+            );
+        }
 
         if (!origin || !destination || !palletCount || palletCount < 1) {
             return NextResponse.json(
@@ -268,6 +290,7 @@ export async function POST(request: NextRequest) {
             temperature: temperature || null,
             consigneeName: consigneeName || null,
             consigneeAddress: consigneeAddress || null,
+            collectionAddresses: cleanCollectionAddresses,
             salesRateTypeId: salesRateTypeId || "srs",
             status: "PENDING",
         });

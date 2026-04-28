@@ -75,6 +75,7 @@ export interface BookingFormData {
     temperature: string;
     consigneeName: string;
     consigneeAddress: string;
+    collectionAddresses: Array<{ label?: string; address: string }>;
     hasDocs: boolean;
     containerId: string;
     vessel: string;

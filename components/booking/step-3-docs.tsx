@@ -107,6 +107,25 @@ export function Step3Docs({ formData, updateFormData }: Step3Props) {
     const uploadedRequired = requiredDocuments.filter(code => fileForCode(code)).length
     const otherFiles = files.filter(f => !requiredDocuments.includes(f.documentCode))
 
+    // Collection/Loading addresses — at least 1, max 5
+    const MAX_COLLECTION_ADDRESSES = 5
+    const collectionAddresses = formData.collectionAddresses && formData.collectionAddresses.length > 0
+        ? formData.collectionAddresses
+        : [{ address: "" }]
+
+    const updateCollectionAddress = (index: number, patch: Partial<{ label: string; address: string }>) => {
+        const next = collectionAddresses.map((row, i) => (i === index ? { ...row, ...patch } : row))
+        updateFormData({ collectionAddresses: next })
+    }
+    const addCollectionAddress = () => {
+        if (collectionAddresses.length >= MAX_COLLECTION_ADDRESSES) return
+        updateFormData({ collectionAddresses: [...collectionAddresses, { address: "" }] })
+    }
+    const removeCollectionAddress = (index: number) => {
+        if (collectionAddresses.length <= 1) return
+        updateFormData({ collectionAddresses: collectionAddresses.filter((_, i) => i !== index) })
+    }
+
     return (
         <motion.div
             initial={{ opacity: 0, x: 20 }}
@@ -139,6 +158,71 @@ export function Step3Docs({ formData, updateFormData }: Step3Props) {
                         className="bg-white dark:bg-slate-950"
                     />
                 </div>
+            </div>
+
+            {/* Collection / Loading addresses */}
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 p-4 sm:p-5 space-y-3 text-left">
+                <div className="flex items-start justify-between gap-3">
+                    <div>
+                        <Label className="text-sm font-bold text-slate-900 dark:text-white">
+                            Collection / Loading Address <span className="text-red-500">*</span>
+                        </Label>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                            Where we collect your cargo. Add up to {MAX_COLLECTION_ADDRESSES} pickup points.
+                        </p>
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 shrink-0">
+                        {collectionAddresses.length}/{MAX_COLLECTION_ADDRESSES}
+                    </span>
+                </div>
+
+                <div className="space-y-2">
+                    {collectionAddresses.map((row, i) => (
+                        <div
+                            key={i}
+                            className="flex items-stretch gap-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2"
+                        >
+                            <div className="flex flex-col items-center justify-center px-2 text-slate-400 font-mono text-xs">
+                                {i + 1}
+                            </div>
+                            <div className="flex-1 grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-2">
+                                <Input
+                                    placeholder="Label (optional)"
+                                    value={row.label || ""}
+                                    onChange={(e) => updateCollectionAddress(i, { label: e.target.value })}
+                                    className="h-10 text-sm border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50"
+                                />
+                                <Input
+                                    placeholder={i === 0 ? "Full address — e.g. 12 Main Rd, Cape Town" : "Another pickup address"}
+                                    value={row.address}
+                                    onChange={(e) => updateCollectionAddress(i, { address: e.target.value })}
+                                    className="h-10 text-sm"
+                                />
+                            </div>
+                            {collectionAddresses.length > 1 && (
+                                <button
+                                    type="button"
+                                    onClick={() => removeCollectionAddress(i)}
+                                    aria-label="Remove address"
+                                    className="shrink-0 self-stretch px-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors flex items-center justify-center"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                            )}
+                        </div>
+                    ))}
+                </div>
+
+                {collectionAddresses.length < MAX_COLLECTION_ADDRESSES && (
+                    <button
+                        type="button"
+                        onClick={addCollectionAddress}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-500 hover:text-brand-blue hover:border-brand-blue hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors"
+                    >
+                        <Plus className="h-3.5 w-3.5" />
+                        Add another collection address
+                    </button>
+                )}
             </div>
 
             <div className="border-t border-slate-100 dark:border-slate-800 my-4" />

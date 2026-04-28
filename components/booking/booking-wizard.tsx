@@ -50,6 +50,7 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
         temperature: "",
         consigneeName: "",
         consigneeAddress: "",
+        collectionAddresses: [{ address: "" }],
         hasDocs: false,
         containerId: "",
         vessel: "",
@@ -79,6 +80,13 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
             toast.error("Consignee Name is required.")
             return
         }
+        const cleanCollectionAddresses = (formData.collectionAddresses || [])
+            .map(a => ({ label: a.label?.trim() || undefined, address: a.address.trim() }))
+            .filter(a => a.address.length > 0)
+        if (cleanCollectionAddresses.length === 0) {
+            toast.error("Add at least one collection / loading address.")
+            return
+        }
         if (!formData.agreeToTerms) {
             toast.error("Please agree to the Terms & Conditions to continue.")
             return
@@ -105,6 +113,7 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
                     temperature: formData.temperature,
                     consigneeName: formData.consigneeName,
                     consigneeAddress: formData.consigneeAddress,
+                    collectionAddresses: cleanCollectionAddresses,
                     containerId: formData.containerId,
                     poNumber: formData.poNumber || null,
                     salesRateTypeId: formData.salesRateTypeId || "srs",
