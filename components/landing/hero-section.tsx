@@ -15,7 +15,6 @@ export function IndustryHero() {
     })
 
     const y = useTransform(scrollYProgress, [0, 1], [0, 200])
-    const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0])
 
     const stats = [
         { icon: Ship, value: '-18°C', label: 'Temperature Controlled', iconBg: 'bg-brand-blue', textColor: 'text-brand-blue' },
@@ -44,7 +43,7 @@ export function IndustryHero() {
 
                 {/* Content Overlay */}
                 <motion.div
-                    style={{ y, opacity }}
+                    style={{ y }}
                     className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center"
                 >
                     <motion.div
@@ -123,9 +122,6 @@ export function IndustryHero() {
                         </div>
                     </motion.div>
                 </motion.div>
-
-                {/* Bottom Gradient */}
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white to-transparent" />
             </section>
 
             {/* Auth Panel */}
