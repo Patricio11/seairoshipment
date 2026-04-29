@@ -1,20 +1,13 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { Ship, Thermometer, MapPin, ArrowRight } from 'lucide-react'
 import { AuthPanel } from '../auth-panel'
 
 export function IndustryHero() {
     const [hoveredStat, setHoveredStat] = useState<number | null>(null)
     const [isAuthOpen, setIsAuthOpen] = useState(false)
-    const ref = useRef<HTMLDivElement>(null)
-    const { scrollYProgress } = useScroll({
-        target: ref,
-        offset: ['start start', 'end start']
-    })
-
-    const y = useTransform(scrollYProgress, [0, 1], [0, 200])
 
     const stats = [
         { icon: Ship, value: '-18°C', label: 'Temperature Controlled', iconBg: 'bg-brand-blue', textColor: 'text-brand-blue' },
@@ -24,7 +17,7 @@ export function IndustryHero() {
 
     return (
         <>
-            <section ref={ref} className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 pt-20">
+            <section className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 pt-20 pb-20">
                 {/* Video Background */}
                 <div className="absolute inset-0">
                     <video
@@ -42,10 +35,7 @@ export function IndustryHero() {
                 </div>
 
                 {/* Content Overlay */}
-                <motion.div
-                    style={{ y }}
-                    className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center"
-                >
+                <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 py-16 text-center">
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -121,7 +111,7 @@ export function IndustryHero() {
                             ))}
                         </div>
                     </motion.div>
-                </motion.div>
+                </div>
             </section>
 
             {/* Auth Panel */}

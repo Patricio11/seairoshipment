@@ -34,9 +34,9 @@ const footerLinks = {
 
 const socialLinks = [
     { icon: Facebook, href: '#', label: 'Facebook' },
-    { icon: Twitter, href: '#', label: 'Twitter' },
+    // { icon: Twitter, href: '#', label: 'Twitter' },
     { icon: Linkedin, href: '#', label: 'LinkedIn' },
-    { icon: Instagram, href: '#', label: 'Instagram' },
+    // { icon: Instagram, href: '#', label: 'Instagram' },
 ]
 
 export function Footer() {
@@ -72,7 +72,7 @@ export function Footer() {
                             </div> */}
                             <div className="flex items-center gap-2">
                                 <Mail className="h-4 w-4 text-brand-orange" />
-                                <span>hello@seairocargo.com</span>
+                                <span>cat@seairo.co.za</span>
                             </div>
                         </div>
 
