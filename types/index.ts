@@ -1,5 +1,12 @@
 export type UserRole = "admin" | "client";
 
+export type VettingStatus =
+    | "EMAIL_PENDING"
+    | "ONBOARDING_PENDING"
+    | "PENDING_REVIEW"
+    | "APPROVED"
+    | "REJECTED";
+
 export interface User {
     id: string;
     name: string;
@@ -11,6 +18,14 @@ export interface User {
     accountNumber?: string;
     companyName?: string;
     companyReg?: string;
+    vettingStatus: VettingStatus;
+    vettingRejectionReason?: string | null;
+    vettingAdminNote?: string | null;
+    vettingReviewedAt?: Date | null;
+    vettingReviewedBy?: string | null;
+    companyAddress?: string | null;
+    companyCountry?: string | null;
+    vatNumber?: string | null;
     createdAt: Date;
     updatedAt: Date;
 }

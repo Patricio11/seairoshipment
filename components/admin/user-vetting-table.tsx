@@ -1,152 +1,236 @@
 "use client"
 
-import { useState } from "react"
-import { Check, X, Eye, FileText, UserCheck, ShieldAlert } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Search, Eye, Loader2, Inbox, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+    Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-    DialogFooter,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
+import { UserReviewModal, type VettingUser } from "./user-review-modal"
 
-interface MockUser {
-    id: string
-    name: string
-    contact: string
-    email: string
-    status: "PENDING" | "VETTED" | "REJECTED"
-    date: string
-    docs?: string[]
-    account?: string
-    reason?: string
+type Tab = "PENDING_REVIEW" | "APPROVED" | "REJECTED" | "ALL"
+
+const TAB_LABELS: Record<Tab, string> = {
+    PENDING_REVIEW: "Pending Review",
+    APPROVED: "Approved",
+    REJECTED: "Rejected",
+    ALL: "All",
 }
 
-const MOCK_USERS: MockUser[] = [
-    { id: "USR-PEND-01", name: "Global Fruits Trading", contact: "Sarah Jenkins", email: "sarah@gft.co.za", status: "PENDING", date: "2 mins ago", docs: ["CK Document", "Tax Clearance"], account: "SRS-K7MNX2PQ" },
-    { id: "USR-PEND-02", name: "Oceanic Seafoods", contact: "Mike Ross", email: "mike@oceanic.com", status: "PENDING", date: "45 mins ago", docs: ["CK Document"], account: "SRS-R4TBW9YL" },
-    { id: "USR-VET-01", name: "Cape Citrus Exporters", contact: "John Doe", email: "john@cce.co.za", status: "VETTED", date: "2 days ago", account: "SRS-A1C3E5G7" },
-    { id: "USR-REJ-01", name: "Fake Co Ltd", contact: "Scammer Steve", email: "steve@fake.com", status: "REJECTED", date: "5 days ago", reason: "Invalid Tax Number", account: "SRS-Z9X8W7V6" },
-]
-
 export function UserVettingTable() {
-    const [selectedUser, setSelectedUser] = useState<MockUser | null>(null)
-    const [isApproveOpen, setIsApproveOpen] = useState(false)
+    const [users, setUsers] = useState<VettingUser[]>([])
+    const [loading, setLoading] = useState(true)
+    const [tab, setTab] = useState<Tab>("PENDING_REVIEW")
+    const [search, setSearch] = useState("")
+    const [selected, setSelected] = useState<VettingUser | null>(null)
+    const [refreshKey, setRefreshKey] = useState(0)
 
-    const handleApproveClick = (user: MockUser) => {
-        setSelectedUser(user)
-        setIsApproveOpen(true)
-    }
+    useEffect(() => {
+        let cancelled = false
+        fetch("/api/admin/users/vetting", { cache: "no-store" })
+            .then(r => r.json())
+            .then(d => {
+                if (cancelled) return
+                if (Array.isArray(d.users)) setUsers(d.users)
+            })
+            .catch(() => { })
+            .finally(() => { if (!cancelled) setLoading(false) })
+        return () => { cancelled = true }
+    }, [refreshKey])
+
+    const counts = useMemo(() => {
+        const c = { PENDING_REVIEW: 0, APPROVED: 0, REJECTED: 0, ALL: users.length }
+        for (const u of users) {
+            if (u.vettingStatus === "PENDING_REVIEW") c.PENDING_REVIEW++
+            else if (u.vettingStatus === "APPROVED") c.APPROVED++
+            else if (u.vettingStatus === "REJECTED") c.REJECTED++
+        }
+        return c
+    }, [users])
+
+    const filtered = useMemo(() => {
+        let list = users
+        if (tab !== "ALL") list = list.filter(u => u.vettingStatus === tab)
+        if (search.trim()) {
+            const q = search.toLowerCase()
+            list = list.filter(u =>
+                (u.companyName || "").toLowerCase().includes(q) ||
+                u.name.toLowerCase().includes(q) ||
+                u.email.toLowerCase().includes(q) ||
+                (u.companyReg || "").toLowerCase().includes(q),
+            )
+        }
+        return list
+    }, [users, tab, search])
+
+    const refresh = () => setRefreshKey(k => k + 1)
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
+            {/* Tabs + search */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex items-center gap-1 bg-slate-950 border border-slate-800 rounded-2xl p-1 w-fit">
+                    {(["PENDING_REVIEW", "APPROVED", "REJECTED", "ALL"] as Tab[]).map(t => (
+                        <button
+                            key={t}
+                            onClick={() => setTab(t)}
+                            className={cn(
+                                "px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
+                                tab === t
+                                    ? "bg-slate-900 text-white shadow-sm"
+                                    : "text-slate-500 hover:text-white",
+                            )}
+                        >
+                            {TAB_LABELS[t]}
+                            <span className={cn(
+                                "px-1.5 py-0.5 rounded-md text-[9px] font-mono",
+                                tab === t ? "bg-brand-blue/20 text-brand-blue" : "bg-slate-800 text-slate-500",
+                            )}>
+                                {counts[t]}
+                            </span>
+                        </button>
+                    ))}
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="relative max-w-xs w-full">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
+                        <Input
+                            placeholder="Search company, contact or reg no…"
+                            className="pl-9 h-9 bg-slate-950 border-slate-800 text-sm"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </div>
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={refresh}
+                        className="h-9 w-9 border-slate-800 bg-slate-950 hover:bg-slate-900"
+                        aria-label="Refresh"
+                    >
+                        <RefreshCw className="h-3.5 w-3.5" />
+                    </Button>
+                </div>
+            </div>
+
+            {/* Table */}
             <div className="rounded-xl border border-slate-800 overflow-hidden bg-slate-950/30">
                 <Table>
                     <TableHeader className="bg-slate-900">
                         <TableRow className="hover:bg-transparent border-slate-800">
-                            <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Company Info</TableHead>
+                            <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Company</TableHead>
+                            <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Contact</TableHead>
+                            <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Reg / VAT</TableHead>
+                            <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Docs</TableHead>
                             <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Status</TableHead>
-                            <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Docs Submitted</TableHead>
-                            <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-right">Actions</TableHead>
+                            <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-right">Action</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {MOCK_USERS.map((user) => (
-                            <TableRow key={user.id} className="border-slate-800 hover:bg-slate-900/40">
-                                <TableCell>
-                                    <div className="flex flex-col">
-                                        <span className="font-bold text-white">{user.name}</span>
-                                        <span className="text-xs text-slate-500">{user.contact} • {user.email}</span>
-                                        <span className="text-[10px] text-slate-600 mt-1 font-mono">{user.date}</span>
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    {user.status === 'PENDING' && <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20">PENDING REVIEW</Badge>}
-                                    {user.status === 'VETTED' && <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">VETTED • {user.account}</Badge>}
-                                    {user.status === 'REJECTED' && <Badge className="bg-red-500/10 text-red-500 border-red-500/20">REJECTED</Badge>}
-                                </TableCell>
-                                <TableCell>
-                                    <div className="flex flex-wrap gap-2 text-xs">
-                                        {user.docs?.map((doc: string) => (
-                                            <div key={doc} className="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded border border-slate-800 text-slate-400">
-                                                <FileText className="h-3 w-3" />
-                                                {doc}
-                                            </div>
-                                        )) || <span className="text-slate-600 italic">No docs viewed</span>}
-                                    </div>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    {user.status === 'PENDING' ? (
-                                        <div className="flex justify-end gap-2">
-                                            <Button size="sm" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-white hover:bg-slate-800">
-                                                <Eye className="h-4 w-4" />
-                                            </Button>
-                                            <Button onClick={() => handleApproveClick(user)} size="sm" className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
-                                                <Check className="h-4 w-4 mr-1" /> Approve
-                                            </Button>
-                                            <Button size="sm" className="h-8 bg-slate-900 border border-slate-700 hover:bg-red-950 hover:text-red-500 hover:border-red-900 text-slate-400 font-bold">
-                                                <X className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    ) : (
-                                        <Button size="sm" variant="ghost" disabled className="text-slate-600">
-                                            Processed
-                                        </Button>
-                                    )}
+                        {loading ? (
+                            <TableRow className="border-slate-800">
+                                <TableCell colSpan={6} className="py-12 text-center text-slate-500">
+                                    <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />
+                                    Loading vetting queue…
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        ) : filtered.length === 0 ? (
+                            <TableRow className="border-slate-800">
+                                <TableCell colSpan={6} className="py-16 text-center">
+                                    <Inbox className="h-8 w-8 mx-auto mb-2 text-slate-700" />
+                                    <p className="text-sm font-bold text-slate-400">
+                                        {tab === "PENDING_REVIEW" ? "No applications waiting" : "Nothing here"}
+                                    </p>
+                                    <p className="text-xs text-slate-600 mt-1">
+                                        {tab === "PENDING_REVIEW"
+                                            ? "New onboarding submissions will appear here."
+                                            : "Try a different tab."}
+                                    </p>
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            <AnimatePresence>
+                                {filtered.map(u => (
+                                    <motion.tr
+                                        key={u.id}
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        className="border-slate-800 hover:bg-slate-900/40 cursor-pointer"
+                                        onClick={() => setSelected(u)}
+                                    >
+                                        <TableCell>
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-white truncate max-w-[220px]">{u.companyName || <span className="italic text-slate-500">— not provided —</span>}</span>
+                                                <span className="text-[10px] text-slate-600 mt-0.5 font-mono">{u.id}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex flex-col">
+                                                <span className="text-xs font-medium text-slate-300">{u.name}</span>
+                                                <span className="text-[10px] text-slate-500">{u.email}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex flex-col">
+                                                <span className="text-xs font-mono text-slate-300">{u.companyReg || "—"}</span>
+                                                <span className="text-[10px] text-slate-500 font-mono">VAT {u.vatNumber || "—"}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <span className="text-xs font-mono text-slate-400">{u.documents.length}</span>
+                                        </TableCell>
+                                        <TableCell>
+                                            <StatusBadge status={u.vettingStatus} accountNumber={u.accountNumber} />
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={(e) => { e.stopPropagation(); setSelected(u) }}
+                                                className="h-8 text-slate-400 hover:text-brand-blue"
+                                            >
+                                                <Eye className="h-3.5 w-3.5 mr-1" /> Review
+                                            </Button>
+                                        </TableCell>
+                                    </motion.tr>
+                                ))}
+                            </AnimatePresence>
+                        )}
                     </TableBody>
                 </Table>
             </div>
 
-            <Dialog open={isApproveOpen} onOpenChange={setIsApproveOpen}>
-                <DialogContent className="bg-slate-900 border-slate-800 text-white sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <UserCheck className="h-5 w-5 text-emerald-500" />
-                            Approve Account
-                        </DialogTitle>
-                        <DialogDescription className="text-slate-400">
-                            You are about to vetting <strong>{selectedUser?.name}</strong>. This will generate a unique account number and send the welcome email.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="p-4 bg-slate-950 rounded-lg space-y-4 border border-slate-800 mt-4">
-                        <div className="space-y-2">
-                            <Label className="text-xs text-slate-500 uppercase font-bold">Account #</Label>
-                            <div className="flex gap-2">
-                                <Input value={selectedUser?.account || "N/A"} readOnly className="bg-slate-900 border-slate-800 text-emerald-400 font-mono font-bold" />
-                                <Button size="icon" variant="outline" className="border-slate-800"><ShieldAlert className="h-4 w-4 text-slate-500" /></Button>
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label className="text-xs text-slate-500 uppercase font-bold">Assign Credit Limit (ZAR)</Label>
-                            <Input defaultValue="500,000" className="bg-slate-900 border-slate-800" />
-                        </div>
-                    </div>
-
-                    <DialogFooter>
-                        <Button variant="ghost" onClick={() => setIsApproveOpen(false)} className="text-slate-400 hover:text-white">Cancel</Button>
-                        <Button onClick={() => setIsApproveOpen(false)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
-                            Authorize & Send Email
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <UserReviewModal
+                user={selected}
+                open={!!selected}
+                onClose={() => setSelected(null)}
+                onActionComplete={refresh}
+            />
         </div>
     )
+}
+
+function StatusBadge({ status, accountNumber }: { status: VettingUser["vettingStatus"]; accountNumber: string | null }) {
+    if (status === "APPROVED") {
+        return (
+            <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-[10px] uppercase tracking-widest font-black">
+                Approved{accountNumber ? ` · ${accountNumber}` : ""}
+            </Badge>
+        )
+    }
+    if (status === "REJECTED") {
+        return <Badge className="bg-red-500/10 text-red-400 border-red-500/30 text-[10px] uppercase tracking-widest font-black">Rejected</Badge>
+    }
+    if (status === "PENDING_REVIEW") {
+        return <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/30 text-[10px] uppercase tracking-widest font-black">Pending Review</Badge>
+    }
+    if (status === "ONBOARDING_PENDING") {
+        return <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/30 text-[10px] uppercase tracking-widest font-black">Onboarding</Badge>
+    }
+    return <Badge className="bg-slate-500/10 text-slate-400 border-slate-500/30 text-[10px] uppercase tracking-widest font-black">Email Pending</Badge>
 }

@@ -15,7 +15,9 @@ export default function VerifiedPage() {
                 if (user.role === "admin") {
                     router.push("/admin")
                 } else {
-                    router.push("/dashboard")
+                    // Clients land on the onboarding page — it figures out the right sub-view
+                    // based on vettingStatus (form, holding screen, or auto-redirect to dashboard if approved).
+                    router.push("/auth/onboarding")
                 }
             }, 3000)
             return () => clearTimeout(timer)
@@ -31,7 +33,11 @@ export default function VerifiedPage() {
                     </div>
                     <h1 className="text-2xl font-bold text-white mb-3">Email Verified!</h1>
                     <p className="text-slate-400 mb-6">
-                        Your email has been verified successfully. {isAuthenticated ? "Redirecting you to your dashboard..." : "You can now sign in to your account."}
+                        Your email has been verified successfully. {isAuthenticated
+                            ? user?.role === "admin"
+                                ? "Redirecting you to admin..."
+                                : "Just one more step — finishing your onboarding..."
+                            : "You can now sign in to your account."}
                     </p>
                     {!isAuthenticated && (
                         <button

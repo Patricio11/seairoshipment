@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { cache } from "react";
 import { redirect } from "next/navigation";
@@ -135,7 +136,11 @@ export async function requireAuth() {
 }
 
 /**
- * Require specific role - redirects to dashboard if role doesn't match
+ * Require specific role - redirects to dashboard if role doesn't match.
+ *
+ * Clients additionally must be `vettingStatus = APPROVED` to enter `/dashboard/*`.
+ * Anyone in EMAIL_PENDING / ONBOARDING_PENDING / PENDING_REVIEW / REJECTED is
+ * redirected to `/auth/onboarding` which renders the right sub-view for their state.
  */
 export async function requireRole(allowedRoles: Array<"admin" | "client">) {
     const session = await requireAuth();
@@ -148,6 +153,23 @@ export async function requireRole(allowedRoles: Array<"admin" | "client">) {
             redirect("/dashboard");
         }
     }
+
+    // Vetting gate — only applies when the page asks for client access
+    if (userRole === "client" && allowedRoles.includes("client")) {
+        const [row] = await db
+            .select({
+                vettingStatus: schema.user.vettingStatus,
+                emailVerified: schema.user.emailVerified,
+            })
+            .from(schema.user)
+            .where(eq(schema.user.id, session.user.id))
+            .limit(1);
+
+        if (!row || row.vettingStatus !== "APPROVED") {
+            redirect("/auth/onboarding");
+        }
+    }
+
     return session;
 }
 

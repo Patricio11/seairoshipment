@@ -11,6 +11,7 @@ export const STORAGE_BUCKET = 'srs-documents';
 
 export const STORAGE_PATHS = {
     BOOKING_DOCUMENTS: 'bookings/documents',
+    COMPANY_DOCUMENTS: 'company/documents',
 } as const;
 
 export type StoragePath = typeof STORAGE_PATHS[keyof typeof STORAGE_PATHS];
