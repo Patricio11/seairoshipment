@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
 const fromAddress = process.env.SMTP_FROM || "noreply@seairocargo.com";
 const fromName = process.env.SMTP_FROM_NAME || "Seairo Cargo";
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://seairocargo.com";
-const supportEmail = process.env.SUPPORT_EMAIL || "hello@seairocargo.com";
+const supportEmail = process.env.SUPPORT_EMAIL || "cat@seairocargo.com";
 
 /* -------------------------------------------------------------------------- */
 /* Shared layout                                                               */
@@ -70,16 +70,19 @@ export async function sendEmail({
     to,
     subject,
     html,
+    replyTo,
 }: {
     to: string;
     subject: string;
     html: string;
+    replyTo?: string;
 }) {
     await transporter.sendMail({
         from: `${fromName} <${fromAddress}>`,
         to,
         subject,
         html,
+        ...(replyTo ? { replyTo } : {}),
     });
 }
 
@@ -220,6 +223,85 @@ export async function sendRequestChangesEmail(to: string, adminNote: string, com
                     Click below to open your application and make the changes — your existing details are saved, you only need to update what's flagged above.
                 </p>
                 ${ctaButton(`${appUrl}/auth/onboarding`, "Update your application", "#f59e0b")}
+            `,
+        }),
+    });
+}
+
+/* -------------------------------------------------------------------------- */
+/* Contact form                                                                */
+/* -------------------------------------------------------------------------- */
+
+const contactInbox = process.env.CONTACT_INBOX_EMAIL || supportEmail;
+
+export interface ContactInquiry {
+    firstName: string;
+    lastName: string;
+    email: string;
+    message: string;
+}
+
+/**
+ * Inbound contact form → fires to the support inbox. Reply-To is set to the
+ * sender so admin can hit reply directly. Body shows the message in a quoted
+ * block and dumps the raw fields below for searchability.
+ */
+export async function sendContactInquiryEmail(inquiry: ContactInquiry) {
+    const fullName = `${inquiry.firstName} ${inquiry.lastName}`.trim();
+    await sendEmail({
+        to: contactInbox,
+        replyTo: inquiry.email,
+        subject: `New inquiry from ${fullName} — Seairo Cargo`,
+        html: emailLayout({
+            heading: "New contact form inquiry",
+            intro: `<strong>${escapeHtml(fullName)}</strong> just sent you a message via seairo.com.`,
+            contentHtml: `
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px 18px; margin-bottom: 18px;">
+                    <p style="color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 8px;">Message</p>
+                    <p style="color: #0f172a; font-size: 14px; line-height: 1.65; margin: 0; white-space: pre-wrap;">${escapeHtml(inquiry.message)}</p>
+                </div>
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <tbody>
+                        <tr>
+                            <td style="padding: 8px 0; color: #64748b; font-weight: 600; width: 90px;">Name</td>
+                            <td style="padding: 8px 0; color: #0f172a;">${escapeHtml(fullName)}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #64748b; font-weight: 600;">Email</td>
+                            <td style="padding: 8px 0; color: #0f172a;">
+                                <a href="mailto:${escapeHtml(inquiry.email)}" style="color: #2563eb; text-decoration: none;">${escapeHtml(inquiry.email)}</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p style="color: #94a3b8; font-size: 12px; line-height: 1.6; margin: 18px 0 0;">
+                    Reply directly to this email to respond — it will go straight to ${escapeHtml(inquiry.email)}.
+                </p>
+            `,
+        }),
+    });
+}
+
+/**
+ * Auto-reply to the sender confirming we got their message.
+ */
+export async function sendContactConfirmationEmail(inquiry: ContactInquiry) {
+    await sendEmail({
+        to: inquiry.email,
+        subject: "We got your message — Seairo Cargo",
+        html: emailLayout({
+            heading: "Thanks for reaching out",
+            intro: `Hi ${escapeHtml(inquiry.firstName)}, your message just landed in our inbox.`,
+            contentHtml: `
+                <p style="color: #475569; font-size: 14px; line-height: 1.65; margin: 0 0 16px;">
+                    Our team will review it and reply within one business day. In the meantime, here's a copy of what you sent:
+                </p>
+                <div style="background: #f8fafc; border-left: 3px solid #2563eb; border-radius: 6px; padding: 14px 18px; margin: 16px 0;">
+                    <p style="color: #0f172a; font-size: 14px; line-height: 1.65; margin: 0; white-space: pre-wrap;">${escapeHtml(inquiry.message)}</p>
+                </div>
+                <p style="color: #94a3b8; font-size: 12px; line-height: 1.6; margin: 18px 0 0;">
+                    Need to add something? Just reply to this email.
+                </p>
             `,
         }),
     });

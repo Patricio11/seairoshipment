@@ -1,17 +1,55 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Mail, MapPin, Phone, Send } from 'lucide-react'
+import { Mail, MapPin, Phone, Send, CheckCircle2 } from 'lucide-react'
 import { useState } from 'react'
+import { toast } from 'sonner'
+
+type FormState = 'idle' | 'submitting' | 'success'
 
 export function ContactSection() {
-    const [formState, setFormState] = useState<'idle' | 'submitting' | 'success'>('idle')
+    const [formState, setFormState] = useState<FormState>('idle')
+    const [firstName, setFirstName] = useState('')
+    const [lastName, setLastName] = useState('')
+    const [email, setEmail] = useState('')
+    const [message, setMessage] = useState('')
+    // Honeypot — invisible to real users, bots auto-fill name-y inputs
+    const [website, setWebsite] = useState('')
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const reset = () => {
+        setFirstName('')
+        setLastName('')
+        setEmail('')
+        setMessage('')
+        setWebsite('')
+    }
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+        if (formState === 'submitting') return
+
         setFormState('submitting')
-        // Simulate API call
-        setTimeout(() => setFormState('success'), 1500)
+        try {
+            const res = await fetch('/api/contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ firstName, lastName, email, message, website }),
+            })
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) {
+                toast.error(data.error || 'Could not send your message — please try again.')
+                setFormState('idle')
+                return
+            }
+            setFormState('success')
+            toast.success('Message sent', { description: "We'll be in touch within one business day." })
+            reset()
+            // Allow the success state to be visible briefly, then return to idle so users can send another
+            setTimeout(() => setFormState('idle'), 4000)
+        } catch {
+            toast.error('Could not send your message — please try again.')
+            setFormState('idle')
+        }
     }
 
     const contactDetails = [
@@ -105,7 +143,21 @@ export function ContactSection() {
                         className="relative"
                     >
                         <div className="relative overflow-hidden rounded-3xl border border-white/50 bg-white/60 p-8 shadow-2xl backdrop-blur-xl lg:p-12">
-                            <form onSubmit={handleSubmit} className="relative z-10 space-y-6">
+                            <form onSubmit={handleSubmit} className="relative z-10 space-y-6" noValidate>
+                                {/* Honeypot — invisible to real users, hidden via CSS + aria/tabindex so screen readers skip it */}
+                                <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', top: 'auto', width: '1px', height: '1px', overflow: 'hidden' }}>
+                                    <label htmlFor="website">Website (leave blank)</label>
+                                    <input
+                                        id="website"
+                                        name="website"
+                                        type="text"
+                                        tabIndex={-1}
+                                        autoComplete="off"
+                                        value={website}
+                                        onChange={(e) => setWebsite(e.target.value)}
+                                    />
+                                </div>
+
                                 <div className="grid gap-6 md:grid-cols-2">
                                     <div className="space-y-2">
                                         <label htmlFor="first-name" className="text-sm font-semibold text-slate-700">First Name</label>
@@ -113,7 +165,11 @@ export function ContactSection() {
                                             id="first-name"
                                             type="text"
                                             required
-                                            className="w-full rounded-xl border border-slate-200 bg-white/50 px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-blue focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-blue/10"
+                                            value={firstName}
+                                            onChange={(e) => setFirstName(e.target.value)}
+                                            disabled={formState !== 'idle'}
+                                            maxLength={80}
+                                            className="w-full rounded-xl border border-slate-200 bg-white/50 px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-blue focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-blue/10 disabled:opacity-60"
                                             placeholder="Jane"
                                         />
                                     </div>
@@ -123,7 +179,11 @@ export function ContactSection() {
                                             id="last-name"
                                             type="text"
                                             required
-                                            className="w-full rounded-xl border border-slate-200 bg-white/50 px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-blue focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-blue/10"
+                                            value={lastName}
+                                            onChange={(e) => setLastName(e.target.value)}
+                                            disabled={formState !== 'idle'}
+                                            maxLength={80}
+                                            className="w-full rounded-xl border border-slate-200 bg-white/50 px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-blue focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-blue/10 disabled:opacity-60"
                                             placeholder="Doe"
                                         />
                                     </div>
@@ -135,7 +195,11 @@ export function ContactSection() {
                                         id="email"
                                         type="email"
                                         required
-                                        className="w-full rounded-xl border border-slate-200 bg-white/50 px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-blue focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-blue/10"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        disabled={formState !== 'idle'}
+                                        maxLength={200}
+                                        className="w-full rounded-xl border border-slate-200 bg-white/50 px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-blue focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-blue/10 disabled:opacity-60"
                                         placeholder="jane@company.com"
                                     />
                                 </div>
@@ -146,14 +210,18 @@ export function ContactSection() {
                                         id="message"
                                         rows={4}
                                         required
-                                        className="w-full resize-none rounded-xl border border-slate-200 bg-white/50 px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-blue focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-blue/10"
+                                        value={message}
+                                        onChange={(e) => setMessage(e.target.value)}
+                                        disabled={formState !== 'idle'}
+                                        maxLength={5000}
+                                        className="w-full resize-none rounded-xl border border-slate-200 bg-white/50 px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-blue focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-blue/10 disabled:opacity-60"
                                         placeholder="Tell us about your shipping needs..."
                                     />
                                 </div>
 
                                 <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
+                                    whileHover={formState === 'idle' ? { scale: 1.02 } : undefined}
+                                    whileTap={formState === 'idle' ? { scale: 0.98 } : undefined}
                                     disabled={formState !== 'idle'}
                                     className="w-full rounded-xl bg-brand-blue px-8 py-4 font-display text-lg font-bold text-white shadow-lg shadow-brand-blue/25 transition-all hover:bg-brand-blue/90 hover:shadow-brand-blue/40 disabled:opacity-70"
                                 >
@@ -162,9 +230,15 @@ export function ContactSection() {
                                             Send Message <Send className="h-5 w-5" />
                                         </span>
                                     ) : formState === 'submitting' ? (
-                                        'Sending...'
+                                        <span className="flex items-center justify-center gap-2">
+                                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                                            Sending…
+                                        </span>
                                     ) : (
-                                        'Message Sent!'
+                                        <span className="flex items-center justify-center gap-2">
+                                            <CheckCircle2 className="h-5 w-5" />
+                                            Message sent!
+                                        </span>
                                     )}
                                 </motion.button>
                             </form>
