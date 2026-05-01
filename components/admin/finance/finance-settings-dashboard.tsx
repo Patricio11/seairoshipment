@@ -33,10 +33,10 @@ export function FinanceSettingsDashboard() {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                <h2 className="text-2xl font-bold tracking-tight text-white">
                     Finance Settings & Exchange Rates
                 </h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                <p className="text-sm text-slate-400 mt-1">
                     Manage exchange rates, prime lending rate, and global finance parameters
                 </p>
             </div>
@@ -44,7 +44,7 @@ export function FinanceSettingsDashboard() {
             {/* Exchange Rates */}
             <div>
                 <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                    <h3 className="text-lg font-bold text-white">
                         Current Exchange Rates
                     </h3>
                     <Button variant="outline" size="sm">
@@ -65,7 +65,7 @@ export function FinanceSettingsDashboard() {
                                         </span>
                                     </div>
                                     <div className="flex items-baseline gap-2">
-                                        <span className="text-3xl font-black text-slate-900 dark:text-white">
+                                        <span className="text-3xl font-black text-white">
                                             {rate.rate.toFixed(2)}
                                         </span>
                                         <TrendingUp className="h-5 w-5 text-emerald-500" />
@@ -73,12 +73,12 @@ export function FinanceSettingsDashboard() {
                                 </div>
                                 <Badge
                                     variant="outline"
-                                    className="text-xs font-mono bg-slate-100 dark:bg-slate-800"
+                                    className="text-xs font-mono bg-slate-800"
                                 >
                                     {rate.source}
                                 </Badge>
                             </div>
-                            <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                            <div className="mt-4 pt-4 border-t border-slate-800">
                                 <div className="flex items-center justify-between text-xs text-slate-500">
                                     <span>Updated: {new Date(rate.effectiveDate).toLocaleDateString()}</span>
                                     <Button
@@ -102,7 +102,7 @@ export function FinanceSettingsDashboard() {
             {/* Finance Settings */}
             <div>
                 <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                    <h3 className="text-lg font-bold text-white">
                         Global Finance Parameters
                     </h3>
                     <div className="flex items-center gap-2 text-xs text-slate-500">
@@ -115,7 +115,7 @@ export function FinanceSettingsDashboard() {
                     {/* Left Column */}
                     <Card className="p-6 space-y-6">
                         <div>
-                            <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-4">
+                            <h4 className="text-sm font-bold text-white mb-4">
                                 Interest Rate Settings
                             </h4>
                             <div className="space-y-4">
@@ -145,16 +145,16 @@ export function FinanceSettingsDashboard() {
                                     </div>
                                 </div>
 
-                                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
+                                <div className="p-4 bg-blue-900/20 rounded-lg border border-blue-800">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm font-medium text-blue-900 dark:text-blue-300">
+                                        <span className="text-sm font-medium text-blue-300">
                                             Total Finance Rate
                                         </span>
-                                        <span className="text-2xl font-black text-blue-600 dark:text-blue-400">
+                                        <span className="text-2xl font-black text-blue-400">
                                             {totalRate.toFixed(2)}%
                                         </span>
                                     </div>
-                                    <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
+                                    <p className="text-xs text-blue-400 mt-1">
                                         Prime ({financeSettings.primeLendingRate}%) + Margin ({financeSettings.financeMargin}%)
                                     </p>
                                 </div>
@@ -165,7 +165,7 @@ export function FinanceSettingsDashboard() {
                     {/* Right Column */}
                     <Card className="p-6 space-y-6">
                         <div>
-                            <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-4">
+                            <h4 className="text-sm font-bold text-white mb-4">
                                 Payment Split Settings
                             </h4>
                             <div className="space-y-4">

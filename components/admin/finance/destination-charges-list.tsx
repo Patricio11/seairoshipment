@@ -121,10 +121,10 @@ export function DestinationChargesList() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                    <h2 className="text-2xl font-bold tracking-tight text-white">
                         Destination Charges (DAP)
                     </h2>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                    <p className="text-sm text-slate-400 mt-1">
                         Manage destination charges for European ports (Delivered at Place)
                     </p>
                 </div>
@@ -184,7 +184,7 @@ export function DestinationChargesList() {
             <Card>
                 <Table>
                     <TableHeader>
-                        <TableRow className="bg-slate-50 dark:bg-slate-900/50">
+                        <TableRow className="bg-slate-900/50">
                             <TableHead>Destination Port</TableHead>
                             <TableHead>Container</TableHead>
                             <TableHead>Rate Type</TableHead>
@@ -203,7 +203,7 @@ export function DestinationChargesList() {
                                 <TableRow key={i}>
                                     {Array.from({ length: 10 }).map((_, j) => (
                                         <TableCell key={j}>
-                                            <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+                                            <div className="h-4 bg-slate-700 rounded animate-pulse" />
                                         </TableCell>
                                     ))}
                                 </TableRow>
@@ -218,10 +218,10 @@ export function DestinationChargesList() {
                             filteredCharges.map((charge) => {
                                 const totals = calculateTotals(charge)
                                 return (
-                                    <TableRow key={charge.id} className="group hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                                    <TableRow key={charge.id} className="group hover:bg-slate-900/50">
                                         <TableCell>
                                             <div className="flex flex-col">
-                                                <span className="font-semibold text-slate-900 dark:text-white">
+                                                <span className="font-semibold text-white">
                                                     {charge.destinationName}
                                                 </span>
                                                 <span className="text-xs text-slate-500 font-mono">
@@ -243,9 +243,9 @@ export function DestinationChargesList() {
                                             <Badge
                                                 className={cn(
                                                     "font-mono font-bold",
-                                                    charge.currency === "GBP" && "bg-blue-100 text-blue-700",
-                                                    charge.currency === "EUR" && "bg-purple-100 text-purple-700",
-                                                    charge.currency === "USD" && "bg-green-100 text-green-700"
+                                                    charge.currency === "GBP" && "bg-blue-900/30 text-blue-400 border border-blue-800",
+                                                    charge.currency === "EUR" && "bg-purple-900/30 text-purple-400 border border-purple-800",
+                                                    charge.currency === "USD" && "bg-emerald-900/30 text-emerald-400 border border-emerald-800"
                                                 )}
                                             >
                                                 {charge.currency}
@@ -280,8 +280,8 @@ export function DestinationChargesList() {
                                                 className={cn(
                                                     "font-semibold",
                                                     charge.active
-                                                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                                                        : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                                                        ? "bg-emerald-900/30 text-emerald-400 border border-emerald-800"
+                                                        : "bg-slate-800 text-slate-400 border border-slate-700"
                                                 )}
                                             >
                                                 {charge.active ? "Active" : "Inactive"}

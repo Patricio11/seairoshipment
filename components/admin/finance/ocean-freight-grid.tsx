@@ -148,10 +148,10 @@ export function OceanFreightGrid() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                    <h2 className="text-2xl font-bold tracking-tight text-white">
                         Ocean Freight Rates
                     </h2>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                    <p className="text-sm text-slate-400 mt-1">
                         Manage freight rates by route and destination
                     </p>
                 </div>
@@ -233,13 +233,13 @@ export function OceanFreightGrid() {
                     Array.from({ length: 3 }).map((_, i) => (
                         <Card key={i} className="overflow-hidden">
                             <div className="p-4 flex items-center gap-3">
-                                <div className="h-5 w-5 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
-                                <div className="h-5 w-32 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
-                                <div className="h-5 w-20 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+                                <div className="h-5 w-5 bg-slate-700 rounded animate-pulse" />
+                                <div className="h-5 w-32 bg-slate-700 rounded animate-pulse" />
+                                <div className="h-5 w-20 bg-slate-700 rounded animate-pulse" />
                             </div>
                             <div className="px-4 pb-4 space-y-2">
                                 {Array.from({ length: 2 }).map((_, j) => (
-                                    <div key={j} className="h-10 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+                                    <div key={j} className="h-10 bg-slate-800 rounded animate-pulse" />
                                 ))}
                             </div>
                         </Card>
@@ -256,7 +256,7 @@ export function OceanFreightGrid() {
                     return (
                         <Card key={country} className="overflow-hidden">
                             <Collapsible open={isOpen} onOpenChange={() => toggleCountry(country)}>
-                                <CollapsibleTrigger className="w-full hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
+                                <CollapsibleTrigger className="w-full hover:bg-slate-900/50 transition-colors">
                                     <div className="flex items-center justify-between p-4">
                                         <div className="flex items-center gap-3">
                                             {isOpen ? (
@@ -264,7 +264,7 @@ export function OceanFreightGrid() {
                                             ) : (
                                                 <ChevronRight className="h-5 w-5 text-slate-500" />
                                             )}
-                                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                                            <h3 className="text-lg font-bold text-white">
                                                 {country}
                                             </h3>
                                             <Badge variant="outline" className="font-mono text-xs">
@@ -284,7 +284,7 @@ export function OceanFreightGrid() {
                                 <CollapsibleContent>
                                     <Table>
                                         <TableHeader>
-                                            <TableRow className="bg-slate-50 dark:bg-slate-900/50">
+                                            <TableRow className="bg-slate-900/50">
                                                 <TableHead className="min-w-[140px]">Port of Load</TableHead>
                                                 <TableHead className="min-w-[140px]">Destination Port</TableHead>
                                                 <TableHead>Shipping Line</TableHead>
@@ -303,13 +303,13 @@ export function OceanFreightGrid() {
                                         </TableHeader>
                                         <TableBody>
                                             {countryRates.map((rate) => (
-                                                <TableRow key={rate.id} className="group hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                                                    <TableCell className="font-medium text-slate-700 dark:text-slate-300">
+                                                <TableRow key={rate.id} className="group hover:bg-slate-900/50">
+                                                    <TableCell className="font-medium text-slate-300">
                                                         {rate.origin}
                                                     </TableCell>
                                                     <TableCell>
                                                         <div className="flex flex-col">
-                                                            <span className="font-semibold text-slate-900 dark:text-white">
+                                                            <span className="font-semibold text-white">
                                                                 {rate.destinationPort}
                                                             </span>
                                                             <span className="text-[10px] text-slate-500 font-mono">
@@ -318,12 +318,12 @@ export function OceanFreightGrid() {
                                                         </div>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Badge variant="outline" className="font-semibold bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                                                        <Badge variant="outline" className="font-semibold bg-slate-800 border-slate-700">
                                                             {rate.shippingLine}
                                                         </Badge>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <span className="text-[11px] font-mono text-slate-600 dark:text-slate-400">
+                                                        <span className="text-[11px] font-mono text-slate-400">
                                                             {rate.containerDisplayName || rate.containerId}
                                                         </span>
                                                     </TableCell>
@@ -347,10 +347,10 @@ export function OceanFreightGrid() {
                                                     <TableCell className="text-right font-mono text-sm text-slate-500">
                                                         {rate.active ? `$${Number(rate.rcgUSD).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
                                                     </TableCell>
-                                                    <TableCell className="text-right font-mono text-sm font-black text-blue-600 bg-blue-50/30 dark:bg-blue-900/10">
+                                                    <TableCell className="text-right font-mono text-sm font-black text-blue-600 bg-blue-900/10">
                                                         {rate.active ? `$${Number(rate.totalUSD).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
                                                     </TableCell>
-                                                    <TableCell className="text-right font-mono text-sm font-black text-emerald-600 bg-emerald-50/30 dark:bg-emerald-900/10">
+                                                    <TableCell className="text-right font-mono text-sm font-black text-emerald-600 bg-emerald-900/10">
                                                         {rate.active ? `R ${Number(rate.totalZAR).toLocaleString(undefined, { minimumFractionDigits: 0 })}` : "-"}
                                                     </TableCell>
                                                     <TableCell>
@@ -358,8 +358,8 @@ export function OceanFreightGrid() {
                                                             className={cn(
                                                                 "font-bold text-[10px] uppercase tracking-wider",
                                                                 rate.active
-                                                                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
-                                                                    : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800"
+                                                                    ? "bg-emerald-900/30 text-emerald-400 border border-emerald-800"
+                                                                    : "bg-red-900/30 text-red-400 border border-red-800"
                                                             )}
                                                         >
                                                             {rate.active ? "Active" : "Missing"}

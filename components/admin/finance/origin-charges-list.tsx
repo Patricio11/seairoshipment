@@ -168,10 +168,10 @@ export function OriginChargesList() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                    <h2 className="text-2xl font-bold tracking-tight text-white">
                         Origin Charges (SA Landsides)
                     </h2>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                    <p className="text-sm text-slate-400 mt-1">
                         Manage all origin-related charges and fees for South African ports
                     </p>
                 </div>
@@ -247,7 +247,7 @@ export function OriginChargesList() {
             <Card>
                 <Table>
                     <TableHeader>
-                        <TableRow className="bg-slate-50 dark:bg-slate-900/50">
+                        <TableRow className="bg-slate-900/50">
                             <TableHead>Origin</TableHead>
                             <TableHead>Container</TableHead>
                             <TableHead>Rate Type</TableHead>
@@ -265,7 +265,7 @@ export function OriginChargesList() {
                                 <TableRow key={i}>
                                     {Array.from({ length: 9 }).map((_, j) => (
                                         <TableCell key={j}>
-                                            <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+                                            <div className="h-4 bg-slate-700 rounded animate-pulse" />
                                         </TableCell>
                                     ))}
                                 </TableRow>
@@ -282,12 +282,12 @@ export function OriginChargesList() {
                                 return (
                                     <TableRow
                                         key={charge.id}
-                                        className="group hover:bg-slate-50 dark:hover:bg-slate-900/50 cursor-pointer"
+                                        className="group hover:bg-slate-900/50 cursor-pointer"
                                         onClick={() => handleRowClick(charge.id)}
                                     >
                                         <TableCell className="font-medium">
                                             <div className="flex flex-col">
-                                                <span className="font-semibold text-slate-900 dark:text-white">
+                                                <span className="font-semibold text-white">
                                                     {charge.originName}
                                                 </span>
                                                 <span className="text-xs text-slate-500">
@@ -307,7 +307,7 @@ export function OriginChargesList() {
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex flex-col text-xs">
-                                                <span className="text-slate-900 dark:text-white">
+                                                <span className="text-white">
                                                     {new Date(charge.effectiveFrom).toLocaleDateString()}
                                                 </span>
                                                 <span className="text-slate-500">
@@ -321,7 +321,7 @@ export function OriginChargesList() {
                                             </span>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <span className="font-mono text-base font-black text-slate-900 dark:text-white">
+                                            <span className="font-mono text-base font-black text-white">
                                                 R {totals.totalPerContainer.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </span>
                                         </TableCell>
@@ -335,8 +335,8 @@ export function OriginChargesList() {
                                                 className={cn(
                                                     "font-semibold",
                                                     charge.active
-                                                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                                                        : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                                                        ? "bg-emerald-900/30 text-emerald-400 border border-emerald-800"
+                                                        : "bg-slate-800 text-slate-400 border border-slate-700"
                                                 )}
                                             >
                                                 {charge.active ? "Active" : "Inactive"}
@@ -364,7 +364,7 @@ export function OriginChargesList() {
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem
-                                                        className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/30 cursor-pointer"
+                                                        className="text-red-600 focus:text-red-600 focus:bg-red-950/30 cursor-pointer"
                                                         onClick={(e) => { e.stopPropagation(); setDeleteDialog(charge) }}
                                                     >
                                                         <Trash2 className="mr-2 h-4 w-4" />

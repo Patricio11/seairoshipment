@@ -236,7 +236,7 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                         <ArrowLeft className="h-5 w-5" />
                     </Button>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+                        <h1 className="text-2xl font-bold text-white">
                             {initialData ? "Edit Origin Charge Rate Card" : "New Origin Charge Rate Card"}
                         </h1>
                         <p className="text-sm text-slate-500 mt-1">
@@ -252,8 +252,8 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                         <Badge className={cn(
                             "font-semibold",
                             initialData.active
-                                ? "bg-emerald-100 text-emerald-700"
-                                : "bg-slate-100 text-slate-700"
+                                ? "bg-emerald-900/30 text-emerald-400 border border-emerald-800"
+                                : "bg-slate-800 text-slate-400 border border-slate-700"
                         )}>
                             {initialData.active ? "Active" : "Inactive"}
                         </Badge>
@@ -269,14 +269,14 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
 
             {/* Charge Items Table */}
             <Card className="overflow-hidden">
-                <div className="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+                <div className="p-6 border-b border-slate-800 bg-slate-900/50">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                                <Calculator className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                            <div className="h-10 w-10 rounded-lg bg-blue-900/30 flex items-center justify-center">
+                                <Calculator className="h-5 w-5 text-blue-400" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Additional Services</h3>
+                                <h3 className="text-lg font-bold text-white">Additional Services</h3>
                                 <p className="text-xs text-slate-500">Add and configure individual charge line items</p>
                             </div>
                         </div>
@@ -290,21 +290,21 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                 <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
-                            <TableRow className="bg-slate-100 dark:bg-slate-900">
+                            <TableRow className="bg-slate-900">
                                 <TableHead className="w-[50px]">#</TableHead>
                                 <TableHead className="min-w-[300px]">
                                     <span className="font-bold">Additional Services</span>
                                     <span className="block text-xs font-normal text-slate-500">(Charge Name)</span>
                                 </TableHead>
-                                <TableHead className="w-[200px] text-right bg-amber-50 dark:bg-amber-900/10">
-                                    <span className="font-bold text-amber-700 dark:text-amber-400">Buy Rate</span>
+                                <TableHead className="w-[200px] text-right bg-amber-900/10">
+                                    <span className="font-bold text-amber-400">Buy Rate</span>
                                     <span className="block text-xs font-normal text-slate-500">Cost price (ZAR)</span>
                                 </TableHead>
                                 <TableHead className="w-[300px] text-right">
                                     <span className="font-bold">Sell Rate</span>
                                     <span className="block text-xs font-normal text-slate-500">Per Pallet or Per Container</span>
                                 </TableHead>
-                                <TableHead className="w-[250px] text-right bg-blue-50 dark:bg-blue-900/20">
+                                <TableHead className="w-[250px] text-right bg-blue-900/20">
                                     <span className="font-bold">40ft HC Reefer</span>
                                     <span className="block text-xs font-normal text-slate-500">20 pallets per reefer</span>
                                 </TableHead>
@@ -326,7 +326,7 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                                         : item.containerCost || 0
 
                                     return (
-                                        <TableRow key={item.id} className="group hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                                        <TableRow key={item.id} className="group hover:bg-slate-900/50">
                                             <TableCell className="font-mono text-xs text-slate-500 align-top pt-4">
                                                 {index + 1}
                                             </TableCell>
@@ -337,7 +337,7 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                                                             value={item.chargeName}
                                                             onChange={(e) => updateItem(item.id, { chargeName: e.target.value })}
                                                             placeholder="Enter custom service name..."
-                                                            className="font-medium h-10 border-blue-400 focus-visible:ring-blue-400 bg-blue-50/50"
+                                                            className="font-medium h-10 bg-blue-900/20 border-blue-700 text-white focus-visible:ring-blue-400"
                                                             autoFocus
                                                         />
                                                         <Button
@@ -405,7 +405,7 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                                                 )}
                                             </TableCell>
                                             {/* Buy Rate Cell */}
-                                            <TableCell className="align-top py-2 bg-amber-50/50 dark:bg-amber-900/5">
+                                            <TableCell className="align-top py-2 bg-amber-900/5">
                                                 <div className="relative">
                                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-amber-500 font-mono text-sm">R</span>
                                                     <Input
@@ -428,7 +428,7 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                                                             }
                                                         }}
                                                         placeholder="0.00"
-                                                        className="text-right font-mono font-bold pl-8 text-base h-10 border-amber-300 dark:border-amber-700 focus-visible:ring-amber-400"
+                                                        className="text-right font-mono font-bold pl-8 text-base h-10 border-amber-700 focus-visible:ring-amber-400"
                                                     />
                                                 </div>
                                             </TableCell>
@@ -489,7 +489,7 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                                                     </Select>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-right bg-slate-50 dark:bg-slate-900/30 font-mono text-lg font-black text-slate-900 dark:text-white align-middle">
+                                            <TableCell className="text-right bg-slate-900/30 font-mono text-lg font-black text-white align-middle">
                                                 R {containerCostDisplay.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </TableCell>
                                             <TableCell className="align-middle">
@@ -512,21 +512,21 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
 
                 {/* Totals Section */}
                 {items.length > 0 && (
-                    <div className="border-t-4 border-slate-900 dark:border-white bg-gradient-to-r from-blue-50 to-emerald-50 dark:from-blue-900/20 dark:to-emerald-900/20 p-8">
+                    <div className="border-t-4 border-white bg-gradient-to-r from-blue-50 to-emerald-900/20 p-8">
                         <div className="flex items-center justify-between max-w-3xl ml-auto">
                             <div>
                                 {/* Visual decoration or additional stats could go here */}
                             </div>
                             <div className="space-y-4 text-right">
                                 <div className="flex items-baseline justify-end gap-6">
-                                    <span className="text-base font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest">Total Cost per Container</span>
-                                    <span className="font-mono text-4xl font-black text-slate-900 dark:text-white">
+                                    <span className="text-base font-bold text-slate-400 uppercase tracking-widest">Total Cost per Container</span>
+                                    <span className="font-mono text-4xl font-black text-white">
                                         R {parseFloat(totals.totalPerContainer).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                     </span>
                                 </div>
                                 <div className="flex items-baseline justify-end gap-6">
-                                    <span className="text-sm font-semibold text-emerald-600/80 dark:text-emerald-400/80 uppercase tracking-wider">Equivalent Cost per Pallet</span>
-                                    <span className="font-mono text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                                    <span className="text-sm font-semibold text-emerald-400/80 uppercase tracking-wider">Equivalent Cost per Pallet</span>
+                                    <span className="font-mono text-2xl font-bold text-emerald-400">
                                         R {parseFloat(totals.totalPerPallet).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                     </span>
                                 </div>
