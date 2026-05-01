@@ -10,7 +10,7 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import {
-    GripVertical, FileText, UploadCloud, Trash2, ExternalLink, Plus, Loader2, Eye, EyeOff, Check, X,
+    GripVertical, FileText, UploadCloud, Trash2, ExternalLink, Plus, Loader2, Eye, EyeOff, Check, X, FileSpreadsheet,
 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -154,6 +154,25 @@ export function OnboardingRequirementsTable() {
 
     return (
         <div className="space-y-4">
+            {rows.length === 0 && !creating && (
+                <div className="rounded-2xl border-2 border-dashed border-slate-700 bg-slate-900/40 p-10 text-center">
+                    <div className="mx-auto h-14 w-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-4">
+                        <FileSpreadsheet className="h-7 w-7 text-purple-400" />
+                    </div>
+                    <h3 className="text-lg font-bold text-white">No onboarding requirements yet</h3>
+                    <p className="text-sm text-slate-400 mt-1.5 max-w-md mx-auto">
+                        Add the first document slot — Company Registration, Tax Clearance, or a fillable Credit Application — and new clients will see it on the onboarding form straight away.
+                    </p>
+                    <Button
+                        onClick={() => setCreating(true)}
+                        className="mt-5 bg-brand-blue hover:bg-brand-blue/90 text-white font-bold"
+                    >
+                        <Plus className="h-4 w-4 mr-1.5" />
+                        Add your first requirement
+                    </Button>
+                </div>
+            )}
+
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={rows.map(r => r.id)} strategy={verticalListSortingStrategy}>
                     <div className="space-y-2">
@@ -210,7 +229,7 @@ export function OnboardingRequirementsTable() {
                         </div>
                     </div>
                 </motion.div>
-            ) : (
+            ) : rows.length > 0 ? (
                 <button
                     type="button"
                     onClick={() => setCreating(true)}
@@ -219,7 +238,7 @@ export function OnboardingRequirementsTable() {
                     <Plus className="h-4 w-4" />
                     Add new requirement
                 </button>
-            )}
+            ) : null}
         </div>
     )
 }

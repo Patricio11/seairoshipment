@@ -132,12 +132,12 @@ file updates the link without resending emails.
 - [x] Email body gains a "Documents to download and fill in" section between the verify CTA and the "What's next" callout. Each template is a tappable card showing name + optional description; clicking opens the file at its Supabase URL.
 - [x] `auth.api.sendVerificationEmail` resends (used by `/api/auth/resend-verification` and `/api/admin/users/[id]/resend-verification`) automatically pick up the same templates because they route through the same callback.
 
-### Phase E — Polish ⏳ TODO
+### Phase E — Polish ✅ DONE (substantive items)
 
-- [ ] Admin review modal labels: dynamic doc names from `requirementId` join (falls back to the legacy enum-label map for old rows)
-- [ ] Drag-to-reorder polish on admin page
-- [ ] Empty state on admin page if no requirements exist
-- [ ] "Match to requirement" affordance in admin review modal for legacy `company_documents` rows that don't have a `requirementId`
+- [x] Admin review modal labels: dynamic doc names from `requirementId` join — `GET /api/admin/users/vetting` now joins `onboarding_requirements` and exposes `requirementId` + `requirementName` on each doc; modal renders `requirementName ?? DOC_LABELS[type] ?? "Document"` so legacy enum-only rows still get a sensible label. Inactive requirements are included in the join so historical uploads referencing hidden requirements keep their original name. `TAX_CLEARANCE` added to `DOC_LABELS`.
+- [x] Empty state on admin page if no requirements exist — `components/admin/onboarding-requirements-table.tsx` now shows a centred FileSpreadsheet illustration + headline + helper copy + "Add your first requirement" CTA when `rows.length === 0`. The dashed "Add new requirement" footer button hides in that state to avoid two competing CTAs.
+- ⏳ Drag-to-reorder polish — deferred. The current `@dnd-kit` setup with optimistic-update + persist is already snappy; revisit if a specific complaint surfaces.
+- ⏳ "Match to requirement" affordance in admin review modal for legacy `company_documents` rows that don't have a `requirementId` — deferred to v2. No legacy rows exist in production yet, so the fallback label path is enough for now.
 
 ---
 

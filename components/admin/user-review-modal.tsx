@@ -41,8 +41,11 @@ export interface VettingUser {
             | "RLA_EXPORT_CERT"
             | "BANK_CONFIRMATION"
             | "DIRECTOR_ID"
+            | "TAX_CLEARANCE"
             | "VAT_CERT"
             | "OTHER"
+        requirementId?: string | null
+        requirementName?: string | null
         originalName: string
         url: string
         uploadedAt: string | Date
@@ -64,6 +67,7 @@ const DOC_LABELS: Record<VettingUser["documents"][number]["type"], string> = {
     RLA_EXPORT_CERT: "RLA Export Certificate",
     BANK_CONFIRMATION: "Bank Confirmation Letter",
     DIRECTOR_ID: "Director's ID",
+    TAX_CLEARANCE: "Tax Clearance Certificate",
     VAT_CERT: "VAT Certificate",
     OTHER: "Other",
 }
@@ -204,7 +208,7 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-[10px] font-bold uppercase tracking-wider text-brand-blue">
-                                                {DOC_LABELS[doc.type]}
+                                                {doc.requirementName || DOC_LABELS[doc.type] || "Document"}
                                             </p>
                                             <p className="text-xs font-medium text-white truncate">{doc.originalName}</p>
                                         </div>

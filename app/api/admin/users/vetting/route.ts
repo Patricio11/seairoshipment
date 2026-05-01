@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/server";
 import { db } from "@/lib/db";
-import { user, companyDocuments } from "@/lib/db/schema";
+import { user, companyDocuments, onboardingRequirements } from "@/lib/db/schema";
 import { desc, eq, inArray } from "drizzle-orm";
 
 /**
@@ -44,6 +44,18 @@ export async function GET() {
             ? await db.select().from(companyDocuments).where(inArray(companyDocuments.userId, userIds))
             : [];
 
+        // Resolve requirement names for the docs that have a requirementId.
+        // Inactive rows are included on purpose — old uploads may reference
+        // requirements that an admin has since hidden, and we still want a
+        // meaningful label rather than the legacy enum.
+        const reqIds = Array.from(new Set(docs.map(d => d.requirementId).filter((id): id is string => !!id)));
+        const requirements = reqIds.length > 0
+            ? await db.select({ id: onboardingRequirements.id, name: onboardingRequirements.name })
+                .from(onboardingRequirements)
+                .where(inArray(onboardingRequirements.id, reqIds))
+            : [];
+        const requirementNameById = new Map(requirements.map(r => [r.id, r.name]));
+
         const docsByUser = new Map<string, typeof docs>();
         for (const d of docs) {
             const list = docsByUser.get(d.userId) ?? [];
@@ -56,6 +68,8 @@ export async function GET() {
             documents: (docsByUser.get(r.id) ?? []).map(d => ({
                 id: d.id,
                 type: d.type,
+                requirementId: d.requirementId,
+                requirementName: d.requirementId ? requirementNameById.get(d.requirementId) ?? null : null,
                 originalName: d.originalName,
                 url: d.url,
                 mimeType: d.mimeType,
