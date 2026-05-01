@@ -45,15 +45,13 @@ export function IndustryHero() {
                         {/* Industry Badge Spacer - Preserves layout */}
                         <div className="h-10 mb-6" />
 
-                        {/* Headline */}
-                        <h1 className="font-display text-6xl font-bold leading-[1.1] tracking-tight text-white md:text-7xl lg:text-8xl">
-                            The Operating System
-                            <br />
+                        {/* Headline — leads with the trademarked keyword for SEO */}
+                        <h1 className="font-display text-5xl font-bold leading-[1.1] tracking-tight text-white md:text-6xl lg:text-7xl">
                             <span className="relative inline-block">
-                                {/* Brand Color Gradient */}
                                 <span className="text-brand-orange">
-                                    for Cold Chain
+                                    Shared Reefer Services
                                 </span>
+                                <span className="text-brand-orange/70 align-super text-2xl md:text-3xl ml-1">®</span>
                                 <motion.div
                                     initial={{ scaleX: 0 }}
                                     animate={{ scaleX: 1 }}
@@ -61,11 +59,13 @@ export function IndustryHero() {
                                     className="absolute -bottom-2 left-0 h-1 w-full origin-left rounded-full bg-brand-orange"
                                 />
                             </span>
+                            <br />
+                            for Cold-Chain Exporters
                         </h1>
 
                         {/* Subheadline */}
                         <p className="mx-auto mt-8 max-w-3xl text-xl leading-relaxed text-slate-300 lg:text-2xl">
-                            <strong className="text-white">SRS consolidation</strong> from Cape Town to the world.{' '}
+                            <strong className="text-white">Shared Reefer Services consolidation</strong> from Cape Town to the world.{' '}
                             <strong className="text-white">IoT temperature tracking</strong> on every pallet.{' '}
                             <strong className="text-white">Automated compliance</strong> for perishable and FMCG exports.
                         </p>

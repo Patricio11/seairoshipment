@@ -153,7 +153,7 @@ export function RejectedScreen({ reason }: { reason?: string | null }) {
             )}
             <p className="text-xs text-slate-500 mt-4">
                 If you believe this was a mistake, please contact us at{" "}
-                <a href="mailto:hello@seairocargo.com" className="font-bold text-brand-blue hover:underline">hello@seairocargo.com</a>.
+                <a href="mailto:cat@seairocargo.co.za" className="font-bold text-brand-blue hover:underline">cat@seairocargo.co.za</a>.
             </p>
         </StatusCard>
     )

@@ -10,10 +10,10 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-const fromAddress = process.env.SMTP_FROM || "noreply@seairocargo.com";
+const fromAddress = process.env.SMTP_FROM || "noreply@seairocargo.co.za";
 const fromName = process.env.SMTP_FROM_NAME || "Seairo Cargo";
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://seairocargo.com";
-const supportEmail = process.env.SUPPORT_EMAIL || "cat@seairocargo.com";
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://seairocargo.co.za";
+const supportEmail = process.env.SUPPORT_EMAIL || "cat@seairocargo.co.za";
 
 /* -------------------------------------------------------------------------- */
 /* Shared layout                                                               */

@@ -9,6 +9,7 @@ const footerLinks = {
     product: [
         { name: 'Features', href: '#features' },
         { name: 'How It Works', href: '#how-it-works' },
+        { name: 'FAQ', href: '#faq' },
         // { name: 'Pricing', href: '#pricing' },
         // { name: 'Case Studies', href: '#testimonials' },
     ],
@@ -50,14 +51,14 @@ export function Footer() {
                         <div className="flex items-center gap-2">
                             <Image
                                 src="/seairo-logo.png"
-                                alt="Seairo"
+                                alt="Seairo Cargo — Shared Reefer Services"
                                 width={120}
                                 height={40}
                                 className="h-10 w-auto object-contain"
                             />
                         </div>
                         <p className="mt-4 max-w-md text-slate-600">
-                            The operating system for cold chain logistics. Revolutionizing cold chain logistics with smart, sustainable freight solutions.
+                            <strong className="text-slate-900">Shared Reefer Services<sup className="text-[0.6em] ml-0.5">®</sup></strong> &mdash; IoT-monitored cold-chain consolidation from Cape Town to the world. Smart, sustainable freight for perishable and FMCG exporters.
                         </p>
 
                         {/* Contact Info */}
@@ -152,7 +153,7 @@ export function Footer() {
                 {/* Bottom Bar */}
                 <div className="mt-16 border-t border-slate-200 pt-8">
                     <div className="flex flex-col items-center justify-between gap-4 text-sm text-slate-500 md:flex-row">
-                        <p>© 2026 Seairo Cargo Solutions. All rights reserved.</p>
+                        <p>© {new Date().getFullYear()} Seairo Cargo Solutions. All rights reserved.</p>
                         <div className="flex gap-6">
                             <span className="flex items-center gap-2">
                                 <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
@@ -160,6 +161,9 @@ export function Footer() {
                             </span>
                         </div>
                     </div>
+                    <p className="mt-4 text-center text-xs text-slate-400 md:text-left">
+                        Shared Reefer Services<sup className="text-[0.6em] ml-0.5">®</sup> is a registered trademark of Seairo Cargo Solutions.
+                    </p>
                 </div>
             </div>
 

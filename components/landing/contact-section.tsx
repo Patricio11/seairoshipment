@@ -63,7 +63,8 @@ export function ContactSection() {
         {
             icon: Mail,
             title: 'Email Us',
-            details: ['bookings@seairo.com', 'support@seairo.com'],
+            details: ['cap@seairocargo.co.za'],
+            // details: ['bookings@seairo.com', 'support@seairo.com'],
             color: 'text-brand-orange',
             bg: 'bg-brand-orange/10'
         },
