@@ -3,8 +3,8 @@ import Image from "next/image"
 import Link from "next/link"
 import { getSession } from "@/lib/auth/server"
 import { db } from "@/lib/db"
-import { user } from "@/lib/db/schema"
-import { eq } from "drizzle-orm"
+import { user, onboardingRequirements } from "@/lib/db/schema"
+import { eq, asc } from "drizzle-orm"
 import { OnboardingForm } from "@/components/auth/onboarding-form"
 import { EmailPendingScreen, PendingReviewScreen, ApprovedScreen, RejectedScreen } from "@/components/auth/onboarding-status-screens"
 
@@ -29,6 +29,16 @@ export default async function OnboardingPage() {
             .where(eq(user.id, row.id))
         status = "ONBOARDING_PENDING"
     }
+
+    // Active admin-managed requirements drive the form. Fetched server-side so
+    // the form has them on first render — no loading flash.
+    const requirements = status === "ONBOARDING_PENDING"
+        ? await db
+            .select()
+            .from(onboardingRequirements)
+            .where(eq(onboardingRequirements.active, true))
+            .orderBy(asc(onboardingRequirements.sortOrder))
+        : []
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950">
@@ -73,6 +83,16 @@ export default async function OnboardingPage() {
                                     vatNumber: row.vatNumber ?? "",
                                 }}
                                 adminNote={row.vettingAdminNote}
+                                requirements={requirements.map(r => ({
+                                    id: r.id,
+                                    name: r.name,
+                                    description: r.description,
+                                    templateUrl: r.templateUrl,
+                                    templateOriginalName: r.templateOriginalName,
+                                    templateMimeType: r.templateMimeType,
+                                    templateSizeBytes: r.templateSizeBytes,
+                                    required: r.required,
+                                }))}
                             />
                         </div>
                     </div>

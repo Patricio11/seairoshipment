@@ -229,6 +229,65 @@ export async function sendRequestChangesEmail(to: string, adminNote: string, com
 }
 
 /* -------------------------------------------------------------------------- */
+/* Admin notifications                                                         */
+/* -------------------------------------------------------------------------- */
+
+const adminInbox = process.env.ADMIN_NOTIFICATIONS_EMAIL || supportEmail;
+
+/**
+ * Notify the admin team that a client just submitted onboarding and is
+ * waiting for review. Fires alongside the in-app `adminNotifications` row.
+ */
+export async function sendAdminVettingNotificationEmail(params: {
+    companyName: string;
+    contactName: string;
+    contactEmail: string;
+    userId: string;
+    submittedAt?: Date;
+}) {
+    const { companyName, contactName, contactEmail, userId, submittedAt } = params;
+    const reviewUrl = `${appUrl}/admin/users`;
+    await sendEmail({
+        to: adminInbox,
+        subject: `New onboarding submission — ${companyName}`,
+        html: emailLayout({
+            heading: "New onboarding submission",
+            intro: `<strong>${escapeHtml(companyName)}</strong> just submitted their onboarding application — they're waiting for review.`,
+            contentHtml: `
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <tbody>
+                        <tr>
+                            <td style="padding: 8px 0; color: #64748b; font-weight: 600; width: 110px;">Company</td>
+                            <td style="padding: 8px 0; color: #0f172a;">${escapeHtml(companyName)}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #64748b; font-weight: 600;">Contact</td>
+                            <td style="padding: 8px 0; color: #0f172a;">${escapeHtml(contactName)}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #64748b; font-weight: 600;">Email</td>
+                            <td style="padding: 8px 0; color: #0f172a;">
+                                <a href="mailto:${escapeHtml(contactEmail)}" style="color: #2563eb; text-decoration: none;">${escapeHtml(contactEmail)}</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #64748b; font-weight: 600;">User ID</td>
+                            <td style="padding: 8px 0; color: #0f172a; font-family: monospace; font-size: 12px;">${escapeHtml(userId)}</td>
+                        </tr>
+                        ${submittedAt ? `
+                        <tr>
+                            <td style="padding: 8px 0; color: #64748b; font-weight: 600;">Submitted</td>
+                            <td style="padding: 8px 0; color: #0f172a;">${submittedAt.toUTCString()}</td>
+                        </tr>` : ""}
+                    </tbody>
+                </table>
+                ${ctaButton(reviewUrl, "Open vetting queue")}
+            `,
+        }),
+    });
+}
+
+/* -------------------------------------------------------------------------- */
 /* Contact form                                                                */
 /* -------------------------------------------------------------------------- */
 

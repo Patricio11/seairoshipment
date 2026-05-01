@@ -35,7 +35,14 @@ export interface VettingUser {
     updatedAt: string | Date
     documents: Array<{
         id: string
-        type: "COMPANY_REG_CERT" | "PROOF_OF_ADDRESS" | "VAT_CERT" | "OTHER"
+        type:
+            | "COMPANY_REG_CERT"
+            | "PROOF_OF_ADDRESS"
+            | "RLA_EXPORT_CERT"
+            | "BANK_CONFIRMATION"
+            | "DIRECTOR_ID"
+            | "VAT_CERT"
+            | "OTHER"
         originalName: string
         url: string
         uploadedAt: string | Date
@@ -54,6 +61,9 @@ interface UserReviewModalProps {
 const DOC_LABELS: Record<VettingUser["documents"][number]["type"], string> = {
     COMPANY_REG_CERT: "Company Registration",
     PROOF_OF_ADDRESS: "Proof of Address",
+    RLA_EXPORT_CERT: "RLA Export Certificate",
+    BANK_CONFIRMATION: "Bank Confirmation Letter",
+    DIRECTOR_ID: "Director's ID",
     VAT_CERT: "VAT Certificate",
     OTHER: "Other",
 }

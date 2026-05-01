@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react"
 import { motion } from "framer-motion"
-import { Building2, MapPin, Hash, Globe2, Receipt, FileCheck2, FileWarning, UploadCloud, Loader2, CheckCircle2, X, AlertTriangle, ArrowRight } from "lucide-react"
+import { Building2, MapPin, Hash, Globe2, Receipt, FileCheck2, FileWarning, UploadCloud, Loader2, CheckCircle2, X, AlertTriangle, ArrowRight, Download } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,10 +10,19 @@ import { Label } from "@/components/ui/label"
 import { uploadFile, STORAGE_PATHS } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 
-type DocType = "COMPANY_REG_CERT" | "PROOF_OF_ADDRESS" | "VAT_CERT"
+export interface OnboardingRequirement {
+    id: string
+    name: string
+    description: string | null
+    templateUrl: string | null
+    templateOriginalName: string | null
+    templateMimeType: string | null
+    templateSizeBytes: number | null
+    required: boolean
+}
 
 interface UploadedDoc {
-    type: DocType
+    requirementId: string
     originalName: string
     url: string
     mimeType?: string
@@ -31,49 +40,27 @@ interface InitialFields {
 interface OnboardingFormProps {
     initial: InitialFields
     adminNote?: string | null
+    requirements: OnboardingRequirement[]
 }
 
-const DOC_META: Record<DocType, { label: string; description: string; required: boolean }> = {
-    COMPANY_REG_CERT: {
-        label: "Company Registration Certificate",
-        description: "CIPC certificate or equivalent for your country",
-        required: true,
-    },
-    PROOF_OF_ADDRESS: {
-        label: "Proof of Address",
-        description: "Utility bill, lease, or bank statement (last 3 months)",
-        required: true,
-    },
-    VAT_CERT: {
-        label: "VAT Certificate",
-        description: "Optional — speeds up tax setup",
-        required: false,
-    },
-}
-
-export function OnboardingForm({ initial, adminNote }: OnboardingFormProps) {
+export function OnboardingForm({ initial, adminNote, requirements }: OnboardingFormProps) {
     const router = useRouter()
     const [companyName, setCompanyName] = useState(initial.companyName || "")
     const [companyReg, setCompanyReg] = useState(initial.companyReg || "")
     const [companyAddress, setCompanyAddress] = useState(initial.companyAddress || "")
     const [companyCountry, setCompanyCountry] = useState(initial.companyCountry || "")
     const [vatNumber, setVatNumber] = useState(initial.vatNumber || "")
-    const [docs, setDocs] = useState<Record<DocType, UploadedDoc | null>>({
-        COMPANY_REG_CERT: null,
-        PROOF_OF_ADDRESS: null,
-        VAT_CERT: null,
-    })
-    const [uploading, setUploading] = useState<DocType | null>(null)
+    const [docs, setDocs] = useState<Record<string, UploadedDoc | null>>(() =>
+        Object.fromEntries(requirements.map(r => [r.id, null])),
+    )
+    const [uploading, setUploading] = useState<string | null>(null)
     const [submitting, setSubmitting] = useState(false)
-    const inputRefs = useRef<Record<DocType, HTMLInputElement | null>>({
-        COMPANY_REG_CERT: null,
-        PROOF_OF_ADDRESS: null,
-        VAT_CERT: null,
-    })
+    const inputRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
-    const handleUpload = async (type: DocType, file: File | undefined) => {
+    const handleUpload = async (requirementId: string, file: File | undefined) => {
         if (!file) return
-        setUploading(type)
+        const requirement = requirements.find(r => r.id === requirementId)
+        setUploading(requirementId)
         try {
             const result = await uploadFile(file, STORAGE_PATHS.COMPANY_DOCUMENTS)
             if (!result.success || !result.url) {
@@ -82,15 +69,15 @@ export function OnboardingForm({ initial, adminNote }: OnboardingFormProps) {
             }
             setDocs(prev => ({
                 ...prev,
-                [type]: {
-                    type,
+                [requirementId]: {
+                    requirementId,
                     originalName: file.name,
                     url: result.url!,
                     mimeType: file.type,
                     sizeBytes: file.size,
                 },
             }))
-            toast.success(`${DOC_META[type].label} uploaded`)
+            toast.success(`${requirement?.name ?? "Document"} uploaded`)
         } catch (err) {
             toast.error(err instanceof Error ? err.message : "Upload failed")
         } finally {
@@ -98,13 +85,15 @@ export function OnboardingForm({ initial, adminNote }: OnboardingFormProps) {
         }
     }
 
-    const removeDoc = (type: DocType) => {
-        setDocs(prev => ({ ...prev, [type]: null }))
+    const removeDoc = (requirementId: string) => {
+        setDocs(prev => ({ ...prev, [requirementId]: null }))
     }
 
-    const requiredDocsReady = !!docs.COMPANY_REG_CERT && !!docs.PROOF_OF_ADDRESS
+    const requiredDocsReady = requirements
+        .filter(r => r.required)
+        .every(r => !!docs[r.id])
     const fieldsReady = !!companyName.trim() && !!companyReg.trim() && !!companyAddress.trim() && companyCountry.trim().length === 2
-    const canSubmit = fieldsReady && requiredDocsReady && !submitting && !uploading
+    const canSubmit = fieldsReady && requiredDocsReady && !submitting && !uploading && requirements.length > 0
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -187,79 +176,98 @@ export function OnboardingForm({ initial, adminNote }: OnboardingFormProps) {
             <div className="space-y-3">
                 <div>
                     <p className="text-sm font-bold text-slate-900 dark:text-white">Verification Documents</p>
-                    <p className="text-xs text-slate-500 mt-0.5">Drop in PDFs or images. Required documents must be uploaded before you can submit.</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Drop in PDFs or images. Required documents must be uploaded before you can submit. For items with a template, download it first, fill it in, and upload the completed copy.</p>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                    {(Object.keys(DOC_META) as DocType[]).map(type => {
-                        const meta = DOC_META[type]
-                        const doc = docs[type]
-                        const busy = uploading === type
-                        return (
-                            <div
-                                key={type}
-                                className={`rounded-2xl border-2 p-4 transition-colors ${
-                                    doc
-                                        ? "border-emerald-500/50 bg-emerald-50/40 dark:bg-emerald-900/10"
-                                        : meta.required
-                                            ? "border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/40 dark:bg-slate-900/30"
-                                            : "border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-900/20"
-                                }`}
-                            >
-                                <div className="flex items-start justify-between gap-3 mb-3">
-                                    <div className="flex items-start gap-2.5">
-                                        <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${doc ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "bg-slate-100 dark:bg-slate-800 text-slate-500"}`}>
-                                            {doc ? <FileCheck2 className="h-4 w-4" /> : <FileWarning className="h-4 w-4" />}
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                                                {meta.label}
-                                                {meta.required && <span className="text-red-500 text-xs">*</span>}
-                                            </p>
-                                            <p className="text-[11px] text-slate-500 mt-0.5">{meta.description}</p>
+                {requirements.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-6 text-center">
+                        <p className="text-sm text-slate-500">No documents are currently required. Please contact support if you believe this is an error.</p>
+                    </div>
+                ) : (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        {requirements.map(requirement => {
+                            const doc = docs[requirement.id]
+                            const busy = uploading === requirement.id
+                            return (
+                                <div
+                                    key={requirement.id}
+                                    className={`rounded-2xl border-2 p-4 transition-colors ${
+                                        doc
+                                            ? "border-emerald-500/50 bg-emerald-50/40 dark:bg-emerald-900/10"
+                                            : requirement.required
+                                                ? "border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/40 dark:bg-slate-900/30"
+                                                : "border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-900/20"
+                                    }`}
+                                >
+                                    <div className="flex items-start justify-between gap-3 mb-3">
+                                        <div className="flex items-start gap-2.5">
+                                            <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${doc ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "bg-slate-100 dark:bg-slate-800 text-slate-500"}`}>
+                                                {doc ? <FileCheck2 className="h-4 w-4" /> : <FileWarning className="h-4 w-4" />}
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                                    {requirement.name}
+                                                    {requirement.required && <span className="text-red-500 text-xs">*</span>}
+                                                </p>
+                                                {requirement.description && (
+                                                    <p className="text-[11px] text-slate-500 mt-0.5">{requirement.description}</p>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
+
+                                    {requirement.templateUrl && (
+                                        <a
+                                            href={requirement.templateUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="mb-2 flex items-center gap-1.5 text-[11px] font-bold text-brand-blue hover:underline"
+                                        >
+                                            <Download className="h-3 w-3" />
+                                            Download template{requirement.templateOriginalName ? ` (${requirement.templateOriginalName})` : ""}
+                                        </a>
+                                    )}
+
+                                    {doc ? (
+                                        <div className="flex items-center justify-between gap-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2">
+                                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                                                <span className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate">{doc.originalName}</span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeDoc(requirement.id)}
+                                                className="shrink-0 h-7 w-7 rounded-md text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center justify-center"
+                                                aria-label="Remove"
+                                            >
+                                                <X className="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <input
+                                                ref={(el) => { inputRefs.current[requirement.id] = el }}
+                                                type="file"
+                                                accept="application/pdf,image/*"
+                                                className="hidden"
+                                                onChange={(e) => handleUpload(requirement.id, e.target.files?.[0])}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => inputRefs.current[requirement.id]?.click()}
+                                                disabled={busy}
+                                                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-brand-blue hover:border-brand-blue transition-colors disabled:opacity-60"
+                                            >
+                                                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UploadCloud className="h-3.5 w-3.5" />}
+                                                {busy ? "Uploading…" : requirement.templateUrl ? "Upload completed file" : "Upload file"}
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
-
-                                {doc ? (
-                                    <div className="flex items-center justify-between gap-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2">
-                                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                                            <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                                            <span className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate">{doc.originalName}</span>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => removeDoc(type)}
-                                            className="shrink-0 h-7 w-7 rounded-md text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center justify-center"
-                                            aria-label="Remove"
-                                        >
-                                            <X className="h-3.5 w-3.5" />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <input
-                                            ref={(el) => { inputRefs.current[type] = el }}
-                                            type="file"
-                                            accept="application/pdf,image/*"
-                                            className="hidden"
-                                            onChange={(e) => handleUpload(type, e.target.files?.[0])}
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => inputRefs.current[type]?.click()}
-                                            disabled={busy}
-                                            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-brand-blue hover:border-brand-blue transition-colors disabled:opacity-60"
-                                        >
-                                            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UploadCloud className="h-3.5 w-3.5" />}
-                                            {busy ? "Uploading…" : "Upload file"}
-                                        </button>
-                                    </>
-                                )}
-                            </div>
-                        )
-                    })}
-                </div>
+                            )
+                        })}
+                    </div>
+                )}
             </div>
 
             <div className="pt-2 flex justify-end">

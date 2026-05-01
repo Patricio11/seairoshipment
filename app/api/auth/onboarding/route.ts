@@ -1,19 +1,45 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/server";
 import { db } from "@/lib/db";
-import { user, companyDocuments, adminNotifications } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { user, companyDocuments, adminNotifications, onboardingRequirements } from "@/lib/db/schema";
+import { eq, asc } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import { sendOnboardingSubmittedEmail } from "@/lib/email";
+import { sendOnboardingSubmittedEmail, sendAdminVettingNotificationEmail } from "@/lib/email";
 
 interface SubmittedDoc {
-    type: "COMPANY_REG_CERT" | "PROOF_OF_ADDRESS" | "VAT_CERT" | "OTHER";
+    /** Stable id of the onboarding_requirements row this upload answers. */
+    requirementId: string;
     originalName: string;
     url: string;
     mimeType?: string;
     sizeBytes?: number;
     storedName?: string;
 }
+
+type CompanyDocumentType =
+    | "COMPANY_REG_CERT"
+    | "PROOF_OF_ADDRESS"
+    | "RLA_EXPORT_CERT"
+    | "BANK_CONFIRMATION"
+    | "DIRECTOR_ID"
+    | "TAX_CLEARANCE"
+    | "VAT_CERT"
+    | "OTHER";
+
+/**
+ * Map seeded requirement IDs to the legacy `company_documents.type` enum so
+ * existing queries keyed on `type` keep working alongside the new
+ * requirementId link. Anything custom the admin adds maps to OTHER.
+ */
+const SEED_TYPE_MAP: Record<string, CompanyDocumentType> = {
+    "req-company-reg": "COMPANY_REG_CERT",
+    "req-proof-of-address": "PROOF_OF_ADDRESS",
+    "req-rla-export": "RLA_EXPORT_CERT",
+    "req-tax-clearance": "TAX_CLEARANCE",
+    "req-bank-confirmation": "BANK_CONFIRMATION",
+    "req-director-id": "DIRECTOR_ID",
+    "req-vat-cert": "VAT_CERT",
+};
 
 /**
  * Fetch the current user's onboarding state. Page renders a different sub-view
@@ -54,6 +80,15 @@ export async function GET() {
             .from(companyDocuments)
             .where(eq(companyDocuments.userId, row.id));
 
+        // Active requirements drive the form. Inactive ones are never returned —
+        // existing in-flight users still see their previously-uploaded docs via
+        // the documents array (which carries the original requirementId).
+        const requirements = await db
+            .select()
+            .from(onboardingRequirements)
+            .where(eq(onboardingRequirements.active, true))
+            .orderBy(asc(onboardingRequirements.sortOrder));
+
         return NextResponse.json({
             status,
             email: row.email,
@@ -68,9 +103,21 @@ export async function GET() {
             },
             rejectionReason: row.vettingRejectionReason,
             adminNote: row.vettingAdminNote,
+            requirements: requirements.map(r => ({
+                id: r.id,
+                name: r.name,
+                description: r.description,
+                templateUrl: r.templateUrl,
+                templateOriginalName: r.templateOriginalName,
+                templateMimeType: r.templateMimeType,
+                templateSizeBytes: r.templateSizeBytes,
+                required: r.required,
+                sortOrder: r.sortOrder,
+            })),
             documents: docs.map(d => ({
                 id: d.id,
                 type: d.type,
+                requirementId: d.requirementId,
                 originalName: d.originalName,
                 url: d.url,
                 uploadedAt: d.uploadedAt,
@@ -136,12 +183,24 @@ export async function POST(req: NextRequest) {
         if (!companyAddress?.trim()) errors.push("Physical address is required");
         if (!companyCountry?.trim() || companyCountry.length !== 2) errors.push("Country must be a 2-letter ISO code");
 
-        // Documents — require at least one COMPANY_REG_CERT and one PROOF_OF_ADDRESS
+        // Validate uploaded documents against the active requirement set.
+        // Every active+required requirement must have a matching upload by requirementId.
         const docs = Array.isArray(documents) ? documents : [];
-        const hasReg = docs.some(d => d.type === "COMPANY_REG_CERT" && typeof d.url === "string" && d.url);
-        const hasPoA = docs.some(d => d.type === "PROOF_OF_ADDRESS" && typeof d.url === "string" && d.url);
-        if (!hasReg) errors.push("Company registration certificate is required");
-        if (!hasPoA) errors.push("Proof of address is required");
+        const activeRequirements = await db
+            .select()
+            .from(onboardingRequirements)
+            .where(eq(onboardingRequirements.active, true));
+
+        const submittedReqIds = new Set(
+            docs
+                .filter(d => typeof d.url === "string" && d.url && typeof d.requirementId === "string")
+                .map(d => d.requirementId),
+        );
+        for (const r of activeRequirements) {
+            if (r.required && !submittedReqIds.has(r.id)) {
+                errors.push(`${r.name} is required`);
+            }
+        }
 
         if (errors.length > 0) {
             return NextResponse.json({ error: errors.join("; ") }, { status: 400 });
@@ -166,11 +225,12 @@ export async function POST(req: NextRequest) {
         await db.delete(companyDocuments).where(eq(companyDocuments.userId, row.id));
 
         const docInserts = docs
-            .filter(d => typeof d.url === "string" && d.url)
+            .filter(d => typeof d.url === "string" && d.url && typeof d.requirementId === "string")
             .map(d => ({
                 id: `CDOC-${nanoid(10)}`,
                 userId: row.id,
-                type: d.type,
+                requirementId: d.requirementId,
+                type: SEED_TYPE_MAP[d.requirementId] ?? "OTHER",
                 originalName: d.originalName ?? "untitled",
                 storedName: d.storedName ?? null,
                 url: d.url,
@@ -195,6 +255,20 @@ export async function POST(req: NextRequest) {
             await sendOnboardingSubmittedEmail(row.email, companyName!.trim());
         } catch (mailErr) {
             console.warn("[onboarding] confirmation email failed", mailErr);
+        }
+
+        // Notify admin by email too — in-app notification fires above, this is the
+        // out-of-band nudge so admins don't miss submissions when not logged in.
+        try {
+            await sendAdminVettingNotificationEmail({
+                companyName: companyName!.trim(),
+                contactName: row.name,
+                contactEmail: row.email,
+                userId: row.id,
+                submittedAt: new Date(),
+            });
+        } catch (mailErr) {
+            console.warn("[onboarding] admin notification email failed", mailErr);
         }
 
         return NextResponse.json({ success: true, status: "PENDING_REVIEW" });
