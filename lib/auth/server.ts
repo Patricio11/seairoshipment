@@ -56,6 +56,9 @@ export const auth = betterAuth({
     emailVerification: {
         sendOnSignUp: true,
         autoSignInAfterVerification: true,
+        // After clicking the verify link, Better Auth lands the user here.
+        // Without this, it defaults to "/" (landing page), forcing a manual login.
+        callbackURL: `${appUrl}/auth/verified`,
         sendVerificationEmail: async ({ user, url }) => {
             await sendVerificationEmail(user.email, url);
         },

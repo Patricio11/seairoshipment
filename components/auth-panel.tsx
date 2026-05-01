@@ -119,10 +119,12 @@ export function AuthPanel({ isOpen, onClose, initialMode = 'login' }: AuthPanelP
                 }, {
                     onSuccess: async () => {
                         toast.success("Account created!", {
-                            description: "Please check your email to verify your account."
+                            description: "Check your inbox — we sent you a verification link."
                         });
-                        // Optimistically switch to login or close
                         onClose();
+                        // Send them to a dedicated waiting page that explains
+                        // what to do next + nudges them to check spam.
+                        router.push(`/auth/check-email?email=${encodeURIComponent(formData.email)}`);
                     },
                     onError: (ctx: { error: { message?: string } }) => {
                         toast.error("Sign up failed", {

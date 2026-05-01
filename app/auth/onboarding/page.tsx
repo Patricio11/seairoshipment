@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
-import { Ship } from "lucide-react"
+import Image from "next/image"
+import Link from "next/link"
 import { getSession } from "@/lib/auth/server"
 import { db } from "@/lib/db"
 import { user } from "@/lib/db/schema"
@@ -33,12 +34,16 @@ export default async function OnboardingPage() {
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950">
             <header className="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur">
                 <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-slate-900 dark:text-white">
-                        <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-brand-blue to-cyan-500 flex items-center justify-center shadow-md">
-                            <Ship className="h-4 w-4 text-white" />
-                        </div>
-                        <span className="font-display text-base font-bold tracking-tight">Seairo</span>
-                    </div>
+                    <Link href="/" className="flex items-center gap-2">
+                        <Image
+                            src="/seairo-logo.png"
+                            alt="Seairo Cargo — Shared Reefer Services"
+                            width={120}
+                            height={40}
+                            className="h-9 w-auto object-contain"
+                            priority
+                        />
+                    </Link>
                     <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Onboarding</span>
                 </div>
             </header>

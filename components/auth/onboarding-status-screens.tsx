@@ -43,10 +43,13 @@ export function EmailPendingScreen({ email }: { email: string }) {
             <p className="text-sm font-mono font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 rounded-lg py-2 px-3 inline-block">
                 {email}
             </p>
-            <p className="text-xs text-slate-500 mt-4">
-                Click the link in the email to continue. If you don&apos;t see it, check your spam folder.
-            </p>
-            <div className="flex items-center justify-center gap-3 mt-6">
+            <div className="mt-5 max-w-md mx-auto rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50/70 dark:bg-amber-900/10 p-3.5 text-left flex items-start gap-2.5">
+                <span className="shrink-0 mt-0.5">⚠️</span>
+                <p className="text-xs text-amber-900 dark:text-amber-200 leading-relaxed">
+                    Don&apos;t see it? Check your <strong>Spam</strong> or <strong>Junk</strong> folder — the first email from a new sender often lands there. Mark us as &quot;Not spam&quot; so future updates land in your inbox.
+                </p>
+            </div>
+            <div className="flex items-center justify-center gap-3 mt-5">
                 <Button
                     variant="outline"
                     onClick={handleResend}
