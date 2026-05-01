@@ -125,11 +125,12 @@ file updates the link without resending emails.
 - [x] Submit gating: every required active requirement must have an upload before submit enables
 - [x] `POST /api/auth/onboarding` validates against the active required-requirements set; inserts persist `requirementId` plus a `SEED_TYPE_MAP[requirementId] ?? "OTHER"` mapping for backwards-compat with the legacy `type` enum
 
-### Phase D — Verification email integration ⏳ TODO
+### Phase D — Verification email integration ✅ DONE
 
-- [ ] `sendVerificationEmail` in `lib/email.ts` accepts an optional `templates: Array<{ name; url; description? }>`
-- [ ] Better Auth's `emailVerification.sendVerificationEmail` callback in `lib/auth/server.ts` queries active fillable templates and passes them in
-- [ ] Email body gains a "Documents to download and fill in" section between the verify CTA and the "what's next" callout
+- [x] `sendVerificationEmail` in `lib/email.ts` accepts an optional `templates: VerificationTemplate[]`
+- [x] Better Auth's `emailVerification.sendVerificationEmail` callback in `lib/auth/server.ts` queries active+templated requirements (active=true AND templateUrl IS NOT NULL, ordered by sortOrder) and passes them in. Wrapped in try/catch — template-loading failure logs a warning but never blocks the verification email itself.
+- [x] Email body gains a "Documents to download and fill in" section between the verify CTA and the "What's next" callout. Each template is a tappable card showing name + optional description; clicking opens the file at its Supabase URL.
+- [x] `auth.api.sendVerificationEmail` resends (used by `/api/auth/resend-verification` and `/api/admin/users/[id]/resend-verification`) automatically pick up the same templates because they route through the same callback.
 
 ### Phase E — Polish ⏳ TODO
 

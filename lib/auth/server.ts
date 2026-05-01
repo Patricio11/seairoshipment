@@ -2,13 +2,13 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { and, asc, eq, isNotNull } from "drizzle-orm";
 import { headers } from "next/headers";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
-import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email";
+import { sendVerificationEmail, sendPasswordResetEmail, type VerificationTemplate } from "@/lib/email";
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
@@ -69,7 +69,32 @@ export const auth = betterAuth({
                 u.searchParams.set("callbackURL", "/auth/verified");
                 finalUrl = u.toString();
             } catch { /* malformed URL, send as-is */ }
-            await sendVerificationEmail(user.email, finalUrl);
+
+            // Pull active fillable templates so the verification email can list
+            // them inline. Failure to load templates must not block sending —
+            // the email is critical, the template list is a nice-to-have.
+            let templates: VerificationTemplate[] = [];
+            try {
+                const rows = await db
+                    .select({
+                        name: schema.onboardingRequirements.name,
+                        url: schema.onboardingRequirements.templateUrl,
+                        description: schema.onboardingRequirements.description,
+                    })
+                    .from(schema.onboardingRequirements)
+                    .where(and(
+                        eq(schema.onboardingRequirements.active, true),
+                        isNotNull(schema.onboardingRequirements.templateUrl),
+                    ))
+                    .orderBy(asc(schema.onboardingRequirements.sortOrder));
+                templates = rows
+                    .filter((r): r is { name: string; url: string; description: string | null } => !!r.url)
+                    .map(r => ({ name: r.name, url: r.url, description: r.description }));
+            } catch (err) {
+                console.warn("[auth] failed to load fillable templates for verification email", err);
+            }
+
+            await sendVerificationEmail(user.email, finalUrl, templates);
         },
     },
     user: {

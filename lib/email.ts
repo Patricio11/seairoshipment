@@ -90,7 +90,32 @@ export async function sendEmail({
 /* Auth — verification + password reset                                        */
 /* -------------------------------------------------------------------------- */
 
-export async function sendVerificationEmail(to: string, verificationUrl: string) {
+export interface VerificationTemplate {
+    name: string;
+    url: string;
+    description?: string | null;
+}
+
+export async function sendVerificationEmail(
+    to: string,
+    verificationUrl: string,
+    templates: VerificationTemplate[] = [],
+) {
+    const templatesHtml = templates.length > 0 ? `
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; margin-top: 8px;">
+            <p style="color: #2563eb; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 6px;">Documents to download and fill in</p>
+            <p style="color: #475569; font-size: 13px; line-height: 1.55; margin: 0 0 14px;">
+                Please download these templates, complete them, and upload your filled copies when you reach the documents step of onboarding.
+            </p>
+            ${templates.map(t => `
+                <a href="${t.url}" style="display: block; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; text-decoration: none;">
+                    <div style="color: #1e40af; font-weight: 700; font-size: 13px;">⬇ ${escapeHtml(t.name)}</div>
+                    ${t.description ? `<div style="color: #64748b; font-size: 12px; line-height: 1.5; margin-top: 3px;">${escapeHtml(t.description)}</div>` : ""}
+                </a>
+            `).join("")}
+        </div>
+    ` : "";
+
     await sendEmail({
         to,
         subject: "Verify your email — Seairo Cargo",
@@ -99,7 +124,8 @@ export async function sendVerificationEmail(to: string, verificationUrl: string)
             intro: "Thanks for signing up. Click the button below to confirm your email address — then we'll guide you through a quick onboarding so we can unlock the dashboard for your company.",
             contentHtml: `
                 ${ctaButton(verificationUrl, "Verify Email Address")}
-                <div style="background: #eff6ff; border: 1px solid #dbeafe; border-radius: 10px; padding: 14px 16px; margin-top: 8px;">
+                ${templatesHtml}
+                <div style="background: #eff6ff; border: 1px solid #dbeafe; border-radius: 10px; padding: 14px 16px; margin-top: 16px;">
                     <p style="color: #1e40af; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 6px;">What's next</p>
                     <p style="color: #475569; font-size: 13px; line-height: 1.55; margin: 0;">
                         After verifying, you'll be asked for your company registration details and a couple of supporting documents. Our team typically approves applications within one business day.
