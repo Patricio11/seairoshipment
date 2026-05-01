@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
@@ -83,6 +85,10 @@ export const metadata: Metadata = {
     // Search Console verification — fill once you've verified the property
     verification: {
         google: process.env.GOOGLE_SITE_VERIFICATION,
+        // Bing / Yandex / etc. → metadata.verification.other = { 'msvalidate.01': '...' }
+        ...(process.env.BING_SITE_VERIFICATION
+            ? { other: { "msvalidate.01": process.env.BING_SITE_VERIFICATION } }
+            : {}),
     },
 };
 
@@ -106,6 +112,8 @@ export default function RootLayout({
             >
                 {children}
                 <Toaster position="top-right" richColors />
+                <Analytics />
+                <SpeedInsights />
             </body>
         </html>
     );

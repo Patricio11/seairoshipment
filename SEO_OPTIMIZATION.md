@@ -61,8 +61,8 @@ Long-tail (FAQ schema captures these):
 - [x] `app/sitemap.ts` — only public landing for now (`/`)
 - [x] `app/robots.ts` — `/` allowed; `/admin`, `/dashboard`, `/api`, auth holding routes disallowed; sitemap pointer
 - [x] `components/seo/structured-data.tsx` — Organization, LocalBusiness (Cape Town address + geo), Service ("Shared Reefer Services®"), wired into landing page as JSON-LD
-- [ ] **Asset task:** OG image at `public/og.png` (1200×630) — placeholder OK for v1, replace with branded design before launch
-- [ ] **Asset task:** Favicon set — `public/favicon.ico`, `public/icon.svg`, `public/apple-touch-icon.png`, `public/site.webmanifest`
+- [ ] **Asset task:** OG image at `public/og.png` (1200×630) — placeholder OK for v1, replace with branded design before launch. Without it, social shares (LinkedIn/Slack/Twitter) get an empty preview.
+- [ ] **Asset task:** Full favicon set — `public/icon.svg` (vector logo), `public/apple-touch-icon.png` (180×180), `public/site.webmanifest` (icon manifest). Next auto-serves `app/favicon.ico` already so the basic browser tab favicon works. The icon + manifest references stay in `app/layout.tsx` — once the assets are dropped in `/public` and deployed, the 404s disappear automatically. Use [realfavicongenerator.net](https://realfavicongenerator.net) to generate the whole set from your logo.
 
 ### Phase B — Content keyword optimization ✅ DONE
 
@@ -76,18 +76,20 @@ Long-tail (FAQ schema captures these):
 - [x] Footer logo alt text expanded from "Seairo" → "Seairo Cargo — Shared Reefer Services"
 - [x] Internal link to FAQ added to the footer's Product column
 
-### Phase C — Tracking + verification ⏳ TODO
+### Phase C — Tracking + verification ✅ DONE (manual setup steps below)
 
-So you can see what's working.
+**Code-side**
+- [x] `metadata.verification.google` reads from `GOOGLE_SITE_VERIFICATION` env — set in Vercel and the `<meta>` tag is automatically rendered into `<head>`
+- [x] `metadata.verification.other['msvalidate.01']` reads from `BING_SITE_VERIFICATION` env — same pattern
+- [x] **Vercel Analytics** (`@vercel/analytics`) mounted via `<Analytics />` in root layout — captures page views, no cookie banner needed (privacy-first)
+- [x] **Vercel Speed Insights** (`@vercel/speed-insights`) mounted via `<SpeedInsights />` — Core Web Vitals (LCP / CLS / INP) reported back so we can spot perf regressions
+- [x] No GA4, no Plausible — Vercel covers what we need without cookie-banner overhead
 
-- [ ] Google Search Console verification meta tag (`google-site-verification`)
-- [ ] Submit sitemap to Search Console after first deploy
-- [ ] Bing Webmaster Tools verification (free + small but real traffic source)
-- [ ] Analytics — install one of:
-  - Vercel Analytics (simplest, $0 on hobby, included on pro)
-  - Plausible (privacy-first, $9/mo, no cookie banner needed)
-  - GA4 (most data, free, but needs cookie banner for EU)
-- [ ] Decide on cookie banner stance once analytics is picked
+**Manual setup steps for the user** (one-time)
+- [ ] Visit [Google Search Console](https://search.google.com/search-console), add `seairo.com`, choose the **HTML tag** verification method, copy the `content` value, set as `GOOGLE_SITE_VERIFICATION` env in Vercel, redeploy, then click Verify in Search Console
+- [ ] In Search Console → Sitemaps, submit `https://seairo.com/sitemap.xml`
+- [ ] Visit [Bing Webmaster Tools](https://www.bing.com/webmasters), import from GSC (one-click) OR add the property manually + use the `BING_SITE_VERIFICATION` env hook to verify
+- [ ] Enable Vercel Analytics in the project's Analytics tab in the Vercel dashboard (data won't appear until that's flipped on)
 
 ---
 
