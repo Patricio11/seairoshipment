@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import {
-    Building2, Hash, Globe2, MapPin, Receipt, FileText, ExternalLink, Mail, CheckCircle2, XCircle, MessageSquareWarning, Loader2,
+    Building2, Hash, Globe2, MapPin, Receipt, FileText, ExternalLink, Mail, CheckCircle2, XCircle, MessageSquareWarning, Loader2, MailWarning, RefreshCw, Hourglass,
 } from "lucide-react"
 import {
     Dialog,
@@ -58,7 +58,7 @@ const DOC_LABELS: Record<VettingUser["documents"][number]["type"], string> = {
     OTHER: "Other",
 }
 
-type Action = "approve" | "reject" | "request-changes" | null
+type Action = "approve" | "reject" | "request-changes" | "resend-verification" | null
 
 export function UserReviewModal({ user, open, onClose, onActionComplete }: UserReviewModalProps) {
     const [pendingAction, setPendingAction] = useState<Action>(null)
@@ -110,10 +110,13 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
             const successCopy =
                 action === "approve" ? "User approved — welcome notification sent" :
                 action === "reject" ? "User rejected" :
+                action === "resend-verification" ? "Verification email resent" :
                 "Changes requested — user can edit & resubmit"
             toast.success(successCopy)
             onActionComplete()
-            closeAll()
+            // resend-verification doesn't change state — leave modal open so admin can confirm
+            if (action !== "resend-verification") closeAll()
+            else setSubmitting(false)
         } catch {
             toast.error("Action failed")
             setSubmitting(false)
@@ -229,7 +232,43 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
                             </p>
                         </motion.div>
                     )}
+
+                    {pendingAction === "resend-verification" && (
+                        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-blue-500/30 bg-blue-500/5 p-4 flex items-start gap-3">
+                            <RefreshCw className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
+                            <div className="text-sm">
+                                <p className="font-bold text-blue-200">Resend verification email?</p>
+                                <p className="text-blue-200/70 mt-0.5">
+                                    A fresh verification link will be emailed to <span className="font-mono text-blue-100">{user.email}</span>. The previous link stays valid until it expires.
+                                </p>
+                            </div>
+                        </motion.div>
+                    )}
                 </div>
+
+                {/* Status-specific informational cards (no actions) */}
+                {pendingAction === null && user.vettingStatus === "EMAIL_PENDING" && (
+                    <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 flex items-start gap-3">
+                        <MailWarning className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+                        <div className="text-sm">
+                            <p className="font-bold text-amber-200">Hasn&apos;t verified email yet</p>
+                            <p className="text-amber-200/70 mt-0.5">
+                                The user signed up but hasn&apos;t clicked the link in their inbox. You can re-send the verification email below — it goes to <span className="font-mono text-amber-100">{user.email}</span>.
+                            </p>
+                        </div>
+                    </div>
+                )}
+                {pendingAction === null && user.vettingStatus === "ONBOARDING_PENDING" && (
+                    <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4 flex items-start gap-3">
+                        <Hourglass className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
+                        <div className="text-sm">
+                            <p className="font-bold text-blue-200">Email verified — waiting on user</p>
+                            <p className="text-blue-200/70 mt-0.5">
+                                They&apos;ve confirmed their email but haven&apos;t completed the onboarding form yet. No admin action needed — the next step is on them.
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 {/* Footer actions */}
                 <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2 pt-3 border-t border-slate-800 mt-2">
@@ -237,26 +276,41 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
 
                     {pendingAction === null ? (
                         <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
-                            <Button
-                                variant="outline"
-                                onClick={() => setPendingAction("request-changes")}
-                                className="border-amber-500/30 bg-amber-500/5 text-amber-300 hover:bg-amber-500/10 hover:text-amber-200"
-                            >
-                                <MessageSquareWarning className="h-4 w-4 mr-1.5" /> Request Changes
-                            </Button>
-                            <Button
-                                variant="outline"
-                                onClick={() => setPendingAction("reject")}
-                                className="border-red-500/30 bg-red-500/5 text-red-300 hover:bg-red-500/10 hover:text-red-200"
-                            >
-                                <XCircle className="h-4 w-4 mr-1.5" /> Reject
-                            </Button>
-                            <Button
-                                onClick={() => setPendingAction("approve")}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
-                            >
-                                <CheckCircle2 className="h-4 w-4 mr-1.5" /> Approve
-                            </Button>
+                            {/* EMAIL_PENDING — only the resend action is meaningful */}
+                            {user.vettingStatus === "EMAIL_PENDING" && (
+                                <Button
+                                    onClick={() => setPendingAction("resend-verification")}
+                                    className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold"
+                                >
+                                    <RefreshCw className="h-4 w-4 mr-1.5" /> Resend verification email
+                                </Button>
+                            )}
+
+                            {/* PENDING_REVIEW — full action set */}
+                            {user.vettingStatus === "PENDING_REVIEW" && (
+                                <>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setPendingAction("request-changes")}
+                                        className="border-amber-500/30 bg-amber-500/5 text-amber-300 hover:bg-amber-500/10 hover:text-amber-200"
+                                    >
+                                        <MessageSquareWarning className="h-4 w-4 mr-1.5" /> Request Changes
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setPendingAction("reject")}
+                                        className="border-red-500/30 bg-red-500/5 text-red-300 hover:bg-red-500/10 hover:text-red-200"
+                                    >
+                                        <XCircle className="h-4 w-4 mr-1.5" /> Reject
+                                    </Button>
+                                    <Button
+                                        onClick={() => setPendingAction("approve")}
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                                    >
+                                        <CheckCircle2 className="h-4 w-4 mr-1.5" /> Approve
+                                    </Button>
+                                </>
+                            )}
                         </div>
                     ) : (
                         <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
@@ -269,6 +323,7 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
                                 className={
                                     pendingAction === "approve" ? "bg-emerald-600 hover:bg-emerald-700 text-white font-bold" :
                                     pendingAction === "reject" ? "bg-red-600 hover:bg-red-700 text-white font-bold" :
+                                    pendingAction === "resend-verification" ? "bg-brand-blue hover:bg-brand-blue/90 text-white font-bold" :
                                     "bg-amber-600 hover:bg-amber-700 text-white font-bold"
                                 }
                             >
@@ -276,6 +331,7 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
                                 {pendingAction === "approve" && "Confirm approval"}
                                 {pendingAction === "reject" && "Confirm rejection"}
                                 {pendingAction === "request-changes" && "Send request"}
+                                {pendingAction === "resend-verification" && "Send it now"}
                             </Button>
                         </div>
                     )}

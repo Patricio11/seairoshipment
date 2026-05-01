@@ -60,7 +60,16 @@ export const auth = betterAuth({
         // Without this, it defaults to "/" (landing page), forcing a manual login.
         callbackURL: `${appUrl}/auth/verified`,
         sendVerificationEmail: async ({ user, url }) => {
-            await sendVerificationEmail(user.email, url);
+            // Belt-and-braces: the URL Better Auth hands us already includes
+            // a callbackURL query — make absolutely sure it points at /auth/verified
+            // so the post-verify redirect can never silently fall back to "/".
+            let finalUrl = url;
+            try {
+                const u = new URL(url);
+                u.searchParams.set("callbackURL", "/auth/verified");
+                finalUrl = u.toString();
+            } catch { /* malformed URL, send as-is */ }
+            await sendVerificationEmail(user.email, finalUrl);
         },
     },
     user: {

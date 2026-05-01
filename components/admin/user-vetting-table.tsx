@@ -12,10 +12,12 @@ import {
 import { cn } from "@/lib/utils"
 import { UserReviewModal, type VettingUser } from "./user-review-modal"
 
-type Tab = "PENDING_REVIEW" | "APPROVED" | "REJECTED" | "ALL"
+type Tab = "PENDING_REVIEW" | "EMAIL_PENDING" | "ONBOARDING_PENDING" | "APPROVED" | "REJECTED" | "ALL"
 
 const TAB_LABELS: Record<Tab, string> = {
     PENDING_REVIEW: "Pending Review",
+    EMAIL_PENDING: "Email Pending",
+    ONBOARDING_PENDING: "Onboarding",
     APPROVED: "Approved",
     REJECTED: "Rejected",
     ALL: "All",
@@ -43,9 +45,18 @@ export function UserVettingTable() {
     }, [refreshKey])
 
     const counts = useMemo(() => {
-        const c = { PENDING_REVIEW: 0, APPROVED: 0, REJECTED: 0, ALL: users.length }
+        const c: Record<Tab, number> = {
+            PENDING_REVIEW: 0,
+            EMAIL_PENDING: 0,
+            ONBOARDING_PENDING: 0,
+            APPROVED: 0,
+            REJECTED: 0,
+            ALL: users.length,
+        }
         for (const u of users) {
             if (u.vettingStatus === "PENDING_REVIEW") c.PENDING_REVIEW++
+            else if (u.vettingStatus === "EMAIL_PENDING") c.EMAIL_PENDING++
+            else if (u.vettingStatus === "ONBOARDING_PENDING") c.ONBOARDING_PENDING++
             else if (u.vettingStatus === "APPROVED") c.APPROVED++
             else if (u.vettingStatus === "REJECTED") c.REJECTED++
         }
@@ -74,7 +85,7 @@ export function UserVettingTable() {
             {/* Tabs + search */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-center gap-1 bg-slate-950 border border-slate-800 rounded-2xl p-1 w-fit">
-                    {(["PENDING_REVIEW", "APPROVED", "REJECTED", "ALL"] as Tab[]).map(t => (
+                    {(["PENDING_REVIEW", "EMAIL_PENDING", "ONBOARDING_PENDING", "APPROVED", "REJECTED", "ALL"] as Tab[]).map(t => (
                         <button
                             key={t}
                             onClick={() => setTab(t)}
