@@ -96,7 +96,7 @@ export function Footer() {
                     {/* Links Columns */}
                     <div>
                         <h3 className="font-display text-sm font-bold uppercase tracking-wider text-slate-900">
-                            Product.
+                            Product
                         </h3>
                         <ul className="mt-4 space-y-3">
                             {footerLinks.product.map((link) => (
