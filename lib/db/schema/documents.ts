@@ -39,6 +39,8 @@ export const documents = pgTable("documents", {
     type: documentTypeEnum("type").notNull(),
     documentCode: text("document_code"),
     url: text("url"),
+    mimeType: text("mime_type"),
+    sizeBytes: integer("size_bytes"),
 
     // MetaShip sync metadata
     source: documentSourceEnum("source").default("CLIENT_UPLOAD").notNull(),

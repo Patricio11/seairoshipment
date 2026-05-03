@@ -86,16 +86,26 @@ export async function DELETE(
             return NextResponse.json({ error: "Allocation not found" }, { status: 404 });
         }
 
-        // Delete document record (file stays in Supabase — could be cleaned up separately)
-        await db
+        // Only client-uploaded docs are user-deletable; MetaShip-sourced docs
+        // come from the carrier and shouldn't be removable from the client UI.
+        const result = await db
             .delete(documents)
             .where(
                 and(
                     eq(documents.id, docId),
                     eq(documents.allocationId, allocationId),
-                    eq(documents.userId, session.user.id)
+                    eq(documents.userId, session.user.id),
+                    eq(documents.source, "CLIENT_UPLOAD"),
                 )
+            )
+            .returning({ id: documents.id });
+
+        if (result.length === 0) {
+            return NextResponse.json(
+                { error: "Document not found or cannot be deleted" },
+                { status: 404 }
             );
+        }
 
         return NextResponse.json({ success: true });
     } catch (err) {
@@ -128,7 +138,7 @@ export async function POST(
         }
 
         const body = await request.json();
-        const { originalName, storedName, url, type, documentCode } = body;
+        const { originalName, storedName, url, type, documentCode, mimeType, sizeBytes } = body;
 
         if (!originalName || !url) {
             return NextResponse.json({ error: "originalName and url are required" }, { status: 400 });
@@ -139,12 +149,15 @@ export async function POST(
         await db.insert(documents).values({
             id: docId,
             allocationId,
+            containerId: allocation[0].containerId,
             userId: session.user.id,
             originalName,
             storedName: storedName || originalName,
             type: type || "OTHER",
             documentCode: documentCode || null,
             url,
+            mimeType: typeof mimeType === "string" ? mimeType : null,
+            sizeBytes: typeof sizeBytes === "number" && Number.isFinite(sizeBytes) ? sizeBytes : null,
             status: "PENDING",
         });
 
