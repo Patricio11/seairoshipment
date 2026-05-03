@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { CloudSun, Eye, EyeOff, Loader2, MapPin, Plus, Trash2, Anchor, ArrowRight } from "lucide-react"
+import { CloudSun, Eye, EyeOff, Loader2, MapPin, Plus, Trash2, Anchor, ArrowRight, Pencil, Save } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -22,6 +22,8 @@ interface Port {
     updatedAt: string | Date
 }
 
+type FormMode = { kind: "create" } | { kind: "edit"; id: string } | null
+
 const ROLE_OPTIONS: PortRole[] = ["ORIGIN", "DEST", "HUB"]
 const ROLE_PILL: Record<PortRole, string> = {
     ORIGIN: "bg-emerald-900/30 text-emerald-400 border-emerald-800",
@@ -29,16 +31,14 @@ const ROLE_PILL: Record<PortRole, string> = {
     HUB: "bg-purple-900/30 text-purple-400 border-purple-800",
 }
 
+const EMPTY_FORM = { city: "", country: "", role: "DEST" as PortRole, lat: "", lng: "" }
+
 export function DashboardWeatherPortsTable() {
     const [rows, setRows] = useState<Port[]>([])
     const [loading, setLoading] = useState(true)
-    const [creating, setCreating] = useState(false)
-    const [savingNew, setSavingNew] = useState(false)
-    const [newCity, setNewCity] = useState("")
-    const [newCountry, setNewCountry] = useState("")
-    const [newRole, setNewRole] = useState<PortRole>("DEST")
-    const [newLat, setNewLat] = useState("")
-    const [newLng, setNewLng] = useState("")
+    const [formMode, setFormMode] = useState<FormMode>(null)
+    const [saving, setSaving] = useState(false)
+    const [form, setForm] = useState(EMPTY_FORM)
 
     useEffect(() => {
         let cancelled = false
@@ -65,10 +65,7 @@ export function DashboardWeatherPortsTable() {
                 body: JSON.stringify(patch),
             })
             const data = await res.json().catch(() => ({}))
-            if (!res.ok) {
-                toast.error(data.error || "Couldn't update")
-                return
-            }
+            if (!res.ok) { toast.error(data.error || "Couldn't update"); return }
             updateRow(id, patch)
         } catch {
             toast.error("Couldn't update")
@@ -81,44 +78,79 @@ export function DashboardWeatherPortsTable() {
             const res = await fetch(`/api/admin/dashboard-weather-ports/${id}`, { method: "DELETE" })
             if (!res.ok) { toast.error("Couldn't delete"); return }
             setRows(prev => prev.filter(r => r.id !== id))
+            // Close the form if we were editing the row that just got deleted
+            if (formMode?.kind === "edit" && formMode.id === id) closeForm()
             toast.success("Port removed")
         } catch {
             toast.error("Couldn't delete")
         }
     }
 
-    const handleCreate = async () => {
-        if (!newCity.trim()) { toast.error("City name is required"); return }
-        const lat = Number(newLat)
-        const lng = Number(newLng)
+    const openCreate = () => {
+        setForm(EMPTY_FORM)
+        setFormMode({ kind: "create" })
+    }
+
+    const openEdit = (row: Port) => {
+        setForm({
+            city: row.cityName,
+            country: row.countryCode ?? "",
+            role: row.role,
+            lat: String(row.latitude),
+            lng: String(row.longitude),
+        })
+        setFormMode({ kind: "edit", id: row.id })
+    }
+
+    const closeForm = () => {
+        setFormMode(null)
+        setForm(EMPTY_FORM)
+    }
+
+    const submitForm = async () => {
+        if (!formMode) return
+        if (!form.city.trim()) { toast.error("City name is required"); return }
+        const lat = Number(form.lat)
+        const lng = Number(form.lng)
         if (!Number.isFinite(lat) || lat < -90 || lat > 90) { toast.error("Enter a valid latitude (-90 to 90)"); return }
         if (!Number.isFinite(lng) || lng < -180 || lng > 180) { toast.error("Enter a valid longitude (-180 to 180)"); return }
 
-        setSavingNew(true)
+        const payload = {
+            cityName: form.city.trim(),
+            countryCode: form.country.trim() || null,
+            role: form.role,
+            latitude: lat,
+            longitude: lng,
+        }
+
+        setSaving(true)
         try {
-            const res = await fetch("/api/admin/dashboard-weather-ports", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    cityName: newCity,
-                    countryCode: newCountry || null,
-                    role: newRole,
-                    latitude: lat,
-                    longitude: lng,
-                }),
-            })
-            const data = await res.json().catch(() => ({}))
-            if (!res.ok) {
-                toast.error(data.error || "Couldn't create")
-                return
+            if (formMode.kind === "create") {
+                const res = await fetch("/api/admin/dashboard-weather-ports", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                })
+                const data = await res.json().catch(() => ({}))
+                if (!res.ok) { toast.error(data.error || "Couldn't create"); return }
+                setRows(prev => [...prev, data.port])
+                toast.success("Port added")
+            } else {
+                const res = await fetch(`/api/admin/dashboard-weather-ports/${formMode.id}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                })
+                const data = await res.json().catch(() => ({}))
+                if (!res.ok) { toast.error(data.error || "Couldn't save"); return }
+                if (data.port) updateRow(formMode.id, data.port)
+                toast.success("Port updated")
             }
-            setRows(prev => [...prev, data.port])
-            setNewCity(""); setNewCountry(""); setNewRole("DEST"); setNewLat(""); setNewLng(""); setCreating(false)
-            toast.success("Port added")
+            closeForm()
         } catch {
-            toast.error("Couldn't create")
+            toast.error("Couldn't save")
         } finally {
-            setSavingNew(false)
+            setSaving(false)
         }
     }
 
@@ -130,9 +162,12 @@ export function DashboardWeatherPortsTable() {
         )
     }
 
+    const isCreating = formMode?.kind === "create"
+    const editingId = formMode?.kind === "edit" ? formMode.id : null
+
     return (
         <div className="space-y-4">
-            {rows.length === 0 && !creating && (
+            {rows.length === 0 && !isCreating && (
                 <div className="rounded-2xl border-2 border-dashed border-slate-700 bg-slate-900/40 p-10 text-center">
                     <div className="mx-auto h-14 w-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-4">
                         <CloudSun className="h-7 w-7 text-orange-400" />
@@ -142,7 +177,7 @@ export function DashboardWeatherPortsTable() {
                         Add 3–5 ports your clients ship to and from. The Key Port Weather widget on the client dashboard reads from here.
                     </p>
                     <Button
-                        onClick={() => setCreating(true)}
+                        onClick={openCreate}
                         className="mt-5 bg-brand-blue hover:bg-brand-blue/90 text-white font-bold"
                     >
                         <Plus className="h-4 w-4 mr-1.5" /> Add your first port
@@ -158,7 +193,11 @@ export function DashboardWeatherPortsTable() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: row.active ? 1 : 0.55 }}
                             exit={{ opacity: 0 }}
-                            className={`rounded-2xl border p-4 bg-slate-900/60 ${row.active ? "border-slate-800" : "border-dashed border-slate-700"}`}
+                            className={`rounded-2xl border p-4 bg-slate-900/60 ${
+                                editingId === row.id
+                                    ? "border-brand-blue/60 ring-1 ring-brand-blue/30"
+                                    : row.active ? "border-slate-800" : "border-dashed border-slate-700"
+                            }`}
                         >
                             <div className="flex items-start gap-4">
                                 <div className="h-11 w-11 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0">
@@ -176,6 +215,11 @@ export function DashboardWeatherPortsTable() {
                                         {!row.active && (
                                             <span className="text-[10px] uppercase tracking-widest font-black text-slate-400 px-1.5 py-0.5 rounded bg-slate-800">
                                                 Inactive
+                                            </span>
+                                        )}
+                                        {editingId === row.id && (
+                                            <span className="text-[10px] uppercase tracking-widest font-black text-brand-blue px-1.5 py-0.5 rounded bg-blue-900/30 border border-brand-blue/30">
+                                                Editing
                                             </span>
                                         )}
                                     </div>
@@ -211,6 +255,14 @@ export function DashboardWeatherPortsTable() {
                                     </div>
                                 </div>
                                 <div className="shrink-0 flex flex-col gap-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => editingId === row.id ? closeForm() : openEdit(row)}
+                                        className="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-brand-blue px-2 py-1 rounded flex items-center gap-1"
+                                        title="Edit name + coordinates"
+                                    >
+                                        <Pencil className="h-3 w-3" /> {editingId === row.id ? "Close" : "Edit"}
+                                    </button>
                                     {row.active ? (
                                         <button
                                             type="button"
@@ -245,74 +297,19 @@ export function DashboardWeatherPortsTable() {
                 </AnimatePresence>
             </div>
 
-            {creating ? (
-                <motion.div
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="rounded-2xl border-2 border-brand-blue/40 bg-blue-900/10 p-4 space-y-3"
-                >
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="sm:col-span-2">
-                            <label className="text-[11px] uppercase tracking-widest text-slate-400 font-bold">City name</label>
-                            <Input
-                                value={newCity}
-                                onChange={e => setNewCity(e.target.value)}
-                                placeholder="e.g. Cape Town"
-                                className="bg-slate-950 border-slate-800 text-white placeholder:text-slate-500"
-                                autoFocus
-                            />
-                        </div>
-                        <div>
-                            <label className="text-[11px] uppercase tracking-widest text-slate-400 font-bold">Country code (optional)</label>
-                            <Input
-                                value={newCountry}
-                                onChange={e => setNewCountry(e.target.value.toUpperCase().slice(0, 2))}
-                                placeholder="ZA"
-                                maxLength={2}
-                                className="bg-slate-950 border-slate-800 text-white uppercase placeholder:text-slate-500"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-[11px] uppercase tracking-widest text-slate-400 font-bold">Role</label>
-                            <select
-                                value={newRole}
-                                onChange={e => setNewRole(e.target.value as PortRole)}
-                                className="w-full h-9 rounded-md bg-slate-950 border border-slate-800 text-white text-sm px-3"
-                            >
-                                {ROLE_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="text-[11px] uppercase tracking-widest text-slate-400 font-bold">Latitude</label>
-                            <Input
-                                value={newLat}
-                                onChange={e => setNewLat(e.target.value)}
-                                placeholder="-33.9249"
-                                className="bg-slate-950 border-slate-800 text-white font-mono placeholder:text-slate-500"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-[11px] uppercase tracking-widest text-slate-400 font-bold">Longitude</label>
-                            <Input
-                                value={newLng}
-                                onChange={e => setNewLng(e.target.value)}
-                                placeholder="18.4241"
-                                className="bg-slate-950 border-slate-800 text-white font-mono placeholder:text-slate-500"
-                            />
-                        </div>
-                    </div>
-                    <div className="flex gap-2 justify-end pt-1">
-                        <Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-slate-800" onClick={() => { setCreating(false); setNewCity(""); setNewCountry(""); setNewLat(""); setNewLng("") }}>Cancel</Button>
-                        <Button onClick={handleCreate} disabled={savingNew} className="bg-brand-blue hover:bg-brand-blue/90 text-white">
-                            {savingNew ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Plus className="h-3.5 w-3.5 mr-1.5" />}
-                            Add port
-                        </Button>
-                    </div>
-                </motion.div>
+            {formMode ? (
+                <PortForm
+                    mode={formMode.kind}
+                    values={form}
+                    onChange={setForm}
+                    onCancel={closeForm}
+                    onSubmit={submitForm}
+                    saving={saving}
+                />
             ) : rows.length > 0 ? (
                 <button
                     type="button"
-                    onClick={() => setCreating(true)}
+                    onClick={openCreate}
                     className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-slate-700 text-sm font-bold text-slate-400 hover:text-brand-blue hover:border-brand-blue hover:bg-blue-900/10 transition-colors"
                 >
                     <Plus className="h-4 w-4" />
@@ -320,5 +317,107 @@ export function DashboardWeatherPortsTable() {
                 </button>
             ) : null}
         </div>
+    )
+}
+
+/* -------------------------------------------------------------------------- */
+/* Reusable form — used for both create and edit                               */
+/* -------------------------------------------------------------------------- */
+
+interface PortFormValues {
+    city: string
+    country: string
+    role: PortRole
+    lat: string
+    lng: string
+}
+
+interface PortFormProps {
+    mode: "create" | "edit"
+    values: PortFormValues
+    onChange: (next: PortFormValues) => void
+    onSubmit: () => void
+    onCancel: () => void
+    saving: boolean
+}
+
+function PortForm({ mode, values, onChange, onSubmit, onCancel, saving }: PortFormProps) {
+    const set = <K extends keyof PortFormValues>(key: K, v: PortFormValues[K]) =>
+        onChange({ ...values, [key]: v })
+
+    const isEdit = mode === "edit"
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-2xl border-2 border-brand-blue/40 bg-blue-900/10 p-4 space-y-3"
+        >
+            <p className="text-[11px] uppercase tracking-widest font-black text-brand-blue">
+                {isEdit ? "Edit port" : "Add new port"}
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2">
+                    <label className="text-[11px] uppercase tracking-widest text-slate-400 font-bold">City name</label>
+                    <Input
+                        value={values.city}
+                        onChange={e => set("city", e.target.value)}
+                        placeholder="e.g. Cape Town"
+                        className="bg-slate-950 border-slate-800 text-white placeholder:text-slate-500"
+                        autoFocus
+                    />
+                </div>
+                <div>
+                    <label className="text-[11px] uppercase tracking-widest text-slate-400 font-bold">Country code (optional)</label>
+                    <Input
+                        value={values.country}
+                        onChange={e => set("country", e.target.value.toUpperCase().slice(0, 2))}
+                        placeholder="ZA"
+                        maxLength={2}
+                        className="bg-slate-950 border-slate-800 text-white uppercase placeholder:text-slate-500"
+                    />
+                </div>
+                <div>
+                    <label className="text-[11px] uppercase tracking-widest text-slate-400 font-bold">Role</label>
+                    <select
+                        value={values.role}
+                        onChange={e => set("role", e.target.value as PortRole)}
+                        className="w-full h-9 rounded-md bg-slate-950 border border-slate-800 text-white text-sm px-3"
+                    >
+                        {ROLE_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label className="text-[11px] uppercase tracking-widest text-slate-400 font-bold">Latitude</label>
+                    <Input
+                        value={values.lat}
+                        onChange={e => set("lat", e.target.value)}
+                        placeholder="-33.9249"
+                        className="bg-slate-950 border-slate-800 text-white font-mono placeholder:text-slate-500"
+                    />
+                </div>
+                <div>
+                    <label className="text-[11px] uppercase tracking-widest text-slate-400 font-bold">Longitude</label>
+                    <Input
+                        value={values.lng}
+                        onChange={e => set("lng", e.target.value)}
+                        placeholder="18.4241"
+                        className="bg-slate-950 border-slate-800 text-white font-mono placeholder:text-slate-500"
+                    />
+                </div>
+            </div>
+            <div className="flex gap-2 justify-end pt-1">
+                <Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-slate-800" onClick={onCancel}>
+                    Cancel
+                </Button>
+                <Button onClick={onSubmit} disabled={saving} className="bg-brand-blue hover:bg-brand-blue/90 text-white">
+                    {saving
+                        ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                        : isEdit ? <Save className="h-3.5 w-3.5 mr-1.5" /> : <Plus className="h-3.5 w-3.5 mr-1.5" />
+                    }
+                    {isEdit ? "Save changes" : "Add port"}
+                </Button>
+            </div>
+        </motion.div>
     )
 }
