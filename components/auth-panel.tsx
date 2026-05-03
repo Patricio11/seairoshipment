@@ -352,6 +352,21 @@ export function AuthPanel({ isOpen, onClose, initialMode = 'login' }: AuthPanelP
                                     >
                                         {isLoading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
                                     </motion.button>
+
+                                    {!isLogin && (
+                                        <p className="mt-3 text-center text-[11px] leading-relaxed text-slate-400">
+                                            By creating an account you agree to our{" "}
+                                            <a
+                                                href="/terms"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="font-semibold text-cyan-400 hover:text-cyan-300 underline-offset-2 hover:underline"
+                                            >
+                                                Terms &amp; Conditions
+                                            </a>
+                                            . Bookings made on the platform are bound by the version in force at the time of booking confirmation.
+                                        </p>
+                                    )}
                                 </form>
 
                                 {/* Toggle */}

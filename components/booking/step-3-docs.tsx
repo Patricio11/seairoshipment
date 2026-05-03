@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import type { BookingFormData } from "@/types"
 import { DOCUMENT_TYPES, documentLabel, DOCUMENT_TYPE_BY_CODE } from "@/lib/constants/document-types"
+import { TermsModal } from "@/components/legal/terms-modal"
 
 interface Step3Props {
     formData: BookingFormData
@@ -33,6 +34,7 @@ export function Step3Docs({ formData, updateFormData }: Step3Props) {
     const [uploading, setUploading] = useState(false)
     const [requiredDocuments, setRequiredDocuments] = useState<string[]>([])
     const [loadingRequirements, setLoadingRequirements] = useState(false)
+    const [termsOpen, setTermsOpen] = useState(false)
 
     // Per-slot ref for the hidden file input
     const inputRefs = useRef<Record<string, HTMLInputElement | null>>({})
@@ -405,18 +407,28 @@ export function Step3Docs({ formData, updateFormData }: Step3Props) {
                             htmlFor="terms"
                             className="text-sm font-medium leading-relaxed cursor-pointer"
                         >
-                            I agree to the{" "}
-                            <a href="#" className="text-brand-blue hover:underline font-semibold">
-                                Terms & Conditions
-                            </a>
-                            {" "}and{" "}
-                            <a href="#" className="text-brand-blue hover:underline font-semibold">
-                                Privacy Policy
-                            </a>
+                            I have read and agree to the{" "}
+                            <button
+                                type="button"
+                                onClick={(e) => { e.preventDefault(); setTermsOpen(true) }}
+                                className="text-brand-blue hover:underline font-semibold"
+                            >
+                                Terms &amp; Conditions
+                            </button>
+                            . By confirming this booking I acknowledge the DAP delivery scope, mandatory marine insurance, and possible rate adjustments.
                         </label>
+                        <button
+                            type="button"
+                            onClick={() => setTermsOpen(true)}
+                            className="mt-2 text-xs text-slate-500 hover:text-brand-blue underline-offset-2 hover:underline"
+                        >
+                            Open the full terms in this window →
+                        </button>
                     </div>
                 </div>
             </div>
+
+            <TermsModal open={termsOpen} onOpenChange={setTermsOpen} />
         </motion.div>
     )
 }

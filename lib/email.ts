@@ -134,6 +134,10 @@ export async function sendVerificationEmail(
                 <p style="color: #94a3b8; font-size: 12px; line-height: 1.6; margin: 20px 0 0;">
                     If you didn't create an account, you can safely ignore this email.
                 </p>
+                <p style="color: #94a3b8; font-size: 11px; line-height: 1.6; margin: 14px 0 0;">
+                    By creating an account and using the platform you agree to our
+                    <a href="${appUrl}/terms" style="color: #2563eb; text-decoration: none;">Terms &amp; Conditions</a>.
+                </p>
             `,
         }),
     });
