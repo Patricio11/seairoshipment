@@ -22,11 +22,11 @@ const FAQS: FAQ[] = [
     },
     {
         q: "How is Shared Reefer Services different from FCL?",
-        a: "FCL (Full Container Load) means you pay for the entire container even if you only fill half. With Shared Reefer Services® you pay per-pallet — typically a minimum of 5 pallets — and we consolidate your cargo with other vetted shippers heading to the same port. You still get full reefer-grade temperature control and individual pallet tracking.",
+        a: "FCL (Full Container Load) means you pay for the entire container even if you only fill half. With Shared Reefer Services® you pay per-pallet - typically a minimum of 5 pallets - and we consolidate your cargo with other vetted shippers heading to the same port. You still get full reefer-grade temperature control and individual pallet tracking.",
     },
     {
         q: "What's the minimum order?",
-        a: "5 pallets is the standard minimum for a Shared Reefer Services® booking. If a container has fewer than 5 spaces remaining we sometimes accept smaller bookings to fill it — it's worth getting in touch.",
+        a: "5 pallets is the standard minimum for a Shared Reefer Services® booking. If a container has fewer than 5 spaces remaining we sometimes accept smaller bookings to fill it - it's worth getting in touch.",
     },
     {
         q: "Which routes do you operate?",
@@ -38,11 +38,11 @@ const FAQS: FAQ[] = [
     },
     {
         q: "Do you handle customs and compliance?",
-        a: "Yes. We handle the export documentation, work with your forwarder of choice on the destination side, and our platform automates document checklists per destination so nothing slips through. SAD500, Phytosanitary, COA, BoL — all tracked from the booking dashboard.",
+        a: "Yes. We handle the export documentation, and our platform automates document checklists per destination so nothing slips through. SAD500, Phytosanitary, COA, BoL - all tracked from the booking dashboard.",
     },
     {
         q: "How do I get started?",
-        a: "Sign up at seairo.com — once your company is vetted (typically within one business day) you can book your first shared reefer container directly from the dashboard. We verify every account to make sure the network only carries serious, compliant exporters.",
+        a: "Sign up at seairo.com - once your company is vetted you can book your first shared reefer container directly from the dashboard. We verify every account to make sure the network only carries serious, compliant exporters.",
     },
 ]
 
