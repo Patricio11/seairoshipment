@@ -827,8 +827,10 @@ export function AdminBookingsGrid() {
                                                                     <span className="text-blue-400">-18°C</span>
                                                                 ) : alloc.allocation.temperature === "chilled" ? (
                                                                     <span className="text-cyan-400">+5°C</span>
+                                                                ) : alloc.allocation.temperature === "ambient" ? (
+                                                                    <span className="text-amber-400">+18°C</span>
                                                                 ) : (
-                                                                    <span className="text-slate-500">—</span>
+                                                                    <span className="text-slate-400">Dry</span>
                                                                 )}
                                                             </TableCell>
                                                             <TableCell className="text-center">
@@ -1441,8 +1443,10 @@ export function AdminBookingsGrid() {
                                                                 <span className="text-blue-400 font-bold">-18°C</span>
                                                             ) : alloc.allocation.temperature === "chilled" ? (
                                                                 <span className="text-cyan-400 font-bold">+5°C</span>
+                                                            ) : alloc.allocation.temperature === "ambient" ? (
+                                                                <span className="text-amber-400 font-bold">+18°C</span>
                                                             ) : (
-                                                                <span className="text-slate-500">—</span>
+                                                                <span className="text-slate-400 font-bold">Dry</span>
                                                             )}
                                                         </TableCell>
                                                         <TableCell className="text-xs text-slate-400">{alloc.allocation.consigneeName || "—"}</TableCell>
@@ -1648,8 +1652,16 @@ export function AdminBookingsGrid() {
                                     </div>
                                     <div className="px-4 py-2.5 flex items-center justify-between">
                                         <span className="text-xs text-slate-500 font-semibold">Temperature</span>
-                                        <span className={`text-sm font-bold ${clientDialog.alloc.allocation.temperature === "frozen" ? "text-blue-400" : clientDialog.alloc.allocation.temperature === "chilled" ? "text-cyan-400" : "text-slate-500"}`}>
-                                            {clientDialog.alloc.allocation.temperature === "frozen" ? "-18°C (Frozen)" : clientDialog.alloc.allocation.temperature === "chilled" ? "+5°C (Chilled)" : "—"}
+                                        <span className={`text-sm font-bold ${
+                                            clientDialog.alloc.allocation.temperature === "frozen" ? "text-blue-400" :
+                                            clientDialog.alloc.allocation.temperature === "chilled" ? "text-cyan-400" :
+                                            clientDialog.alloc.allocation.temperature === "ambient" ? "text-amber-400" :
+                                            "text-slate-400"
+                                        }`}>
+                                            {clientDialog.alloc.allocation.temperature === "frozen" ? "-18°C (Frozen)" :
+                                                clientDialog.alloc.allocation.temperature === "chilled" ? "+5°C (Chilled)" :
+                                                    clientDialog.alloc.allocation.temperature === "ambient" ? "+18°C (Ambient)" :
+                                                        "Dry"}
                                         </span>
                                     </div>
                                     <div className="px-4 py-2.5 flex items-center justify-between">

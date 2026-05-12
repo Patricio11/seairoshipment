@@ -288,7 +288,9 @@ export async function POST(request: NextRequest) {
             hsCode: hsCode || null,
             nettWeight: nettWeight?.toString() || null,
             grossWeight: grossWeight?.toString() || null,
-            temperature: temperature || null,
+            // SCS carries no temperature regime; force null even if client sent
+            // a stale string from an earlier wizard state.
+            temperature: salesRateTypeId === "scs" ? null : (temperature || null),
             consigneeName: consigneeName || null,
             consigneeAddress: consigneeAddress || null,
             collectionAddresses: cleanCollectionAddresses,

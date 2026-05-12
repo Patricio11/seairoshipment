@@ -188,19 +188,16 @@ export function CategoriesManager() {
         setForm(prev => ({
             ...prev,
             salesRateTypeId: v,
-            // SCS is ambient-only; SRS can't be ambient
-            allowedTemperatures: v === "scs"
-                ? ["ambient"]
-                : prev.allowedTemperatures.filter(t => t !== "ambient"),
+            // SCS is a dry container — no temperature regime. SRS keeps whatever
+            // temps were already picked (or defaults to frozen on a fresh form).
+            allowedTemperatures: v === "scs" ? [] : (prev.allowedTemperatures.length > 0 ? prev.allowedTemperatures : ["frozen"]),
         }))
     }
 
     const toggleTemp = (t: Temperature) => {
         setForm(prev => {
-            // SCS categories are locked to ambient
-            if (prev.salesRateTypeId === "scs") return { ...prev, allowedTemperatures: ["ambient"] }
-            // SRS can't select ambient
-            if (t === "ambient") return prev
+            // SCS categories never carry temperatures
+            if (prev.salesRateTypeId === "scs") return prev
             const has = prev.allowedTemperatures.includes(t)
             const next = has
                 ? prev.allowedTemperatures.filter(x => x !== t)
@@ -226,7 +223,8 @@ export function CategoriesManager() {
             toast.error("Name is required")
             return
         }
-        if (form.allowedTemperatures.length === 0) {
+        // SCS is dry — no temperatures. SRS must have at least one allowed temp.
+        if (form.salesRateTypeId === "srs" && form.allowedTemperatures.length === 0) {
             toast.error("Pick at least one allowed temperature")
             return
         }
@@ -445,7 +443,7 @@ export function CategoriesManager() {
                                     >
                                         <div className="font-bold text-white text-sm">{type.toUpperCase()}</div>
                                         <div className="text-[10px] text-slate-400 mt-0.5">
-                                            {type === "srs" ? "Shared Reefer (frozen/chilled)" : "Shared Container (ambient)"}
+                                            {type === "srs" ? "Shared Reefer (frozen / chilled / ambient)" : "Shared Container (Dry)"}
                                         </div>
                                     </button>
                                 ))}
@@ -455,34 +453,44 @@ export function CategoriesManager() {
                             )}
                         </div>
 
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Allowed Temperatures</Label>
-                            <div className="grid grid-cols-3 gap-2">
-                                {ALL_TEMPS.map(t => {
-                                    const selected = form.allowedTemperatures.includes(t.value)
-                                    const disabled = form.salesRateTypeId === "scs"
-                                        ? t.value !== "ambient"
-                                        : t.value === "ambient"
-                                    const Icon = t.icon
-                                    return (
-                                        <button
-                                            key={t.value}
-                                            type="button"
-                                            disabled={disabled}
-                                            onClick={() => toggleTemp(t.value)}
-                                            className={cn(
-                                                "flex items-center justify-center gap-1.5 h-9 rounded-lg border text-xs font-bold",
-                                                disabled && "border-slate-800 text-slate-600 cursor-not-allowed opacity-40",
-                                                !disabled && !selected && "border-slate-700 text-slate-400 hover:border-brand-blue hover:text-white",
-                                                selected && "border-brand-blue bg-brand-blue/15 text-brand-blue"
-                                            )}
-                                        >
-                                            <Icon className="h-3.5 w-3.5" /> {t.label}
-                                        </button>
-                                    )
-                                })}
+                        {form.salesRateTypeId === "scs" ? (
+                            <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-3 flex items-start gap-2.5">
+                                <Sun className="h-4 w-4 text-slate-500 shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-xs font-bold text-slate-300">Dry container — no temperature regime</p>
+                                    <p className="text-[11px] text-slate-500 mt-0.5">
+                                        SCS categories ship at ambient conditions inside a dry container; no reefer setpoint applies.
+                                    </p>
+                                </div>
                             </div>
-                        </div>
+                        ) : (
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Allowed Temperatures</Label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {ALL_TEMPS.map(t => {
+                                        const selected = form.allowedTemperatures.includes(t.value)
+                                        const Icon = t.icon
+                                        return (
+                                            <button
+                                                key={t.value}
+                                                type="button"
+                                                onClick={() => toggleTemp(t.value)}
+                                                className={cn(
+                                                    "flex items-center justify-center gap-1.5 h-9 rounded-lg border text-xs font-bold",
+                                                    !selected && "border-slate-700 text-slate-400 hover:border-brand-blue hover:text-white",
+                                                    selected && "border-brand-blue bg-brand-blue/15 text-brand-blue"
+                                                )}
+                                            >
+                                                <Icon className="h-3.5 w-3.5" /> {t.label}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                                <p className="text-[10px] text-slate-500">
+                                    Pick every temperature the category can ship at. Confectionery/chocolate-style categories typically tick +18°C only.
+                                </p>
+                            </div>
+                        )}
 
                         <div className="space-y-2">
                             <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
@@ -600,21 +608,29 @@ export function CategoriesManager() {
                 {/* Spec summary */}
                 <div className="grid grid-cols-2 gap-3">
                     <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">Allowed Temperatures</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                            {detailCat.salesRateTypeId === "scs" ? "Container Regime" : "Allowed Temperatures"}
+                        </p>
                         <div className="flex flex-wrap gap-1.5">
-                            {detailCat.allowedTemperatures.map(t => {
-                                const opt = ALL_TEMPS.find(x => x.value === t)
-                                const Icon = opt?.icon || Snowflake
-                                return (
-                                    <Badge key={t} variant="outline" className={
-                                        t === "ambient"
-                                            ? "border-amber-500/40 text-amber-400"
-                                            : "border-sky-500/40 text-sky-400"
-                                    }>
-                                        <Icon className="h-3 w-3 mr-1" /> {opt?.label || t}
-                                    </Badge>
-                                )
-                            })}
+                            {detailCat.salesRateTypeId === "scs" ? (
+                                <Badge variant="outline" className="border-slate-600/60 text-slate-300">
+                                    <Sun className="h-3 w-3 mr-1" /> Dry
+                                </Badge>
+                            ) : (
+                                detailCat.allowedTemperatures.map(t => {
+                                    const opt = ALL_TEMPS.find(x => x.value === t)
+                                    const Icon = opt?.icon || Snowflake
+                                    return (
+                                        <Badge key={t} variant="outline" className={
+                                            t === "ambient"
+                                                ? "border-amber-500/40 text-amber-400"
+                                                : "border-sky-500/40 text-sky-400"
+                                        }>
+                                            <Icon className="h-3 w-3 mr-1" /> {opt?.label || t}
+                                        </Badge>
+                                    )
+                                })
+                            )}
                         </div>
                     </div>
                     <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
@@ -843,19 +859,25 @@ export function CategoriesManager() {
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex flex-wrap gap-1">
-                                            {cat.allowedTemperatures.map(t => (
-                                                <span
-                                                    key={t}
-                                                    className={cn(
-                                                        "text-[9px] font-mono uppercase px-1.5 py-0.5 rounded",
-                                                        t === "ambient"
-                                                            ? "bg-amber-500/15 text-amber-400"
-                                                            : "bg-sky-500/15 text-sky-400",
-                                                    )}
-                                                >
-                                                    {t}
+                                            {cat.salesRateTypeId === "scs" ? (
+                                                <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-slate-700/40 text-slate-300">
+                                                    dry
                                                 </span>
-                                            ))}
+                                            ) : (
+                                                cat.allowedTemperatures.map(t => (
+                                                    <span
+                                                        key={t}
+                                                        className={cn(
+                                                            "text-[9px] font-mono uppercase px-1.5 py-0.5 rounded",
+                                                            t === "ambient"
+                                                                ? "bg-amber-500/15 text-amber-400"
+                                                                : "bg-sky-500/15 text-sky-400",
+                                                        )}
+                                                    >
+                                                        {t}
+                                                    </span>
+                                                ))
+                                            )}
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-center">

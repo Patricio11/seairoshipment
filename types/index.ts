@@ -87,7 +87,7 @@ export interface BookingFormData {
     categoryName?: string;       // for display
     nettWeight?: number;
     grossWeight?: number;
-    temperature: string;
+    temperature: string | null;   // null = SCS / dry container; "" = SRS not yet picked
     consigneeName: string;
     consigneeAddress: string;
     collectionAddresses: Array<{ label?: string; address: string }>;

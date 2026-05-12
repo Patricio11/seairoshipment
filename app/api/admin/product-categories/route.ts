@@ -78,20 +78,20 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "salesRateTypeId must be 'srs' or 'scs'" }, { status: 400 });
         }
 
-        const temps = (Array.isArray(allowedTemperatures) ? allowedTemperatures : []) as Temperature[];
-        if (temps.length === 0) {
-            return NextResponse.json({ error: "At least one allowed temperature is required" }, { status: 400 });
-        }
+        // SCS (Shared Container — Dry) carries no temperature regime. SRS
+        // (Shared Reefer) requires at least one temperature and may include
+        // ambient (+18°C) for products like chocolate that need controlled
+        // but non-chilled conditions.
+        const rawTemps = (Array.isArray(allowedTemperatures) ? allowedTemperatures : []) as Temperature[];
+        const temps = salesRateTypeId === "scs" ? [] : rawTemps;
         const validTemps: Temperature[] = ["frozen", "chilled", "ambient"];
-        if (!temps.every(t => validTemps.includes(t))) {
-            return NextResponse.json({ error: "Invalid temperature value" }, { status: 400 });
-        }
-        // SCS must only be ambient; SRS must NOT include ambient
-        if (salesRateTypeId === "scs" && temps.some(t => t !== "ambient")) {
-            return NextResponse.json({ error: "SCS (dry) categories can only allow ambient temperature" }, { status: 400 });
-        }
-        if (salesRateTypeId === "srs" && temps.includes("ambient")) {
-            return NextResponse.json({ error: "SRS (reefer) categories cannot allow ambient temperature" }, { status: 400 });
+        if (salesRateTypeId === "srs") {
+            if (temps.length === 0) {
+                return NextResponse.json({ error: "At least one allowed temperature is required for SRS categories" }, { status: 400 });
+            }
+            if (!temps.every(t => validTemps.includes(t))) {
+                return NextResponse.json({ error: "Invalid temperature value" }, { status: 400 });
+            }
         }
 
         const docs = Array.isArray(requiredDocuments) ? (requiredDocuments as string[]) : [];

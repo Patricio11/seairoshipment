@@ -69,19 +69,21 @@ export async function PATCH(
             updates.requiredDocuments = Array.isArray(body.requiredDocuments) ? body.requiredDocuments : [];
         }
         if (body.allowedTemperatures !== undefined) {
-            const temps = (Array.isArray(body.allowedTemperatures) ? body.allowedTemperatures : []) as Temperature[];
-            if (temps.length === 0) return NextResponse.json({ error: "At least one allowed temperature is required" }, { status: 400 });
-            const validTemps: Temperature[] = ["frozen", "chilled", "ambient"];
-            if (!temps.every(t => validTemps.includes(t))) {
-                return NextResponse.json({ error: "Invalid temperature" }, { status: 400 });
+            // SCS (dry) carries no temperatures; ignore whatever the client sent
+            // and force empty. SRS must have ≥ 1 valid temperature.
+            if (existing.salesRateTypeId === "scs") {
+                updates.allowedTemperatures = [];
+            } else {
+                const temps = (Array.isArray(body.allowedTemperatures) ? body.allowedTemperatures : []) as Temperature[];
+                if (temps.length === 0) {
+                    return NextResponse.json({ error: "At least one allowed temperature is required for SRS categories" }, { status: 400 });
+                }
+                const validTemps: Temperature[] = ["frozen", "chilled", "ambient"];
+                if (!temps.every(t => validTemps.includes(t))) {
+                    return NextResponse.json({ error: "Invalid temperature" }, { status: 400 });
+                }
+                updates.allowedTemperatures = temps;
             }
-            if (existing.salesRateTypeId === "scs" && temps.some(t => t !== "ambient")) {
-                return NextResponse.json({ error: "SCS categories must only allow ambient" }, { status: 400 });
-            }
-            if (existing.salesRateTypeId === "srs" && temps.includes("ambient")) {
-                return NextResponse.json({ error: "SRS categories cannot allow ambient" }, { status: 400 });
-            }
-            updates.allowedTemperatures = temps;
         }
         // salesRateTypeId is deliberately NOT editable — create a new category instead
 

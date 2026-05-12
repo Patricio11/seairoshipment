@@ -72,13 +72,24 @@ export async function POST() {
                     "COA", "SGS",
                 ],
             },
+            {
+                id: "cat-confectionery",
+                name: "Confectionery & Chocolate",
+                description: "Chocolate, sweets, and other heat-sensitive ambient-temp cargo — reefer at +18°C, not chilled.",
+                salesRateTypeId: "srs",
+                allowedTemperatures: ["ambient"],
+                requiredDocuments: [
+                    "COMMERCIAL_INVOICE", "PACKING_LIST", "IMPORT_PERMIT", "BILL_OF_LADING",
+                    "SAD500", "CERTIFICATE_OF_ORIGIN",
+                ],
+            },
             // SCS (dry) categories
             {
                 id: "cat-hunting-trophies",
                 name: "Hunting Trophies",
                 description: "Trophies (requires CITES certification)",
                 salesRateTypeId: "scs",
-                allowedTemperatures: ["ambient"],
+                allowedTemperatures: [],
                 requiredDocuments: [
                     "COMMERCIAL_INVOICE", "PACKING_LIST", "IMPORT_PERMIT", "BILL_OF_LADING",
                     "CITES", "SAD500", "CERTIFICATE_OF_ORIGIN",
@@ -89,7 +100,7 @@ export async function POST() {
                 name: "Wine & Spirits",
                 description: "Wine requires SAWIS certification",
                 salesRateTypeId: "scs",
-                allowedTemperatures: ["ambient"],
+                allowedTemperatures: [],
                 requiredDocuments: [
                     "COMMERCIAL_INVOICE", "PACKING_LIST", "IMPORT_PERMIT", "BILL_OF_LADING",
                     "SAWIS", "SAD500", "CERTIFICATE_OF_ORIGIN",
@@ -100,7 +111,7 @@ export async function POST() {
                 name: "Other Dry Mixed",
                 description: "Dry food goods, canned goods, general ambient cargo",
                 salesRateTypeId: "scs",
-                allowedTemperatures: ["ambient"],
+                allowedTemperatures: [],
                 requiredDocuments: [
                     "COMMERCIAL_INVOICE", "PACKING_LIST", "IMPORT_PERMIT", "BILL_OF_LADING",
                     "SAD500", "CERTIFICATE_OF_ORIGIN",

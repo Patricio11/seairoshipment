@@ -302,7 +302,7 @@ export function FleetScheduler() {
             toast.error("Select a sailing")
             return
         }
-        if (!formData.temperature) {
+        if (selectedContainerType?.type !== "DRY" && !formData.temperature) {
             toast.error("Select a temperature")
             return
         }
@@ -325,7 +325,8 @@ export function FleetScheduler() {
                         route,
                         sailingId: formData.sailingId,
                         containerTypeId: formData.containerTypeId,
-                        temperature: formData.temperature,
+                        // Dry containers carry no temperature regime
+                        temperature: selectedContainerType?.type === "DRY" ? null : formData.temperature,
                         categoryId: formData.categoryId,
                     }),
                 }
@@ -401,9 +402,12 @@ export function FleetScheduler() {
     const handleContainerTypeChange = (ctId: string) => {
         const ct = containerTypeOptions.find(c => c.id === ctId)
         setFormData(prev => {
+            // DRY containers carry no temperature regime — clear the field.
+            // REEFER containers keep whatever was picked (frozen/chilled/ambient
+            // are now all valid for reefer).
             const nextTemp: "frozen" | "chilled" | "ambient" | "" = ct?.type === "DRY"
-                ? "ambient"
-                : (prev.temperature === "ambient" ? "" : prev.temperature)
+                ? ""
+                : prev.temperature
             return {
                 ...prev,
                 containerTypeId: ctId,
@@ -445,10 +449,14 @@ export function FleetScheduler() {
     const selectedCategory = categoryOptions.find(c => c.id === formData.categoryId)
 
     // Container-type-level temperature constraints
+    // DRY containers carry no temperature regime → empty array, the temp section
+    // is hidden entirely. REEFER containers can run any of the three regimes.
     const containerTypeTemps: Array<"frozen" | "chilled" | "ambient"> =
-        selectedContainerType?.type === "DRY" ? ["ambient"] : ["frozen", "chilled"]
+        selectedContainerType?.type === "DRY" ? [] : ["frozen", "chilled", "ambient"]
 
-    // Final allowed temperatures = intersection of container type + category.allowedTemperatures
+    // Final allowed temperatures = intersection of container type + category.allowedTemperatures.
+    // SCS categories carry [] for allowedTemperatures; nothing to intersect, so for
+    // DRY containers we end up correctly with no temperature options.
     const categoryTemps = selectedCategory?.allowedTemperatures || containerTypeTemps
     const temperatureOptions: Array<{ value: "frozen" | "chilled" | "ambient"; label: string }> =
         containerTypeTemps
@@ -537,7 +545,7 @@ export function FleetScheduler() {
                                                 <Badge className={STATUS_COLORS[container.status] || STATUS_COLORS.OPEN}>
                                                     {container.status.replace("_", " ")}
                                                 </Badge>
-                                                {container.temperature && (
+                                                {container.temperature ? (
                                                     <Badge className={
                                                         container.temperature === "ambient"
                                                             ? "bg-amber-500/15 text-amber-400 border-none text-[10px]"
@@ -545,6 +553,10 @@ export function FleetScheduler() {
                                                     }>
                                                         {container.temperature === "ambient" ? <Sun className="h-3 w-3 mr-1" /> : <Snowflake className="h-3 w-3 mr-1" />}
                                                         {container.temperature === "frozen" ? "-18°C" : container.temperature === "chilled" ? "+5°C" : "+18°C"}
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge className="bg-slate-700/40 text-slate-300 border-none text-[10px]">
+                                                        <Sun className="h-3 w-3 mr-1" /> Dry
                                                     </Badge>
                                                 )}
                                                 {container.categoryName && (
@@ -836,41 +848,47 @@ export function FleetScheduler() {
                                 </div>
                             </div>
 
-                            {/* Step 4: Temperature */}
-                            <div className="border-t border-slate-800/50 pt-4">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">4. Temperature</p>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {(["frozen", "chilled", "ambient"] as const).map(t => {
-                                        const allowed = temperatureOptions.some(o => o.value === t)
-                                        const selected = formData.temperature === t
-                                        const icon = t === "ambient" ? <Sun className="h-3.5 w-3.5" /> : <Snowflake className="h-3.5 w-3.5" />
-                                        const label = t === "frozen" ? "-18°C Frozen" : t === "chilled" ? "+5°C Chilled" : "+18°C Ambient"
-                                        return (
-                                            <button
-                                                key={t}
-                                                type="button"
-                                                disabled={!allowed}
-                                                onClick={() => setFormData({ ...formData, temperature: t })}
-                                                className={cn(
-                                                    "flex items-center justify-center gap-1.5 h-9 rounded-lg border text-xs font-bold transition-all",
-                                                    !allowed && "border-slate-800 text-slate-600 cursor-not-allowed opacity-40",
-                                                    allowed && !selected && "border-slate-700 text-slate-400 hover:border-brand-blue hover:text-white",
-                                                    selected && "border-brand-blue bg-brand-blue/15 text-brand-blue"
-                                                )}
-                                            >
-                                                {icon} {label}
-                                            </button>
-                                        )
-                                    })}
+            {/* Step 4: Temperature — hidden for Dry containers (no temperature regime) */}
+                            {selectedContainerType?.type === "DRY" ? (
+                                <div className="border-t border-slate-800/50 pt-4">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">4. Temperature</p>
+                                    <div className="rounded-lg border border-slate-800 bg-slate-900/40 px-3 py-2.5 flex items-center gap-2">
+                                        <Sun className="h-4 w-4 text-slate-500" />
+                                        <span className="text-sm font-medium text-slate-300">Dry container — no temperature regime</span>
+                                    </div>
                                 </div>
-                                {selectedContainerType && (
+                            ) : (
+                                <div className="border-t border-slate-800/50 pt-4">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">4. Temperature</p>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {(["frozen", "chilled", "ambient"] as const).map(t => {
+                                            const allowed = temperatureOptions.some(o => o.value === t)
+                                            const selected = formData.temperature === t
+                                            const icon = t === "ambient" ? <Sun className="h-3.5 w-3.5" /> : <Snowflake className="h-3.5 w-3.5" />
+                                            const label = t === "frozen" ? "-18°C Frozen" : t === "chilled" ? "+5°C Chilled" : "+18°C Ambient"
+                                            return (
+                                                <button
+                                                    key={t}
+                                                    type="button"
+                                                    disabled={!allowed}
+                                                    onClick={() => setFormData({ ...formData, temperature: t })}
+                                                    className={cn(
+                                                        "flex items-center justify-center gap-1.5 h-9 rounded-lg border text-xs font-bold transition-all",
+                                                        !allowed && "border-slate-800 text-slate-600 cursor-not-allowed opacity-40",
+                                                        allowed && !selected && "border-slate-700 text-slate-400 hover:border-brand-blue hover:text-white",
+                                                        selected && "border-brand-blue bg-brand-blue/15 text-brand-blue"
+                                                    )}
+                                                >
+                                                    {icon} {label}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
                                     <p className="text-[10px] text-slate-500 mt-1.5">
-                                        {selectedContainerType.type === "DRY"
-                                            ? "Dry containers only carry ambient cargo."
-                                            : "Reefer containers can carry frozen or chilled cargo."}
+                                        Reefer containers can carry frozen, chilled, or ambient (+18°C) cargo.
                                     </p>
-                                )}
-                            </div>
+                                </div>
+                            )}
 
                             {/* Step 5: Category */}
                             <div className="border-t border-slate-800/50 pt-4">
