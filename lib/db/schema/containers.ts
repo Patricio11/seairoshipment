@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, doublePrecision, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, numeric, doublePrecision, pgEnum } from "drizzle-orm/pg-core";
 import { containerTypes } from "./container-types";
 import { sailings } from "./sailings";
 import { productCategories } from "./product-categories";
@@ -26,6 +26,16 @@ export const temperatureEnum = pgEnum("temperature", [
     "ambient",  // +18°C
 ]);
 
+/**
+ * Cargo type — distinguishes pallet-based bookings (the existing model) from
+ * CBM-based bookings (new). Lives on the container at creation time and is
+ * inherited by every allocation that books into it. Locked after creation.
+ *
+ * Imported by pallet_allocations, rate cards and invoices so the same enum
+ * value flows end-to-end without conversion noise.
+ */
+export const cargoTypeEnum = pgEnum("cargo_type", ["PALLET", "CUBE"]);
+
 export const containers = pgTable("containers", {
     id: text("id").primaryKey(),
     route: text("route").notNull(), // e.g. "ZACPT-NLRTM"
@@ -41,6 +51,13 @@ export const containers = pgTable("containers", {
     eta: timestamp("eta"),
     totalPallets: integer("total_pallets").default(0).notNull(),
     maxCapacity: integer("max_capacity").default(20).notNull(),
+    // Cargo type is set once at creation. PALLET containers track totalPallets +
+    // maxCapacity; CUBE containers track totalCBM + maxCapacityCBM. Both columns
+    // exist on every row to keep queries simple; nulls are fine on the dimension
+    // that doesn't apply.
+    cargoType: cargoTypeEnum("cargo_type").default("PALLET").notNull(),
+    totalCBM: numeric("total_cbm").default("0").notNull(),
+    maxCapacityCBM: numeric("max_capacity_cbm"),
     status: containerStatusEnum("status").default("OPEN").notNull(),
     salesRateTypeId: text("sales_rate_type_id").default("srs").notNull(),
     metashipOrderNo: text("metaship_order_no"),

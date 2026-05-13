@@ -9,11 +9,13 @@ import {
 } from "drizzle-orm/pg-core";
 import { salesRateTypes } from "./sales-rate-types";
 import { containerTypes } from "./container-types";
+import { cargoTypeEnum } from "./containers";
 
 export const chargeTypeEnum = pgEnum("charge_type", [
     "PER_PALLET",
     "PER_CONTAINER",
     "FIXED",
+    "PER_CBM",
 ]);
 
 // ── Origin Charges (header) ──
@@ -27,6 +29,7 @@ export const originCharges = pgTable("origin_charges", {
     containerId: text("container_id")
         .notNull()
         .references(() => containerTypes.id),
+    cargoType: cargoTypeEnum("cargo_type").default("PALLET").notNull(),
     effectiveFrom: text("effective_from").notNull(),
     effectiveTo: text("effective_to"),
     currency: text("currency").default("ZAR").notNull(),
@@ -70,6 +73,7 @@ export const oceanFreightRates = pgTable("ocean_freight_rates", {
     containerId: text("container_id")
         .notNull()
         .references(() => containerTypes.id),
+    cargoType: cargoTypeEnum("cargo_type").default("PALLET").notNull(),
     effectiveFrom: text("effective_from").notNull(),
     effectiveTo: text("effective_to"),
     freightUSD: numeric("freight_usd").default("0").notNull(),
@@ -104,6 +108,7 @@ export const destinationCharges = pgTable("destination_charges", {
     containerId: text("container_id")
         .notNull()
         .references(() => containerTypes.id),
+    cargoType: cargoTypeEnum("cargo_type").default("PALLET").notNull(),
     currency: text("currency").notNull(),
     exchangeRateToZAR: numeric("exchange_rate_to_zar").notNull(),
     buyExchangeRateToZAR: numeric("buy_exchange_rate_to_zar"),
