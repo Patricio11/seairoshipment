@@ -74,6 +74,16 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -210,6 +220,16 @@ export function FleetScheduler() {
     // Delete confirmation
     const [deleteDialog, setDeleteDialog] = useState<ContainerData | null>(null)
     const [deleting, setDeleting] = useState(false)
+
+    // Delete-allocation confirmation. Holds the row clicked on so the dialog
+    // can show the client + pallet count for verification.
+    const [deleteAllocDialog, setDeleteAllocDialog] = useState<{
+        allocationId: string
+        clientName: string
+        palletCount: number
+        commodity: string
+    } | null>(null)
+    const [deletingAlloc, setDeletingAlloc] = useState(false)
 
     // MetaShip booking dialog
     const [bookingDialog, setBookingDialog] = useState<ContainerData | null>(null)
@@ -384,6 +404,28 @@ export function FleetScheduler() {
             toast.error("Failed to delete container")
         } finally {
             setDeleting(false)
+        }
+    }
+
+    const handleDeleteAllocation = async () => {
+        if (!deleteAllocDialog) return
+        setDeletingAlloc(true)
+        try {
+            const res = await fetch(`/api/admin/allocations/${deleteAllocDialog.allocationId}`, { method: "DELETE" })
+            if (res.ok) {
+                toast.success("Booking deleted", {
+                    description: `${deleteAllocDialog.clientName} · ${deleteAllocDialog.palletCount} pallet${deleteAllocDialog.palletCount === 1 ? "" : "s"}`,
+                })
+                setDeleteAllocDialog(null)
+                fetchContainers()
+            } else {
+                const data = await res.json().catch(() => ({}))
+                toast.error(data.error || "Failed to delete booking")
+            }
+        } catch {
+            toast.error("Failed to delete booking")
+        } finally {
+            setDeletingAlloc(false)
         }
     }
 
@@ -726,6 +768,7 @@ export function FleetScheduler() {
                                                     <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-[10px] text-center">Weight (kg)</TableHead>
                                                     <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-[10px] text-center">Temp</TableHead>
                                                     <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-[10px] text-center">Status</TableHead>
+                                                    <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-[10px] text-right w-[40px]"></TableHead>
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
@@ -762,6 +805,22 @@ export function FleetScheduler() {
                                                             }>
                                                                 {alloc.allocation.status}
                                                             </Badge>
+                                                        </TableCell>
+                                                        <TableCell className="text-right pr-2">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                onClick={() => setDeleteAllocDialog({
+                                                                    allocationId: alloc.allocation.id,
+                                                                    clientName: alloc.userName || "Unknown client",
+                                                                    palletCount: alloc.allocation.palletCount,
+                                                                    commodity: alloc.allocation.commodityName || "—",
+                                                                })}
+                                                                className="h-7 w-7 text-slate-500 hover:text-red-400 hover:bg-red-950/30"
+                                                                title="Delete booking"
+                                                            >
+                                                                <Trash2 className="h-3.5 w-3.5" />
+                                                            </Button>
                                                         </TableCell>
                                                     </TableRow>
                                                 ))}
@@ -1077,6 +1136,38 @@ export function FleetScheduler() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Delete Booking (allocation) Confirmation */}
+            <AlertDialog open={!!deleteAllocDialog} onOpenChange={(open) => !open && setDeleteAllocDialog(null)}>
+                <AlertDialogContent className="bg-slate-950 border-slate-800 text-white">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-white">Delete this booking?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-slate-400">
+                            {deleteAllocDialog && (
+                                <>
+                                    This will permanently delete <span className="font-bold text-white">{deleteAllocDialog.clientName}</span>&apos;s
+                                    {" "}booking of <span className="font-bold text-white">{deleteAllocDialog.palletCount} pallet{deleteAllocDialog.palletCount === 1 ? "" : "s"}</span>
+                                    {deleteAllocDialog.commodity && deleteAllocDialog.commodity !== "—" ? <> ({deleteAllocDialog.commodity})</> : null},
+                                    {" "}along with its uploaded documents and any unpaid invoices. The container&apos;s pallet counter will be adjusted automatically. This cannot be undone.
+                                </>
+                            )}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={deletingAlloc} className="bg-transparent text-slate-300 border-slate-700 hover:bg-slate-900 hover:text-white">
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => { e.preventDefault(); handleDeleteAllocation() }}
+                            disabled={deletingAlloc}
+                            className="bg-red-600 hover:bg-red-700 font-bold"
+                        >
+                            {deletingAlloc ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                            {deletingAlloc ? "Deleting…" : "Delete booking"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {/* Booking Detail View Dialog */}
             <Dialog open={!!detailDialog} onOpenChange={() => setDetailDialog(null)}>
