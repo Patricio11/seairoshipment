@@ -150,7 +150,7 @@ function EmptyState() {
             </div>
             <h3 className="font-bold text-slate-900 dark:text-white">No saved calculations yet</h3>
             <p className="text-sm text-slate-500 max-w-md mt-1">
-                Measure your cargo once, reuse it everywhere - in quotes, in bookings, shared with consignees. Start with one calculation.
+                Measure your cargo once, reuse it everywhere in quotes, in bookings, shared with consignees. Start with one calculation.
             </p>
             <Button asChild className="mt-5 bg-brand-blue hover:bg-brand-blue/90">
                 <Link href="/dashboard/tools/cbm-calculator/new">
