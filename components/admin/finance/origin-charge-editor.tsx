@@ -77,6 +77,7 @@ interface OriginChargeEditorProps {
         country?: string
         containerId: string
         containerDisplayName: string
+        cargoType?: "PALLET" | "CUBE"
         effectiveFrom: string
         effectiveTo: string | null
         currency: "ZAR"
@@ -92,6 +93,12 @@ interface UIOriginChargeItem extends OriginChargeItem {
 
 export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
     const router = useRouter()
+    // Cargo type drives per-unit pricing — PER_PALLET (factor 20) on pallet
+    // cards, PER_CBM (factor 67.7 = 40ft HC interior) on cube cards.
+    const isCube = initialData?.cargoType === "CUBE"
+    const perUnitChargeType: "PER_PALLET" | "PER_CBM" = isCube ? "PER_CBM" : "PER_PALLET"
+    const containerFactor = isCube ? 67.7 : 20
+
     // Initialize items checking if they match predefined list or should be custom
     const [items, setItems] = useState<UIOriginChargeItem[]>(
         (initialData?.items || []).map(item => ({
@@ -105,9 +112,11 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
         let totalPerContainer = 0
 
         items.forEach(item => {
-            // Use the actual value that would be charged per container
-            const cost = item.chargeType === "PER_PALLET" && item.unitCost
-                ? item.unitCost * 20
+            // Per-unit charges (PER_PALLET on pallet cards, PER_CBM on cube
+            // cards) get multiplied by the container's unit capacity to give
+            // a container-equivalent total for the summary.
+            const cost = (item.chargeType === "PER_PALLET" || item.chargeType === "PER_CBM") && item.unitCost
+                ? item.unitCost * containerFactor
                 : (item.containerCost || 0)
 
             totalPerContainer += cost
@@ -115,7 +124,7 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
 
         return {
             totalPerContainer: totalPerContainer.toFixed(2),
-            totalPerPallet: (totalPerContainer / 20).toFixed(2)
+            totalPerPallet: (totalPerContainer / containerFactor).toFixed(2),
         }
     }
 
@@ -127,7 +136,8 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
             originChargeId: initialData?.id || "new",
             chargeCode: "",
             chargeName: "",
-            chargeType: "PER_CONTAINER",
+            // Default to the per-unit type that matches this card's cargo type
+            chargeType: perUnitChargeType,
             category: "OTHER",
             unitCost: null,
             containerCost: null,
@@ -167,7 +177,8 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
             return
         }
         const hasZeroCost = items.some(item => {
-            const cost = item.chargeType === "PER_PALLET" ? (item.unitCost || 0) : (item.containerCost || 0)
+            const perUnit = item.chargeType === "PER_PALLET" || item.chargeType === "PER_CBM"
+            const cost = perUnit ? (item.unitCost || 0) : (item.containerCost || 0)
             return cost <= 0
         })
         if (hasZeroCost) {
@@ -190,6 +201,7 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                         originId: initialData?.originId,
                         originName: initialData?.originName,
                         containerId: initialData?.containerId,
+                        cargoType: initialData?.cargoType ?? "PALLET",
                         effectiveFrom: initialData?.effectiveFrom,
                         effectiveTo: initialData?.effectiveTo,
                         currency: initialData?.currency,
@@ -302,11 +314,15 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                                 </TableHead>
                                 <TableHead className="w-[300px] text-right">
                                     <span className="font-bold">Sell Rate</span>
-                                    <span className="block text-xs font-normal text-slate-500">Per Pallet or Per Container</span>
+                                    <span className="block text-xs font-normal text-slate-500">
+                                        {isCube ? "Per m³ or Per Container" : "Per Pallet or Per Container"}
+                                    </span>
                                 </TableHead>
                                 <TableHead className="w-[250px] text-right bg-blue-900/20">
-                                    <span className="font-bold">40ft HC Reefer</span>
-                                    <span className="block text-xs font-normal text-slate-500">20 pallets per reefer</span>
+                                    <span className="font-bold">40ft HC {isCube ? "Cube" : "Reefer"}</span>
+                                    <span className="block text-xs font-normal text-slate-500">
+                                        {isCube ? `${containerFactor} m³ per container` : `${containerFactor} pallets per reefer`}
+                                    </span>
                                 </TableHead>
                                 <TableHead className="w-[60px]"></TableHead>
                             </TableRow>
@@ -320,9 +336,12 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                                 </TableRow>
                             ) : (
                                 items.map((item, index) => {
-                                    // Calculate display cost for container column
-                                    const containerCostDisplay = item.chargeType === "PER_PALLET" && item.unitCost
-                                        ? item.unitCost * 20
+                                    // Calculate display cost for container column.
+                                    // Per-unit rates (PER_PALLET / PER_CBM) get multiplied by the
+                                    // container factor for the column showing container-equivalent total.
+                                    const perUnit = item.chargeType === "PER_PALLET" || item.chargeType === "PER_CBM"
+                                    const containerCostDisplay = perUnit && item.unitCost
+                                        ? item.unitCost * containerFactor
                                         : item.containerCost || 0
 
                                     return (
@@ -412,16 +431,16 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                                                         type="number"
                                                         step="0.01"
                                                         value={
-                                                            item.chargeType === "PER_PALLET"
+                                                            (item.chargeType === "PER_PALLET" || item.chargeType === "PER_CBM")
                                                                 ? (item.buyUnitCost || "")
                                                                 : (item.buyContainerCost || "")
                                                         }
                                                         onChange={(e) => {
                                                             const value = parseFloat(e.target.value) || 0
-                                                            if (item.chargeType === "PER_PALLET") {
+                                                            if (item.chargeType === "PER_PALLET" || item.chargeType === "PER_CBM") {
                                                                 updateItem(item.id, {
                                                                     buyUnitCost: value,
-                                                                    buyContainerCost: value * 20
+                                                                    buyContainerCost: value * containerFactor
                                                                 })
                                                             } else {
                                                                 updateItem(item.id, { buyContainerCost: value })
@@ -441,16 +460,16 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                                                             type="number"
                                                             step="0.01"
                                                             value={
-                                                                item.chargeType === "PER_PALLET"
+                                                                (item.chargeType === "PER_PALLET" || item.chargeType === "PER_CBM")
                                                                     ? (item.unitCost || "")
                                                                     : (item.containerCost || "")
                                                             }
                                                             onChange={(e) => {
                                                                 const value = parseFloat(e.target.value) || 0
-                                                                if (item.chargeType === "PER_PALLET") {
+                                                                if (item.chargeType === "PER_PALLET" || item.chargeType === "PER_CBM") {
                                                                     updateItem(item.id, {
                                                                         unitCost: value,
-                                                                        containerCost: value * 20
+                                                                        containerCost: value * containerFactor
                                                                     })
                                                                 } else {
                                                                     updateItem(item.id, { containerCost: value })
@@ -463,12 +482,17 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                                                     <Select
                                                         value={item.chargeType}
                                                         onValueChange={(value: ChargeType) => {
-                                                            const currentVal = item.chargeType === "PER_PALLET" ? item.unitCost : item.containerCost
-                                                            if (value === "PER_PALLET") {
+                                                            const wasPerUnit = item.chargeType === "PER_PALLET" || item.chargeType === "PER_CBM"
+                                                            const isPerUnit = value === "PER_PALLET" || value === "PER_CBM"
+                                                            const currentVal = wasPerUnit ? item.unitCost : item.containerCost
+                                                            // Conversion factor — pallet rate cards default to 20 pallets,
+                                                            // CBM rate cards default to a 67.7 m³ (40ft HC) baseline.
+                                                            const factor = isCube ? 67.7 : 20
+                                                            if (isPerUnit) {
                                                                 updateItem(item.id, {
                                                                     chargeType: value,
                                                                     unitCost: currentVal,
-                                                                    containerCost: currentVal ? currentVal * 20 : null
+                                                                    containerCost: currentVal ? currentVal * factor : null
                                                                 })
                                                             } else {
                                                                 updateItem(item.id, {
@@ -483,7 +507,11 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                                                             <SelectValue />
                                                         </SelectTrigger>
                                                         <SelectContent>
-                                                            <SelectItem value="PER_PALLET">Per Pallet</SelectItem>
+                                                            {isCube ? (
+                                                                <SelectItem value="PER_CBM">Per m³</SelectItem>
+                                                            ) : (
+                                                                <SelectItem value="PER_PALLET">Per Pallet</SelectItem>
+                                                            )}
                                                             <SelectItem value="PER_CONTAINER">Per Container</SelectItem>
                                                         </SelectContent>
                                                     </Select>

@@ -45,6 +45,7 @@ import { toast } from "sonner"
 interface OriginChargeData {
     id: string
     salesRateTypeId: string | null
+    cargoType?: "PALLET" | "CUBE" | null
     originId: string
     originName: string
     containerId: string
@@ -301,9 +302,16 @@ export function OriginChargesList() {
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
-                                            <Badge className="bg-brand-blue text-white">
-                                                {charge.salesRateTypeName || charge.salesRateTypeId}
-                                            </Badge>
+                                            <div className="flex items-center gap-1">
+                                                <Badge className="bg-brand-blue text-white">
+                                                    {charge.salesRateTypeName || charge.salesRateTypeId}
+                                                </Badge>
+                                                {charge.cargoType === "CUBE" && (
+                                                    <Badge variant="outline" className="text-[10px] border-purple-700 text-purple-400">
+                                                        m³
+                                                    </Badge>
+                                                )}
+                                            </div>
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex flex-col text-xs">

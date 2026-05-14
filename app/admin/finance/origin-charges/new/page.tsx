@@ -15,6 +15,10 @@ export default async function NewOriginChargePage({
     const country = (params.country as string) || "South Africa"
     const containerId = (params.containerId as string) || "40ft-reefer-hc"
     const salesRateTypeId = (params.salesRateTypeId as string) || "srs"
+    const cargoTypeRaw = params.cargoType as string | undefined
+    const cargoType: "PALLET" | "CUBE" = salesRateTypeId === "srs"
+        ? "PALLET"
+        : (cargoTypeRaw === "CUBE" ? "CUBE" : "PALLET")
     const effectiveFrom = (params.effectiveFrom as string) || new Date().toISOString().split("T")[0]
 
     const [container] = await db
@@ -31,6 +35,7 @@ export default async function NewOriginChargePage({
         country,
         containerId,
         containerDisplayName: container?.displayName || "40ft HC Reefer",
+        cargoType,
         effectiveFrom,
         effectiveTo: null,
         currency: "ZAR" as const,

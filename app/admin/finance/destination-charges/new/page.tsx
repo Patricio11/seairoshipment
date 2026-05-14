@@ -13,6 +13,10 @@ function NewDestinationChargeContent() {
     const destinationPortCode = searchParams.get("destinationPortCode") || ""
     const containerId = searchParams.get("containerId") || "40ft-reefer-hc"
     const salesRateTypeId = searchParams.get("salesRateTypeId") || "srs"
+    const cargoTypeRaw = searchParams.get("cargoType")
+    const cargoType: DestinationCharge["cargoType"] = salesRateTypeId === "srs"
+        ? "PALLET"
+        : (cargoTypeRaw === "CUBE" ? "CUBE" : "PALLET")
     const currency = searchParams.get("currency") || "GBP"
     const exchangeRateToZAR = searchParams.get("exchangeRateToZAR") || "22.30"
     const effectiveFrom = searchParams.get("effectiveFrom") || new Date().toISOString().split("T")[0]
@@ -26,6 +30,7 @@ function NewDestinationChargeContent() {
         destinationPortCode,
         containerId,
         containerDisplayName: "",
+        cargoType,
         currency: currency as DestinationCharge["currency"],
         exchangeRateToZAR: parseFloat(exchangeRateToZAR),
         effectiveFrom,

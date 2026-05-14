@@ -66,6 +66,10 @@ interface UIDestinationChargeItem extends DestinationChargeItem {
 export function DestinationChargeEditor({ initialData }: DestinationChargeEditorProps) {
     const router = useRouter()
 
+    const isCube = initialData?.cargoType === "CUBE"
+    const unitLabel = isCube ? "m³" : "pallet"
+    const unitDivisor = isCube ? 67.7 : 20
+
     // Form State
     const [currency, setCurrency] = useState<'GBP' | 'EUR' | 'USD'>(initialData?.currency || 'GBP')
     const [exchangeRate, setExchangeRate] = useState<number>(initialData?.exchangeRateToZAR || 22.30)
@@ -111,7 +115,7 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
             totalLocal,
             totalZAR,
             buyTotalZAR,
-            perPalletZAR: totalZAR / 20,
+            perUnitZAR: totalZAR / unitDivisor,
             marginZAR: totalZAR - buyTotalZAR,
         }
     }
@@ -192,6 +196,7 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
                         destinationName: initialData?.destinationName,
                         destinationPortCode: initialData?.destinationPortCode,
                         containerId: initialData?.containerId,
+                        cargoType: initialData?.cargoType ?? "PALLET",
                         effectiveFrom: initialData?.effectiveFrom,
                         effectiveTo: initialData?.effectiveTo,
                     }),
@@ -523,7 +528,7 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
                                 <div className="font-mono text-2xl font-black text-emerald-400">
                                     R {totals.totalZAR.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                 </div>
-                                <div className="text-xs text-slate-500">@ {exchangeRate.toFixed(2)} ROE · R {totals.perPalletZAR.toLocaleString(undefined, { maximumFractionDigits: 2 })} / pallet</div>
+                                <div className="text-xs text-slate-500">@ {exchangeRate.toFixed(2)} ROE · R {totals.perUnitZAR.toLocaleString(undefined, { maximumFractionDigits: 2 })} / {unitLabel}</div>
                             </div>
                             <div className="text-right space-y-1">
                                 <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Margin (ZAR)</div>

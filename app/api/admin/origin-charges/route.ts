@@ -15,23 +15,25 @@ export async function GET(request: NextRequest) {
 
         // Fetch headers with joined display names
         let headers;
+        const selectFields = {
+            id: originCharges.id,
+            salesRateTypeId: originCharges.salesRateTypeId,
+            originId: originCharges.originId,
+            originName: originCharges.originName,
+            containerId: originCharges.containerId,
+            cargoType: originCharges.cargoType,
+            effectiveFrom: originCharges.effectiveFrom,
+            effectiveTo: originCharges.effectiveTo,
+            currency: originCharges.currency,
+            active: originCharges.active,
+            createdAt: originCharges.createdAt,
+            updatedAt: originCharges.updatedAt,
+            containerDisplayName: containerTypes.displayName,
+            salesRateTypeName: salesRateTypes.name,
+        };
         if (originId) {
             headers = await db
-                .select({
-                    id: originCharges.id,
-                    salesRateTypeId: originCharges.salesRateTypeId,
-                    originId: originCharges.originId,
-                    originName: originCharges.originName,
-                    containerId: originCharges.containerId,
-                    effectiveFrom: originCharges.effectiveFrom,
-                    effectiveTo: originCharges.effectiveTo,
-                    currency: originCharges.currency,
-                    active: originCharges.active,
-                    createdAt: originCharges.createdAt,
-                    updatedAt: originCharges.updatedAt,
-                    containerDisplayName: containerTypes.displayName,
-                    salesRateTypeName: salesRateTypes.name,
-                })
+                .select(selectFields)
                 .from(originCharges)
                 .leftJoin(containerTypes, eq(originCharges.containerId, containerTypes.id))
                 .leftJoin(salesRateTypes, eq(originCharges.salesRateTypeId, salesRateTypes.id))
@@ -39,21 +41,7 @@ export async function GET(request: NextRequest) {
                 .orderBy(desc(originCharges.createdAt));
         } else {
             headers = await db
-                .select({
-                    id: originCharges.id,
-                    salesRateTypeId: originCharges.salesRateTypeId,
-                    originId: originCharges.originId,
-                    originName: originCharges.originName,
-                    containerId: originCharges.containerId,
-                    effectiveFrom: originCharges.effectiveFrom,
-                    effectiveTo: originCharges.effectiveTo,
-                    currency: originCharges.currency,
-                    active: originCharges.active,
-                    createdAt: originCharges.createdAt,
-                    updatedAt: originCharges.updatedAt,
-                    containerDisplayName: containerTypes.displayName,
-                    salesRateTypeName: salesRateTypes.name,
-                })
+                .select(selectFields)
                 .from(originCharges)
                 .leftJoin(containerTypes, eq(originCharges.containerId, containerTypes.id))
                 .leftJoin(salesRateTypes, eq(originCharges.salesRateTypeId, salesRateTypes.id))
@@ -83,13 +71,62 @@ export async function GET(request: NextRequest) {
     }
 }
 
+/**
+ * Cross-validation: a CUBE rate card line item must use PER_CBM /
+ * PER_CONTAINER / FIXED; PER_PALLET is meaningless. A PALLET rate card
+ * line item must use PER_PALLET / PER_CONTAINER / FIXED; PER_CBM is
+ * meaningless. Returns an error string when invalid, or null when OK.
+ */
+function validateChargeTypeForCargoType(
+    chargeType: string,
+    cargoType: "PALLET" | "CUBE",
+): string | null {
+    if (cargoType === "CUBE" && chargeType === "PER_PALLET") {
+        return "PER_PALLET is not valid on a CUBE rate card — use PER_CBM, PER_CONTAINER, or FIXED.";
+    }
+    if (cargoType === "PALLET" && chargeType === "PER_CBM") {
+        return "PER_CBM is not valid on a PALLET rate card — use PER_PALLET, PER_CONTAINER, or FIXED.";
+    }
+    if (!["PER_PALLET", "PER_CONTAINER", "FIXED", "PER_CBM"].includes(chargeType)) {
+        return `Unknown charge type "${chargeType}".`;
+    }
+    return null;
+}
+
 export async function POST(request: NextRequest) {
     try {
         const { error } = await requireAdmin();
         if (error) return error;
 
         const body = await request.json();
-        const { id: customId, salesRateTypeId, originId, originName, containerId, effectiveFrom, effectiveTo, currency, active, items } = body;
+        const {
+            id: customId,
+            salesRateTypeId,
+            originId,
+            originName,
+            containerId,
+            effectiveFrom,
+            effectiveTo,
+            currency,
+            active,
+            items,
+            cargoType: cargoTypeRaw,
+        } = body;
+
+        // SRS rate cards are always PALLET. SCS cards take the field from the
+        // form (defaults to PALLET if the form didn't supply one).
+        const cargoType: "PALLET" | "CUBE" = salesRateTypeId === "srs"
+            ? "PALLET"
+            : (cargoTypeRaw === "CUBE" ? "CUBE" : "PALLET");
+
+        // Pre-validate every item before any insert so we don't half-create the card.
+        if (items && Array.isArray(items)) {
+            for (const item of items) {
+                const ct = (item as Record<string, unknown>).chargeType as string;
+                const err = validateChargeTypeForCargoType(ct, cargoType);
+                if (err) return NextResponse.json({ error: err }, { status: 400 });
+            }
+        }
 
         const id = customId || `oc-${nanoid(8)}`;
         const [created] = await db
@@ -100,6 +137,7 @@ export async function POST(request: NextRequest) {
                 originId,
                 originName,
                 containerId,
+                cargoType,
                 effectiveFrom,
                 effectiveTo: effectiveTo || null,
                 currency: currency || "ZAR",
@@ -115,7 +153,7 @@ export async function POST(request: NextRequest) {
                     originChargeId: id,
                     chargeCode: (item.chargeCode as string) || "",
                     chargeName: item.chargeName as string,
-                    chargeType: item.chargeType as "PER_PALLET" | "PER_CONTAINER" | "FIXED",
+                    chargeType: item.chargeType as "PER_PALLET" | "PER_CONTAINER" | "FIXED" | "PER_CBM",
                     category: (item.category as string) || "OTHER",
                     unitCost: item.unitCost != null ? String(item.unitCost) : null,
                     containerCost: item.containerCost != null ? String(item.containerCost) : null,

@@ -52,6 +52,7 @@ interface OceanFreightRate {
     id: string
     salesRateTypeId: string | null
     salesRateTypeName: string | null
+    cargoType?: "PALLET" | "CUBE" | null
     origin: string
     destinationCountry: string
     destinationPort: string
@@ -328,9 +329,16 @@ export function OceanFreightGrid() {
                                                         </span>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Badge className="bg-brand-blue text-white">
-                                                            {rate.salesRateTypeName || rate.salesRateTypeId || "—"}
-                                                        </Badge>
+                                                        <div className="flex items-center gap-1">
+                                                            <Badge className="bg-brand-blue text-white">
+                                                                {rate.salesRateTypeName || rate.salesRateTypeId || "—"}
+                                                            </Badge>
+                                                            {rate.cargoType === "CUBE" && (
+                                                                <Badge variant="outline" className="text-[10px] border-purple-700 text-purple-400">
+                                                                    m³
+                                                                </Badge>
+                                                            )}
+                                                        </div>
                                                     </TableCell>
                                                     <TableCell className="text-right font-mono text-sm">
                                                         {rate.active ? `$${Number(rate.freightUSD).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
@@ -382,6 +390,7 @@ export function OceanFreightGrid() {
                                                                     shippingLine: rate.shippingLine,
                                                                     containerId: rate.containerId,
                                                                     salesRateTypeId: rate.salesRateTypeId,
+                                                                    cargoType: rate.cargoType,
                                                                     freightUSD: rate.freightUSD,
                                                                     bafUSD: rate.bafUSD,
                                                                     ispsUSD: rate.ispsUSD,

@@ -23,6 +23,7 @@ export async function GET(
                 destinationName: destinationCharges.destinationName,
                 destinationPortCode: destinationCharges.destinationPortCode,
                 containerId: destinationCharges.containerId,
+                cargoType: destinationCharges.cargoType,
                 currency: destinationCharges.currency,
                 exchangeRateToZAR: destinationCharges.exchangeRateToZAR,
                 buyExchangeRateToZAR: destinationCharges.buyExchangeRateToZAR,
@@ -68,6 +69,28 @@ export async function PUT(
         const { id } = await params;
         const body = await request.json();
         const { currency, exchangeRateToZAR, buyExchangeRateToZAR, effectiveFrom, effectiveTo, active, items } = body;
+
+        // Look up the existing card so we can revalidate item chargeTypes
+        // against the (locked) cargoType.
+        const [existing] = await db
+            .select({ cargoType: destinationCharges.cargoType })
+            .from(destinationCharges)
+            .where(eq(destinationCharges.id, id))
+            .limit(1);
+        if (!existing) {
+            return NextResponse.json({ error: "Destination charge not found" }, { status: 404 });
+        }
+        if (items && Array.isArray(items)) {
+            for (const item of items) {
+                const ct = (item as Record<string, unknown>).chargeType as string || "PER_CONTAINER";
+                if (existing.cargoType === "CUBE" && ct === "PER_PALLET") {
+                    return NextResponse.json({ error: "PER_PALLET is not valid on a CUBE rate card." }, { status: 400 });
+                }
+                if (existing.cargoType === "PALLET" && ct === "PER_CBM") {
+                    return NextResponse.json({ error: "PER_CBM is not valid on a PALLET rate card." }, { status: 400 });
+                }
+            }
+        }
 
         const updateData: Record<string, unknown> = { updatedAt: new Date() };
         if (currency !== undefined) updateData.currency = currency;

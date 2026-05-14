@@ -36,6 +36,7 @@ interface CreateOceanFreightForm {
     shippingLine: string
     containerId: string
     salesRateTypeId: string
+    cargoType: "PALLET" | "CUBE"
     freightUSD: number
     bafUSD: number
     ispsUSD: number
@@ -58,6 +59,7 @@ export interface OceanFreightEditData {
     shippingLine: string
     containerId: string
     salesRateTypeId: string | null
+    cargoType?: "PALLET" | "CUBE" | null
     freightUSD: string | null
     bafUSD: string | null
     ispsUSD: string | null
@@ -134,6 +136,7 @@ export function CreateOceanFreightDialog({
                 shippingLine: editData.shippingLine,
                 containerId: editData.containerId,
                 salesRateTypeId: editData.salesRateTypeId || "srs",
+                cargoType: (editData.cargoType || "PALLET") as "PALLET" | "CUBE",
                 freightUSD: Number(editData.freightUSD) || 0,
                 bafUSD: Number(editData.bafUSD) || 0,
                 ispsUSD: Number(editData.ispsUSD) || 0,
@@ -156,6 +159,7 @@ export function CreateOceanFreightDialog({
             shippingLine: "MSC",
             containerId: "40ft-reefer-hc",
             salesRateTypeId: "srs",
+            cargoType: "PALLET",
             freightUSD: 0,
             bafUSD: 0,
             ispsUSD: 0,
@@ -248,11 +252,14 @@ export function CreateOceanFreightDialog({
                 : "/api/admin/ocean-freight"
             const method = isEditMode ? "PUT" : "POST"
 
+            // SRS always PALLET; SCS honours the dialog's choice.
+            const effectiveCargoType = formData.salesRateTypeId === "srs" ? "PALLET" : formData.cargoType
             const res = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     salesRateTypeId: formData.salesRateTypeId,
+                    cargoType: effectiveCargoType,
                     origin: formData.origin,
                     destinationCountry: formData.destinationCountry,
                     destinationPort: formData.destinationPort,
@@ -389,7 +396,16 @@ export function CreateOceanFreightDialog({
                             </div>
                             <div className="space-y-1.5">
                                 <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Rate Type</Label>
-                                <Select value={formData.salesRateTypeId} onValueChange={(v) => setFormData({ ...formData, salesRateTypeId: v })}>
+                                <Select
+                                    value={formData.salesRateTypeId}
+                                    onValueChange={(v) => setFormData({
+                                        ...formData,
+                                        salesRateTypeId: v,
+                                        // Switching to SRS forces PALLET; SRS doesn't support per-m³ pricing.
+                                        cargoType: v === "srs" ? "PALLET" : formData.cargoType,
+                                    })}
+                                    disabled={isEditMode}
+                                >
                                     <SelectTrigger className="bg-slate-900 border-slate-800 h-9 text-sm">
                                         <SelectValue placeholder="Select rate type" />
                                     </SelectTrigger>
@@ -400,6 +416,26 @@ export function CreateOceanFreightDialog({
                                     </SelectContent>
                                 </Select>
                             </div>
+
+                            {/* Cargo Type — SCS only; SRS is always pallets. Locked after creation. */}
+                            {formData.salesRateTypeId === "scs" && (
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Cargo Type</Label>
+                                    <Select
+                                        value={formData.cargoType}
+                                        onValueChange={(v) => setFormData({ ...formData, cargoType: v as "PALLET" | "CUBE" })}
+                                        disabled={isEditMode}
+                                    >
+                                        <SelectTrigger className="bg-slate-900 border-slate-800 h-9 text-sm">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-slate-900 border-slate-800 text-white">
+                                            <SelectItem value="PALLET">Pallet</SelectItem>
+                                            <SelectItem value="CUBE">Cube (per m³)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
                         </div>
 
                         {/* Right Column: Financials */}

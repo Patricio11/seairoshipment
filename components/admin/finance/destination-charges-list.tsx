@@ -53,6 +53,7 @@ interface DestinationChargeData {
     containerDisplayName: string | null
     salesRateTypeId: string | null
     salesRateTypeName: string | null
+    cargoType?: "PALLET" | "CUBE" | null
     currency: string
     exchangeRateToZAR: string
     active: boolean
@@ -235,9 +236,16 @@ export function DestinationChargesList() {
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
-                                            <Badge className="bg-brand-blue text-white">
-                                                {charge.salesRateTypeName || charge.salesRateTypeId || "—"}
-                                            </Badge>
+                                            <div className="flex items-center gap-1">
+                                                <Badge className="bg-brand-blue text-white">
+                                                    {charge.salesRateTypeName || charge.salesRateTypeId || "—"}
+                                                </Badge>
+                                                {charge.cargoType === "CUBE" && (
+                                                    <Badge variant="outline" className="text-[10px] border-purple-700 text-purple-400">
+                                                        m³
+                                                    </Badge>
+                                                )}
+                                            </div>
                                         </TableCell>
                                         <TableCell>
                                             <Badge

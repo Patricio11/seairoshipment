@@ -58,6 +58,7 @@ export function CreateOriginChargeDialog() {
         customCountryName: "",
         containerId: "40ft-reefer-hc",
         salesRateTypeId: "srs",
+        cargoType: "PALLET" as "PALLET" | "CUBE",
         effectiveFrom: new Date().toISOString().split("T")[0],
     })
 
@@ -70,6 +71,8 @@ export function CreateOriginChargeDialog() {
 
         const selectedLoc = originLocations.find(l => l.code.toLowerCase().slice(2) === formData.originId)
 
+        // SRS is always pallet; SCS honours the dialog's choice.
+        const effectiveCargoType = formData.salesRateTypeId === "srs" ? "PALLET" : formData.cargoType
         // Build query params
         const params = new URLSearchParams({
             originId: formData.originId,
@@ -77,6 +80,7 @@ export function CreateOriginChargeDialog() {
             country: isCustomCountry ? formData.customCountryName : formData.country,
             containerId: formData.containerId,
             salesRateTypeId: formData.salesRateTypeId,
+            cargoType: effectiveCargoType,
             effectiveFrom: formData.effectiveFrom,
         })
 
@@ -215,7 +219,11 @@ export function CreateOriginChargeDialog() {
                             </Label>
                             <Select
                                 value={formData.salesRateTypeId}
-                                onValueChange={(val) => setFormData({ ...formData, salesRateTypeId: val })}
+                                onValueChange={(val) => setFormData({
+                                    ...formData,
+                                    salesRateTypeId: val,
+                                    cargoType: val === "srs" ? "PALLET" : formData.cargoType,
+                                })}
                             >
                                 <SelectTrigger className="col-span-3">
                                     <SelectValue placeholder="Select rate type" />
@@ -229,6 +237,26 @@ export function CreateOriginChargeDialog() {
                                 </SelectContent>
                             </Select>
                         </div>
+
+                        {/* Cargo Type — only when SCS. SRS is always pallets. */}
+                        {formData.salesRateTypeId === "scs" && (
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right whitespace-nowrap">Cargo Type</Label>
+                                <Select
+                                    value={formData.cargoType}
+                                    onValueChange={(val) => setFormData({ ...formData, cargoType: val as "PALLET" | "CUBE" })}
+                                >
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="PALLET">Pallet</SelectItem>
+                                        <SelectItem value="CUBE">Cube (per m³)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="effectiveFrom" className="text-right">
                                 Effective

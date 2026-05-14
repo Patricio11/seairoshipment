@@ -37,7 +37,9 @@ export type ChargeCategory =
     | 'INSURANCE'
     | 'OTHER';
 
-export type ChargeType = 'PER_PALLET' | 'PER_CONTAINER' | 'FIXED';
+export type ChargeType = 'PER_PALLET' | 'PER_CONTAINER' | 'FIXED' | 'PER_CBM';
+
+export type CargoType = 'PALLET' | 'CUBE';
 
 export interface OriginChargeItem {
     id: string;
@@ -65,6 +67,7 @@ export interface OriginCharge {
     originName: string;
     containerId: string;
     containerDisplayName: string;
+    cargoType?: CargoType;
     effectiveFrom: string;
     effectiveTo: string | null;
     currency: 'ZAR';
@@ -85,6 +88,7 @@ export interface OceanFreightRate {
     shippingLine: string;
     containerId: string;
     containerDisplayName: string; // Equipment Type
+    cargoType?: CargoType;
     effectiveFrom: string;
     effectiveTo: string | null;
     freightUSD: number;
@@ -114,7 +118,7 @@ export interface DestinationChargeItem {
     destinationChargeId: string;
     chargeCode: string;
     chargeName: string;
-    chargeType: 'PER_CONTAINER' | 'FIXED';
+    chargeType: 'PER_CONTAINER' | 'FIXED' | 'PER_CBM' | 'PER_PALLET';
     amountLocal: number;
     amountZAR: number;
     buyAmountZAR?: number | null;
@@ -133,6 +137,7 @@ export interface DestinationCharge {
     destinationPortCode: string;
     containerId: string;
     containerDisplayName: string;
+    cargoType?: CargoType;
     currency: 'GBP' | 'EUR' | 'USD';
     exchangeRateToZAR: number;
     buyExchangeRateToZAR?: number | null;

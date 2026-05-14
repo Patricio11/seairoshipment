@@ -55,6 +55,7 @@ export function CreateDestinationChargeDialog({ onSuccess }: { onSuccess?: () =>
         destinationId: "",
         containerId: "40ft-reefer-hc",
         salesRateTypeId: "srs",
+        cargoType: "PALLET" as "PALLET" | "CUBE",
         currency: "GBP",
         exchangeRateToZAR: "22.30",
         effectiveFrom: new Date().toISOString().split("T")[0],
@@ -70,12 +71,15 @@ export function CreateDestinationChargeDialog({ onSuccess }: { onSuccess?: () =>
             return
         }
 
+        // SRS is always pallet; SCS honours the dialog's choice.
+        const effectiveCargoType = formData.salesRateTypeId === "srs" ? "PALLET" : formData.cargoType
         const params = new URLSearchParams({
             destinationId: selectedLoc.code.toLowerCase().slice(2),
             destinationName: selectedLoc.name,
             destinationPortCode: selectedLoc.code,
             containerId: formData.containerId,
             salesRateTypeId: formData.salesRateTypeId,
+            cargoType: effectiveCargoType,
             currency: formData.currency,
             exchangeRateToZAR: formData.exchangeRateToZAR,
             effectiveFrom: formData.effectiveFrom,
@@ -150,7 +154,12 @@ export function CreateDestinationChargeDialog({ onSuccess }: { onSuccess?: () =>
                             <Label className="text-right whitespace-nowrap">Rate Type</Label>
                             <Select
                                 value={formData.salesRateTypeId}
-                                onValueChange={(val) => setFormData({ ...formData, salesRateTypeId: val })}
+                                onValueChange={(val) => setFormData({
+                                    ...formData,
+                                    salesRateTypeId: val,
+                                    // Switching to SRS clears any Cube selection — SRS is always pallets.
+                                    cargoType: val === "srs" ? "PALLET" : formData.cargoType,
+                                })}
                             >
                                 <SelectTrigger className="col-span-3">
                                     <SelectValue placeholder="Select rate type" />
@@ -164,6 +173,25 @@ export function CreateDestinationChargeDialog({ onSuccess }: { onSuccess?: () =>
                                 </SelectContent>
                             </Select>
                         </div>
+
+                        {/* Cargo Type — only relevant for SCS. SRS is always pallets. */}
+                        {formData.salesRateTypeId === "scs" && (
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right whitespace-nowrap">Cargo Type</Label>
+                                <Select
+                                    value={formData.cargoType}
+                                    onValueChange={(val) => setFormData({ ...formData, cargoType: val as "PALLET" | "CUBE" })}
+                                >
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="PALLET">Pallet</SelectItem>
+                                        <SelectItem value="CUBE">Cube (per m³)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label className="text-right">Currency</Label>

@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
             destinationName: destinationCharges.destinationName,
             destinationPortCode: destinationCharges.destinationPortCode,
             containerId: destinationCharges.containerId,
+            cargoType: destinationCharges.cargoType,
             currency: destinationCharges.currency,
             exchangeRateToZAR: destinationCharges.exchangeRateToZAR,
             buyExchangeRateToZAR: destinationCharges.buyExchangeRateToZAR,
@@ -78,10 +79,25 @@ export async function POST(request: NextRequest) {
             id: customId, salesRateTypeId, destinationId, destinationName,
             destinationPortCode, containerId, currency, exchangeRateToZAR,
             buyExchangeRateToZAR, effectiveFrom, effectiveTo, active, items,
+            cargoType: cargoTypeRaw,
         } = body;
 
         if (!salesRateTypeId) {
             return NextResponse.json({ error: "salesRateTypeId is required (srs or scs)" }, { status: 400 });
+        }
+
+        // SRS = always PALLET. SCS = use submitted cargoType (default PALLET).
+        const cargoType: "PALLET" | "CUBE" = salesRateTypeId === "srs"
+            ? "PALLET"
+            : (cargoTypeRaw === "CUBE" ? "CUBE" : "PALLET");
+
+        // Validate every item's chargeType against this card's cargoType before inserting.
+        if (items && Array.isArray(items)) {
+            for (const item of items) {
+                const ct = (item as Record<string, unknown>).chargeType as string;
+                const err = validateDestinationChargeType(ct, cargoType);
+                if (err) return NextResponse.json({ error: err }, { status: 400 });
+            }
         }
 
         const id = customId || `dc-${nanoid(8)}`;
@@ -94,6 +110,7 @@ export async function POST(request: NextRequest) {
                 destinationName,
                 destinationPortCode,
                 containerId,
+                cargoType,
                 currency,
                 exchangeRateToZAR: String(exchangeRateToZAR),
                 buyExchangeRateToZAR: buyExchangeRateToZAR != null ? String(buyExchangeRateToZAR) : null,
@@ -126,4 +143,23 @@ export async function POST(request: NextRequest) {
         const message = error instanceof Error ? error.message : "Failed to create destination charge";
         return NextResponse.json({ error: message }, { status: 500 });
     }
+}
+
+/**
+ * Cargo-type ↔ chargeType compatibility check for destination items.
+ * Destination items use a free-form text chargeType (no enum at the
+ * column level), so we accept the same vocabulary as origin/ocean:
+ * PER_PALLET, PER_CONTAINER, FIXED, PER_CBM.
+ */
+function validateDestinationChargeType(chargeType: string, cargoType: "PALLET" | "CUBE"): string | null {
+    if (cargoType === "CUBE" && chargeType === "PER_PALLET") {
+        return "PER_PALLET is not valid on a CUBE rate card — use PER_CBM, PER_CONTAINER, or FIXED.";
+    }
+    if (cargoType === "PALLET" && chargeType === "PER_CBM") {
+        return "PER_CBM is not valid on a PALLET rate card — use PER_PALLET, PER_CONTAINER, or FIXED.";
+    }
+    if (!["PER_PALLET", "PER_CONTAINER", "FIXED", "PER_CBM"].includes(chargeType)) {
+        return `Unknown charge type "${chargeType}".`;
+    }
+    return null;
 }

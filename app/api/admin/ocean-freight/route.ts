@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
             destinationPortCode: oceanFreightRates.destinationPortCode,
             shippingLine: oceanFreightRates.shippingLine,
             containerId: oceanFreightRates.containerId,
+            cargoType: oceanFreightRates.cargoType,
             effectiveFrom: oceanFreightRates.effectiveFrom,
             effectiveTo: oceanFreightRates.effectiveTo,
             freightUSD: oceanFreightRates.freightUSD,
@@ -83,11 +84,17 @@ export async function POST(request: NextRequest) {
             effectiveTo, freightUSD, bafUSD, ispsUSD, otherSurchargesUSD,
             rcgUSD, exchangeRate, active,
             buyFreightUSD, buyBafUSD, buyIspsUSD, buyOtherSurchargesUSD, buyRcgUSD,
+            cargoType: cargoTypeRaw,
         } = body;
 
         if (!salesRateTypeId) {
             return NextResponse.json({ error: "salesRateTypeId is required (srs or scs)" }, { status: 400 });
         }
+
+        // SRS = always PALLET. SCS = honour the submitted cargoType.
+        const cargoType: "PALLET" | "CUBE" = salesRateTypeId === "srs"
+            ? "PALLET"
+            : (cargoTypeRaw === "CUBE" ? "CUBE" : "PALLET");
 
         // Compute sell totals
         const freight = Number(freightUSD) || 0;
@@ -120,6 +127,7 @@ export async function POST(request: NextRequest) {
                 destinationPortCode,
                 shippingLine: shippingLine || "MSC",
                 containerId,
+                cargoType,
                 effectiveFrom,
                 effectiveTo: effectiveTo || null,
                 freightUSD: freight.toFixed(2),

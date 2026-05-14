@@ -22,6 +22,7 @@ export async function GET(
                 originId: originCharges.originId,
                 originName: originCharges.originName,
                 containerId: originCharges.containerId,
+                cargoType: originCharges.cargoType,
                 effectiveFrom: originCharges.effectiveFrom,
                 effectiveTo: originCharges.effectiveTo,
                 currency: originCharges.currency,
@@ -54,6 +55,24 @@ export async function GET(
     }
 }
 
+/**
+ * Cargo type is locked after creation — same pattern as the existing
+ * salesRateTypeId / containerId locks. Line items are revalidated
+ * against the existing cargoType.
+ */
+function validateChargeTypeForCargoType(chargeType: string, cargoType: "PALLET" | "CUBE"): string | null {
+    if (cargoType === "CUBE" && chargeType === "PER_PALLET") {
+        return "PER_PALLET is not valid on a CUBE rate card — use PER_CBM, PER_CONTAINER, or FIXED.";
+    }
+    if (cargoType === "PALLET" && chargeType === "PER_CBM") {
+        return "PER_CBM is not valid on a PALLET rate card — use PER_PALLET, PER_CONTAINER, or FIXED.";
+    }
+    if (!["PER_PALLET", "PER_CONTAINER", "FIXED", "PER_CBM"].includes(chargeType)) {
+        return `Unknown charge type "${chargeType}".`;
+    }
+    return null;
+}
+
 export async function PUT(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -66,7 +85,26 @@ export async function PUT(
         const body = await request.json();
         const { salesRateTypeId, originId, originName, containerId, effectiveFrom, effectiveTo, currency, active, items } = body;
 
-        // Update header
+        // Look up the existing row first so we can revalidate item chargeTypes
+        // against the (locked) cargoType.
+        const [existing] = await db
+            .select({ cargoType: originCharges.cargoType })
+            .from(originCharges)
+            .where(eq(originCharges.id, id))
+            .limit(1);
+        if (!existing) {
+            return NextResponse.json({ error: "Origin charge not found" }, { status: 404 });
+        }
+
+        if (items && Array.isArray(items)) {
+            for (const item of items) {
+                const ct = (item as Record<string, unknown>).chargeType as string;
+                const err = validateChargeTypeForCargoType(ct, existing.cargoType);
+                if (err) return NextResponse.json({ error: err }, { status: 400 });
+            }
+        }
+
+        // Update header — cargoType is deliberately NOT updatable here.
         const updateData: Record<string, unknown> = { updatedAt: new Date() };
         if (salesRateTypeId !== undefined) updateData.salesRateTypeId = salesRateTypeId;
         if (originId !== undefined) updateData.originId = originId;
@@ -83,10 +121,6 @@ export async function PUT(
             .where(eq(originCharges.id, id))
             .returning();
 
-        if (!updated) {
-            return NextResponse.json({ error: "Origin charge not found" }, { status: 404 });
-        }
-
         // Replace items: delete all, then insert new
         if (items !== undefined) {
             await db.delete(originChargeItems).where(eq(originChargeItems.originChargeId, id));
@@ -98,7 +132,7 @@ export async function PUT(
                         originChargeId: id,
                         chargeCode: (item.chargeCode as string) || "",
                         chargeName: item.chargeName as string,
-                        chargeType: item.chargeType as "PER_PALLET" | "PER_CONTAINER" | "FIXED",
+                        chargeType: item.chargeType as "PER_PALLET" | "PER_CONTAINER" | "FIXED" | "PER_CBM",
                         category: (item.category as string) || "OTHER",
                         unitCost: item.unitCost != null ? String(item.unitCost) : null,
                         containerCost: item.containerCost != null ? String(item.containerCost) : null,

@@ -132,7 +132,7 @@ C · Tools hub + saved calcs       ✅ DONE
    C.2 presets + live-quote + smart-match  ✅ DONE  → docs/cbm-cargo-type/phase-c2-killer-feature-panels.md
    C.3 share + PDF + bulk paste   ✅ DONE  → docs/cbm-cargo-type/phase-c3-share-pdf-bulk-paste.md
 D · Booking wizard integration    ✅ DONE  → docs/cbm-cargo-type/phase-d-booking-integration.md
-E · Admin rate cards              ~cargoType discriminator + PER_CBM charge type
+E · Admin rate cards              ✅ DONE  → docs/cbm-cargo-type/phase-e-admin-rate-cards.md
 F · Container creation + admin views ~Fleet scheduler picks cargo type; grid columns polymorphic
 G · Display surfaces              ~dashboard widgets, invoices, recent shipments
 H · Polish + tracker updates      ~empty states, copy, related doc tweaks
@@ -329,18 +329,23 @@ Easy to expand later — the seed lives in `app/api/admin/cargo-item-presets/see
 
 ---
 
-## Phase E — Admin rate cards with cargo type
+## Phase E — Admin rate cards with cargo type ✅ DONE
 
-- [ ] `components/admin/finance/origin-charge-editor.tsx` — add Cargo Type selector (locked after creation). For CUBE, charge-type dropdown swaps `PER_PALLET` for `PER_CBM`.
-- [ ] `components/admin/finance/destination-charge-editor.tsx` — same pattern.
-- [ ] `components/admin/finance/create-ocean-freight-dialog.tsx` — Cargo Type added to basic details (locked after creation).
-- [ ] `app/api/admin/origin-charges/`, `destination-charges/`, `ocean-freight/` (route + `[id]`)
-  - Add `cargoType` to POST validation + GET responses
-  - Validate line-item `chargeType` is compatible with the card's `cargoType`
-- [ ] `lib/rates.ts` — rate lookups filter by `cargoType` too
-- [ ] List pages: filter chip for Pallet / Cube alongside the existing SRS / SCS chip
+**Detailed write-up:** [docs/cbm-cargo-type/phase-e-admin-rate-cards.md](docs/cbm-cargo-type/phase-e-admin-rate-cards.md)
 
-**Done when**: admin can create a Cube destination card with `PER_CBM` line items; booking quotes pick it up correctly.
+- [x] `components/admin/finance/origin-charge-editor.tsx` — Cargo Type-aware line items. For CUBE, charge-type dropdown swaps `PER_PALLET` for `PER_CBM`, table headers swap "/ pallet" → "/ m³", container-equivalent uses `× 67.7` (40ft HC m³) instead of `× 20`.
+- [x] `components/admin/finance/destination-charge-editor.tsx` — cargoType passthrough + per-unit divisor in totals (m³ vs pallet).
+- [x] `components/admin/finance/create-origin-charge-dialog.tsx` + `create-destination-charge-dialog.tsx` + `create-ocean-freight-dialog.tsx` — Cargo Type field appears below Rate Type **only when SCS is selected**; SRS forces PALLET silently. Field is **locked after creation** (disabled in edit mode for ocean freight; not editable on the editor pages for origin/destination).
+- [x] `app/api/admin/origin-charges/`, `destination-charges/`, `ocean-freight/` (route + `[id]`)
+  - cargoType returned in GET responses; accepted in POST; locked on PUT (server fetches existing cargoType and validates items against it).
+  - `validateChargeTypeForCargoType()` / `validateDestinationChargeType()` helpers reject `PER_PALLET` items on a CUBE card and `PER_CBM` items on a PALLET card.
+- [x] `app/admin/finance/{origin,destination}-charges/new/page.tsx` — parse `cargoType` from URL params (SRS → "PALLET", SCS → param value).
+- [x] `app/admin/finance/{origin,destination}-charges/[id]/page.tsx` — include `cargoType` in select clause + `initialData`; widen item chargeType type to include `PER_CBM | PER_PALLET`.
+- [x] List grids: small `m³` chip next to the Rate Type badge for CUBE cards (origin-charges-list, destination-charges-list, ocean-freight-grid).
+
+**Note**: `lib/rates.ts` cargoType filtering shipped in Phase D's quote endpoint (`cargoType` is already a quote-input dimension); no further changes needed here.
+
+**Done when**: admin can create a Cube destination card with `PER_CBM` line items; booking quotes pick it up correctly. ✅
 
 ---
 
