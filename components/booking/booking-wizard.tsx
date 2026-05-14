@@ -11,7 +11,6 @@ import { toast } from "sonner"
 import type { BookingFormData, CostBreakdown } from "@/types"
 import { bookingModalStore, type BookingPrefill } from "@/hooks/use-booking-modal"
 import { useAuth } from "@/lib/auth/client"
-import { uploadFile, STORAGE_PATHS } from "@/lib/supabase"
 
 const STEP_LABELS = ["Cargo & Route", "Cost & Payment", "Confirm Booking"]
 const TOTAL_STEPS = 3
@@ -30,8 +29,13 @@ function mapDocCodeToLegacyType(code: string): "INVOICE" | "BOL" | "COA" | "PACK
 
 export function BookingWizard({ onSuccess, prefill }: { onSuccess?: () => void; prefill?: BookingPrefill | null }) {
     const { user } = useAuth()
+    void user // kept for any future use; currently no client-side filename logic.
     const [step, setStep] = useState(1)
     const [submitting, setSubmitting] = useState(false)
+    // While files are uploading after a successful booking POST, show progress
+    // ("Uploading 2/6…"). Sequential upload — one file at a time — so a single
+    // bad file doesn't take the whole batch down with it.
+    const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null)
     const [costBreakdown, setCostBreakdown] = useState<CostBreakdown | null>(null)
     const [formData, setFormData] = useState<BookingFormData>({
         origin: "",
@@ -179,7 +183,13 @@ export function BookingWizard({ onSuccess, prefill }: { onSuccess?: () => void; 
                 return
             }
 
-            // Upload documents via Supabase storage
+            // Upload documents via the server-side upload route. Server uses
+            // the Supabase service-role key, which bypasses storage RLS that
+            // was blocking the browser-side anon-key client. Files go up
+            // SEQUENTIALLY (one at a time) so the user sees clear progress,
+            // a single bad file can't abort the others through a connection
+            // burst, and we don't hammer Supabase with parallel requests.
+            //
             // Prefer fileEntries (with documentCode per file) — fall back to raw files with OTHER.
             const fileEntries: Array<{ file: File; documentCode: string }> =
                 formData.fileEntries && formData.fileEntries.length > 0
@@ -187,43 +197,36 @@ export function BookingWizard({ onSuccess, prefill }: { onSuccess?: () => void; 
                     : (formData.files || []).map(f => ({ file: f, documentCode: "OTHER" }))
             const files = fileEntries.map(e => e.file)
             let uploadedCount = 0
-            let failedCount = 0
             let firstErrorMessage = ""
             if (fileEntries.length > 0 && data.allocationId) {
-                const accountPrefix = user?.accountNumber || "UNVERIFIED"
                 console.log(`[booking] Uploading ${fileEntries.length} document(s) for allocation ${data.allocationId}`)
-                const uploadResults = await Promise.allSettled(
-                    fileEntries.map(async ({ file, documentCode }) => {
-                        const prefixedName = `${accountPrefix}_${file.name}`
-                        const result = await uploadFile(file, STORAGE_PATHS.BOOKING_DOCUMENTS, prefixedName)
-                        if (!result.success || !result.url) {
-                            throw new Error(result.error || "Upload failed")
-                        }
-                        const docRes = await fetch(`/api/bookings/${data.allocationId}/documents`, {
+                setUploadProgress({ current: 0, total: fileEntries.length })
+                for (let i = 0; i < fileEntries.length; i++) {
+                    const { file, documentCode } = fileEntries[i]
+                    setUploadProgress({ current: i + 1, total: fileEntries.length })
+                    try {
+                        const fd = new FormData()
+                        fd.append("file", file)
+                        fd.append("type", mapDocCodeToLegacyType(documentCode))
+                        fd.append("documentCode", documentCode)
+                        const res = await fetch(`/api/bookings/${data.allocationId}/upload`, {
                             method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                originalName: prefixedName,
-                                storedName: result.path,
-                                url: result.url,
-                                // Map our doc code to the legacy coarse type for back-compat
-                                type: mapDocCodeToLegacyType(documentCode),
-                                documentCode,
-                            }),
+                            body: fd,
                         })
-                        if (!docRes.ok) {
-                            const err = await docRes.json().catch(() => ({}))
-                            throw new Error(err.error || `Failed to save document record (${docRes.status})`)
+                        if (!res.ok) {
+                            const errBody = await res.json().catch(() => ({}))
+                            throw new Error(errBody.error || `Upload failed (${res.status})`)
                         }
-                    })
-                )
-                uploadedCount = uploadResults.filter(r => r.status === "fulfilled").length
-                failedCount = uploadResults.filter(r => r.status === "rejected").length
-                const firstRejected = uploadResults.find(r => r.status === "rejected")
-                if (firstRejected && firstRejected.status === "rejected") {
-                    firstErrorMessage = firstRejected.reason?.message || "Unknown error"
-                    console.error(`[booking] ${failedCount} upload(s) failed. First error:`, firstErrorMessage)
+                        uploadedCount++
+                    } catch (err) {
+                        const message = err instanceof Error ? err.message : "Unknown error"
+                        if (!firstErrorMessage) firstErrorMessage = message
+                        console.error(`[booking] Upload failed for "${file.name}":`, message)
+                        // Keep going — best-effort for remaining files; client can
+                        // re-upload the failed ones from the bookings page.
+                    }
                 }
+                setUploadProgress(null)
             }
             // silence unused-var warning when fileEntries path is taken
             void files
@@ -261,6 +264,7 @@ export function BookingWizard({ onSuccess, prefill }: { onSuccess?: () => void; 
             toast.error("Failed to submit booking. Please try again.")
         } finally {
             setSubmitting(false)
+            setUploadProgress(null)
         }
     }
 
@@ -325,7 +329,9 @@ export function BookingWizard({ onSuccess, prefill }: { onSuccess?: () => void; 
                             {submitting ? (
                                 <>
                                     <Loader2 className="mr-1 sm:mr-2 h-4 w-4 animate-spin" />
-                                    Submitting...
+                                    {uploadProgress
+                                        ? `Uploading ${uploadProgress.current}/${uploadProgress.total}…`
+                                        : "Submitting..."}
                                 </>
                             ) : (
                                 <>

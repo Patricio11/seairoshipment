@@ -5,6 +5,7 @@ import { documents, palletAllocations, user as userTable } from "@/lib/db/schema
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { createClient } from "@supabase/supabase-js";
+import { generateUniqueFileName } from "@/lib/supabase";
 
 const BUCKET = "srs-documents";
 const STORAGE_PATH = "bookings/documents";
@@ -77,8 +78,11 @@ export async function POST(
         const validTypes = ["INVOICE", "BOL", "COA", "PACKING_LIST", "OTHER"] as const;
         const docType = (validTypes.includes(type as typeof validTypes[number]) ? type : "OTHER") as "INVOICE" | "BOL" | "COA" | "PACKING_LIST" | "OTHER";
 
+        // Display name (kept human-readable for admin browsing) vs the storage
+        // key (always sanitised + uniquified — see generateUniqueFileName).
         const prefixedName = `${accountPrefix}_${file.name}`;
-        const filePath = `${STORAGE_PATH}/${prefixedName}`;
+        const safeKey = generateUniqueFileName(file.name, prefixedName);
+        const filePath = `${STORAGE_PATH}/${safeKey}`;
 
         // Convert file to ArrayBuffer for upload
         const arrayBuffer = await file.arrayBuffer();
@@ -88,7 +92,7 @@ export async function POST(
             .from(BUCKET)
             .upload(filePath, buffer, {
                 cacheControl: "3600",
-                upsert: true,
+                upsert: false,
                 contentType: file.type || "application/octet-stream",
             });
 

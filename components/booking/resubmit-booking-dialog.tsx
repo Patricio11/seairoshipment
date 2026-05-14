@@ -21,8 +21,6 @@ import {
 } from "@/components/ui/select"
 import { AlertCircle, FileText, Loader2, RotateCcw, UploadCloud, X, MapPin, Plus } from "lucide-react"
 import { toast } from "sonner"
-import { uploadFile, STORAGE_PATHS } from "@/lib/supabase"
-import { useAuth } from "@/lib/auth/client"
 import type { ClientBooking } from "@/types"
 
 interface ExistingDoc {
@@ -40,7 +38,6 @@ interface ResubmitBookingDialogProps {
 }
 
 export function ResubmitBookingDialog({ booking, open, onClose, onSuccess }: ResubmitBookingDialogProps) {
-    const { user } = useAuth()
     const inputRef = useRef<HTMLInputElement>(null)
 
     const [palletCount, setPalletCount] = useState(0)
@@ -56,6 +53,7 @@ export function ResubmitBookingDialog({ booking, open, onClose, onSuccess }: Res
     const [newFiles, setNewFiles] = useState<File[]>([])
     const [loadingDocs, setLoadingDocs] = useState(false)
     const [submitting, setSubmitting] = useState(false)
+    const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null)
 
     // Load existing documents + seed form when dialog opens
     useEffect(() => {
@@ -159,28 +157,32 @@ export function ResubmitBookingDialog({ booking, open, onClose, onSuccess }: Res
                 return
             }
 
-            // 2. Upload any new documents
+            // 2. Upload any new documents — sequential, server-side route
+            //    bypasses the storage RLS that was blocking client-side anon uploads.
             if (newFiles.length > 0) {
-                const accountPrefix = user?.accountNumber || "UNVERIFIED"
-                const uploadResults = await Promise.allSettled(
-                    newFiles.map(async (file) => {
-                        const prefixedName = `${accountPrefix}_${file.name}`
-                        const result = await uploadFile(file, STORAGE_PATHS.BOOKING_DOCUMENTS, prefixedName)
-                        if (!result.success || !result.url) throw new Error(result.error || "Upload failed")
-                        const docRes = await fetch(`/api/bookings/${booking.id}/documents`, {
+                let failed = 0
+                setUploadProgress({ current: 0, total: newFiles.length })
+                for (let i = 0; i < newFiles.length; i++) {
+                    const file = newFiles[i]
+                    setUploadProgress({ current: i + 1, total: newFiles.length })
+                    try {
+                        const fd = new FormData()
+                        fd.append("file", file)
+                        fd.append("type", "OTHER")
+                        const res = await fetch(`/api/bookings/${booking.id}/upload`, {
                             method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                originalName: prefixedName,
-                                storedName: result.path,
-                                url: result.url,
-                                type: "OTHER",
-                            }),
+                            body: fd,
                         })
-                        if (!docRes.ok) throw new Error("Failed to save document record")
-                    })
-                )
-                const failed = uploadResults.filter(r => r.status === "rejected").length
+                        if (!res.ok) {
+                            const errBody = await res.json().catch(() => ({}))
+                            throw new Error(errBody.error || `Upload failed (${res.status})`)
+                        }
+                    } catch (err) {
+                        failed++
+                        console.error(`[resubmit] Upload failed for "${file.name}":`, err)
+                    }
+                }
+                setUploadProgress(null)
                 if (failed > 0) {
                     toast.warning(`Booking resubmitted, but ${failed}/${newFiles.length} new document(s) failed to upload.`)
                 } else {
@@ -200,6 +202,7 @@ export function ResubmitBookingDialog({ booking, open, onClose, onSuccess }: Res
             toast.error(err instanceof Error ? err.message : "Failed to resubmit booking")
         } finally {
             setSubmitting(false)
+            setUploadProgress(null)
         }
     }
 
@@ -438,7 +441,11 @@ export function ResubmitBookingDialog({ booking, open, onClose, onSuccess }: Res
                         className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold"
                     >
                         {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RotateCcw className="h-4 w-4 mr-2" />}
-                        {submitting ? "Resubmitting..." : "Resubmit Booking"}
+                        {submitting
+                            ? uploadProgress
+                                ? `Uploading ${uploadProgress.current}/${uploadProgress.total}…`
+                                : "Resubmitting..."
+                            : "Resubmit Booking"}
                     </Button>
                 </DialogFooter>
             </DialogContent>

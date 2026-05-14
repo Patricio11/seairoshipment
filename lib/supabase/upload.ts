@@ -16,7 +16,7 @@ export interface UploadResult {
  * keep the stored key human-readable for admin browsing — it gets the same
  * sanitiser + suffix treatment as a raw filename.
  */
-function generateUniqueFileName(originalName: string, preferredBase?: string): string {
+export function generateUniqueFileName(originalName: string, preferredBase?: string): string {
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2, 10);
     const dotIdx = originalName.lastIndexOf('.');

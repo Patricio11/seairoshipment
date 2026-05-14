@@ -20,8 +20,6 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
-import { useAuth } from "@/lib/auth/client"
-import { uploadFile, STORAGE_PATHS } from "@/lib/supabase"
 
 // Maps the UI's friendly value → the documents.type pgEnum value
 const DOC_TYPE_TO_ENUM: Record<string, "INVOICE" | "BOL" | "COA" | "PACKING_LIST" | "OTHER"> = {
@@ -30,27 +28,6 @@ const DOC_TYPE_TO_ENUM: Record<string, "INVOICE" | "BOL" | "COA" | "PACKING_LIST
     coa: "COA",
     packing: "PACKING_LIST",
     other: "OTHER",
-}
-
-const DOC_TYPE_LABEL: Record<string, string> = {
-    invoice: "Invoice",
-    bol: "BoL",
-    coa: "CoA",
-    packing: "PackingList",
-    other: "Document",
-}
-
-function generateStoredName(
-    accountNumber: string | undefined,
-    docType: string,
-    bookingRef: string,
-    originalName: string,
-): string {
-    const ext = originalName.includes(".") ? originalName.split(".").pop() : "pdf"
-    const acc = accountNumber || "UNVERIFIED"
-    const typeLabel = DOC_TYPE_LABEL[docType] || "Document"
-    const ref = bookingRef || "NO-REF"
-    return `${acc}_${typeLabel}_${ref}.${ext}`
 }
 
 interface UploadDialogProps {
@@ -63,16 +40,12 @@ interface UploadDialogProps {
 }
 
 export function UploadDialog({ allocationId, bookingRef, onUploaded }: UploadDialogProps) {
+    void bookingRef // accepted for context but the server route derives the stored name from the file + account
     const [isOpen, setIsOpen] = useState(false)
     const [isDragging, setIsDragging] = useState(false)
     const [file, setFile] = useState<File | null>(null)
     const [uploading, setUploading] = useState(false)
     const [docType, setDocType] = useState("")
-    const { user } = useAuth()
-
-    const storedName = file && docType
-        ? generateStoredName(user?.accountNumber, docType, bookingRef, file.name)
-        : null
 
     const reset = () => {
         setFile(null)
@@ -99,30 +72,18 @@ export function UploadDialog({ allocationId, bookingRef, onUploaded }: UploadDia
 
         setUploading(true)
         try {
-            const preferredBase = storedName ?? file.name
-            const result = await uploadFile(file, STORAGE_PATHS.BOOKING_DOCUMENTS, preferredBase)
-            if (!result.success || !result.url) {
-                toast.error(result.error || "Upload failed")
-                return
-            }
-
-            const res = await fetch(`/api/bookings/${allocationId}/documents`, {
+            // Server-side upload bypasses storage RLS via the service-role key,
+            // and applies the same sanitise+uniquify to the stored key.
+            const fd = new FormData()
+            fd.append("file", file)
+            fd.append("type", DOC_TYPE_TO_ENUM[docType] ?? "OTHER")
+            const res = await fetch(`/api/bookings/${allocationId}/upload`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    originalName: file.name,
-                    // Use the path the storage layer actually wrote to, not the
-                    // requested name — they differ after sanitisation + uniquify.
-                    storedName: result.path,
-                    url: result.url,
-                    type: DOC_TYPE_TO_ENUM[docType] ?? "OTHER",
-                    mimeType: file.type || null,
-                    sizeBytes: file.size,
-                }),
+                body: fd,
             })
             const data = await res.json().catch(() => ({}))
             if (!res.ok) {
-                toast.error(data.error || "Saved file but couldn't link it to the shipment")
+                toast.error(data.error || "Upload failed")
                 return
             }
 
@@ -197,11 +158,6 @@ export function UploadDialog({ allocationId, bookingRef, onUploaded }: UploadDia
                                 <span className="text-xs text-slate-500">
                                     {(file.size / 1024).toFixed(0)} KB · {file.type || "Unknown type"}
                                 </span>
-                                {storedName && (
-                                    <span className="text-xs text-brand-blue font-mono bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">
-                                        Saved as: {storedName}
-                                    </span>
-                                )}
                                 <Button
                                     type="button"
                                     variant="link"
