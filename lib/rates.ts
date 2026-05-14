@@ -58,17 +58,20 @@ export async function calculateQuote(
     let originName = originCode;
     let destinationName = destinationCode;
     try {
+        // (code, type) is now the unique key on locations — same code can
+        // exist as both ORIGIN and DESTINATION (Cape Town being both). Pin
+        // each lookup to its expected type so we resolve to the right row.
         const [originLoc] = await db
             .select({ name: locations.name })
             .from(locations)
-            .where(eq(locations.code, originCode))
+            .where(and(eq(locations.code, originCode), eq(locations.type, "ORIGIN")))
             .limit(1);
         if (originLoc) originName = originLoc.name;
 
         const [destLoc] = await db
             .select({ name: locations.name })
             .from(locations)
-            .where(eq(locations.code, destinationCode))
+            .where(and(eq(locations.code, destinationCode), eq(locations.type, "DESTINATION")))
             .limit(1);
         if (destLoc) destinationName = destLoc.name;
     } catch {
@@ -249,13 +252,23 @@ export async function calculateCubeQuote(
         .limit(1);
     const containerVolumeCBM = ct?.volumeCBM ? Number(ct.volumeCBM) : 67.7;
 
-    // Resolve friendly names
+    // Resolve friendly names — pin each lookup to its expected type so we
+    // get the right row when a code (e.g. ZACPT) exists as both ORIGIN and
+    // DESTINATION (Cape Town as export AND import port).
     let originName = originCode;
     let destinationName = destinationCode;
     try {
-        const [originLoc] = await db.select({ name: locations.name }).from(locations).where(eq(locations.code, originCode)).limit(1);
+        const [originLoc] = await db
+            .select({ name: locations.name })
+            .from(locations)
+            .where(and(eq(locations.code, originCode), eq(locations.type, "ORIGIN")))
+            .limit(1);
         if (originLoc) originName = originLoc.name;
-        const [destLoc] = await db.select({ name: locations.name }).from(locations).where(eq(locations.code, destinationCode)).limit(1);
+        const [destLoc] = await db
+            .select({ name: locations.name })
+            .from(locations)
+            .where(and(eq(locations.code, destinationCode), eq(locations.type, "DESTINATION")))
+            .limit(1);
         if (destLoc) destinationName = destLoc.name;
     } catch { /* fallback to codes */ }
 

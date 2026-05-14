@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { containers, palletAllocations, adminNotifications, locations, products } from "@/lib/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { createMetaShipOrder, subscribeTracking, getTracking } from "@/lib/metaship";
 import { uploadAllocationDocsToMetaShip } from "@/lib/metaship/upload-allocation-docs";
 import { syncTrackingEvents } from "@/lib/tracking/sync";
@@ -63,17 +63,19 @@ export async function POST(
         // Extract origin/destination UN/LOCODE from route (e.g. "ZACPT-NLRTM")
         const [originCode, destinationCode] = container.route.split("-");
 
-        // Resolve location names from DB
+        // Resolve location names from DB. (code, type) is now the unique
+        // key — same code can exist for both ORIGIN and DESTINATION — so we
+        // pin each lookup to the type implied by its position in the route.
         const [originLoc] = await db
             .select({ name: locations.name, country: locations.country })
             .from(locations)
-            .where(eq(locations.code, originCode))
+            .where(and(eq(locations.code, originCode), eq(locations.type, "ORIGIN")))
             .limit(1);
 
         const [destLoc] = await db
             .select({ name: locations.name, country: locations.country })
             .from(locations)
-            .where(eq(locations.code, destinationCode))
+            .where(and(eq(locations.code, destinationCode), eq(locations.type, "DESTINATION")))
             .limit(1);
 
         const originCountry = originCode.slice(0, 2);
