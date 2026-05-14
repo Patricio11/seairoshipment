@@ -80,6 +80,8 @@ export async function GET() {
                     invGroup?.deposit?.status || null
                 ),
                 palletCount: allocation.palletCount,
+                cargoType: allocation.cargoType,
+                cbmVolume: allocation.cbmVolume,
                 commodityName: allocation.commodityName,
                 temperature: allocation.temperature,
                 consigneeName: allocation.consigneeName,

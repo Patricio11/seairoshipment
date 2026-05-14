@@ -134,7 +134,7 @@ C · Tools hub + saved calcs       ✅ DONE
 D · Booking wizard integration    ✅ DONE  → docs/cbm-cargo-type/phase-d-booking-integration.md
 E · Admin rate cards              ✅ DONE  → docs/cbm-cargo-type/phase-e-admin-rate-cards.md
 F · Container creation + admin views ✅ DONE  → docs/cbm-cargo-type/phase-f-container-creation-and-admin-views.md
-G · Display surfaces              ~dashboard widgets, invoices, recent shipments
+G · Display surfaces              ✅ DONE  → docs/cbm-cargo-type/phase-g-display-surfaces.md
 H · Polish + tracker updates      ~empty states, copy, related doc tweaks
 ```
 
@@ -373,15 +373,23 @@ Easy to expand later — the seed lives in `app/api/admin/cargo-item-presets/see
 
 ---
 
-## Phase G — Display surfaces (client side)
+## Phase G — Display surfaces (client side) ✅ DONE
 
-- [ ] `components/dashboard/overview/recent-shipments.tsx` — polymorphic Volume column.
-- [ ] `components/dashboard/overview/my-bookings-widget.tsx` — replace `{b.palletCount} pallet(s)` with branched render based on `cargoType`.
-- [ ] `components/finance/invoice-view-dialog.tsx` — invoice line: `pallets × R` OR `m³ × R` depending on `invoice.cargoType`.
-- [ ] `app/api/dashboard/overview/route.ts` and `documents/route.ts` — include `cargoType` in returned rows.
-- [ ] Documents vault: existing flow is fine (docs don't care about pallet vs cube).
+**Detailed write-up:** [docs/cbm-cargo-type/phase-g-display-surfaces.md](docs/cbm-cargo-type/phase-g-display-surfaces.md)
 
-**Done when**: every "N pallets" string on the client side branches correctly.
+- [x] `components/dashboard/overview/recent-shipments.tsx` — "Pallets" column renamed "Volume"; renders `{palletCount}` for PALLET, `{cbmVolume.toFixed(2)} m³` for CUBE.
+- [x] `components/dashboard/overview/my-bookings-widget.tsx` — replaced `{b.palletCount} pallet(s)` with cargoType branch (`X.XX m³` for CUBE).
+- [x] `components/dashboard/overview/overview-grid.tsx` — `upcomingBookings` type extended with optional `cargoType` + `cbmVolume`.
+- [x] `app/dashboard/bookings/page.tsx` — bookings list pallet cell renders m³ for CUBE.
+- [x] `components/booking/booking-detail-dialog.tsx` — cargo details panel flips "Pallets" → "Volume" for CUBE.
+- [x] `components/finance/invoice-view-dialog.tsx` — line-item table headers + per-unit divisor branch on cargoType. Route header chip shows m³ for CUBE invoices.
+- [x] `app/api/dashboard/overview/route.ts` — `upcomingBookings` payload includes `cargoType` + `cbmVolume`.
+- [x] `app/api/bookings/route.ts` — bookings payload includes `cargoType` + `cbmVolume`.
+- [x] `app/api/invoices/route.ts` — admin select clause includes `cargoType` + `cbmVolume`.
+- [x] `types/index.ts` — `ClientBooking` and `Invoice` gain optional `cargoType` + `cbmVolume`.
+- [x] Documents vault: no change needed (it doesn't display pallet/CBM, only route + vessel + booking ref).
+
+**Done when**: every "N pallets" string on the client side branches correctly. ✅
 
 ---
 

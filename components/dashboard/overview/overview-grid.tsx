@@ -40,6 +40,8 @@ export interface DashboardOverview {
         bookingRef: string
         status: string
         palletCount: number
+        cargoType?: "PALLET" | "CUBE" | null
+        cbmVolume?: string | null
         vessel: string
         voyageNumber: string | null
         route: string

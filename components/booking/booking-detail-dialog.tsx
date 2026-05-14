@@ -181,8 +181,12 @@ export function BookingDetailDialog({ booking, open, onOpenChange }: BookingDeta
                                 <p className="text-sm font-bold text-slate-900 dark:text-white">{booking.commodityName || "—"}</p>
                             </div>
                             <div>
-                                <p className="text-[10px] font-bold uppercase text-slate-400">Pallets</p>
-                                <p className="text-sm font-bold text-slate-900 dark:text-white">{booking.palletCount}</p>
+                                <p className="text-[10px] font-bold uppercase text-slate-400">{booking.cargoType === "CUBE" ? "Volume" : "Pallets"}</p>
+                                <p className="text-sm font-bold text-slate-900 dark:text-white">
+                                    {booking.cargoType === "CUBE"
+                                        ? `${Number(booking.cbmVolume ?? 0).toFixed(2)} m³`
+                                        : booking.palletCount}
+                                </p>
                             </div>
                             {booking.temperature && (
                                 <div className="col-span-2 flex items-center gap-2">

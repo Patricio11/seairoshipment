@@ -206,6 +206,8 @@ export async function GET() {
             bookingRef: invoiceBookingRefByAllocation.get(allocation.id) ?? "—",
             status: derivedStatus,
             palletCount: allocation.palletCount,
+            cargoType: allocation.cargoType,
+            cbmVolume: allocation.cbmVolume,
             vessel: container.vessel,
             voyageNumber: container.voyageNumber,
             route: container.route,

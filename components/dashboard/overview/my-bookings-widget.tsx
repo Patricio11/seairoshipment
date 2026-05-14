@@ -86,7 +86,11 @@ export function MyBookingsWidget({ bookings, loading }: MyBookingsWidgetProps) {
                                     </div>
                                     <div className="text-right shrink-0">
                                         <p className="text-xs font-mono font-bold text-slate-700 dark:text-slate-200">{formatEtd(b.etd)}</p>
-                                        <p className="text-[10px] text-slate-500">{b.palletCount} pallet{b.palletCount !== 1 ? "s" : ""}</p>
+                                        <p className="text-[10px] text-slate-500">
+                                            {b.cargoType === "CUBE"
+                                                ? `${Number(b.cbmVolume ?? 0).toFixed(2)} m³`
+                                                : `${b.palletCount} pallet${b.palletCount !== 1 ? "s" : ""}`}
+                                        </p>
                                     </div>
                                 </Link>
                             )

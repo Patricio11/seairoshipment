@@ -274,8 +274,17 @@ export default function BookingsPage() {
                                             </td>
                                             <td className="px-6 py-5">
                                                 <div className="flex flex-col items-center">
-                                                    <span className="text-lg font-black text-slate-900 dark:text-white leading-none">{booking.palletCount}</span>
-                                                    <span className="text-[10px] uppercase font-bold text-slate-400 mt-1 tracking-tighter">Pallets</span>
+                                                    {booking.cargoType === "CUBE" ? (
+                                                        <>
+                                                            <span className="text-lg font-black text-slate-900 dark:text-white leading-none">{Number(booking.cbmVolume ?? 0).toFixed(2)}</span>
+                                                            <span className="text-[10px] uppercase font-bold text-slate-400 mt-1 tracking-tighter">m³</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <span className="text-lg font-black text-slate-900 dark:text-white leading-none">{booking.palletCount}</span>
+                                                            <span className="text-[10px] uppercase font-bold text-slate-400 mt-1 tracking-tighter">Pallets</span>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-5">

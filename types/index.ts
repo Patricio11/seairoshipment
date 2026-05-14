@@ -188,6 +188,8 @@ export interface ClientBooking {
     bookingRef: string;
     status: "PENDING" | "DEPOSIT_PAID" | "CONFIRMED" | "SAILING" | "DELIVERED" | "CANCELLED";
     palletCount: number;
+    cargoType?: "PALLET" | "CUBE" | null;
+    cbmVolume?: string | null;
     commodityName: string | null;
     temperature: string | null;
     consigneeName: string | null;
@@ -224,6 +226,8 @@ export interface Invoice {
     bookingRef: string;
     route: string;
     palletCount: number;
+    cargoType?: "PALLET" | "CUBE" | null;
+    cbmVolume?: string | null;
     originChargesZAR?: number;
     oceanFreightZAR?: number;
     destinationChargesZAR?: number;

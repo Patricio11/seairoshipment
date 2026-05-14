@@ -95,7 +95,7 @@ export function RecentShipments() {
                                 <TableHead className="hidden md:table-cell">Vessel</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead className="hidden md:table-cell">ETD</TableHead>
-                                <TableHead className="text-right">Pallets</TableHead>
+                                <TableHead className="text-right">Volume</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -104,6 +104,10 @@ export function RecentShipments() {
                                 const routeParts = booking.routeLabel.includes("→")
                                     ? booking.routeLabel.split("→").map(s => s.trim())
                                     : [booking.routeLabel, ""]
+                                const isCube = booking.cargoType === "CUBE"
+                                const volumeLabel = isCube
+                                    ? `${Number(booking.cbmVolume ?? 0).toFixed(2)} m³`
+                                    : String(booking.palletCount)
 
                                 return (
                                     <TableRow key={booking.id}>
@@ -126,7 +130,7 @@ export function RecentShipments() {
                                             )}
                                         </TableCell>
                                         <TableCell className="hidden md:table-cell">{formatDate(booking.etd)}</TableCell>
-                                        <TableCell className="text-right font-medium">{booking.palletCount}</TableCell>
+                                        <TableCell className="text-right font-medium">{volumeLabel}</TableCell>
                                     </TableRow>
                                 )
                             })}

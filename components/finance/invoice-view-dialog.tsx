@@ -93,15 +93,24 @@ export function InvoiceViewDialog({ invoice, open, onOpenChange }: InvoiceViewDi
     const StatusIcon = statusConfig.icon
 
     const palletCount = invoice.palletCount || 1
+    const isCube = invoice.cargoType === "CUBE"
+    const cbmVolume = Number(invoice.cbmVolume ?? 0)
+    // Quantity = pallets for PALLET, m³ for CUBE. Used as the divisor for the
+    // per-unit column and as the displayed "Qty" so the maths reconciles either way.
+    const quantity = isCube ? cbmVolume : palletCount
+    const quantityLabel = isCube ? `${cbmVolume.toFixed(2)} m³` : String(palletCount)
+    const unitHeader = isCube ? "Qty (m³)" : "Pallets"
+    const perUnitHeader = isCube ? "Per m³" : "Per Pallet"
+
     const originCharges = Number(invoice.originChargesZAR || 0)
     const oceanFreight = Number(invoice.oceanFreightZAR || 0)
     const destinationCharges = Number(invoice.destinationChargesZAR || 0)
     const subtotal = Number(invoice.subtotalZAR)
     const amount = Number(invoice.amountZAR)
 
-    const originPerPallet = palletCount > 0 ? originCharges / palletCount : 0
-    const oceanPerPallet = palletCount > 0 ? oceanFreight / palletCount : 0
-    const destPerPallet = palletCount > 0 ? destinationCharges / palletCount : 0
+    const originPerUnit = quantity > 0 ? originCharges / quantity : 0
+    const oceanPerUnit = quantity > 0 ? oceanFreight / quantity : 0
+    const destPerUnit = quantity > 0 ? destinationCharges / quantity : 0
 
     const handleDownloadPDF = async () => {
         if (!invoiceRef.current) return
@@ -282,7 +291,9 @@ export function InvoiceViewDialog({ invoice, open, onOpenChange }: InvoiceViewDi
                             <Ship className="h-4 w-4 text-brand-blue" />
                             <span className="text-sm font-bold text-slate-900 dark:text-white">{invoice.route}</span>
                             <span className="text-slate-400 mx-1">|</span>
-                            <span className="text-sm text-slate-500">{invoice.palletCount} Pallets</span>
+                            <span className="text-sm text-slate-500">
+                                {isCube ? `${cbmVolume.toFixed(2)} m³` : `${invoice.palletCount} Pallets`}
+                            </span>
                         </div>
 
                         <Separator />
@@ -295,28 +306,28 @@ export function InvoiceViewDialog({ invoice, open, onOpenChange }: InvoiceViewDi
                                     <thead>
                                         <tr className="bg-slate-50 dark:bg-slate-800/50">
                                             <th className="text-left py-3 px-4 text-xs font-bold uppercase tracking-wider text-slate-500">Description</th>
-                                            <th className="text-center py-3 px-4 text-xs font-bold uppercase tracking-wider text-slate-500">Pallets</th>
-                                            <th className="text-right py-3 px-4 text-xs font-bold uppercase tracking-wider text-slate-500">Per Pallet</th>
+                                            <th className="text-center py-3 px-4 text-xs font-bold uppercase tracking-wider text-slate-500">{unitHeader}</th>
+                                            <th className="text-right py-3 px-4 text-xs font-bold uppercase tracking-wider text-slate-500">{perUnitHeader}</th>
                                             <th className="text-right py-3 px-4 text-xs font-bold uppercase tracking-wider text-slate-500">Amount</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                                         <tr>
                                             <td className="py-3 px-4 text-sm font-medium text-slate-900 dark:text-white">Origin Charges</td>
-                                            <td className="py-3 px-4 text-sm text-center text-slate-600 dark:text-slate-400">{palletCount}</td>
-                                            <td className="py-3 px-4 text-sm text-right font-mono text-slate-600 dark:text-slate-400">{formatZAR(originPerPallet)}</td>
+                                            <td className="py-3 px-4 text-sm text-center text-slate-600 dark:text-slate-400">{quantityLabel}</td>
+                                            <td className="py-3 px-4 text-sm text-right font-mono text-slate-600 dark:text-slate-400">{formatZAR(originPerUnit)}</td>
                                             <td className="py-3 px-4 text-sm text-right font-mono font-bold text-slate-900 dark:text-white">{formatZAR(originCharges)}</td>
                                         </tr>
                                         <tr>
                                             <td className="py-3 px-4 text-sm font-medium text-slate-900 dark:text-white">Ocean Freight</td>
-                                            <td className="py-3 px-4 text-sm text-center text-slate-600 dark:text-slate-400">{palletCount}</td>
-                                            <td className="py-3 px-4 text-sm text-right font-mono text-slate-600 dark:text-slate-400">{formatZAR(oceanPerPallet)}</td>
+                                            <td className="py-3 px-4 text-sm text-center text-slate-600 dark:text-slate-400">{quantityLabel}</td>
+                                            <td className="py-3 px-4 text-sm text-right font-mono text-slate-600 dark:text-slate-400">{formatZAR(oceanPerUnit)}</td>
                                             <td className="py-3 px-4 text-sm text-right font-mono font-bold text-slate-900 dark:text-white">{formatZAR(oceanFreight)}</td>
                                         </tr>
                                         <tr>
                                             <td className="py-3 px-4 text-sm font-medium text-slate-900 dark:text-white">Destination Charges</td>
-                                            <td className="py-3 px-4 text-sm text-center text-slate-600 dark:text-slate-400">{palletCount}</td>
-                                            <td className="py-3 px-4 text-sm text-right font-mono text-slate-600 dark:text-slate-400">{formatZAR(destPerPallet)}</td>
+                                            <td className="py-3 px-4 text-sm text-center text-slate-600 dark:text-slate-400">{quantityLabel}</td>
+                                            <td className="py-3 px-4 text-sm text-right font-mono text-slate-600 dark:text-slate-400">{formatZAR(destPerUnit)}</td>
                                             <td className="py-3 px-4 text-sm text-right font-mono font-bold text-slate-900 dark:text-white">{formatZAR(destinationCharges)}</td>
                                         </tr>
                                     </tbody>
