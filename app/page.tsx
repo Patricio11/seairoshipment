@@ -2,6 +2,7 @@ import { Header } from '@/components/header'
 import { IndustryHero } from '@/components/landing/hero-section'
 import { IndustryFeatures } from '@/components/landing/features-section'
 import { ProcessTimeline } from '@/components/landing/how-it-works-section'
+import { CBMCalculatorSection } from '@/components/landing/cbm-calculator-section'
 import { StatsSection } from '@/components/landing/stats-section'
 import { TestimonialsSection } from '@/components/landing/testimonials-section'
 import { FAQSection } from '@/components/landing/faq-section'
@@ -26,6 +27,7 @@ export default function HomePage() {
         <IndustryHero />
         <IndustryFeatures />
         <ProcessTimeline />
+        <CBMCalculatorSection />
         <StatsSection />
         <TestimonialsSection />
         <FAQSection />
