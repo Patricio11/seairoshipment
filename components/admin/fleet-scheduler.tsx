@@ -726,7 +726,6 @@ export function FleetScheduler() {
                                                 <DropdownMenuItem
                                                     className="focus:bg-red-950 focus:text-red-400 text-red-400 cursor-pointer gap-2"
                                                     onClick={() => setDeleteDialog(container)}
-                                                    disabled={container.totalPallets > 0 || container.status !== "OPEN"}
                                                 >
                                                     <Trash2 className="h-4 w-4" /> Delete Container
                                                 </DropdownMenuItem>
@@ -1119,10 +1118,28 @@ export function FleetScheduler() {
                     <DialogHeader>
                         <DialogTitle className="text-xl font-black">Delete Container</DialogTitle>
                         <DialogDescription className="text-slate-400">
-                            Are you sure you want to delete container <span className="font-mono text-white">{deleteDialog?.id}</span>?
-                            This action cannot be undone.
+                            Permanently delete container <span className="font-mono text-white">{deleteDialog?.id}</span>?
                         </DialogDescription>
                     </DialogHeader>
+                    {deleteDialog && (
+                        <div className="text-sm text-slate-400 space-y-2">
+                            {deleteDialog.status !== "OPEN" && (
+                                <div className="rounded-lg border border-amber-700/50 bg-amber-900/20 px-3 py-2 text-amber-300 text-xs flex items-start gap-2">
+                                    <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                                    <span>
+                                        Container status is <span className="font-bold uppercase">{deleteDialog.status.replace("_", " ")}</span>.
+                                        {deleteDialog.metashipOrderNo && <> A MetaShip order <span className="font-mono">#{deleteDialog.metashipOrderNo}</span> has been placed against it.</>}
+                                    </span>
+                                </div>
+                            )}
+                            <p>
+                                This will also delete <span className="font-bold text-white">{deleteDialog.totalPallets} pallet{deleteDialog.totalPallets === 1 ? "" : "s"}</span> worth of bookings on this container, along with all their uploaded documents and unpaid invoices. The container&apos;s record in your system is removed entirely. This cannot be undone.
+                            </p>
+                            <p className="text-xs">
+                                If any booking has a <span className="font-bold">PAID</span> invoice the delete will be refused — void the invoice first.
+                            </p>
+                        </div>
+                    )}
                     <DialogFooter>
                         <Button variant="ghost" onClick={() => setDeleteDialog(null)} className="text-slate-400">Cancel</Button>
                         <Button

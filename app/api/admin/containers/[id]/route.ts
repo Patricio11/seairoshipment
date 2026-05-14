@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/server";
 import { db } from "@/lib/db";
-import { containers, palletAllocations, containerTypes, sailings, productCategories } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { containers, palletAllocations, containerTypes, sailings, productCategories, documents, invoices } from "@/lib/db/schema";
+import { eq, inArray } from "drizzle-orm";
 
 type Temperature = "frozen" | "chilled" | "ambient";
 
@@ -136,6 +136,18 @@ export async function PUT(
     }
 }
 
+/**
+ * Hard-delete a container. Cascades through every dependent row so the admin
+ * can always wipe a container (even after a MetaShip order has been placed):
+ *
+ *   1. Find all allocations on this container.
+ *   2. Refuse if any of those allocations has a PAID invoice — admin should
+ *      void the invoice manually first.
+ *   3. Delete documents → invoices → allocations → the container itself.
+ *
+ * Storage objects in Supabase (the actual uploaded files) are left orphaned;
+ * a later sweep job can claim them.
+ */
 export async function DELETE(
     _request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -156,21 +168,36 @@ export async function DELETE(
             return NextResponse.json({ error: "Container not found" }, { status: 404 });
         }
 
-        if (existing.totalPallets > 0) {
-            return NextResponse.json(
-                { error: "Cannot delete container with pallet allocations. Remove allocations first." },
-                { status: 400 }
-            );
+        // Pull every allocation under this container so we can cascade through
+        // each one's documents + invoices in bulk.
+        const allocations = await db
+            .select({ id: palletAllocations.id })
+            .from(palletAllocations)
+            .where(eq(palletAllocations.containerId, id));
+        const allocationIds = allocations.map(a => a.id);
+
+        if (allocationIds.length > 0) {
+            // Refuse if any linked invoice is PAID
+            const linkedInvoices = await db
+                .select()
+                .from(invoices)
+                .where(inArray(invoices.allocationId, allocationIds));
+
+            const hasPaid = linkedInvoices.some(inv => inv.status === "PAID");
+            if (hasPaid) {
+                return NextResponse.json(
+                    { error: "Cannot delete: at least one booking has a paid invoice. Void the invoice first." },
+                    { status: 400 }
+                );
+            }
+
+            await db.delete(documents).where(inArray(documents.allocationId, allocationIds));
+            await db.delete(invoices).where(inArray(invoices.allocationId, allocationIds));
         }
 
-        if (existing.status !== "OPEN") {
-            return NextResponse.json(
-                { error: "Can only delete containers with OPEN status" },
-                { status: 400 }
-            );
-        }
+        // Container-level docs (METASHIP_SHARED) — clean those up too.
+        await db.delete(documents).where(eq(documents.containerId, id));
 
-        // Clean up any allocations (should be 0 but just in case)
         await db.delete(palletAllocations).where(eq(palletAllocations.containerId, id));
         await db.delete(containers).where(eq(containers.id, id));
 

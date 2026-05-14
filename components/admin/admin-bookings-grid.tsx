@@ -26,6 +26,7 @@ import {
     User,
     ChevronDown,
     X,
+    Trash2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -54,6 +55,16 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { documentLabel } from "@/lib/constants/document-types"
@@ -241,6 +252,14 @@ export function AdminBookingsGrid() {
     const [clientDialog, setClientDialog] = useState<{ alloc: ContainerAllocation; docs: ClientDoc[] } | null>(null)
     const [loadingClientDocs, setLoadingClientDocs] = useState(false)
     const [viewDoc, setViewDoc] = useState<ClientDoc | null>(null)
+    // Delete-allocation confirmation
+    const [deleteAllocDialog, setDeleteAllocDialog] = useState<{
+        allocationId: string
+        clientName: string
+        volumeLabel: string
+        commodity: string
+    } | null>(null)
+    const [deletingAlloc, setDeletingAlloc] = useState(false)
 
     /**
      * Open a document in the viewer. If it's a MetaShip doc with a URL that's
@@ -507,6 +526,28 @@ export function AdminBookingsGrid() {
             toast.error("Failed to create MetaShip order")
         } finally {
             setCreatingBooking(false)
+        }
+    }
+
+    const handleDeleteAllocation = async () => {
+        if (!deleteAllocDialog) return
+        setDeletingAlloc(true)
+        try {
+            const res = await fetch(`/api/admin/allocations/${deleteAllocDialog.allocationId}`, { method: "DELETE" })
+            if (res.ok) {
+                toast.success("Booking deleted", {
+                    description: `${deleteAllocDialog.clientName} · ${deleteAllocDialog.volumeLabel}`,
+                })
+                setDeleteAllocDialog(null)
+                fetchContainers()
+            } else {
+                const data = await res.json().catch(() => ({}))
+                toast.error(data.error || "Failed to delete booking")
+            }
+        } catch {
+            toast.error("Failed to delete booking")
+        } finally {
+            setDeletingAlloc(false)
         }
     }
 
@@ -835,6 +876,7 @@ export function AdminBookingsGrid() {
                                                         <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-[10px] text-center">Weight (kg)</TableHead>
                                                         <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-[10px] text-center">Temp</TableHead>
                                                         <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-[10px] text-center">Status</TableHead>
+                                                        <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-[10px] text-right w-[40px]"></TableHead>
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
@@ -892,6 +934,25 @@ export function AdminBookingsGrid() {
                                                                         {(alloc.allocation.salesRateTypeId || "srs").toUpperCase()}
                                                                     </Badge>
                                                                 </div>
+                                                            </TableCell>
+                                                            <TableCell className="text-right pr-2" onClick={(e) => e.stopPropagation()}>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        setDeleteAllocDialog({
+                                                                            allocationId: alloc.allocation.id,
+                                                                            clientName: alloc.userName || "Unknown client",
+                                                                            volumeLabel: `${formatAllocationVolume(alloc.allocation)}${alloc.allocation.cargoType === "CUBE" ? "" : ` pallet${alloc.allocation.palletCount === 1 ? "" : "s"}`}`,
+                                                                            commodity: alloc.allocation.commodityName || "—",
+                                                                        })
+                                                                    }}
+                                                                    className="h-7 w-7 text-slate-500 hover:text-red-400 hover:bg-red-950/30"
+                                                                    title="Delete booking"
+                                                                >
+                                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                                </Button>
                                                             </TableCell>
                                                         </TableRow>
                                                     ))}
@@ -1774,6 +1835,38 @@ export function AdminBookingsGrid() {
                     )}
                 </DialogContent>
             </Dialog>
+
+            {/* Delete Booking (allocation) Confirmation */}
+            <AlertDialog open={!!deleteAllocDialog} onOpenChange={(open) => !open && setDeleteAllocDialog(null)}>
+                <AlertDialogContent className="bg-slate-950 border-slate-800 text-white">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-white">Delete this booking?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-slate-400">
+                            {deleteAllocDialog && (
+                                <>
+                                    This will permanently delete <span className="font-bold text-white">{deleteAllocDialog.clientName}</span>&apos;s
+                                    {" "}booking of <span className="font-bold text-white">{deleteAllocDialog.volumeLabel}</span>
+                                    {deleteAllocDialog.commodity && deleteAllocDialog.commodity !== "—" ? <> ({deleteAllocDialog.commodity})</> : null},
+                                    {" "}along with its uploaded documents and any unpaid invoices. The container&apos;s counter will be adjusted automatically. This cannot be undone.
+                                </>
+                            )}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={deletingAlloc} className="bg-transparent text-slate-300 border-slate-700 hover:bg-slate-900 hover:text-white">
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => { e.preventDefault(); handleDeleteAllocation() }}
+                            disabled={deletingAlloc}
+                            className="bg-red-600 hover:bg-red-700 font-bold"
+                        >
+                            {deletingAlloc ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                            {deletingAlloc ? "Deleting…" : "Delete booking"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {/* Review Request Modal */}
             <Dialog open={!!reviewRequest} onOpenChange={(open) => { if (!open) setReviewRequest(null) }}>
