@@ -96,17 +96,17 @@ export async function PUT(
             if (cat) targetCategoryAllowedTemps = (cat.allowedTemperatures as Temperature[]) || [];
         }
 
-        // Temperature change — validate against container type AND category
+        // Temperature change — DRY containers always end up with null
+        // (no temperature regime). REEFER containers must pick from
+        // frozen / chilled / ambient and the category's allowed list.
         if (body.temperature !== undefined) {
-            if (body.temperature) {
-                const containerTypeTemps: Record<string, Temperature[]> = {
-                    REEFER: ["frozen", "chilled"],
-                    DRY: ["ambient"],
-                };
-                const ctAllowed = containerCategory ? containerTypeTemps[containerCategory] : [];
-                if (!ctAllowed.includes(body.temperature as Temperature)) {
+            if (containerCategory === "DRY") {
+                updates.temperature = null;
+            } else if (body.temperature) {
+                const reeferAllowed: Temperature[] = ["frozen", "chilled", "ambient"];
+                if (!reeferAllowed.includes(body.temperature as Temperature)) {
                     return NextResponse.json(
-                        { error: `Temperature "${body.temperature}" is not valid for this container type. Allowed: ${ctAllowed.join(", ")}` },
+                        { error: `Temperature "${body.temperature}" is not valid for a reefer container. Allowed: ${reeferAllowed.join(", ")}` },
                         { status: 400 }
                     );
                 }

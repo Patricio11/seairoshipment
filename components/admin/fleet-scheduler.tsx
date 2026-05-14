@@ -836,7 +836,7 @@ export function FleetScheduler() {
             {/* Create / Edit Container Dialog */}
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogContent
-                    className="sm:max-w-[500px] bg-slate-950 border-slate-800 text-white"
+                    className="sm:max-w-[500px] bg-slate-950 border-slate-800 text-white max-h-[90vh] overflow-y-auto"
                     onInteractOutside={(e) => e.preventDefault()}
                     onEscapeKeyDown={(e) => e.preventDefault()}
                 >

@@ -75,9 +75,12 @@ export async function POST(request: NextRequest) {
             cargoType: cargoTypeRaw,
         } = body;
 
-        if (!route || !containerTypeId || !sailingId || !categoryId || !temperature) {
+        // Temperature is required for REEFER containers but must be null for
+        // DRY (SCS) — see SCS_SRS_RULES.md. Validate after we've looked up the
+        // container type below, since the rule depends on it.
+        if (!route || !containerTypeId || !sailingId || !categoryId) {
             return NextResponse.json(
-                { error: "Route, container type, sailing, category, and temperature are all required" },
+                { error: "Route, container type, sailing, and category are all required" },
                 { status: 400 }
             );
         }
@@ -92,18 +95,24 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Invalid container type" }, { status: 400 });
         }
 
-        // Validate temperature matches container type (reefer → frozen|chilled, dry → ambient)
-        const containerTypeTemps: Record<string, Temperature[]> = {
-            REEFER: ["frozen", "chilled"],
-            DRY: ["ambient"],
-        };
-        const containerTypeAllowed = containerTypeTemps[ct.type] || [];
-        if (!containerTypeAllowed.includes(temperature as Temperature)) {
-            return NextResponse.json(
-                { error: `Temperature "${temperature}" is not valid for a ${ct.type} container. Allowed: ${containerTypeAllowed.join(", ")}` },
-                { status: 400 }
-            );
+        // Temperature regime is tied to container type:
+        //   - REEFER: must pick one of frozen / chilled / ambient
+        //   - DRY:    must be null (the "Dry — no temperature regime" sentinel)
+        const effectiveTemperature: Temperature | null = ct.type === "DRY"
+            ? null
+            : (temperature as Temperature | null);
+
+        if (ct.type === "REEFER") {
+            const allowed: Temperature[] = ["frozen", "chilled", "ambient"];
+            if (!effectiveTemperature || !allowed.includes(effectiveTemperature)) {
+                return NextResponse.json(
+                    { error: `Pick a temperature for this reefer container (${allowed.join(", ")}).` },
+                    { status: 400 }
+                );
+            }
         }
+        // DRY containers ignore any client-supplied temperature value; we
+        // overwrite to null below regardless.
 
         // Validate category exists, is active, and matches service type + allowed temps
         const [category] = await db
@@ -132,10 +141,13 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // SCS categories carry allowedTemperatures: [] — nothing to check
+        // (the container is DRY with null temperature). REEFER categories
+        // must list the chosen temperature.
         const categoryAllowed = (category.allowedTemperatures as Temperature[]) || [];
-        if (!categoryAllowed.includes(temperature as Temperature)) {
+        if (ct.type === "REEFER" && effectiveTemperature && !categoryAllowed.includes(effectiveTemperature)) {
             return NextResponse.json(
-                { error: `Temperature "${temperature}" is not allowed for this category. Allowed: ${categoryAllowed.join(", ")}` },
+                { error: `Temperature "${effectiveTemperature}" is not allowed for this category. Allowed: ${categoryAllowed.join(", ")}` },
                 { status: 400 }
             );
         }
@@ -172,7 +184,7 @@ export async function POST(request: NextRequest) {
                 type: sizeEnum,
                 containerTypeId,
                 categoryId: category.id,
-                temperature: temperature as Temperature,
+                temperature: effectiveTemperature,
                 etd: sailing.etd,
                 eta: sailing.eta,
                 totalPallets: 0,
