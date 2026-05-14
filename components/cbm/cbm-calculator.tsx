@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { BulkPasteButton } from "@/components/cbm/bulk-paste-button"
 import { cn } from "@/lib/utils"
 import type { CargoItem } from "@/lib/db/schema/pallet-allocations"
 import {
@@ -129,6 +130,14 @@ export function CBMCalculator({ value, onChange, containerVolumeCBM, containerLa
         toast.success(`Added "${preset.name}"`)
     }
 
+    const applyBulkRows = (rows: CargoItem[]) => {
+        // Replace blank auto-seed if it's the only existing row
+        const onlyBlank = value.length === 1 &&
+            value[0].lengthMm === 0 && value[0].widthMm === 0 && value[0].heightMm === 0 &&
+            (value[0].weightKg ?? 0) === 0 && !value[0].label
+        onChange(onlyBlank ? rows : [...value, ...rows])
+    }
+
     const addRow = () => {
         onChange([...value, blankRow()])
     }
@@ -183,13 +192,15 @@ export function CBMCalculator({ value, onChange, containerVolumeCBM, containerLa
                     disabled={readOnly}
                 />
                 {!readOnly && (
-                    <Popover open={presetOpen} onOpenChange={setPresetOpen}>
-                        <PopoverTrigger asChild>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="ml-auto border-brand-blue/40 text-brand-blue hover:bg-brand-blue/5"
-                            >
+                    <>
+                        <BulkPasteButton onAdd={applyBulkRows} />
+                        <Popover open={presetOpen} onOpenChange={setPresetOpen}>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-brand-blue/40 text-brand-blue hover:bg-brand-blue/5"
+                                >
                                 <Sparkles className="h-3.5 w-3.5 mr-1.5" />
                                 Quick add from preset
                             </Button>
@@ -238,6 +249,7 @@ export function CBMCalculator({ value, onChange, containerVolumeCBM, containerLa
                             </Command>
                         </PopoverContent>
                     </Popover>
+                    </>
                 )}
             </div>
 

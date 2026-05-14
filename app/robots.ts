@@ -22,6 +22,7 @@ export default function robots(): MetadataRoute.Robots {
                     "/auth/onboarding",
                     "/auth/verified",
                     "/auth/forgot-password",
+                    "/share/",
                 ],
             },
         ],

@@ -14,6 +14,8 @@ import { CBMCalculator } from "@/components/cbm/cbm-calculator"
 import { CBM3DViz } from "@/components/cbm/cbm-3d-viz"
 import { LiveQuotePanel } from "@/components/cbm/live-quote-panel"
 import { SmartMatchPanel } from "@/components/cbm/smart-match-panel"
+import { ShareLinkButton } from "@/components/cbm/share-link-button"
+import { DownloadPdfButton } from "@/components/cbm/download-pdf-button"
 import type { CargoItem } from "@/lib/db/schema/pallet-allocations"
 
 export interface CalculationEditorInitial {
@@ -177,9 +179,14 @@ export function CalculationEditor({ initial }: CalculationEditorProps) {
                         />
                     </div>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                <div className="flex flex-col sm:flex-row gap-2 shrink-0 flex-wrap">
                     {isEdit && (
                         <>
+                            <ShareLinkButton calculationId={initial!.id} />
+                            <DownloadPdfButton
+                                calculationName={name || "calculation"}
+                                items={items}
+                            />
                             <Button
                                 variant="outline"
                                 onClick={handleDuplicate}
