@@ -11,7 +11,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "tsx scripts/seed-standalone.ts"
+    "db:seed": "tsx scripts/seed-standalone.ts",
+    "seed:cargo-presets": "tsx scripts/seed-cargo-presets.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
