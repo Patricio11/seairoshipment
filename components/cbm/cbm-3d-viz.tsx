@@ -191,21 +191,22 @@ function ContainerOutline({ length, width, height }: { length: number; width: nu
 }
 
 /**
- * Pack cargo blocks into the container using a 3-axis shelf algorithm:
+ * Pack cargo blocks into the container using a 3-axis shelf algorithm.
+ * Priority matches how a forwarder actually loads a container:
  *
- *   1. Place along the **length** axis (Z), starting from the back of the
- *      container.
- *   2. When the length row fills, advance across **width** (X) — start a new
- *      row beside the previous one. Row width = the widest box that was in
- *      the row that just closed.
- *   3. When both length and width are exhausted, advance up in **height**
- *      (Y) — start a new layer on top. Layer height = tallest box in the
- *      layer that just closed.
- *   4. When the container's height is exhausted, stop placing.
+ *   1. Place across the **width** (X) — boxes go side-by-side first.
+ *   2. When the width row fills, stack up in **height** (Y) — new layer
+ *      on top. Layer height = tallest box in the row that just closed.
+ *   3. When the column (the back-most XY slice) is full, advance forward
+ *      in **length** (Z) — start a fresh column. Column depth = deepest
+ *      box in the slice that just closed.
+ *   4. When length runs out, stop placing. Totals overlay still reflects
+ *      the full cargo volume, so the user gets honest numbers even if a
+ *      few items don't render.
  *
- * Not a real 3D bin-packer — a proper one is the Phase-3 "Container Loading
- * Planner" tool. Goal here is "looks plausible at a glance" so the user
- * trusts the volume figure.
+ * Not a real 3D bin-packer — a proper one is the Phase-3 "Container
+ * Loading Planner" tool. Goal here is "looks plausible at a glance" so
+ * the user trusts the volume figure.
  */
 function buildBlocks(items: CargoItem[], dim: { length: number; width: number; height: number }): PlacedBox[] {
     // Expand quantities into per-unit blocks, capping at 60 for scene perf
@@ -227,15 +228,15 @@ function buildBlocks(items: CargoItem[], dim: { length: number; width: number; h
     const gap = 0.02
 
     // 3-axis cursor. Container coordinates centred on origin:
-    //   X spans [-W/2, +W/2] (width)
+    //   X spans [-W/2, +W/2] (width)   ← fastest axis
     //   Y spans [0, H]       (height, container floor at 0)
-    //   Z spans [-L/2, +L/2] (length, back at -L/2)
+    //   Z spans [-L/2, +L/2] (length, back at -L/2)  ← slowest axis
     let cursorX = -dim.width / 2
     let cursorY = 0
     let cursorZ = -dim.length / 2
 
-    let rowMaxWidth = 0   // widest box (X-axis) in the current Z-row
-    let layerMaxHeight = 0 // tallest box in the current XY-floor layer
+    let rowMaxHeight = 0    // tallest box in the current X-row → bumps Y when row closes
+    let columnMaxDepth = 0  // deepest box in the current XY-slice → bumps Z when slice closes
 
     const eps = 0.001
 
@@ -244,26 +245,24 @@ function buildBlocks(items: CargoItem[], dim: { length: number; width: number; h
         const h = Math.min(item.heightMm / 1000, dim.height)
         const d = Math.min(item.lengthMm / 1000, dim.length)
 
-        // 1. Doesn't fit in this row along length — start a new row across width.
-        if (cursorZ + d > dim.length / 2 + eps) {
-            cursorX += rowMaxWidth + gap
-            cursorZ = -dim.length / 2
-            rowMaxWidth = 0
-        }
-
-        // 2. Doesn't fit in this layer along width — start a new layer above.
+        // 1. Doesn't fit across width — stack up.
         if (cursorX + w > dim.width / 2 + eps) {
-            cursorY += layerMaxHeight + gap
+            cursorY += rowMaxHeight + gap
             cursorX = -dim.width / 2
-            cursorZ = -dim.length / 2
-            rowMaxWidth = 0
-            layerMaxHeight = 0
+            rowMaxHeight = 0
         }
 
-        // 3. Doesn't fit in container height — stop. The remaining items are
-        //    silently dropped from the viz; the totals overlay still reflects
-        //    their volume from `totalCbm()`, so this is honest.
+        // 2. Doesn't fit in height — move forward.
         if (cursorY + h > dim.height + eps) {
+            cursorZ += columnMaxDepth + gap
+            cursorX = -dim.width / 2
+            cursorY = 0
+            rowMaxHeight = 0
+            columnMaxDepth = 0
+        }
+
+        // 3. Doesn't fit in length — container full, stop.
+        if (cursorZ + d > dim.length / 2 + eps) {
             break
         }
 
@@ -276,9 +275,9 @@ function buildBlocks(items: CargoItem[], dim: { length: number; width: number; h
             label: item.label || `Item ${index + 1}`,
         })
 
-        cursorZ += d + gap
-        if (w > rowMaxWidth) rowMaxWidth = w
-        if (h > layerMaxHeight) layerMaxHeight = h
+        cursorX += w + gap
+        if (h > rowMaxHeight) rowMaxHeight = h
+        if (d > columnMaxDepth) columnMaxDepth = d
     }
 
     return placed
