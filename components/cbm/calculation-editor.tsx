@@ -12,6 +12,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { CBMCalculator } from "@/components/cbm/cbm-calculator"
 import { CBM3DViz } from "@/components/cbm/cbm-3d-viz"
+import { LiveQuotePanel } from "@/components/cbm/live-quote-panel"
+import { SmartMatchPanel } from "@/components/cbm/smart-match-panel"
 import type { CargoItem } from "@/lib/db/schema/pallet-allocations"
 
 export interface CalculationEditorInitial {
@@ -35,6 +37,8 @@ export function CalculationEditor({ initial }: CalculationEditorProps) {
     const [saving, setSaving] = useState(false)
     const [archiving, setArchiving] = useState(false)
     const [duplicating, setDuplicating] = useState(false)
+    // Bumped each time we save so the live-quote + smart-match panels refetch.
+    const [panelRefreshKey, setPanelRefreshKey] = useState(0)
 
     useEffect(() => {
         if (initial) {
@@ -79,6 +83,7 @@ export function CalculationEditor({ initial }: CalculationEditorProps) {
                 return
             }
             toast.success(isEdit ? "Calculation updated" : "Calculation saved")
+            setPanelRefreshKey(k => k + 1)
             if (!isEdit && data.calculation?.id) {
                 router.push(`/dashboard/tools/cbm-calculator/${data.calculation.id}`)
             } else {
@@ -221,8 +226,10 @@ export function CalculationEditor({ initial }: CalculationEditorProps) {
                     </div>
                 </div>
 
-                <div className="lg:col-span-2">
+                <div className="lg:col-span-2 space-y-4">
                     <CBM3DViz items={items} containerVolumeCBM={67.7} />
+                    <LiveQuotePanel calculationId={initial?.id ?? null} refreshKey={panelRefreshKey} />
+                    <SmartMatchPanel calculationId={initial?.id ?? null} refreshKey={panelRefreshKey} />
                 </div>
             </div>
         </div>

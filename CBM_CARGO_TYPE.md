@@ -129,8 +129,8 @@ A · Schema foundations            ✅ DONE  → docs/cbm-cargo-type/phase-a-sch
 B · CBM helpers + calculator UI   ✅ DONE  → docs/cbm-cargo-type/phase-b-calculator-ui.md
 C · Tools hub + saved calcs       🚧 IN PROGRESS
    C.1 foundation                 ✅ DONE  → docs/cbm-cargo-type/phase-c1-tools-hub-and-crud.md
-   C.2 presets + live-quote + smart-match  ⏳ NEXT
-   C.3 share + PDF + polish       (after C.2)
+   C.2 presets + live-quote + smart-match  ✅ DONE  → docs/cbm-cargo-type/phase-c2-killer-feature-panels.md
+   C.3 share + PDF + polish       ⏳ NEXT
 D · Booking wizard integration    ~cargo-type gate + saved-calc dropdown
 E · Admin rate cards              ~cargoType discriminator + PER_CBM charge type
 F · Container creation + admin views ~Fleet scheduler picks cargo type; grid columns polymorphic

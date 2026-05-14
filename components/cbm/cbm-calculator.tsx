@@ -1,9 +1,13 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { Trash2, Plus, Box, Scale, Ruler, Layers, Container as ContainerIcon } from "lucide-react"
+import { Trash2, Plus, Box, Scale, Ruler, Layers, Container as ContainerIcon, Sparkles } from "lucide-react"
 import { nanoid } from "nanoid"
+import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { cn } from "@/lib/utils"
 import type { CargoItem } from "@/lib/db/schema/pallet-allocations"
 import {
@@ -30,6 +34,18 @@ import {
 /* Props                                                                       */
 /* -------------------------------------------------------------------------- */
 
+interface PresetRow {
+    id: string
+    name: string
+    categoryId: string | null
+    lengthMm: number
+    widthMm: number
+    heightMm: number
+    weightKg: string | null
+    isAdmin: boolean
+    userId: string | null
+}
+
 export interface CBMCalculatorProps {
     /** Current cargo items — mm/kg canonical units. Controlled from outside. */
     value: CargoItem[]
@@ -42,6 +58,12 @@ export interface CBMCalculatorProps {
      */
     containerVolumeCBM?: number | null
     containerLabel?: string
+    /**
+     * When set, the cargo-item presets dropdown ranks category-matching
+     * presets first. The booking wizard passes the chosen container's
+     * categoryId in Phase D; the standalone calculator leaves it null.
+     */
+    categoryId?: string | null
     /** Read-only mode for share-link views. */
     readOnly?: boolean
 }
@@ -57,9 +79,12 @@ const MAX_QUANTITY = 100_000
 /* Component                                                                   */
 /* -------------------------------------------------------------------------- */
 
-export function CBMCalculator({ value, onChange, containerVolumeCBM, containerLabel, readOnly = false }: CBMCalculatorProps) {
+export function CBMCalculator({ value, onChange, containerVolumeCBM, containerLabel, categoryId, readOnly = false }: CBMCalculatorProps) {
     const [lengthUnit, setLengthUnit] = useState<LengthUnit>("cm")
     const [weightUnit, setWeightUnit] = useState<WeightUnit>("kg")
+    const [presets, setPresets] = useState<PresetRow[]>([])
+    const [presetsLoading, setPresetsLoading] = useState(false)
+    const [presetOpen, setPresetOpen] = useState(false)
 
     // Auto-seed an empty first row so the UI never looks blank
     useEffect(() => {
@@ -68,6 +93,41 @@ export function CBMCalculator({ value, onChange, containerVolumeCBM, containerLa
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
+
+    // Load presets once when the picker opens; refresh when categoryId changes
+    useEffect(() => {
+        if (readOnly) return
+        let cancelled = false
+        setPresetsLoading(true)
+        const url = categoryId
+            ? `/api/cargo-item-presets?categoryId=${encodeURIComponent(categoryId)}`
+            : "/api/cargo-item-presets"
+        fetch(url, { cache: "no-store" })
+            .then(r => r.ok ? r.json() : { presets: [] })
+            .then(d => { if (!cancelled && Array.isArray(d.presets)) setPresets(d.presets) })
+            .catch(() => { /* silent — calculator still works without presets */ })
+            .finally(() => { if (!cancelled) setPresetsLoading(false) })
+        return () => { cancelled = true }
+    }, [categoryId, readOnly])
+
+    const applyPreset = (preset: PresetRow) => {
+        const newRow: CargoItem = {
+            id: `ci-${nanoid(8)}`,
+            label: preset.name,
+            lengthMm: preset.lengthMm,
+            widthMm: preset.widthMm,
+            heightMm: preset.heightMm,
+            weightKg: preset.weightKg ? Number(preset.weightKg) : 0,
+            quantity: 1,
+        }
+        // If the only existing row is the auto-seeded blank, replace it; otherwise append.
+        const onlyBlank = value.length === 1 &&
+            value[0].lengthMm === 0 && value[0].widthMm === 0 && value[0].heightMm === 0 &&
+            (value[0].weightKg ?? 0) === 0 && !value[0].label
+        onChange(onlyBlank ? [newRow] : [...value, newRow])
+        setPresetOpen(false)
+        toast.success(`Added "${preset.name}"`)
+    }
 
     const addRow = () => {
         onChange([...value, blankRow()])
@@ -104,7 +164,7 @@ export function CBMCalculator({ value, onChange, containerVolumeCBM, containerLa
 
     return (
         <div className="space-y-4">
-            {/* Unit toggles */}
+            {/* Unit toggles + presets picker */}
             <div className="flex flex-wrap items-center gap-3">
                 <UnitToggle
                     label="Dimensions"
@@ -122,6 +182,63 @@ export function CBMCalculator({ value, onChange, containerVolumeCBM, containerLa
                     icon={<Scale className="h-3.5 w-3.5" />}
                     disabled={readOnly}
                 />
+                {!readOnly && (
+                    <Popover open={presetOpen} onOpenChange={setPresetOpen}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="ml-auto border-brand-blue/40 text-brand-blue hover:bg-brand-blue/5"
+                            >
+                                <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                                Quick add from preset
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="p-0 w-[360px]" align="end">
+                            <Command>
+                                <CommandInput placeholder="Search presets…" />
+                                <CommandList className="max-h-[320px]">
+                                    {presetsLoading ? (
+                                        <CommandEmpty>Loading…</CommandEmpty>
+                                    ) : presets.length === 0 ? (
+                                        <CommandEmpty>
+                                            No presets available yet.{" "}
+                                            <span className="block text-[10px] text-slate-500 mt-1">
+                                                Admin can seed the starter set at /api/admin/cargo-item-presets/seed.
+                                            </span>
+                                        </CommandEmpty>
+                                    ) : (
+                                        <CommandGroup>
+                                            {presets.map(p => (
+                                                <CommandItem
+                                                    key={p.id}
+                                                    value={`${p.name} ${p.categoryId ?? ""}`}
+                                                    onSelect={() => applyPreset(p)}
+                                                    className="cursor-pointer"
+                                                >
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <p className="text-sm font-medium truncate">{p.name}</p>
+                                                            {!p.isAdmin && (
+                                                                <span className="text-[9px] font-bold uppercase tracking-widest text-purple-500">
+                                                                    Yours
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+                                                            {p.lengthMm} × {p.widthMm} × {p.heightMm} mm
+                                                            {p.weightKg ? ` · ${Number(p.weightKg).toFixed(1)} kg` : ""}
+                                                        </p>
+                                                    </div>
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    )}
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
+                )}
             </div>
 
             {/* Rows */}
