@@ -387,11 +387,14 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
             : undefined
     )
 
-    // No-match flags for UX
+    // No-match flags for UX. SCS bookings don't carry a temperature (Dry by
+    // definition — see SCS_SRS_RULES.md), so anywhere we'd normally require
+    // `formData.temperature`, an SCS booking is "temperature-ready" too.
     const routeReady = Boolean(formData.origin && formData.destination && formData.salesRateTypeId)
+    const temperatureReady = isSCS || !!formData.temperature
     const showNoProducts = routeReady && !loadingOptions && options.products.length === 0
-    const showNoTempsForProduct = routeReady && !!formData.commodity && !loadingOptions && options.temperatures.length === 0
-    const showNoSailingsForTemp = routeReady && !!formData.commodity && !!formData.temperature && !loadingOptions && options.sailings.length === 0
+    const showNoTempsForProduct = !isSCS && routeReady && !!formData.commodity && !loadingOptions && options.temperatures.length === 0
+    const showNoSailingsForTemp = routeReady && !!formData.commodity && temperatureReady && !loadingOptions && options.sailings.length === 0
 
     const showRequestCta = showNoProducts || showNoTempsForProduct || showNoSailingsForTemp
 
@@ -722,9 +725,13 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                             <Loader2 className="h-4 w-4 animate-spin" />
                                             Loading sailings...
                                         </div>
-                                    ) : !formData.temperature ? (
+                                    ) : !formData.commodity ? (
                                         <div className="flex items-center gap-2 h-12 px-3 bg-white dark:bg-slate-950 rounded-md border text-sm text-slate-400">
-                                            Pick a product and temperature first
+                                            Pick a product first
+                                        </div>
+                                    ) : !temperatureReady ? (
+                                        <div className="flex items-center gap-2 h-12 px-3 bg-white dark:bg-slate-950 rounded-md border text-sm text-slate-400">
+                                            Pick a temperature first
                                         </div>
                                     ) : options.sailings.length > 0 ? (
                                         <Popover open={sailingOpen} onOpenChange={setSailingOpen}>
