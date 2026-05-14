@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { AnimatePresence } from "framer-motion"
+import { AnimatePresence, motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { ChevronRight, ChevronLeft, Check, Loader2 } from "lucide-react"
 import { Step2Cargo } from "./step-2-cargo"
@@ -296,10 +296,50 @@ export function BookingWizard({ onSuccess, prefill }: { onSuccess?: () => void; 
             {/* Content Container */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xl border border-slate-100 dark:border-slate-800 min-h-[400px] sm:min-h-[500px] flex flex-col justify-between overflow-hidden">
                 <div className="flex-1 overflow-y-auto">
+                    {/* Wrap each step in a parent-level motion.div so
+                        AnimatePresence sees a consistent motion child for every
+                        step. Without this, StepCostBreakdown (a plain Card)
+                        never signals exit-complete and `mode="wait"` deadlocks
+                        on Back from step 3 → step 2 → step 1, leaving the
+                        content area blank.
+
+                        The child components (Step2Cargo, Step3Docs) keep their
+                        own internal motion wrappers for content-level animation;
+                        the parent wrapper only owns the step transition. */}
                     <AnimatePresence mode="wait">
-                        {step === 1 && <Step2Cargo key="step1" formData={formData} updateFormData={updateFormData} />}
-                        {step === 2 && <StepCostBreakdown key="step2" formData={formData} updateFormData={updateFormData} onQuoteLoaded={setCostBreakdown} />}
-                        {step === 3 && <Step3Docs key="step3" formData={formData} updateFormData={updateFormData} />}
+                        {step === 1 && (
+                            <motion.div
+                                key="step1"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <Step2Cargo formData={formData} updateFormData={updateFormData} />
+                            </motion.div>
+                        )}
+                        {step === 2 && (
+                            <motion.div
+                                key="step2"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <StepCostBreakdown formData={formData} updateFormData={updateFormData} onQuoteLoaded={setCostBreakdown} />
+                            </motion.div>
+                        )}
+                        {step === 3 && (
+                            <motion.div
+                                key="step3"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <Step3Docs formData={formData} updateFormData={updateFormData} />
+                            </motion.div>
+                        )}
                     </AnimatePresence>
                 </div>
 
