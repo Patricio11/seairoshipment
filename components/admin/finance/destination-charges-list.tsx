@@ -155,7 +155,7 @@ export function DestinationChargesList() {
             </AlertDialog>
 
             {/* Filters */}
-            <Card className="p-4">
+            <Card className="p-4 bg-slate-900 border-slate-800 shadow-none">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="relative col-span-2">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -163,15 +163,15 @@ export function DestinationChargesList() {
                             placeholder="Search destinations..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-9"
+                            className="pl-9 bg-slate-950 border-slate-800 text-white placeholder:text-slate-500 focus-visible:ring-slate-700"
                         />
                     </div>
 
                     <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-slate-950 border-slate-800 text-white">
                             <SelectValue placeholder="Filter by currency" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-slate-950 border-slate-800 text-white">
                             <SelectItem value="all">All Currencies</SelectItem>
                             <SelectItem value="GBP">GBP</SelectItem>
                             <SelectItem value="EUR">EUR</SelectItem>
@@ -182,35 +182,35 @@ export function DestinationChargesList() {
             </Card>
 
             {/* Table */}
-            <Card>
+            <Card className="overflow-hidden bg-slate-900 border-slate-800 shadow-none py-0">
                 <Table>
                     <TableHeader>
-                        <TableRow className="bg-slate-900/50">
-                            <TableHead>Destination Port</TableHead>
-                            <TableHead>Container</TableHead>
-                            <TableHead>Rate Type</TableHead>
-                            <TableHead>Currency</TableHead>
-                            <TableHead className="text-right">Exchange Rate</TableHead>
-                            <TableHead className="text-right">Items</TableHead>
-                            <TableHead className="text-right">Total (Local)</TableHead>
-                            <TableHead className="text-right">Total (ZAR)</TableHead>
-                            <TableHead>Status</TableHead>
+                        <TableRow className="bg-slate-950 border-slate-800 hover:bg-slate-950">
+                            <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Destination Port</TableHead>
+                            <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Container</TableHead>
+                            <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Rate Type</TableHead>
+                            <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Currency</TableHead>
+                            <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-right">Exchange Rate</TableHead>
+                            <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-right">Items</TableHead>
+                            <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-right">Total (Local)</TableHead>
+                            <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-right">Total (ZAR)</TableHead>
+                            <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Status</TableHead>
                             <TableHead className="w-[50px]"></TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {loading ? (
                             Array.from({ length: 5 }).map((_, i) => (
-                                <TableRow key={i}>
+                                <TableRow key={i} className="border-slate-800">
                                     {Array.from({ length: 10 }).map((_, j) => (
                                         <TableCell key={j}>
-                                            <div className="h-4 bg-slate-700 rounded animate-pulse" />
+                                            <div className="h-4 bg-slate-800 rounded animate-pulse" />
                                         </TableCell>
                                     ))}
                                 </TableRow>
                             ))
                         ) : filteredCharges.length === 0 ? (
-                            <TableRow>
+                            <TableRow className="border-slate-800 hover:bg-transparent">
                                 <TableCell colSpan={10} className="text-center py-12 text-slate-500">
                                     No destination charges found
                                 </TableCell>
@@ -219,7 +219,7 @@ export function DestinationChargesList() {
                             filteredCharges.map((charge) => {
                                 const totals = calculateTotals(charge)
                                 return (
-                                    <TableRow key={charge.id} className="group hover:bg-slate-900/50">
+                                    <TableRow key={charge.id} className="group border-slate-800 hover:bg-slate-950/60">
                                         <TableCell>
                                             <div className="flex flex-col">
                                                 <span className="font-semibold text-white">
@@ -231,7 +231,7 @@ export function DestinationChargesList() {
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant="outline" className="font-mono text-xs">
+                                            <Badge variant="outline" className="font-mono text-xs border-slate-700 text-slate-300">
                                                 {charge.containerDisplayName || charge.containerId}
                                             </Badge>
                                         </TableCell>
@@ -261,25 +261,25 @@ export function DestinationChargesList() {
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex items-center justify-end gap-1 text-xs">
-                                                <span className="font-mono font-semibold">
+                                                <span className="font-mono font-semibold text-white">
                                                     {Number(charge.exchangeRateToZAR).toFixed(2)}
                                                 </span>
-                                                <ArrowRightLeft className="h-3 w-3 text-slate-400" />
+                                                <ArrowRightLeft className="h-3 w-3 text-slate-500" />
                                                 <span className="text-slate-500">ZAR</span>
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <span className="font-mono text-sm font-semibold">
+                                            <span className="font-mono text-sm font-semibold text-white">
                                                 {totals.itemCount}
                                             </span>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <span className="font-mono text-sm font-semibold text-blue-600">
+                                            <span className="font-mono text-sm font-semibold text-blue-400">
                                                 {charge.currency} {totals.totalLocal.toLocaleString()}
                                             </span>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <span className="font-mono text-sm font-semibold text-emerald-600">
+                                            <span className="font-mono text-sm font-semibold text-emerald-400">
                                                 R {totals.totalZAR.toLocaleString()}
                                             </span>
                                         </TableCell>

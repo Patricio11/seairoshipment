@@ -199,7 +199,7 @@ export function OceanFreightGrid() {
             </AlertDialog>
 
             {/* Filters */}
-            <Card className="p-4">
+            <Card className="p-4 bg-slate-900 border-slate-800 shadow-none">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -207,22 +207,22 @@ export function OceanFreightGrid() {
                             placeholder="Search destinations..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-9"
+                            className="pl-9 bg-slate-950 border-slate-800 text-white placeholder:text-slate-500 focus-visible:ring-slate-700"
                         />
                     </div>
 
                     <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-slate-950 border-slate-800 text-white">
                             <SelectValue placeholder="Filter by status" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-slate-950 border-slate-800 text-white">
                             <SelectItem value="all">All Status</SelectItem>
                             <SelectItem value="active">Active</SelectItem>
                             <SelectItem value="inactive">Inactive / Missing</SelectItem>
                         </SelectContent>
                     </Select>
 
-                    <Button variant="outline" onClick={() => setOpenCountries(countries)}>
+                    <Button variant="outline" className="bg-slate-950 border-slate-800 text-slate-200 hover:bg-slate-900 hover:text-white" onClick={() => setOpenCountries(countries)}>
                         Expand All Countries
                     </Button>
                 </div>
@@ -232,11 +232,11 @@ export function OceanFreightGrid() {
             <div className="space-y-4">
                 {loading ? (
                     Array.from({ length: 3 }).map((_, i) => (
-                        <Card key={i} className="overflow-hidden">
+                        <Card key={i} className="overflow-hidden bg-slate-900 border-slate-800 shadow-none py-0">
                             <div className="p-4 flex items-center gap-3">
-                                <div className="h-5 w-5 bg-slate-700 rounded animate-pulse" />
-                                <div className="h-5 w-32 bg-slate-700 rounded animate-pulse" />
-                                <div className="h-5 w-20 bg-slate-700 rounded animate-pulse" />
+                                <div className="h-5 w-5 bg-slate-800 rounded animate-pulse" />
+                                <div className="h-5 w-32 bg-slate-800 rounded animate-pulse" />
+                                <div className="h-5 w-20 bg-slate-800 rounded animate-pulse" />
                             </div>
                             <div className="px-4 pb-4 space-y-2">
                                 {Array.from({ length: 2 }).map((_, j) => (
@@ -255,26 +255,26 @@ export function OceanFreightGrid() {
                     const totalCount = countryRates.length
 
                     return (
-                        <Card key={country} className="overflow-hidden">
+                        <Card key={country} className="overflow-hidden bg-slate-900 border-slate-800 shadow-none py-0">
                             <Collapsible open={isOpen} onOpenChange={() => toggleCountry(country)}>
-                                <CollapsibleTrigger className="w-full hover:bg-slate-900/50 transition-colors">
+                                <CollapsibleTrigger className="w-full hover:bg-slate-950/60 transition-colors">
                                     <div className="flex items-center justify-between p-4">
                                         <div className="flex items-center gap-3">
                                             {isOpen ? (
-                                                <ChevronDown className="h-5 w-5 text-slate-500" />
+                                                <ChevronDown className="h-5 w-5 text-slate-400" />
                                             ) : (
-                                                <ChevronRight className="h-5 w-5 text-slate-500" />
+                                                <ChevronRight className="h-5 w-5 text-slate-400" />
                                             )}
                                             <h3 className="text-lg font-bold text-white">
                                                 {country}
                                             </h3>
-                                            <Badge variant="outline" className="font-mono text-xs">
+                                            <Badge variant="outline" className="font-mono text-xs border-slate-700 text-slate-300">
                                                 {activeCount} / {totalCount} Active
                                             </Badge>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             {activeCount < totalCount && (
-                                                <Badge variant="destructive" className="text-xs">
+                                                <Badge className="text-xs bg-red-500/15 text-red-400 border border-red-800">
                                                     <AlertCircle className="h-3 w-3 mr-1" />
                                                     Missing Rates
                                                 </Badge>
@@ -285,26 +285,26 @@ export function OceanFreightGrid() {
                                 <CollapsibleContent>
                                     <Table>
                                         <TableHeader>
-                                            <TableRow className="bg-slate-900/50">
-                                                <TableHead className="min-w-[140px]">Port of Load</TableHead>
-                                                <TableHead className="min-w-[140px]">Destination Port</TableHead>
-                                                <TableHead>Shipping Line</TableHead>
-                                                <TableHead>Equipment</TableHead>
-                                                <TableHead>Rate Type</TableHead>
-                                                <TableHead className="text-right">Freight</TableHead>
-                                                <TableHead className="text-right">BAF</TableHead>
-                                                <TableHead className="text-right">ISPS</TableHead>
-                                                <TableHead className="text-right">Other</TableHead>
-                                                <TableHead className="text-right">RCG</TableHead>
-                                                <TableHead className="text-right font-bold text-blue-600">Total USD</TableHead>
-                                                <TableHead className="text-right font-bold text-emerald-600">Total ZAR</TableHead>
-                                                <TableHead>Status</TableHead>
+                                            <TableRow className="bg-slate-950 border-slate-800 hover:bg-slate-950">
+                                                <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] min-w-[140px]">Port of Load</TableHead>
+                                                <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] min-w-[140px]">Destination Port</TableHead>
+                                                <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Shipping Line</TableHead>
+                                                <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Equipment</TableHead>
+                                                <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Rate Type</TableHead>
+                                                <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-right">Freight</TableHead>
+                                                <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-right">BAF</TableHead>
+                                                <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-right">ISPS</TableHead>
+                                                <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-right">Other</TableHead>
+                                                <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-right">RCG</TableHead>
+                                                <TableHead className="text-blue-400 font-bold uppercase tracking-wider text-[10px] text-right">Total USD</TableHead>
+                                                <TableHead className="text-emerald-400 font-bold uppercase tracking-wider text-[10px] text-right">Total ZAR</TableHead>
+                                                <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Status</TableHead>
                                                 <TableHead className="w-[50px]"></TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
                                             {countryRates.map((rate) => (
-                                                <TableRow key={rate.id} className="group hover:bg-slate-900/50">
+                                                <TableRow key={rate.id} className="group border-slate-800 hover:bg-slate-950/60">
                                                     <TableCell className="font-medium text-slate-300">
                                                         {rate.origin}
                                                     </TableCell>
@@ -340,25 +340,25 @@ export function OceanFreightGrid() {
                                                             )}
                                                         </div>
                                                     </TableCell>
-                                                    <TableCell className="text-right font-mono text-sm">
+                                                    <TableCell className="text-right font-mono text-sm text-white">
                                                         {rate.active ? `$${Number(rate.freightUSD).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
                                                     </TableCell>
-                                                    <TableCell className="text-right font-mono text-sm text-amber-600">
+                                                    <TableCell className="text-right font-mono text-sm text-amber-400">
                                                         {rate.active ? `$${Number(rate.bafUSD).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
                                                     </TableCell>
-                                                    <TableCell className="text-right font-mono text-sm text-slate-500">
+                                                    <TableCell className="text-right font-mono text-sm text-slate-400">
                                                         {rate.active ? `$${Number(rate.ispsUSD).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
                                                     </TableCell>
-                                                    <TableCell className="text-right font-mono text-sm text-slate-500">
+                                                    <TableCell className="text-right font-mono text-sm text-slate-400">
                                                         {rate.active ? `$${Number(rate.otherSurchargesUSD).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
                                                     </TableCell>
-                                                    <TableCell className="text-right font-mono text-sm text-slate-500">
+                                                    <TableCell className="text-right font-mono text-sm text-slate-400">
                                                         {rate.active ? `$${Number(rate.rcgUSD).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
                                                     </TableCell>
-                                                    <TableCell className="text-right font-mono text-sm font-black text-blue-600 bg-blue-900/10">
+                                                    <TableCell className="text-right font-mono text-sm font-black text-blue-400 bg-blue-900/20">
                                                         {rate.active ? `$${Number(rate.totalUSD).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "-"}
                                                     </TableCell>
-                                                    <TableCell className="text-right font-mono text-sm font-black text-emerald-600 bg-emerald-900/10">
+                                                    <TableCell className="text-right font-mono text-sm font-black text-emerald-400 bg-emerald-900/20">
                                                         {rate.active ? `R ${Number(rate.totalZAR).toLocaleString(undefined, { minimumFractionDigits: 0 })}` : "-"}
                                                     </TableCell>
                                                     <TableCell>
