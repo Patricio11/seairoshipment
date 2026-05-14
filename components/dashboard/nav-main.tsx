@@ -9,6 +9,7 @@ import {
     Settings,
     LifeBuoy,
     LogOut,
+    Wrench,
 } from "lucide-react"
 
 export const navItems = [
@@ -37,6 +38,11 @@ export const navItems = [
         title: "Finance",
         url: "/dashboard/finance",
         icon: CreditCard,
+    },
+    {
+        title: "Tools",
+        url: "/dashboard/tools",
+        icon: Wrench,
     },
     {
         title: "Settings",

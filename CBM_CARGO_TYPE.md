@@ -127,7 +127,10 @@ The Tools hub is built so future calculators slot in. Sketched here so the hub l
 ```
 A · Schema foundations            ✅ DONE  → docs/cbm-cargo-type/phase-a-schema-foundations.md
 B · CBM helpers + calculator UI   ✅ DONE  → docs/cbm-cargo-type/phase-b-calculator-ui.md
-C · Tools hub + saved calcs       ⏳ NEXT
+C · Tools hub + saved calcs       🚧 IN PROGRESS
+   C.1 foundation                 ✅ DONE  → docs/cbm-cargo-type/phase-c1-tools-hub-and-crud.md
+   C.2 presets + live-quote + smart-match  ⏳ NEXT
+   C.3 share + PDF + polish       (after C.2)
 D · Booking wizard integration    ~cargo-type gate + saved-calc dropdown
 E · Admin rate cards              ~cargoType discriminator + PER_CBM charge type
 F · Container creation + admin views ~Fleet scheduler picks cargo type; grid columns polymorphic
