@@ -6,7 +6,7 @@ import { useMemo } from "react"
 import * as THREE from "three"
 import { cn } from "@/lib/utils"
 import type { CargoItem } from "@/lib/db/schema/pallet-allocations"
-import { itemCbm, totalCbm, fitInContainer } from "@/lib/cbm"
+import { totalCbm, fitInContainer } from "@/lib/cbm"
 
 /**
  * 3D preview of how the cargo items would sit inside the chosen (or default
@@ -191,26 +191,27 @@ function ContainerOutline({ length, width, height }: { length: number; width: nu
 }
 
 /**
- * Pack cargo blocks into the container using a 3-axis shelf algorithm.
- * Priority matches how a forwarder actually loads a container:
+ * Pack cargo blocks into the container. Each box's Y is computed from a
+ * per-slice **heightmap** — i.e. the actual tops of whatever sits directly
+ * beneath it. That kills the "floating" you'd get from a naive shelf-pack
+ * that advances Y by the tallest box in the row.
+ *
+ * Priority matches how a forwarder loads a container:
  *
  *   1. Place across the **width** (X) — boxes go side-by-side first.
- *   2. When the width row fills, stack up in **height** (Y) — new layer
- *      on top. Layer height = tallest box in the row that just closed.
- *   3. When the column is full, advance forward in **length** (Z).
- *   4. When length runs out, stop placing. Totals overlay still reflects
- *      the full cargo volume, so the user gets honest numbers even if a
- *      few items don't render.
+ *   2. When cursorX overflows the width, wrap to the left wall. The next
+ *      box's bottom Y comes from what's actually below it, so it rests
+ *      cleanly on its neighbours instead of floating at row-max height.
+ *   3. When no Y position fits, advance forward in **length** (Z).
+ *   4. When length runs out, stop. The totals overlay still reflects the
+ *      full cargo volume, so the user gets honest numbers.
  *
- * Each box is **virtually rotated** before placement so its three
- * dimensions map to (width=smallest, height=middle, depth=largest).
- * That lets more boxes fit side-by-side without sacrificing realism —
- * a forwarder physically orients boxes the same way when loading. The
- * volume each box occupies is unchanged, so the totals stay honest.
+ * Each box is **virtually rotated** before placement (smallest → width,
+ * middle → height, largest → depth). Forwarders physically orient cargo
+ * the same way; volume is preserved.
  *
  * Not a real 3D bin-packer — a proper one is the Phase-3 "Container
- * Loading Planner" tool. Goal here is "looks plausible at a glance" so
- * the user trusts the volume figure.
+ * Loading Planner" tool. Goal here is "looks plausible at a glance".
  */
 function buildBlocks(items: CargoItem[], dim: { length: number; width: number; height: number }): PlacedBox[] {
     // Expand quantities into per-unit blocks, capping at 60 for scene perf
@@ -222,7 +223,7 @@ function buildBlocks(items: CargoItem[], dim: { length: number; width: number; h
         for (let q = 0; q < qty; q++) expanded.push({ item, index: i })
     }
 
-    // Sort largest-volume-first for visually nicer packing
+    // Sort largest-volume-first so big anchors get placed against the floor
     expanded.sort((a, b) =>
         (b.item.lengthMm * b.item.widthMm * b.item.heightMm) -
         (a.item.lengthMm * a.item.widthMm * a.item.heightMm)
@@ -232,53 +233,61 @@ function buildBlocks(items: CargoItem[], dim: { length: number; width: number; h
     // 1 cm gap — visible but doesn't eat enough container width to push a
     // legitimately-fitting box into a stack.
     const gap = 0.01
-
-    // 3-axis cursor. Container coordinates centred on origin:
-    //   X spans [-W/2, +W/2] (width)   ← fastest axis
-    //   Y spans [0, H]       (height, container floor at 0)
-    //   Z spans [-L/2, +L/2] (length, back at -L/2)  ← slowest axis
-    let cursorX = -dim.width / 2
-    let cursorY = 0
-    let cursorZ = -dim.length / 2
-
-    let rowMaxHeight = 0    // tallest box in the current X-row → bumps Y when row closes
-    let columnMaxDepth = 0  // deepest box in the current XY-slice → bumps Z when slice closes
-
     const eps = 0.001
 
+    let cursorX = -dim.width / 2
+    let cursorZ = -dim.length / 2
+    let columnMaxDepth = 0
+
+    /**
+     * Highest Y already occupied within the rectangle (xLeft..xRight, zLeft..zRight).
+     * Returns 0 if nothing is below — the new box sits on the floor.
+     */
+    function topOfStackUnder(xLeft: number, xRight: number, zLeft: number, zRight: number): number {
+        let maxTop = 0
+        for (const b of placed) {
+            const bxLeft = b.x - b.w / 2
+            const bxRight = b.x + b.w / 2
+            // Strict overlap (touching edges don't count as overlap).
+            if (bxRight <= xLeft + eps || bxLeft >= xRight - eps) continue
+            const bzLeft = b.z - b.d / 2
+            const bzRight = b.z + b.d / 2
+            if (bzRight <= zLeft + eps || bzLeft >= zRight - eps) continue
+            const top = b.y + b.h / 2
+            if (top > maxTop) maxTop = top
+        }
+        return maxTop
+    }
+
     for (const { item, index } of expanded) {
-        // Virtual orientation: smallest dim on width, middle on height,
-        // largest on length. Forwarders do this physically when loading
-        // (longest side along the container length).
         const dimsMm = [item.lengthMm, item.widthMm, item.heightMm].sort((a, b) => a - b)
         const w = Math.min(dimsMm[0] / 1000, dim.width)
         const h = Math.min(dimsMm[1] / 1000, dim.height)
         const d = Math.min(dimsMm[2] / 1000, dim.length)
 
-        // 1. Doesn't fit across width — stack up.
+        // 1. Doesn't fit across width — wrap to the left wall. No Y bump
+        //    here; the heightmap below picks the right floor.
         if (cursorX + w > dim.width / 2 + eps) {
-            cursorY += rowMaxHeight + gap
             cursorX = -dim.width / 2
-            rowMaxHeight = 0
         }
 
-        // 2. Doesn't fit in height — move forward.
-        if (cursorY + h > dim.height + eps) {
+        // 2. Y = top of whatever's directly under the new box's XZ footprint.
+        let bottomY = topOfStackUnder(cursorX, cursorX + w, cursorZ, cursorZ + d)
+
+        // 3. If that overflows the ceiling, advance to the next Z slice and
+        //    retry against a fresh (empty) heightmap there.
+        if (bottomY + h > dim.height + eps) {
             cursorZ += columnMaxDepth + gap
             cursorX = -dim.width / 2
-            cursorY = 0
-            rowMaxHeight = 0
             columnMaxDepth = 0
-        }
-
-        // 3. Doesn't fit in length — container full, stop.
-        if (cursorZ + d > dim.length / 2 + eps) {
-            break
+            if (cursorZ + d > dim.length / 2 + eps) break  // out of length
+            bottomY = topOfStackUnder(cursorX, cursorX + w, cursorZ, cursorZ + d)
+            if (bottomY + h > dim.height + eps) break  // single item too tall — give up
         }
 
         placed.push({
             x: cursorX + w / 2,
-            y: cursorY + h / 2,
+            y: bottomY + h / 2,
             z: cursorZ + d / 2,
             w, h, d,
             color: colorForLabel(item.label || "", index),
@@ -286,7 +295,6 @@ function buildBlocks(items: CargoItem[], dim: { length: number; width: number; h
         })
 
         cursorX += w + gap
-        if (h > rowMaxHeight) rowMaxHeight = h
         if (d > columnMaxDepth) columnMaxDepth = d
     }
 
