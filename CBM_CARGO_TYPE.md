@@ -126,8 +126,8 @@ The Tools hub is built so future calculators slot in. Sketched here so the hub l
 
 ```
 A · Schema foundations            ✅ DONE  → docs/cbm-cargo-type/phase-a-schema-foundations.md
-B · CBM helpers + calculator UI   ⏳ NEXT
-C · Tools hub + saved calcs       ~/dashboard/tools/* + APIs + 3D viz + PDF
+B · CBM helpers + calculator UI   ✅ DONE  → docs/cbm-cargo-type/phase-b-calculator-ui.md
+C · Tools hub + saved calcs       ⏳ NEXT
 D · Booking wizard integration    ~cargo-type gate + saved-calc dropdown
 E · Admin rate cards              ~cargoType discriminator + PER_CBM charge type
 F · Container creation + admin views ~Fleet scheduler picks cargo type; grid columns polymorphic
@@ -161,31 +161,18 @@ Each phase ships independently. A → B → C is the critical path for any Cube 
 
 ---
 
-## Phase B — CBM helpers + calculator UI
+## Phase B — CBM helpers + calculator UI ✅ DONE
+
+**Detailed write-up:** [docs/cbm-cargo-type/phase-b-calculator-ui.md](docs/cbm-cargo-type/phase-b-calculator-ui.md)
 
 **Goal**: standalone, testable calculator component + pure unit-conversion helpers. No backend wiring yet.
 
-- [ ] New `lib/cbm.ts` — pure helpers, no React:
-  - `toMetres(value, unit: "cm"|"in"|"m"|"ft")`, `toKg(value, unit: "kg"|"lb")`
-  - `itemCbm(item)`, `totalCbm(items)`, `totalWeight(items)`
-  - `volumetricWeightSea(cbm)` = `cbm × 1000`
-  - `volumetricWeightCourier(cbm)`, `volumetricWeightAir(cbm)` (future-friendly factors)
-  - `fitInContainer(totalCbm, containerVolume)` → `{ qty, percentFull }`
-- [ ] New `components/cbm/cbm-calculator.tsx` — controlled component
-  - Props: `value: CargoItem[]`, `onChange`, optional `containerVolumeCBM` for fit hints
-  - Item rows with: label (optional), L / W / H + unit toggle, weight + unit toggle, quantity
-  - Add row / remove row
-  - Compute per-row CBM and totals live
-  - Container fit panel: 20ft / 40ft / 40ft HC + highlight smallest fit
-  - Sane input bounds (≤ 10 m per dimension; non-negative)
-- [ ] New `components/cbm/cbm-3d-viz.tsx` — react-three-fiber scene
-  - Container outline (transparent box scaled to selected container's interior dimensions, falls back to 40ft if none picked)
-  - Stack cargo as block(s); colour-code per item label
-  - Camera + ContactShadows + Environment lift (match existing container-scene aesthetics)
-  - `screenshotRef` returned via callback so the parent can capture a PNG for PDF embedding
-- [ ] Smoke test on a throwaway `/dev/cbm` page (delete after Phase C)
+- [x] `lib/cbm.ts` — pure helpers (units, CBM math, volumetric weight × 4 modes, container fit, pallet equivalent, sustainability score, formatters)
+- [x] `components/cbm/cbm-calculator.tsx` — controlled component with per-row inputs, unit toggles, stat cards, container fit table, read-only mode for share views
+- [x] `components/cbm/cbm-3d-viz.tsx` — react-three-fiber scene matching the existing booking aesthetic; shelf-pack placement; 60-block visual cap; auto-rotate
+- [x] Smoke test page at `/dev/cbm` (throwaway — deleted at the end of Phase C)
 
-**Done when**: the component renders cleanly, computes correctly across mixed units, 3D viz updates as items change.
+**Verified**: `tsc --noEmit` clean. Manual smoke test passes for the demo cargo across all four length units and both weight units.
 
 ---
 
