@@ -197,12 +197,16 @@ function ContainerOutline({ length, width, height }: { length: number; width: nu
  *   1. Place across the **width** (X) — boxes go side-by-side first.
  *   2. When the width row fills, stack up in **height** (Y) — new layer
  *      on top. Layer height = tallest box in the row that just closed.
- *   3. When the column (the back-most XY slice) is full, advance forward
- *      in **length** (Z) — start a fresh column. Column depth = deepest
- *      box in the slice that just closed.
+ *   3. When the column is full, advance forward in **length** (Z).
  *   4. When length runs out, stop placing. Totals overlay still reflects
  *      the full cargo volume, so the user gets honest numbers even if a
  *      few items don't render.
+ *
+ * Each box is **virtually rotated** before placement so its three
+ * dimensions map to (width=smallest, height=middle, depth=largest).
+ * That lets more boxes fit side-by-side without sacrificing realism —
+ * a forwarder physically orients boxes the same way when loading. The
+ * volume each box occupies is unchanged, so the totals stay honest.
  *
  * Not a real 3D bin-packer — a proper one is the Phase-3 "Container
  * Loading Planner" tool. Goal here is "looks plausible at a glance" so
@@ -225,7 +229,9 @@ function buildBlocks(items: CargoItem[], dim: { length: number; width: number; h
     )
 
     const placed: PlacedBox[] = []
-    const gap = 0.02
+    // 1 cm gap — visible but doesn't eat enough container width to push a
+    // legitimately-fitting box into a stack.
+    const gap = 0.01
 
     // 3-axis cursor. Container coordinates centred on origin:
     //   X spans [-W/2, +W/2] (width)   ← fastest axis
@@ -241,9 +247,13 @@ function buildBlocks(items: CargoItem[], dim: { length: number; width: number; h
     const eps = 0.001
 
     for (const { item, index } of expanded) {
-        const w = Math.min(item.widthMm / 1000, dim.width)
-        const h = Math.min(item.heightMm / 1000, dim.height)
-        const d = Math.min(item.lengthMm / 1000, dim.length)
+        // Virtual orientation: smallest dim on width, middle on height,
+        // largest on length. Forwarders do this physically when loading
+        // (longest side along the container length).
+        const dimsMm = [item.lengthMm, item.widthMm, item.heightMm].sort((a, b) => a - b)
+        const w = Math.min(dimsMm[0] / 1000, dim.width)
+        const h = Math.min(dimsMm[1] / 1000, dim.height)
+        const d = Math.min(dimsMm[2] / 1000, dim.length)
 
         // 1. Doesn't fit across width — stack up.
         if (cursorX + w > dim.width / 2 + eps) {
