@@ -76,29 +76,27 @@ export function Step3Docs({ formData, updateFormData }: Step3Props) {
         if (!file) return
         setUploading(true)
         setTimeout(() => {
-            setFiles(prev => {
-                // Replace existing file for this required-doc slot (except OTHER, which appends)
-                const filtered = documentCode === "OTHER"
-                    ? prev
-                    : prev.filter(u => u.documentCode !== documentCode)
-                const next: UploadedFile[] = [...filtered, {
-                    id: `${file.name}-${file.size}-${Date.now()}-${Math.random()}`,
-                    file,
-                    documentCode,
-                }]
-                syncToFormData(next)
-                return next
-            })
+            // Compute the new file list outside the setFiles updater so we can
+            // call the parent's updateFormData without doing it from inside a
+            // render-phase setState updater (React 18 setState-during-render).
+            const filtered = documentCode === "OTHER"
+                ? files
+                : files.filter(u => u.documentCode !== documentCode)
+            const next: UploadedFile[] = [...filtered, {
+                id: `${file.name}-${file.size}-${Date.now()}-${Math.random()}`,
+                file,
+                documentCode,
+            }]
+            setFiles(next)
+            syncToFormData(next)
             setUploading(false)
         }, 300)
     }
 
     const removeFile = (id: string) => {
-        setFiles(prev => {
-            const next = prev.filter(f => f.id !== id)
-            syncToFormData(next)
-            return next
-        })
+        const next = files.filter(f => f.id !== id)
+        setFiles(next)
+        syncToFormData(next)
     }
 
     const openPickerForCode = (code: string) => {
