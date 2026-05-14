@@ -59,20 +59,29 @@ export async function POST(
             return NextResponse.json({ error: "No file provided" }, { status: 400 });
         }
 
-        // Check Supabase env
+        // Require the service-role key — without it we'd fall back to the
+        // anon key which is subject to storage RLS and would silently fail
+        // with "new row violates row-level security policy". Make the failure
+        // mode unmistakable so it's a deploy-config problem, not a mystery
+        // toast for the client.
         const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
         const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-        const key = serviceKey || anonKey;
 
-        if (!url || !key) {
+        if (!url) {
             return NextResponse.json(
-                { error: "Supabase is not configured on the server" },
+                { error: "Supabase URL is not configured on the server (NEXT_PUBLIC_SUPABASE_URL)" },
+                { status: 500 }
+            );
+        }
+        if (!serviceKey) {
+            console.error("[upload] SUPABASE_SERVICE_ROLE_KEY is not set — server-side uploads will hit storage RLS");
+            return NextResponse.json(
+                { error: "Document uploads are not configured on the server. Set SUPABASE_SERVICE_ROLE_KEY in the environment." },
                 { status: 500 }
             );
         }
 
-        const supabase = createClient(url, key, { auth: { persistSession: false } });
+        const supabase = createClient(url, serviceKey, { auth: { persistSession: false } });
 
         // Validate type against document enum
         const validTypes = ["INVOICE", "BOL", "COA", "PACKING_LIST", "OTHER"] as const;
