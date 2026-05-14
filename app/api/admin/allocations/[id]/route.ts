@@ -59,35 +59,42 @@ export async function DELETE(
         await db.delete(documents).where(eq(documents.allocationId, id));
         await db.delete(invoices).where(eq(invoices.allocationId, id));
 
-        // Decrement container counter for this allocation's cargo type
-        const [container] = await db
-            .select()
-            .from(containers)
-            .where(eq(containers.id, allocation.containerId))
-            .limit(1);
+        // Decrement container counter for this allocation's cargo type — but
+        // ONLY if the allocation was CONFIRMED. The container.totalPallets and
+        // totalCBM counters are only ever incremented on approve, so a PENDING
+        // allocation never contributed to them; subtracting on delete in that
+        // case would put the counter out of sync (and shrink the apparent
+        // remaining capacity the next time someone tries to book).
+        if (allocation.status === "CONFIRMED") {
+            const [container] = await db
+                .select()
+                .from(containers)
+                .where(eq(containers.id, allocation.containerId))
+                .limit(1);
 
-        if (container) {
-            const updates: Record<string, unknown> = { updatedAt: new Date() };
+            if (container) {
+                const updates: Record<string, unknown> = { updatedAt: new Date() };
 
-            if (allocation.cargoType === "CUBE") {
-                const currentCBM = Number(container.totalCBM ?? 0);
-                const allocCBM = Number(allocation.cbmVolume ?? 0);
-                const newCBM = Math.max(0, currentCBM - allocCBM);
-                updates.totalCBM = newCBM.toFixed(4);
-            } else {
-                // PALLET (default): decrement pallet count and consider reverting
-                // the container's THRESHOLD_REACHED status back to OPEN.
-                const newTotal = Math.max(0, container.totalPallets - (allocation.palletCount || 0));
-                updates.totalPallets = newTotal;
-                if (container.status === "THRESHOLD_REACHED" && newTotal < 15) {
-                    updates.status = "OPEN";
+                if (allocation.cargoType === "CUBE") {
+                    const currentCBM = Number(container.totalCBM ?? 0);
+                    const allocCBM = Number(allocation.cbmVolume ?? 0);
+                    const newCBM = Math.max(0, currentCBM - allocCBM);
+                    updates.totalCBM = newCBM.toFixed(4);
+                } else {
+                    const newTotal = Math.max(0, container.totalPallets - (allocation.palletCount || 0));
+                    updates.totalPallets = newTotal;
+                    // Revert THRESHOLD_REACHED back to OPEN if we drop below 15
+                    // so the container becomes deletable / re-bookable again.
+                    if (container.status === "THRESHOLD_REACHED" && newTotal < 15) {
+                        updates.status = "OPEN";
+                    }
                 }
-            }
 
-            await db
-                .update(containers)
-                .set(updates)
-                .where(eq(containers.id, container.id));
+                await db
+                    .update(containers)
+                    .set(updates)
+                    .where(eq(containers.id, container.id));
+            }
         }
 
         // Finally drop the allocation row

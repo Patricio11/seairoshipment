@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/server";
 import { db } from "@/lib/db";
-import { containers, products, productCategories, sailings } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { containers, products, productCategories, sailings, palletAllocations } from "@/lib/db/schema";
+import { eq, and, inArray } from "drizzle-orm";
 
 /**
  * Client-facing list of bookable containers.
@@ -65,6 +65,33 @@ export async function GET(request: NextRequest) {
                 eq(containers.salesRateTypeId, salesRateTypeId),
             ));
 
+        // Aggregate pending allocations per container so the slider's "remaining"
+        // figure matches what the booking POST endpoint will actually enforce.
+        // container.totalPallets / totalCBM only count CONFIRMED allocations —
+        // pending requests reserve space too, and the server check rejects
+        // bookings that would push over (confirmed + pending + new).
+        const containerIds = baseRows.map(r => r.container.id);
+        const pendingByContainer = new Map<string, { pallets: number; cbm: number }>();
+        if (containerIds.length > 0) {
+            const pendings = await db
+                .select({
+                    containerId: palletAllocations.containerId,
+                    palletCount: palletAllocations.palletCount,
+                    cbmVolume: palletAllocations.cbmVolume,
+                })
+                .from(palletAllocations)
+                .where(and(
+                    inArray(palletAllocations.containerId, containerIds),
+                    eq(palletAllocations.status, "PENDING"),
+                ));
+            for (const p of pendings) {
+                const slot = pendingByContainer.get(p.containerId) || { pallets: 0, cbm: 0 };
+                slot.pallets += p.palletCount || 0;
+                slot.cbm += Number(p.cbmVolume ?? 0);
+                pendingByContainer.set(p.containerId, slot);
+            }
+        }
+
         const matches: Slot[] = [];
         const excluded: Excluded[] = [];
 
@@ -72,17 +99,22 @@ export async function GET(request: NextRequest) {
             const c = row.container;
             const reasons: string[] = [];
 
+            const pending = pendingByContainer.get(c.id) || { pallets: 0, cbm: 0 };
+            const reservedPallets = c.totalPallets + pending.pallets;
+            const reservedCBM = Number(c.totalCBM ?? 0) + pending.cbm;
+
             if (c.status !== "OPEN" && c.status !== "THRESHOLD_REACHED") {
                 reasons.push(c.status === "BOOKED" ? "Already booked with MetaShip" : `Status is ${c.status}`);
             }
-            // Capacity check varies by cargo type
+            // Capacity check varies by cargo type. Compare against the
+            // *reserved* total (confirmed + pending) so a full-but-not-yet-
+            // approved container shows as full to the booking UI.
             if (c.cargoType === "CUBE") {
                 const maxCBM = c.maxCapacityCBM ? Number(c.maxCapacityCBM) : 0;
-                const usedCBM = c.totalCBM ? Number(c.totalCBM) : 0;
                 if (maxCBM <= 0) reasons.push("CBM capacity not configured");
-                else if (maxCBM - usedCBM < 0.01) reasons.push("Container is full");
+                else if (maxCBM - reservedCBM < 0.01) reasons.push("Container is full");
             } else {
-                if (c.maxCapacity - c.totalPallets < 1) {
+                if (c.maxCapacity - reservedPallets < 1) {
                     reasons.push("Container is full");
                 }
             }
@@ -105,7 +137,9 @@ export async function GET(request: NextRequest) {
                 id: c.id,
                 vessel: row.sailingVessel || c.vessel,
                 voyageNumber: row.sailingVoyage || c.voyageNumber,
-                preFilled: c.totalPallets,
+                // preFilled includes pending allocations so the wizard's slider
+                // can't offer space the server will reject.
+                preFilled: reservedPallets,
                 maxCapacity: c.maxCapacity,
                 date: c.etd
                     ? new Date(c.etd).toLocaleDateString("en-US", { month: "short", day: "2-digit" })
@@ -115,7 +149,8 @@ export async function GET(request: NextRequest) {
                 categoryName: row.categoryName,
                 productName: row.categoryName,
                 cargoType: c.cargoType,
-                totalCBM: c.totalCBM ? Number(c.totalCBM) : 0,
+                // Same convention for CUBE — reservedCBM, not raw totalCBM.
+                totalCBM: reservedCBM,
                 maxCapacityCBM: c.maxCapacityCBM ? Number(c.maxCapacityCBM) : null,
             };
 
