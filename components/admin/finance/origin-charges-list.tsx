@@ -139,9 +139,16 @@ export function OriginChargesList() {
         return matchesSearch && matchesOrigin && matchesContainer && matchesStatus
     })
 
-    // Calculate totals matching the editor logic
+    // Calculate totals matching the editor logic. Per-unit container factor
+    // depends on cargo type — 20 pallets for a 40ft HC Reefer (PALLET cards),
+    // 67.7 m³ for a 40ft HC Cube (CUBE cards). These are the same defaults
+    // the editor uses; once we thread real container dimensions through the
+    // API we can swap them for the actual volume / max pallets.
     const calculateTotal = (charge: OriginChargeData) => {
         if (!charge.items) return { totalPerContainer: 0, totalPerPallet: 0, totalItems: 0 }
+
+        const isCube = charge.cargoType === "CUBE"
+        const containerFactor = isCube ? 67.7 : 20
 
         let totalPerContainer = 0
 
@@ -150,12 +157,18 @@ export function OriginChargesList() {
                 totalPerContainer += Number(item.containerCost)
             } else if (item.chargeType === "PER_PALLET" && item.unitCost) {
                 totalPerContainer += Number(item.unitCost) * 20
+            } else if (item.chargeType === "PER_CBM" && item.unitCost) {
+                totalPerContainer += Number(item.unitCost) * 67.7
             }
         })
 
         return {
             totalPerContainer,
-            totalPerPallet: totalPerContainer / 20,
+            // "totalPerPallet" is the per-unit summary — pallets for PALLET
+            // cards, m³ for CUBE cards. Column header in the table is generic
+            // ("Equiv. Pallet Cost") so we render it the same way; future
+            // polish: rename the column to "Per Unit Cost".
+            totalPerPallet: totalPerContainer / containerFactor,
             totalItems: charge.items.length
         }
     }

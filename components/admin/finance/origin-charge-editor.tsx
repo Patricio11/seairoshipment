@@ -302,25 +302,25 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                 <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
-                            <TableRow className="bg-slate-900">
-                                <TableHead className="w-[50px]">#</TableHead>
+                            <TableRow className="bg-slate-950 border-slate-800 hover:bg-slate-950">
+                                <TableHead className="w-[50px] text-slate-400 font-bold uppercase tracking-wider text-[10px]">#</TableHead>
                                 <TableHead className="min-w-[300px]">
-                                    <span className="font-bold">Additional Services</span>
-                                    <span className="block text-xs font-normal text-slate-500">(Charge Name)</span>
+                                    <span className="text-slate-300 font-bold uppercase tracking-wider text-[10px]">Additional Services</span>
+                                    <span className="block text-[10px] font-normal text-slate-500 normal-case tracking-normal">(Charge Name)</span>
                                 </TableHead>
                                 <TableHead className="w-[200px] text-right bg-amber-900/10">
-                                    <span className="font-bold text-amber-400">Buy Rate</span>
-                                    <span className="block text-xs font-normal text-slate-500">Cost price (ZAR)</span>
+                                    <span className="text-amber-400 font-bold uppercase tracking-wider text-[10px]">Buy Rate</span>
+                                    <span className="block text-[10px] font-normal text-slate-500 normal-case tracking-normal">Cost price (ZAR)</span>
                                 </TableHead>
                                 <TableHead className="w-[300px] text-right">
-                                    <span className="font-bold">Sell Rate</span>
-                                    <span className="block text-xs font-normal text-slate-500">
+                                    <span className="text-slate-300 font-bold uppercase tracking-wider text-[10px]">Sell Rate</span>
+                                    <span className="block text-[10px] font-normal text-slate-500 normal-case tracking-normal">
                                         {isCube ? "Per m³ or Per Container" : "Per Pallet or Per Container"}
                                     </span>
                                 </TableHead>
-                                <TableHead className="w-[250px] text-right bg-blue-900/20">
-                                    <span className="font-bold">40ft HC {isCube ? "Cube" : "Reefer"}</span>
-                                    <span className="block text-xs font-normal text-slate-500">
+                                <TableHead className="w-[250px] text-right bg-blue-900/15">
+                                    <span className="text-blue-400 font-bold uppercase tracking-wider text-[10px]">40ft HC {isCube ? "Cube" : "Reefer"}</span>
+                                    <span className="block text-[10px] font-normal text-slate-500 normal-case tracking-normal">
                                         {isCube ? `${containerFactor} m³ per container` : `${containerFactor} pallets per reefer`}
                                     </span>
                                 </TableHead>
@@ -540,7 +540,7 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
 
                 {/* Totals Section */}
                 {items.length > 0 && (
-                    <div className="border-t-4 border-white bg-gradient-to-r from-blue-50 to-emerald-900/20 p-8">
+                    <div className="border-t border-slate-800 bg-slate-950/60 p-8">
                         <div className="flex items-center justify-between max-w-3xl ml-auto">
                             <div>
                                 {/* Visual decoration or additional stats could go here */}
@@ -553,13 +553,17 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                                     </span>
                                 </div>
                                 <div className="flex items-baseline justify-end gap-6">
-                                    <span className="text-sm font-semibold text-emerald-400/80 uppercase tracking-wider">Equivalent Cost per Pallet</span>
+                                    <span className="text-sm font-semibold text-emerald-400/80 uppercase tracking-wider">
+                                        {isCube ? "Equivalent Cost per m³" : "Equivalent Cost per Pallet"}
+                                    </span>
                                     <span className="font-mono text-2xl font-bold text-emerald-400">
                                         R {parseFloat(totals.totalPerPallet).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                     </span>
                                 </div>
                                 <div className="pt-2 text-xs text-slate-500 font-medium">
-                                    * Calculations based on standard 40ft HC Reefer capacity (20 pallets)
+                                    {isCube
+                                        ? `* Calculations based on standard 40ft HC Cube capacity (${containerFactor} m³)`
+                                        : `* Calculations based on standard 40ft HC Reefer capacity (${containerFactor} pallets)`}
                                 </div>
                             </div>
                         </div>
