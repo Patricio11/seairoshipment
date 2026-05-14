@@ -15,7 +15,7 @@ import { useState } from "react"
 import { toast } from "sonner"
 
 export type DocType = "Invoice" | "BoL" | "CoA" | "PackingList" | "Other"
-export type DocSource = "CLIENT_UPLOAD" | "METASHIP_CLIENT" | "METASHIP_SHARED"
+export type DocSource = "CLIENT_UPLOAD" | "ADMIN_UPLOAD" | "METASHIP_CLIENT" | "METASHIP_SHARED"
 
 interface DocumentCardProps {
     id: string
@@ -159,10 +159,16 @@ export function DocumentCard({
                         {!isClientUpload && (
                             <span
                                 className="text-[10px] text-slate-400 inline-flex items-center gap-0.5"
-                                title={source === "METASHIP_CLIENT" ? "Issued by carrier — not editable" : "Container-level document — not editable"}
+                                title={
+                                    source === "ADMIN_UPLOAD"
+                                        ? "Uploaded by Seairo on your behalf — not editable"
+                                        : source === "METASHIP_CLIENT"
+                                            ? "Issued by carrier — not editable"
+                                            : "Container-level document — not editable"
+                                }
                             >
                                 <Lock className="h-2.5 w-2.5" />
-                                Carrier
+                                {source === "ADMIN_UPLOAD" ? "Seairo" : "Carrier"}
                             </span>
                         )}
                     </div>

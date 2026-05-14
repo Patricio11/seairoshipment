@@ -58,6 +58,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { documentLabel } from "@/lib/constants/document-types"
 import { AllocationDocs } from "./allocation-docs"
+import { AdminUploadDialog } from "./admin-upload-dialog"
 import { LiveShipmentCard } from "@/components/tracking/live-shipment-card"
 
 interface ContainerAllocation {
@@ -215,7 +216,7 @@ interface ClientDoc {
     originalName: string
     type: string
     documentCode: string | null
-    source: "CLIENT_UPLOAD" | "METASHIP_CLIENT" | "METASHIP_SHARED"
+    source: "CLIENT_UPLOAD" | "ADMIN_UPLOAD" | "METASHIP_CLIENT" | "METASHIP_SHARED"
     metashipDocumentId: number | null
     metashipReference: string | null
     metashipDownloadUrl: string | null
@@ -1752,11 +1753,22 @@ export function AdminBookingsGrid() {
                                 )}
 
                                 {/* Documents (grouped by source) */}
-                                <AllocationDocs
-                                    docs={clientDialog.docs}
-                                    loading={loadingClientDocs}
-                                    onView={openViewDoc}
-                                />
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Documents</p>
+                                        <AdminUploadDialog
+                                            allocationId={clientDialog.alloc.allocation.id}
+                                            bookingRef={clientDialog.alloc.allocation.id}
+                                            clientName={clientDialog.alloc.userName}
+                                            onUploaded={() => openClientDialog(clientDialog.alloc)}
+                                        />
+                                    </div>
+                                    <AllocationDocs
+                                        docs={clientDialog.docs}
+                                        loading={loadingClientDocs}
+                                        onView={openViewDoc}
+                                    />
+                                </div>
                             </div>
                         </>
                     )}

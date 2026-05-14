@@ -19,12 +19,14 @@ export const documentStatusEnum = pgEnum("document_status", [
 
 /**
  * Where this document came from:
- *  - CLIENT_UPLOAD: client uploaded in step-3 of booking
+ *  - CLIENT_UPLOAD: client uploaded in step-3 of booking (or via the docs vault)
+ *  - ADMIN_UPLOAD:  admin uploaded on behalf of the client from the admin bookings dialog
  *  - METASHIP_CLIENT: pulled from MetaShip, matched to a specific allocation by account-number prefix in the doc name
  *  - METASHIP_SHARED: pulled from MetaShip, applies to the whole container (no account-number match)
  */
 export const documentSourceEnum = pgEnum("document_source", [
     "CLIENT_UPLOAD",
+    "ADMIN_UPLOAD",
     "METASHIP_CLIENT",
     "METASHIP_SHARED",
 ]);

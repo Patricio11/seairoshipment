@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { FileText, Loader2, Eye, Download, ChevronDown, ChevronRight, CheckCircle2, Layers, User as UserIcon } from "lucide-react"
+import { FileText, Loader2, Eye, Download, ChevronDown, ChevronRight, CheckCircle2, Layers, User as UserIcon, Shield } from "lucide-react"
 import { documentLabel } from "@/lib/constants/document-types"
 
 export interface AllocationDoc {
@@ -9,7 +9,7 @@ export interface AllocationDoc {
     originalName: string
     type: string
     documentCode: string | null
-    source: "CLIENT_UPLOAD" | "METASHIP_CLIENT" | "METASHIP_SHARED"
+    source: "CLIENT_UPLOAD" | "ADMIN_UPLOAD" | "METASHIP_CLIENT" | "METASHIP_SHARED"
     metashipDocumentId: number | null
     metashipReference: string | null
     metashipDownloadUrl: string | null
@@ -30,18 +30,20 @@ interface AllocationDocsProps {
 }
 
 /**
- * Renders an allocation's documents in three grouped sections:
+ * Renders an allocation's documents in grouped sections:
  *   1. Finalised by MetaShip (METASHIP_CLIENT docs matched to this allocation)
  *   2. Container Documents (METASHIP_SHARED — visible to every client on the container)
- *   3. Your Uploads / Drafts (CLIENT_UPLOAD — hidden by default if finalised docs exist)
+ *   3. Uploaded by Seairo (ADMIN_UPLOAD — uploaded on behalf of the client)
+ *   4. Your Uploads / Drafts (CLIENT_UPLOAD — hidden by default if finalised docs exist)
  */
 export function AllocationDocs({ docs, loading, onView, alwaysShowDrafts }: AllocationDocsProps) {
     const [showDrafts, setShowDrafts] = useState(false)
 
-    const { finalDocs, sharedDocs, draftDocs } = useMemo(() => {
+    const { finalDocs, sharedDocs, adminDocs, draftDocs } = useMemo(() => {
         return {
             finalDocs: docs.filter(d => d.source === "METASHIP_CLIENT"),
             sharedDocs: docs.filter(d => d.source === "METASHIP_SHARED"),
+            adminDocs: docs.filter(d => d.source === "ADMIN_UPLOAD"),
             draftDocs: docs.filter(d => d.source === "CLIENT_UPLOAD"),
         }
     }, [docs])
@@ -97,7 +99,22 @@ export function AllocationDocs({ docs, loading, onView, alwaysShowDrafts }: Allo
                 </Section>
             )}
 
-            {/* 3. Client uploads (drafts) */}
+            {/* 3. Admin uploads (on behalf of client) */}
+            {adminDocs.length > 0 && (
+                <Section
+                    icon={<Shield className="h-3 w-3 text-brand-blue" />}
+                    label="Uploaded by Seairo"
+                    sub="Added on behalf of the client"
+                    accent="brand"
+                    count={adminDocs.length}
+                >
+                    {adminDocs.map(doc => (
+                        <DocRow key={doc.id} doc={doc} onView={onView} />
+                    ))}
+                </Section>
+            )}
+
+            {/* 4. Client uploads (drafts) */}
             {draftDocs.length > 0 && (
                 <div>
                     {!alwaysShowDrafts && hasFinalised && (
@@ -134,7 +151,7 @@ interface SectionProps {
     icon: React.ReactNode
     label: string
     sub?: string
-    accent: "emerald" | "sky" | "slate"
+    accent: "emerald" | "sky" | "slate" | "brand"
     count: number
     muted?: boolean
     children: React.ReactNode
@@ -145,7 +162,9 @@ function Section({ icon, label, sub, accent, count, muted, children }: SectionPr
         ? "text-emerald-400"
         : accent === "sky"
             ? "text-sky-400"
-            : "text-slate-400"
+            : accent === "brand"
+                ? "text-brand-blue"
+                : "text-slate-400"
     return (
         <div className={muted ? "opacity-70" : ""}>
             <div className="flex items-center gap-1.5 mb-2">
