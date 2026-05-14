@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { ChevronRight, ChevronLeft, Check, Loader2 } from "lucide-react"
@@ -9,7 +9,7 @@ import { StepCostBreakdown } from "./step-cost-breakdown"
 import { Step3Docs } from "./step-3-docs"
 import { toast } from "sonner"
 import type { BookingFormData, CostBreakdown } from "@/types"
-import { bookingModalStore } from "@/hooks/use-booking-modal"
+import { bookingModalStore, type BookingPrefill } from "@/hooks/use-booking-modal"
 import { useAuth } from "@/lib/auth/client"
 import { uploadFile, STORAGE_PATHS } from "@/lib/supabase"
 
@@ -28,7 +28,7 @@ function mapDocCodeToLegacyType(code: string): "INVOICE" | "BOL" | "COA" | "PACK
     }
 }
 
-export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
+export function BookingWizard({ onSuccess, prefill }: { onSuccess?: () => void; prefill?: BookingPrefill | null }) {
     const { user } = useAuth()
     const [step, setStep] = useState(1)
     const [submitting, setSubmitting] = useState(false)
@@ -57,7 +57,46 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
         agreeToTerms: false,
         poNumber: "",
         salesRateTypeId: "",
+        cargoType: "PALLET",
     })
+
+    // Prefill from a Smart-match deep-link: cargoType + calculationId +
+    // containerId arrive together. We seed the form so the user lands in
+    // step 1 with the cargo type already chosen and the modal heading
+    // makes it obvious what's happening.
+    useEffect(() => {
+        if (!prefill) return
+        // Fetch container + calc details so we can hydrate route, sailing, etc.
+        let cancelled = false
+        const hydrate = async () => {
+            try {
+                const updates: Partial<BookingFormData> = {}
+                if (prefill.cargoType) updates.cargoType = prefill.cargoType
+                if (prefill.calculationId) updates.calculationId = prefill.calculationId
+                if (prefill.containerId) updates.containerId = prefill.containerId
+
+                // Pull the calc's items + totals so the form has them on first render
+                if (prefill.calculationId) {
+                    const res = await fetch(`/api/dashboard/cbm-calculations/${prefill.calculationId}`, { cache: "no-store" })
+                    if (res.ok) {
+                        const data = await res.json()
+                        const calc = data.calculation
+                        if (calc) {
+                            updates.cbmVolume = Number(calc.totalCBM)
+                            updates.volumetricWeightKg = Number(calc.volumetricWeightKg ?? Number(calc.totalCBM) * 1000)
+                            updates.cargoItems = calc.cargoItems ?? []
+                            if (calc.totalWeightKg) updates.grossWeight = Number(calc.totalWeightKg)
+                        }
+                    }
+                }
+                if (!cancelled) setFormData(prev => ({ ...prev, ...updates }))
+            } catch {
+                // best-effort prefill — silent failure leaves the user to fill manually
+            }
+        }
+        hydrate()
+        return () => { cancelled = true }
+    }, [prefill])
 
     const updateFormData = (data: Partial<BookingFormData>) => {
         setFormData((prev) => ({ ...prev, ...data }))
@@ -65,7 +104,16 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
 
     const nextStep = () => {
         if (step === 1) {
-            if (!formData.containerId || formData.palletCount < 1) {
+            if (!formData.containerId) {
+                toast.error("Pick a container before continuing.")
+                return
+            }
+            if (formData.cargoType === "CUBE") {
+                if (!formData.calculationId || !formData.cbmVolume) {
+                    toast.error("Pick a saved CBM calculation for your cube booking.")
+                    return
+                }
+            } else if (formData.palletCount < 1) {
                 toast.error("Please select at least 1 pallet.")
                 return
             }
@@ -94,6 +142,7 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
 
         setSubmitting(true)
         try {
+            const isCube = formData.cargoType === "CUBE"
             const res = await fetch("/api/bookings", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -104,7 +153,10 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
                     vessel: formData.vessel,
                     voyageNumber: formData.voyageNumber,
                     etd: formData.sailingDate,
-                    palletCount: formData.palletCount,
+                    // Cargo type discriminator + mode-specific payload below.
+                    cargoType: isCube ? "CUBE" : "PALLET",
+                    palletCount: isCube ? 0 : formData.palletCount,
+                    calculationId: isCube ? formData.calculationId : null,
                     productId: formData.commodity,
                     commodityName: formData.commodityName,
                     hsCode: formData.hsCode,
@@ -176,10 +228,13 @@ export function BookingWizard({ onSuccess }: { onSuccess?: () => void }) {
             // silence unused-var warning when fileEntries path is taken
             void files
 
-            // Show a single outcome toast
+            // Show a single outcome toast (mode-aware volume copy)
+            const volumeLabel = data.cargoType === "CUBE"
+                ? `${(data.totalCBM ?? 0).toFixed(2)} m³`
+                : `${data.totalPallets} pallet(s)`
             if (files.length === 0) {
                 toast.success("Booking Submitted Successfully!", {
-                    description: `Reference: ${data.bookingReference} | ${data.totalPallets} pallet(s)`,
+                    description: `Reference: ${data.bookingReference} | ${volumeLabel}`,
                     duration: 5000,
                 })
             } else if (uploadedCount === files.length) {

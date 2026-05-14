@@ -131,7 +131,7 @@ C · Tools hub + saved calcs       ✅ DONE
    C.1 foundation                 ✅ DONE  → docs/cbm-cargo-type/phase-c1-tools-hub-and-crud.md
    C.2 presets + live-quote + smart-match  ✅ DONE  → docs/cbm-cargo-type/phase-c2-killer-feature-panels.md
    C.3 share + PDF + bulk paste   ✅ DONE  → docs/cbm-cargo-type/phase-c3-share-pdf-bulk-paste.md
-D · Booking wizard integration    ⏳ NEXT — cargo-type gate + saved-calc dropdown
+D · Booking wizard integration    ✅ DONE  → docs/cbm-cargo-type/phase-d-booking-integration.md
 E · Admin rate cards              ~cargoType discriminator + PER_CBM charge type
 F · Container creation + admin views ~Fleet scheduler picks cargo type; grid columns polymorphic
 G · Display surfaces              ~dashboard widgets, invoices, recent shipments

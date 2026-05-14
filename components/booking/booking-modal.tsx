@@ -21,13 +21,15 @@ import {
 import { Button } from "@/components/ui/button"
 import { BookingWizard } from "./booking-wizard"
 import { Ship, X } from "lucide-react"
+import type { BookingPrefill } from "@/hooks/use-booking-modal"
 
 interface BookingModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
+    prefill?: BookingPrefill | null
 }
 
-export function BookingModal({ open, onOpenChange }: BookingModalProps) {
+export function BookingModal({ open, onOpenChange, prefill }: BookingModalProps) {
     const [confirmClose, setConfirmClose] = useState(false)
 
     const handleCloseAttempt = () => {
@@ -75,7 +77,7 @@ export function BookingModal({ open, onOpenChange }: BookingModalProps) {
                     </DialogHeader>
 
                     <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
-                        <BookingWizard onSuccess={() => onOpenChange(false)} />
+                        <BookingWizard onSuccess={() => onOpenChange(false)} prefill={prefill} />
                     </div>
                 </DialogContent>
             </Dialog>

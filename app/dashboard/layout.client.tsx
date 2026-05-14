@@ -16,7 +16,7 @@ export function DashboardLayoutClient({
     children: React.ReactNode
 }) {
     const [isCollapsed, setIsCollapsed] = React.useState(false)
-    const { isOpen, onClose } = useBookingModal()
+    const { isOpen, onClose, prefill } = useBookingModal()
 
     return (
         <div className="flex min-h-screen bg-slate-50/50 dark:bg-slate-950/50">
@@ -65,7 +65,7 @@ export function DashboardLayoutClient({
                 </main>
             </div>
 
-            <BookingModal open={isOpen} onOpenChange={(open) => !open && onClose()} />
+            <BookingModal open={isOpen} onOpenChange={(open) => !open && onClose()} prefill={prefill} />
         </div>
     )
 }

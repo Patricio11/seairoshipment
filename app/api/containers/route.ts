@@ -32,6 +32,8 @@ export async function GET(request: NextRequest) {
         const productId = request.nextUrl.searchParams.get("productId");
         const temperature = request.nextUrl.searchParams.get("temperature");
         const sailingId = request.nextUrl.searchParams.get("sailingId");
+        const cargoTypeRaw = request.nextUrl.searchParams.get("cargoType");
+        const cargoType = cargoTypeRaw === "CUBE" || cargoTypeRaw === "PALLET" ? cargoTypeRaw : null;
 
         // Resolve productId → categoryId so we can filter on the consolidation unit
         let resolvedCategoryId: string | null = null;
@@ -73,8 +75,19 @@ export async function GET(request: NextRequest) {
             if (c.status !== "OPEN" && c.status !== "THRESHOLD_REACHED") {
                 reasons.push(c.status === "BOOKED" ? "Already booked with MetaShip" : `Status is ${c.status}`);
             }
-            if (c.maxCapacity - c.totalPallets < 1) {
-                reasons.push("Container is full");
+            // Capacity check varies by cargo type
+            if (c.cargoType === "CUBE") {
+                const maxCBM = c.maxCapacityCBM ? Number(c.maxCapacityCBM) : 0;
+                const usedCBM = c.totalCBM ? Number(c.totalCBM) : 0;
+                if (maxCBM <= 0) reasons.push("CBM capacity not configured");
+                else if (maxCBM - usedCBM < 0.01) reasons.push("Container is full");
+            } else {
+                if (c.maxCapacity - c.totalPallets < 1) {
+                    reasons.push("Container is full");
+                }
+            }
+            if (cargoType && c.cargoType !== cargoType) {
+                reasons.push(`Cargo-type mismatch — container is ${c.cargoType.toLowerCase()}-only`);
             }
             if (productMissingCategory) {
                 reasons.push("Selected product has no category — ask admin to assign one");
@@ -101,6 +114,9 @@ export async function GET(request: NextRequest) {
                 temperature: c.temperature,
                 categoryName: row.categoryName,
                 productName: row.categoryName,
+                cargoType: c.cargoType,
+                totalCBM: c.totalCBM ? Number(c.totalCBM) : 0,
+                maxCapacityCBM: c.maxCapacityCBM ? Number(c.maxCapacityCBM) : null,
             };
 
             if (reasons.length === 0) {
@@ -129,6 +145,9 @@ interface Slot {
     temperature: string | null;
     categoryName: string | null;
     productName: string | null;
+    cargoType: "PALLET" | "CUBE";
+    totalCBM: number;
+    maxCapacityCBM: number | null;
 }
 
 interface Excluded extends Slot {

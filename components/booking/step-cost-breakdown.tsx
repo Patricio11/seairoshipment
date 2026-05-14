@@ -25,8 +25,19 @@ export function StepCostBreakdown({ formData, updateFormData, onQuoteLoaded }: S
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
-        if (!formData.origin || !formData.destination || !formData.palletCount) {
-            setError("Missing route or pallet information.")
+        const isCube = formData.cargoType === "CUBE"
+        if (!formData.origin || !formData.destination) {
+            setError("Missing route information.")
+            setLoading(false)
+            return
+        }
+        if (!isCube && !formData.palletCount) {
+            setError("Missing pallet count.")
+            setLoading(false)
+            return
+        }
+        if (isCube && (!formData.cbmVolume || formData.cbmVolume <= 0)) {
+            setError("Pick a saved CBM calculation first.")
             setLoading(false)
             return
         }
@@ -50,10 +61,15 @@ export function StepCostBreakdown({ formData, updateFormData, onQuoteLoaded }: S
                 const params = new URLSearchParams({
                     origin: formData.origin,
                     destination: formData.destination,
-                    palletCount: String(formData.palletCount),
                     salesRateTypeId: formData.salesRateTypeId!,
                     containerId: formData.containerId,
+                    cargoType: formData.cargoType ?? "PALLET",
                 })
+                if (isCube) {
+                    params.set("cbmVolume", String(formData.cbmVolume))
+                } else {
+                    params.set("palletCount", String(formData.palletCount))
+                }
                 const res = await fetch(`/api/rates/quote?${params}`)
                 if (!res.ok) {
                     const data = await res.json()
@@ -76,7 +92,7 @@ export function StepCostBreakdown({ formData, updateFormData, onQuoteLoaded }: S
         fetchQuote()
         return () => { cancelled = true }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [formData.origin, formData.destination, formData.palletCount, formData.salesRateTypeId, formData.containerId])
+    }, [formData.origin, formData.destination, formData.palletCount, formData.cbmVolume, formData.cargoType, formData.salesRateTypeId, formData.containerId])
 
     if (loading) {
         return (
@@ -115,6 +131,14 @@ export function StepCostBreakdown({ formData, updateFormData, onQuoteLoaded }: S
         )
     }
 
+    const isCube = quote.cargoType === "CUBE"
+    const unitLabel = isCube ? "m³" : "pallet"
+    const unitQty = isCube ? (quote.cbmVolume ?? 0) : (quote.palletCount ?? formData.palletCount)
+    const originPerUnit = isCube ? (quote.originPerCBM ?? 0) : (quote.originPerPallet ?? 0)
+    const oceanPerUnit = isCube ? (quote.oceanPerCBM ?? 0) : (quote.oceanPerPallet ?? 0)
+    const destPerUnit = isCube ? (quote.destinationPerCBM ?? 0) : (quote.destinationPerPallet ?? 0)
+    const totalPerUnit = isCube ? (quote.totalPerCBM ?? 0) : (quote.totalPerPallet ?? 0)
+
     return (
         <div className="max-w-2xl mx-auto space-y-6">
             {/* Route header */}
@@ -129,10 +153,12 @@ export function StepCostBreakdown({ formData, updateFormData, onQuoteLoaded }: S
                 <div className="flex items-center justify-center gap-2">
                     <Badge variant="outline" className="text-xs">
                         <Ship className="h-3 w-3 mr-1" />
-                        {formData.palletCount} Pallets
+                        {isCube
+                            ? `${(quote.cbmVolume ?? 0).toFixed(2)} m³ Cube`
+                            : `${formData.palletCount} Pallets`}
                     </Badge>
                     <Badge variant="outline" className="text-xs bg-blue-50 text-brand-blue border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
-                        40ft HC Reefer
+                        {isCube ? "40ft HC Cube" : "40ft HC Reefer"}
                     </Badge>
                 </div>
             </div>
@@ -171,7 +197,7 @@ export function StepCostBreakdown({ formData, updateFormData, onQuoteLoaded }: S
                                 <span className="text-xs text-slate-500">Collection, handling, port charges</span>
                             </div>
                             <span className={`font-mono font-bold ${quote.hasOriginRates ? "text-slate-900 dark:text-white" : "text-slate-400"}`}>
-                                {quote.hasOriginRates ? formatZAR(quote.originPerPallet) : "—"}
+                                {quote.hasOriginRates ? formatZAR(originPerUnit) : "—"}
                             </span>
                         </div>
 
@@ -181,7 +207,7 @@ export function StepCostBreakdown({ formData, updateFormData, onQuoteLoaded }: S
                                 <span className="text-xs text-slate-500">Shipping line, BAF, surcharges</span>
                             </div>
                             <span className={`font-mono font-bold ${quote.hasOceanRates ? "text-slate-900 dark:text-white" : "text-slate-400"}`}>
-                                {quote.hasOceanRates ? formatZAR(quote.oceanPerPallet) : "—"}
+                                {quote.hasOceanRates ? formatZAR(oceanPerUnit) : "—"}
                             </span>
                         </div>
 
@@ -191,7 +217,7 @@ export function StepCostBreakdown({ formData, updateFormData, onQuoteLoaded }: S
                                 <span className="text-xs text-slate-500">Delivery, customs, terminal handling</span>
                             </div>
                             <span className={`font-mono font-bold ${quote.hasDestinationRates ? "text-slate-900 dark:text-white" : "text-slate-400"}`}>
-                                {quote.hasDestinationRates ? formatZAR(quote.destinationPerPallet) : "—"}
+                                {quote.hasDestinationRates ? formatZAR(destPerUnit) : "—"}
                             </span>
                         </div>
                     </div>
@@ -202,18 +228,20 @@ export function StepCostBreakdown({ formData, updateFormData, onQuoteLoaded }: S
                     <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/30 space-y-3">
                         <div className="flex justify-between items-center">
                             <div className="flex items-center gap-3">
-                                <span className="font-semibold text-slate-700 dark:text-slate-300">Cost per pallet</span>
+                                <span className="font-semibold text-slate-700 dark:text-slate-300">Cost per {unitLabel}</span>
                                 <Badge variant="secondary" className="text-xs font-mono">×1</Badge>
                             </div>
                             <span className="font-mono font-bold text-lg text-slate-900 dark:text-white">
-                                {formatZAR(quote.totalPerPallet)}
+                                {formatZAR(totalPerUnit)}
                             </span>
                         </div>
 
                         <div className="flex justify-between items-center">
                             <div className="flex items-center gap-3">
                                 <span className="font-bold text-slate-900 dark:text-white text-lg">Total</span>
-                                <Badge variant="secondary" className="text-xs font-mono">×{quote.palletCount}</Badge>
+                                <Badge variant="secondary" className="text-xs font-mono">
+                                    ×{isCube ? (unitQty as number).toFixed(2) : unitQty}
+                                </Badge>
                             </div>
                             <span className="font-mono font-black text-xl text-brand-blue">
                                 {formatZAR(quote.totalCost)}

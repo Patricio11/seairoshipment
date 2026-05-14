@@ -31,6 +31,8 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { BookingFormData, ContainerSlot } from "@/types"
 import { RequestContainerDialog } from "./request-container-dialog"
+import { CubeCalcPicker } from "./cube-calc-picker"
+import { CBM3DViz } from "@/components/cbm/cbm-3d-viz"
 
 interface Step2Props {
     formData: BookingFormData
@@ -133,6 +135,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
         salesRateTypeId: string,
         productId?: string,
         temperature?: string,
+        cargoType?: "PALLET" | "CUBE",
     ) => {
         if (!origin || !destination) {
             setOptions({ products: [], temperatures: [], sailings: [], totalContainers: 0 })
@@ -146,6 +149,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
             })
             if (productId) params.set("productId", productId)
             if (temperature) params.set("temperature", temperature)
+            if (cargoType) params.set("cargoType", cargoType)
             const res = await fetch(`/api/bookings/options?${params.toString()}`)
             if (res.ok) {
                 setOptions(await res.json())
@@ -167,9 +171,10 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                 formData.salesRateTypeId || "srs",
                 formData.commodity || undefined,
                 formData.temperature ?? undefined,
+                formData.cargoType ?? "PALLET",
             )
         }
-    }, [formData.origin, formData.destination, formData.salesRateTypeId, formData.commodity, formData.temperature, fetchOptions])
+    }, [formData.origin, formData.destination, formData.salesRateTypeId, formData.commodity, formData.temperature, formData.cargoType, fetchOptions])
 
     const selectedContainer = availableContainers.find(c => c.id === formData.containerId)
     const containerCapacity = selectedContainer?.maxCapacity || 20
@@ -199,6 +204,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
             const params = new URLSearchParams({
                 route,
                 salesRateTypeId: formData.salesRateTypeId || "srs",
+                cargoType: formData.cargoType ?? "PALLET",
             })
             if (formData.commodity) params.set("productId", formData.commodity)
             if (formData.temperature) params.set("temperature", formData.temperature)
@@ -313,6 +319,14 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
             salesRateTypeId: rateTypeId,
             // SCS carries no temperature — null sentinel means "dry". SRS clears so user picks.
             temperature: isDry ? null : "",
+            // SRS is always pallets. SCS defaults to PALLET; the cargo-type
+            // chooser flips it to CUBE when relevant. Clear any stale Cube
+            // state when toggling rate type.
+            cargoType: "PALLET",
+            calculationId: undefined,
+            cbmVolume: undefined,
+            volumetricWeightKg: undefined,
+            cargoItems: undefined,
             // Cascading clears — rate-type change can flip which products/sailings are available
             commodity: "",
             commodityName: "",
@@ -324,6 +338,22 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
             voyageNumber: undefined,
             vesselName: undefined,
         })
+    }
+
+    const handleCargoTypeSelect = (cargoType: "PALLET" | "CUBE") => {
+        // Cargo type changes invalidate the container pick — different containers
+        // serve different cargo types. Clear and let the user re-pick.
+        updateFormData({
+            cargoType,
+            containerId: "",
+            vessel: "",
+            calculationId: undefined,
+            cbmVolume: undefined,
+            volumetricWeightKg: undefined,
+            cargoItems: undefined,
+            palletCount: cargoType === "CUBE" ? 0 : 5,
+        })
+        if (viewStage !== "initial") setViewStage("initial")
     }
 
     const getStatusColor = () => {
@@ -422,6 +452,62 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                     })}
                                 </div>
                             </div>
+
+                            {/* Cargo Type — only relevant on SCS; SRS is always pallets */}
+                            {formData.salesRateTypeId === "scs" && (
+                                <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-800">
+                                    <div className="flex items-center gap-2 text-brand-blue">
+                                        <Boxes className="h-4 w-4" />
+                                        <span className="text-xs font-bold uppercase tracking-wider">Cargo Type</span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {[
+                                            {
+                                                id: "PALLET" as const,
+                                                label: "Pallet",
+                                                description: "Set per-pallet quantity (standard SCS)",
+                                            },
+                                            {
+                                                id: "CUBE" as const,
+                                                label: "Cube",
+                                                description: "Cargo measured in m³ (loose cartons, drums, mixed sizes)",
+                                            },
+                                        ].map(opt => {
+                                            const selected = (formData.cargoType ?? "PALLET") === opt.id
+                                            return (
+                                                <button
+                                                    key={opt.id}
+                                                    type="button"
+                                                    onClick={() => handleCargoTypeSelect(opt.id)}
+                                                    className={`flex flex-col items-start gap-1 p-4 rounded-2xl border-2 transition-all text-left ${
+                                                        selected
+                                                            ? "bg-blue-50 dark:bg-blue-900/20 border-brand-blue ring-2 ring-brand-blue/40 ring-offset-1"
+                                                            : "bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-700 hover:border-slate-300"
+                                                    }`}
+                                                >
+                                                    <span className={`text-sm font-bold ${selected ? "text-brand-blue" : "text-slate-700 dark:text-slate-300"}`}>
+                                                        {opt.label}
+                                                    </span>
+                                                    <span className="text-[11px] text-slate-500 leading-snug">
+                                                        {opt.description}
+                                                    </span>
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                    {formData.cargoType === "CUBE" && (
+                                        <p className="text-[11px] text-slate-500 leading-relaxed">
+                                            Cube bookings use a saved CBM calculation. Create one under
+                                            {" "}
+                                            <a href="/dashboard/tools/cbm-calculator" target="_blank" rel="noopener noreferrer" className="text-brand-blue font-semibold hover:underline">
+                                                Tools → CBM Calculator
+                                            </a>
+                                            {" "}
+                                            if you haven&apos;t already.
+                                        </p>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Route Section */}
                             <div className="space-y-4 pt-2 border-t border-slate-200 dark:border-slate-800">
@@ -956,91 +1042,167 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                 </Button>
                             </div>
 
-                            <ContainerScene
-                                preFilledCount={selectedContainer.preFilled}
-                                userAddedCount={count}
-                                type={selectedContainer.type}
-                                className="h-[300px] sm:h-[450px]"
-                            />
+                            {formData.cargoType === "CUBE" ? (
+                                <CBM3DViz
+                                    items={formData.cargoItems ?? []}
+                                    containerVolumeCBM={selectedContainer.maxCapacityCBM ?? 67.7}
+                                    className="h-[300px] sm:h-[450px]"
+                                />
+                            ) : (
+                                <ContainerScene
+                                    preFilledCount={selectedContainer.preFilled}
+                                    userAddedCount={count}
+                                    type={selectedContainer.type}
+                                    className="h-[300px] sm:h-[450px]"
+                                />
+                            )}
                         </div>
 
                         <div className="w-full lg:w-80 space-y-6">
                             <div className="bg-white dark:bg-slate-950 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm space-y-8">
-                                <div className="space-y-6">
-                                    <div>
-                                        <Label className="text-[10px] uppercase tracking-widest font-black text-slate-400 mb-2 block">Volume Allocation</Label>
-                                        <div className="flex justify-between items-baseline mb-4">
-                                            <span className="text-5xl font-black text-slate-900 dark:text-white">{count}</span>
-                                            <div className="text-right">
-                                                <p className="text-xs font-bold text-slate-500">Pallets</p>
-                                                <p className={`text-[10px] font-black uppercase ${getStatusColor()}`}>
-                                                    {count + selectedContainer.preFilled === containerCapacity ? "Limit Reached" : "Available"}
+                                {formData.cargoType === "CUBE" ? (
+                                    /* Cube branch — saved-calc picker + share-of-container bar */
+                                    <div className="space-y-6">
+                                        <div>
+                                            <Label className="text-[10px] uppercase tracking-widest font-black text-slate-400 mb-2 block">Volume Allocation</Label>
+                                            <div className="flex justify-between items-baseline mb-4">
+                                                <span className="text-4xl font-black text-slate-900 dark:text-white">
+                                                    {(formData.cbmVolume ?? 0).toFixed(2)}
+                                                </span>
+                                                <div className="text-right">
+                                                    <p className="text-xs font-bold text-slate-500">m³</p>
+                                                    <p className="text-[10px] font-black uppercase text-brand-blue">
+                                                        Cube booking
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <CubeCalcPicker
+                                                value={formData.calculationId}
+                                                onChange={(calc) => {
+                                                    if (calc) {
+                                                        updateFormData({
+                                                            calculationId: calc.id,
+                                                            cbmVolume: calc.cbmVolume,
+                                                            volumetricWeightKg: calc.cbmVolume * 1000,
+                                                            cargoItems: calc.cargoItems,
+                                                            grossWeight: calc.weightKg || formData.grossWeight,
+                                                        })
+                                                    } else {
+                                                        updateFormData({
+                                                            calculationId: undefined,
+                                                            cbmVolume: undefined,
+                                                            volumetricWeightKg: undefined,
+                                                            cargoItems: undefined,
+                                                        })
+                                                    }
+                                                }}
+                                                remainingCBM={(selectedContainer.maxCapacityCBM ?? 0) - (selectedContainer.totalCBM ?? 0)}
+                                            />
+                                        </div>
+
+                                        {/* Share-of-container bar */}
+                                        {(selectedContainer.maxCapacityCBM ?? 0) > 0 && (
+                                            <div className="space-y-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+                                                <div className="flex justify-between text-xs font-bold">
+                                                    <span className="text-slate-400 uppercase tracking-tighter">Your Share</span>
+                                                    <span className="text-brand-blue">
+                                                        {Math.round(((formData.cbmVolume ?? 0) / (selectedContainer.maxCapacityCBM ?? 1)) * 100)}%
+                                                    </span>
+                                                </div>
+                                                <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
+                                                    <div
+                                                        className="bg-slate-300 dark:bg-slate-600 h-full border-r border-white/20"
+                                                        style={{ width: `${((selectedContainer.totalCBM ?? 0) / (selectedContainer.maxCapacityCBM ?? 1)) * 100}%` }}
+                                                    />
+                                                    <div
+                                                        className="bg-brand-blue h-full transition-all duration-300"
+                                                        style={{ width: `${((formData.cbmVolume ?? 0) / (selectedContainer.maxCapacityCBM ?? 1)) * 100}%` }}
+                                                    />
+                                                </div>
+                                                <p className="text-[10px] text-slate-500">
+                                                    Container max {(selectedContainer.maxCapacityCBM ?? 0).toFixed(1)} m³ · already booked {(selectedContainer.totalCBM ?? 0).toFixed(1)} m³
                                                 </p>
                                             </div>
-                                        </div>
-                                        <Slider
-                                            value={[count]}
-                                            max={remainingCapacity}
-                                            min={remainingCapacity < 5 ? 1 : 5}
-                                            step={1}
-                                            onValueChange={(vals) => updateFormData({ palletCount: vals[0] })}
-                                            className="py-4"
-                                        />
-                                        {remainingCapacity < 5 && (
-                                            <p className="text-[10px] text-amber-500 font-bold mt-1">
-                                                Only {remainingCapacity} spot{remainingCapacity !== 1 ? "s" : ""} left — minimum reduced to 1 pallet.
-                                            </p>
                                         )}
                                     </div>
-
-                                    {/* Nett Weight & Gross Weight */}
-                                    <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-                                        <Label className="text-[10px] uppercase tracking-widest font-black text-slate-400 block">Weight Details</Label>
-                                        <div className="space-y-3">
-                                            <div className="space-y-1.5">
-                                                <Label className="text-xs font-semibold text-slate-600">Nett Weight (kg)</Label>
-                                                <Input
-                                                    type="number"
-                                                    min={0}
-                                                    step={0.1}
-                                                    placeholder="0.00"
-                                                    value={formData.nettWeight || ""}
-                                                    onChange={(e) => updateFormData({ nettWeight: parseFloat(e.target.value) || 0 })}
-                                                    className="h-10 bg-slate-50 dark:bg-slate-900 font-medium"
-                                                />
+                                ) : (
+                                    /* Pallet branch — existing slider + weight inputs + share bar */
+                                    <div className="space-y-6">
+                                        <div>
+                                            <Label className="text-[10px] uppercase tracking-widest font-black text-slate-400 mb-2 block">Volume Allocation</Label>
+                                            <div className="flex justify-between items-baseline mb-4">
+                                                <span className="text-5xl font-black text-slate-900 dark:text-white">{count}</span>
+                                                <div className="text-right">
+                                                    <p className="text-xs font-bold text-slate-500">Pallets</p>
+                                                    <p className={`text-[10px] font-black uppercase ${getStatusColor()}`}>
+                                                        {count + selectedContainer.preFilled === containerCapacity ? "Limit Reached" : "Available"}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div className="space-y-1.5">
-                                                <Label className="text-xs font-semibold text-slate-600">Gross Weight (kg)</Label>
-                                                <Input
-                                                    type="number"
-                                                    min={0}
-                                                    step={0.1}
-                                                    placeholder="0.00"
-                                                    value={formData.grossWeight || ""}
-                                                    onChange={(e) => updateFormData({ grossWeight: parseFloat(e.target.value) || 0 })}
-                                                    className="h-10 bg-slate-50 dark:bg-slate-900 font-medium"
+                                            <Slider
+                                                value={[count]}
+                                                max={remainingCapacity}
+                                                min={remainingCapacity < 5 ? 1 : 5}
+                                                step={1}
+                                                onValueChange={(vals) => updateFormData({ palletCount: vals[0] })}
+                                                className="py-4"
+                                            />
+                                            {remainingCapacity < 5 && (
+                                                <p className="text-[10px] text-amber-500 font-bold mt-1">
+                                                    Only {remainingCapacity} spot{remainingCapacity !== 1 ? "s" : ""} left — minimum reduced to 1 pallet.
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        {/* Nett Weight & Gross Weight */}
+                                        <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                                            <Label className="text-[10px] uppercase tracking-widest font-black text-slate-400 block">Weight Details</Label>
+                                            <div className="space-y-3">
+                                                <div className="space-y-1.5">
+                                                    <Label className="text-xs font-semibold text-slate-600">Nett Weight (kg)</Label>
+                                                    <Input
+                                                        type="number"
+                                                        min={0}
+                                                        step={0.1}
+                                                        placeholder="0.00"
+                                                        value={formData.nettWeight || ""}
+                                                        onChange={(e) => updateFormData({ nettWeight: parseFloat(e.target.value) || 0 })}
+                                                        className="h-10 bg-slate-50 dark:bg-slate-900 font-medium"
+                                                    />
+                                                </div>
+                                                <div className="space-y-1.5">
+                                                    <Label className="text-xs font-semibold text-slate-600">Gross Weight (kg)</Label>
+                                                    <Input
+                                                        type="number"
+                                                        min={0}
+                                                        step={0.1}
+                                                        placeholder="0.00"
+                                                        value={formData.grossWeight || ""}
+                                                        onChange={(e) => updateFormData({ grossWeight: parseFloat(e.target.value) || 0 })}
+                                                        className="h-10 bg-slate-50 dark:bg-slate-900 font-medium"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between text-xs font-bold">
+                                                <span className="text-slate-400 uppercase tracking-tighter">Your Share</span>
+                                                <span className="text-brand-blue">{Math.round((count / containerCapacity) * 100)}%</span>
+                                            </div>
+                                            <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
+                                                <div
+                                                    className="bg-slate-300 dark:bg-slate-600 h-full border-r border-white/20"
+                                                    style={{ width: `${(selectedContainer.preFilled / containerCapacity) * 100}%` }}
+                                                />
+                                                <div
+                                                    className="bg-brand-blue h-full transition-all duration-300"
+                                                    style={{ width: `${(count / containerCapacity) * 100}%` }}
                                                 />
                                             </div>
                                         </div>
                                     </div>
-
-                                    <div className="space-y-4">
-                                        <div className="flex justify-between text-xs font-bold">
-                                            <span className="text-slate-400 uppercase tracking-tighter">Your Share</span>
-                                            <span className="text-brand-blue">{Math.round((count / containerCapacity) * 100)}%</span>
-                                        </div>
-                                        <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
-                                            <div
-                                                className="bg-slate-300 dark:bg-slate-600 h-full border-r border-white/20"
-                                                style={{ width: `${(selectedContainer.preFilled / containerCapacity) * 100}%` }}
-                                            />
-                                            <div
-                                                className="bg-brand-blue h-full transition-all duration-300"
-                                                style={{ width: `${(count / containerCapacity) * 100}%` }}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
+                                )}
                             </div>
                         </div>
                     </motion.div>

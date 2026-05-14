@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { Loader2, Ship, Clock, AlertCircle, ArrowRight, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { bookingModalStore } from "@/hooks/use-booking-modal"
 import { cn } from "@/lib/utils"
 
 interface ContainerMatch {
@@ -153,14 +154,16 @@ export function SmartMatchPanel({ calculationId, refreshKey }: SmartMatchPanelPr
                                     </div>
                                 </div>
                                 <Button
-                                    asChild
                                     size="sm"
                                     variant="outline"
+                                    onClick={() => bookingModalStore.onOpenWithPrefill({
+                                        cargoType: "CUBE",
+                                        calculationId,
+                                        containerId: m.containerId,
+                                    })}
                                     className="mt-2 w-full border-brand-blue/40 text-brand-blue hover:bg-brand-blue/5 h-8 text-xs"
                                 >
-                                    <a href={`/dashboard/bookings/new?calculationId=${encodeURIComponent(calculationId)}&containerId=${encodeURIComponent(m.containerId)}`}>
-                                        Book this container <ArrowRight className="ml-1.5 h-3 w-3" />
-                                    </a>
+                                    Book this container <ArrowRight className="ml-1.5 h-3 w-3" />
                                 </Button>
                             </li>
                         )

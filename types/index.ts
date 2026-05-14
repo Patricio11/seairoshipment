@@ -88,6 +88,22 @@ export interface BookingFormData {
     nettWeight?: number;
     grossWeight?: number;
     temperature: string | null;   // null = SCS / dry container; "" = SRS not yet picked
+    // Cargo type — Pallet keeps the existing palletCount flow; Cube uses
+    // calculationId + cargoItems + cbmVolume below. SRS bookings are always
+    // PALLET; SCS bookings can be either. Defaults to "PALLET".
+    cargoType?: "PALLET" | "CUBE";
+    calculationId?: string;        // FK soft-reference to cargo_calculations
+    cbmVolume?: number;            // total volume in m³ (server recomputes from calc)
+    volumetricWeightKg?: number;   // sea volumetric weight (cbm × 1000)
+    cargoItems?: Array<{           // snapshot from the calc at booking time
+        id: string;
+        label?: string;
+        lengthMm: number;
+        widthMm: number;
+        heightMm: number;
+        weightKg: number;
+        quantity: number;
+    }>;
     consigneeName: string;
     consigneeAddress: string;
     collectionAddresses: Array<{ label?: string; address: string }>;
@@ -108,6 +124,9 @@ export interface ContainerSlot {
     maxCapacity: number;
     date: string;
     type: "20FT" | "40FT";
+    cargoType?: "PALLET" | "CUBE";
+    totalCBM?: number;
+    maxCapacityCBM?: number | null;
 }
 
 export interface SailingSchedule {
@@ -131,15 +150,32 @@ export interface MetaShipProduct {
     description: string;
 }
 
+/**
+ * Quote response from /api/rates/quote — polymorphic shape:
+ *   - PALLET quotes carry per-pallet fields and `palletCount`
+ *   - CUBE quotes carry per-CBM fields and `cbmVolume`
+ * The `cargoType` discriminator field lets the renderer pick the right
+ * accessor without inferring.
+ */
 export interface CostBreakdown {
-    originPerPallet: number;
-    oceanPerPallet: number;
-    destinationPerPallet: number;
-    totalPerPallet: number;
+    cargoType?: "PALLET" | "CUBE";
+    // PALLET-only fields
+    originPerPallet?: number;
+    oceanPerPallet?: number;
+    destinationPerPallet?: number;
+    totalPerPallet?: number;
+    palletCount?: number;
+    // CUBE-only fields
+    originPerCBM?: number;
+    oceanPerCBM?: number;
+    destinationPerCBM?: number;
+    totalPerCBM?: number;
+    cbmVolume?: number;
+    containerVolumeCBM?: number;
+    // Shared
     totalCost: number;
     depositAmount: number;
     balanceAmount: number;
-    palletCount: number;
     originName: string;
     destinationName: string;
     hasOriginRates: boolean;

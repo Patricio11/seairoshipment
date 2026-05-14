@@ -35,18 +35,37 @@ export async function GET(request: NextRequest) {
         const salesRateTypeId = url.searchParams.get("salesRateTypeId") || "srs";
         const productId = url.searchParams.get("productId");
         const temperature = url.searchParams.get("temperature");
+        const cargoTypeRaw = url.searchParams.get("cargoType");
+        const cargoType = cargoTypeRaw === "CUBE" || cargoTypeRaw === "PALLET" ? cargoTypeRaw : null;
 
         if (!route) {
             return NextResponse.json({ error: "route is required" }, { status: 400 });
         }
 
-        // Base filter: bookable containers on this route + service type
-        const openFilter = and(
+        // Base filter: bookable containers on this route + service type. Capacity
+        // check differs by cargo type: PALLET = remaining pallet slots ≥ 1,
+        // CUBE = remaining CBM > 0.
+        const conds = [
             eq(containers.route, route),
             eq(containers.salesRateTypeId, salesRateTypeId),
             inArray(containers.status, ["OPEN", "THRESHOLD_REACHED"]),
-            sql`${containers.maxCapacity} - ${containers.totalPallets} >= 1`,
-        );
+        ];
+        if (cargoType) {
+            conds.push(eq(containers.cargoType, cargoType));
+            if (cargoType === "CUBE") {
+                conds.push(sql`COALESCE(${containers.maxCapacityCBM}, 0) - COALESCE(${containers.totalCBM}, 0) > 0`);
+            } else {
+                conds.push(sql`${containers.maxCapacity} - ${containers.totalPallets} >= 1`);
+            }
+        } else {
+            // No cargoType filter — fall back to either condition holding.
+            conds.push(sql`
+                (${containers.cargoType} = 'PALLET' AND ${containers.maxCapacity} - ${containers.totalPallets} >= 1)
+                OR
+                (${containers.cargoType} = 'CUBE' AND COALESCE(${containers.maxCapacityCBM}, 0) - COALESCE(${containers.totalCBM}, 0) > 0)
+            `);
+        }
+        const openFilter = and(...conds);
 
         const matching = await db.select().from(containers).where(openFilter);
 
