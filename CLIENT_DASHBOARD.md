@@ -130,6 +130,46 @@ ongoing maintenance.
 
 ---
 
+## Phase 3 — Tools section + Cube booking path ✅ DONE (CBM rollout, Phases C–G)
+
+### New surface: `/dashboard/tools`
+
+The dashboard sidebar gained a **Tools** entry pointing at a tools hub
+([app/dashboard/tools/page.tsx](app/dashboard/tools/page.tsx)). The first
+available tool is the **CBM Calculator** under
+`/dashboard/tools/cbm-calculator`. Future tools (pallet-fit, chargeable
+weight, container loading planner, ETA, HS-code lookup, etc.) slot into
+the same hub — see [CBM_CARGO_TYPE.md § Tier 3](CBM_CARGO_TYPE.md) for
+the roadmap.
+
+The CBM calculator section ships with:
+- Named saved calculations (CRUD per user)
+- 3D viz (re-uses `@react-three/fiber`)
+- **Live SCS quote** from the user's typical/last route
+- **Smart-match Containers** — shows which open containers fit the cargo, with cut-off urgency
+- **Bulk paste from packing list** + CSV upload
+- **Share-by-link** for consignee/buyer confirmation
+- **Cargo item presets** (admin-curated by product category + user-saved)
+- Sustainability score per CBM (sea ≈ 95 % less CO2 than air)
+- PDF download
+
+### Booking wizard now branches on cargo type
+
+`/dashboard/bookings` and the booking modal accept Pallet *or* Cube
+bookings:
+- **Pallet**: existing slider-driven flow (unchanged for SRS, still works for SCS-Pallet containers).
+- **Cube**: pick a CUBE container, pick a saved calculation, see the 3D viz inline + correct m³-based quote. First-time users get a "Create your first calculation" CTA that opens the calculator in a new tab so wizard state survives.
+
+### Polymorphic display everywhere
+
+Every "N pallets" string on the dashboard now branches:
+- Recent Shipments table, My Bookings widget, bookings list page, booking detail dialog, invoice view dialog (line items + route header).
+- For PALLET it renders `{palletCount}`; for CUBE it renders `{cbmVolume.toFixed(2)} m³`.
+
+See [docs/cbm-cargo-type/phase-g-display-surfaces.md](docs/cbm-cargo-type/phase-g-display-surfaces.md) for the file-level inventory.
+
+---
+
 ## Reality check / deferred items
 
 - **Cut-off accuracy** — `etd - 48h` is industry-typical but not authoritative. If MetaShip exposes a real `cutoffAt`, swap [app/api/dashboard/overview/route.ts:cutoffFromEtd](app/api/dashboard/overview/route.ts) for that field.

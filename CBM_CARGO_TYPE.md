@@ -135,7 +135,7 @@ D · Booking wizard integration    ✅ DONE  → docs/cbm-cargo-type/phase-d-boo
 E · Admin rate cards              ✅ DONE  → docs/cbm-cargo-type/phase-e-admin-rate-cards.md
 F · Container creation + admin views ✅ DONE  → docs/cbm-cargo-type/phase-f-container-creation-and-admin-views.md
 G · Display surfaces              ✅ DONE  → docs/cbm-cargo-type/phase-g-display-surfaces.md
-H · Polish + tracker updates      ~empty states, copy, related doc tweaks
+H · Polish + tracker updates      ✅ DONE  → docs/cbm-cargo-type/phase-h-polish-and-doc-updates.md
 ```
 
 Each phase ships independently. A → B → C is the critical path for any Cube booking to be possible; D depends on C; E unblocks correct billing; F polishes admin; G is read-side polish; H is docs.
@@ -393,12 +393,14 @@ Easy to expand later — the seed lives in `app/api/admin/cargo-item-presets/see
 
 ---
 
-## Phase H — Polish + tracker updates
+## Phase H — Polish + tracker updates ✅ DONE
 
-- [ ] Empty-state copy + tooltips wherever a new field appears
-- [ ] Update [CLIENT_DASHBOARD.md](CLIENT_DASHBOARD.md) noting the new Tools section + Cube booking path
-- [ ] Update [SCS_SRS_RULES.md](SCS_SRS_RULES.md) noting Cube as a new SCS mode
-- [ ] Marketing page for the standalone CBM calculator — **out of scope here** but flagged in [SEO_PLAYBOOK.md](SEO_PLAYBOOK.md) as a future SEO target ("cbm calculator south africa", "shared container cbm")
+**Detailed write-up:** [docs/cbm-cargo-type/phase-h-polish-and-doc-updates.md](docs/cbm-cargo-type/phase-h-polish-and-doc-updates.md)
+
+- [x] Empty-state copy + tooltips wherever a new field appears — audited in Phase H. Calculator first-time empty state, cube-calc-picker "Create your first calculation" CTA, booking wizard cargo-type tile descriptions, and admin fleet scheduler Cargo Type help text were all wired up in earlier phases (C, D, F). Nothing new to ship.
+- [x] Updated [CLIENT_DASHBOARD.md](CLIENT_DASHBOARD.md) with a new "Phase 3 — Tools section + Cube booking path" section noting the new surfaces.
+- [x] Updated [SCS_SRS_RULES.md](SCS_SRS_RULES.md) with a "Cargo type (Pallet vs Cube)" subsection explaining the SRS-always-pallet rule and the SCS Pallet/Cube split.
+- [x] Flagged the public CBM calculator landing as a future SEO target in [SEO_PLAYBOOK.md](SEO_PLAYBOOK.md) (§7b) with target queries, scope, and out-of-scope notes — kept separate from the playbook's core execution.
 
 ---
 

@@ -410,6 +410,51 @@ After the user has done the manual steps and redeployed, Claude (or the user) sh
 
 ---
 
+## 7b. Future SEO target — public CBM Calculator landing
+
+After the CBM rollout (see [CBM_CARGO_TYPE.md](CBM_CARGO_TYPE.md)) we
+ship a logged-in CBM calculator at `/dashboard/tools/cbm-calculator`.
+A public, marketing-friendly version of the same calculator is a high-
+intent SEO opportunity. Filed here so it doesn't get lost.
+
+**Target queries** (high-intent, low-competition in our region):
+- `cbm calculator south africa`
+- `shared container cbm`
+- `lcl cbm calculator`
+- `cargo volume calculator south africa`
+- `chargeable weight calculator sea freight`
+- `cube vs pallet container loading`
+
+**Why this is worth doing**:
+- The calculator is *the* gateway tool exporters reach for. Bring them to
+  it for free, then convert via "Quote this on the SRS network" + "Sign
+  up to save calculations".
+- Generic calculators on the web (pier2pier, cbm3.net) outrank us today
+  for the volume-only queries because they have the topical authority.
+  Our differentiator — live carrier rates + actual containers on the
+  client's lane — only shows up *after* sign-in. A public version
+  surfaces that differentiator earlier.
+
+**Scope when we get to it** (separate phase, not part of this playbook's
+core execution):
+- New public route at `/tools/cbm-calculator` (server component) reusing
+  `<CBMCalculator>` and `<CBM3DViz>` in read-only-savings mode
+  (calculation persists to localStorage, not the DB).
+- Inline "Sign in to save this" + "Get a real quote on the SRS network"
+  CTAs at strong scroll positions.
+- Page-level metadata + FAQPage JSON-LD targeting the queries above.
+- Sitemap entry; expected indexable within a week of launch.
+- No paywalled features below the fold — Google will deprioritise a
+  page that locks the substance behind auth.
+
+**Out of scope for this future phase**:
+- Bulk paste / CSV upload (auth-only — they leave PII traces).
+- Saved-calculation library (auth-only by design).
+- Sharing-by-link from the public page (would require an unauth share
+  token table; the logged-in flow already has one).
+
+---
+
 ## 8. What this playbook deliberately does NOT do
 
 - **No GA4 / Plausible / Fathom integration** — Vercel Analytics covers it without a cookie banner. Add only if the user explicitly asks.

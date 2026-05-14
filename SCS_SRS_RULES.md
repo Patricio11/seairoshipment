@@ -13,6 +13,14 @@ orthogonal concepts:
   on cargo. Ambient on a reefer is a real use-case (e.g. chocolate /
   confectionery that needs controlled-but-not-chilled conditions).
 
+### Cargo type (Pallet vs Cube)
+
+A second dimension was added in the CBM rollout. See [CBM_CARGO_TYPE.md](CBM_CARGO_TYPE.md) for the full story.
+
+- **SRS** is **always Pallet** — reefer cargo is always palletised, so SRS containers, rate cards, and bookings all force `cargoType: "PALLET"`.
+- **SCS** can be either **Pallet** OR **Cube**. Cargo type is **locked at creation** on the container, the rate card, and the booking — same lock pattern as `salesRateTypeId`. Once an SCS container is created as Cube, all allocations on it are m³-priced and the calculator-driven booking flow applies; once created as Pallet, it behaves like a traditional pallet-counted SCS container.
+- The booking wizard only asks the Pallet/Cube question when SCS *and* the chosen route has both modes open; if only one mode is available, the wizard auto-selects it.
+
 Before this change SCS was treated as "ambient-only" and SRS was
 explicitly *blocked from* ambient — which conflated the container type
 with a temperature regime and made chocolate-style products unbookable.
