@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { locations } from "@/lib/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { and, eq, asc } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 export async function GET(request: NextRequest) {
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const type = searchParams.get("type");
 
-        let query = db.select().from(locations).orderBy(asc(locations.type), asc(locations.name));
+        const query = db.select().from(locations).orderBy(asc(locations.type), asc(locations.name));
 
         if (type) {
             const results = await db
@@ -44,13 +44,32 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "name, code, country, and type are required" }, { status: 400 });
         }
 
+        const normalisedCode = String(code).toUpperCase();
+
+        // Duplicate guard — Cape Town can be both ORIGIN and DESTINATION
+        // (export today, import tomorrow), so the uniqueness is (code, type),
+        // not code alone. Reject before INSERT so the UI gets a friendly 400
+        // instead of a generic 500 from the DB constraint.
+        const [existing] = await db
+            .select()
+            .from(locations)
+            .where(and(eq(locations.code, normalisedCode), eq(locations.type, type)))
+            .limit(1);
+
+        if (existing) {
+            return NextResponse.json(
+                { error: `A ${String(type).toLowerCase()} location with code ${normalisedCode} already exists.` },
+                { status: 400 }
+            );
+        }
+
         const id = `LOC-${nanoid(6).toUpperCase()}`;
         const [created] = await db
             .insert(locations)
             .values({
                 id,
                 name,
-                code: code.toUpperCase(),
+                code: normalisedCode,
                 country,
                 type,
                 coordinates: coordinates || null,
