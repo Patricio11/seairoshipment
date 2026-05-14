@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
             categoryId,
             temperature,
             salesRateTypeId,
+            cargoType: cargoTypeRaw,
         } = body;
 
         if (!route || !containerTypeId || !sailingId || !categoryId || !temperature) {
@@ -118,6 +119,12 @@ export async function POST(request: NextRequest) {
         }
 
         const derivedSalesRateTypeId = salesRateTypeId || (ct.type === "DRY" ? "scs" : "srs");
+
+        // Cargo type lock: SRS (reefer) is always PALLET. SCS (dry) honours the request.
+        const cargoType: "PALLET" | "CUBE" = derivedSalesRateTypeId === "srs"
+            ? "PALLET"
+            : (cargoTypeRaw === "CUBE" ? "CUBE" : "PALLET");
+
         if (category.salesRateTypeId !== derivedSalesRateTypeId) {
             return NextResponse.json(
                 { error: `Category is for ${category.salesRateTypeId.toUpperCase()} but this container type is ${derivedSalesRateTypeId.toUpperCase()}` },
@@ -170,6 +177,9 @@ export async function POST(request: NextRequest) {
                 eta: sailing.eta,
                 totalPallets: 0,
                 maxCapacity: ct.maxPallets,
+                cargoType,
+                totalCBM: "0",
+                maxCapacityCBM: ct.volumeCBM ?? null,
                 status: "OPEN",
                 salesRateTypeId: derivedSalesRateTypeId,
             })

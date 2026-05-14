@@ -112,6 +112,9 @@ interface ContainerData {
     eta: string | null
     totalPallets: number
     maxCapacity: number
+    cargoType: "PALLET" | "CUBE"
+    totalCBM: string | null
+    maxCapacityCBM: string | null
     status: string
     metashipOrderNo: string | null
     metashipReference: string | null
@@ -133,6 +136,7 @@ interface ContainerTypeOption {
     size: string
     type: string
     maxPallets: number
+    volumeCBM: string | null
     active: boolean
 }
 
@@ -170,6 +174,7 @@ interface ContainerForm {
     temperature: "frozen" | "chilled" | "ambient" | ""
     categoryId: string
     maxCapacity: number
+    cargoType: "PALLET" | "CUBE"
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -188,6 +193,7 @@ const EMPTY_FORM: ContainerForm = {
     temperature: "",
     categoryId: "",
     maxCapacity: 20,
+    cargoType: "PALLET",
 }
 
 export function FleetScheduler() {
@@ -288,6 +294,7 @@ export function FleetScheduler() {
             temperature: (container.temperature as "frozen" | "chilled" | "ambient" | null) || "",
             categoryId: container.categoryId || "",
             maxCapacity: container.maxCapacity,
+            cargoType: container.cargoType || "PALLET",
         })
         setDialogOpen(true)
     }
@@ -316,6 +323,9 @@ export function FleetScheduler() {
             const route = `${formData.origin}-${formData.destination}`
             const isEdit = !!editingContainer
 
+            // REEFER (SRS) is always PALLET. DRY (SCS) honours the form choice.
+            const effectiveCargoType = selectedContainerType?.type === "DRY" ? formData.cargoType : "PALLET"
+
             const res = await fetch(
                 isEdit ? `/api/admin/containers/${editingContainer!.id}` : "/api/admin/containers",
                 {
@@ -328,6 +338,9 @@ export function FleetScheduler() {
                         // Dry containers carry no temperature regime
                         temperature: selectedContainerType?.type === "DRY" ? null : formData.temperature,
                         categoryId: formData.categoryId,
+                        // cargoType is locked at creation; PUT ignores it server-side but
+                        // we still send it on POST so a fresh container picks the right mode.
+                        ...(isEdit ? {} : { cargoType: effectiveCargoType }),
                     }),
                 }
             )
@@ -408,11 +421,14 @@ export function FleetScheduler() {
             const nextTemp: "frozen" | "chilled" | "ambient" | "" = ct?.type === "DRY"
                 ? ""
                 : prev.temperature
+            // Reefer (SRS) is always PALLET; reset cargoType if we just switched to it.
+            const nextCargoType: "PALLET" | "CUBE" = ct?.type === "REEFER" ? "PALLET" : prev.cargoType
             return {
                 ...prev,
                 containerTypeId: ctId,
                 maxCapacity: ct?.maxPallets || 20,
                 temperature: nextTemp,
+                cargoType: nextCargoType,
                 // Category scope changes with service type — clear to force re-pick
                 categoryId: "",
             }
@@ -564,6 +580,11 @@ export function FleetScheduler() {
                                                         <Apple className="h-3 w-3 mr-1" /> {container.categoryName}
                                                     </Badge>
                                                 )}
+                                                {container.cargoType === "CUBE" && (
+                                                    <Badge className="bg-purple-500/15 text-purple-400 border-none text-[10px]">
+                                                        m³ Cube
+                                                    </Badge>
+                                                )}
                                             </h3>
                                             <p className="text-slate-500 text-sm font-medium">
                                                 {container.vessel} • {container.containerTypeName || container.type} • {container.id}
@@ -580,14 +601,29 @@ export function FleetScheduler() {
                                     </div>
 
                                     <div className="flex items-center gap-3">
-                                        {/* Pallet counter */}
-                                        <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-lg px-4 py-2">
-                                            <Package className="h-4 w-4 text-slate-500" />
-                                            <span className={`text-2xl font-black ${container.totalPallets >= 15 ? "text-amber-400" : "text-white"}`}>
-                                                {container.totalPallets}
-                                            </span>
-                                            <span className="text-slate-500 text-sm">/ {container.maxCapacity}</span>
-                                        </div>
+                                        {/* Capacity counter — CUBE shows CBM, PALLET shows pallet count */}
+                                        {container.cargoType === "CUBE" ? (() => {
+                                            const usedCBM = Number(container.totalCBM ?? 0)
+                                            const maxCBM = Number(container.maxCapacityCBM ?? 0)
+                                            const nearFull = maxCBM > 0 && usedCBM / maxCBM >= 0.75
+                                            return (
+                                                <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-lg px-4 py-2">
+                                                    <Package className="h-4 w-4 text-slate-500" />
+                                                    <span className={`text-2xl font-black ${nearFull ? "text-amber-400" : "text-white"}`}>
+                                                        {usedCBM.toFixed(2)}
+                                                    </span>
+                                                    <span className="text-slate-500 text-sm">/ {maxCBM > 0 ? `${maxCBM.toFixed(1)} m³` : "— m³"}</span>
+                                                </div>
+                                            )
+                                        })() : (
+                                            <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-lg px-4 py-2">
+                                                <Package className="h-4 w-4 text-slate-500" />
+                                                <span className={`text-2xl font-black ${container.totalPallets >= 15 ? "text-amber-400" : "text-white"}`}>
+                                                    {container.totalPallets}
+                                                </span>
+                                                <span className="text-slate-500 text-sm">/ {container.maxCapacity}</span>
+                                            </div>
+                                        )}
 
                                         {container.status === "THRESHOLD_REACHED" && !container.metashipOrderNo && (
                                             <Button
@@ -847,6 +883,40 @@ export function FleetScheduler() {
                                     />
                                 </div>
                             </div>
+
+            {/* Step 3b: Cargo Type — SCS (DRY) only. SRS (reefer) is always PALLET, so the field is hidden. */}
+                            {selectedContainerType?.type === "DRY" && (
+                                <div className="border-t border-slate-800/50 pt-4">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">3b. Cargo Type</p>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {(["PALLET", "CUBE"] as const).map(ct => {
+                                            const selected = formData.cargoType === ct
+                                            const label = ct === "PALLET" ? "Pallet" : "Cube (per m³)"
+                                            return (
+                                                <button
+                                                    key={ct}
+                                                    type="button"
+                                                    disabled={!!editingContainer}
+                                                    onClick={() => setFormData({ ...formData, cargoType: ct })}
+                                                    className={cn(
+                                                        "flex items-center justify-center h-9 rounded-lg border text-xs font-bold transition-all",
+                                                        !!editingContainer && "opacity-60 cursor-not-allowed",
+                                                        !selected && "border-slate-700 text-slate-400 hover:border-brand-blue hover:text-white",
+                                                        selected && "border-brand-blue bg-brand-blue/15 text-brand-blue"
+                                                    )}
+                                                >
+                                                    {label}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 mt-1.5">
+                                        {editingContainer
+                                            ? "Cargo type is locked after creation."
+                                            : "Pallet: per-pallet counting. Cube: m³-based booking with a CBM calculator."}
+                                    </p>
+                                </div>
+                            )}
 
             {/* Step 4: Temperature — hidden for Dry containers (no temperature regime) */}
                             {selectedContainerType?.type === "DRY" ? (

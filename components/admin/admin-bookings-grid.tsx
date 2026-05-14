@@ -64,6 +64,8 @@ interface ContainerAllocation {
     allocation: {
         id: string
         palletCount: number
+        cargoType?: "PALLET" | "CUBE" | null
+        cbmVolume?: string | null
         commodityName: string | null
         hsCode: string | null
         nettWeight: string | null
@@ -92,6 +94,9 @@ interface ContainerData {
     eta: string | null
     totalPallets: number
     maxCapacity: number
+    cargoType?: "PALLET" | "CUBE" | null
+    totalCBM?: string | null
+    maxCapacityCBM?: string | null
     status: string
     salesRateTypeId: string
     metashipOrderNo: string | null
@@ -106,6 +111,8 @@ interface PendingRequest {
     allocation: {
         id: string
         palletCount: number
+        cargoType?: "PALLET" | "CUBE" | null
+        cbmVolume?: string | null
         productId: string | null
         commodityName: string | null
         hsCode: string | null
@@ -187,6 +194,20 @@ const STATUS_COLORS: Record<string, string> = {
     BOOKED: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
     SAILING: "bg-purple-500/10 text-purple-400 border-purple-500/20",
     DELIVERED: "bg-slate-500/10 text-slate-400 border-slate-500/20",
+}
+
+// Format an allocation's volume as either "{N}" pallets or "{X.XX} m³"
+// depending on cargoType. Used by every Volume cell in the grid.
+function formatAllocationVolume(a: { palletCount: number; cargoType?: "PALLET" | "CUBE" | null; cbmVolume?: string | null }): string {
+    if (a.cargoType === "CUBE") {
+        const cbm = Number(a.cbmVolume ?? 0)
+        return `${cbm.toFixed(2)} m³`
+    }
+    return String(a.palletCount)
+}
+
+function allocationVolumeUnit(a: { cargoType?: "PALLET" | "CUBE" | null }): string {
+    return a.cargoType === "CUBE" ? "m³" : "pallets"
 }
 
 interface ClientDoc {
@@ -689,6 +710,11 @@ export function AdminBookingsGrid() {
                                                     }>
                                                         {container.salesRateTypeId || "srs"}
                                                     </Badge>
+                                                    {container.cargoType === "CUBE" && (
+                                                        <Badge className="bg-purple-500/10 text-purple-400 border-purple-500/20 font-mono text-[10px] uppercase">
+                                                            m³ Cube
+                                                        </Badge>
+                                                    )}
                                                 </h3>
                                                 <p className="text-slate-500 text-sm font-medium">
                                                     {container.vessel} • {container.containerTypeName || container.type} • {container.id}
@@ -705,14 +731,29 @@ export function AdminBookingsGrid() {
                                         </div>
 
                                         <div className="flex items-center gap-3">
-                                            {/* Pallet counter */}
-                                            <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-lg px-4 py-2">
-                                                <Package className="h-4 w-4 text-slate-500" />
-                                                <span className={`text-2xl font-black ${container.totalPallets >= 15 ? "text-amber-400" : "text-white"}`}>
-                                                    {container.totalPallets}
-                                                </span>
-                                                <span className="text-slate-500 text-sm">/ {container.maxCapacity}</span>
-                                            </div>
+                                            {/* Capacity counter — CBM for CUBE containers, pallets for PALLET */}
+                                            {container.cargoType === "CUBE" ? (() => {
+                                                const usedCBM = Number(container.totalCBM ?? 0)
+                                                const maxCBM = Number(container.maxCapacityCBM ?? 0)
+                                                const nearFull = maxCBM > 0 && usedCBM / maxCBM >= 0.75
+                                                return (
+                                                    <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-lg px-4 py-2">
+                                                        <Package className="h-4 w-4 text-slate-500" />
+                                                        <span className={`text-2xl font-black ${nearFull ? "text-amber-400" : "text-white"}`}>
+                                                            {usedCBM.toFixed(2)}
+                                                        </span>
+                                                        <span className="text-slate-500 text-sm">/ {maxCBM > 0 ? `${maxCBM.toFixed(1)} m³` : "— m³"}</span>
+                                                    </div>
+                                                )
+                                            })() : (
+                                                <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-lg px-4 py-2">
+                                                    <Package className="h-4 w-4 text-slate-500" />
+                                                    <span className={`text-2xl font-black ${container.totalPallets >= 15 ? "text-amber-400" : "text-white"}`}>
+                                                        {container.totalPallets}
+                                                    </span>
+                                                    <span className="text-slate-500 text-sm">/ {container.maxCapacity}</span>
+                                                </div>
+                                            )}
 
                                             {container.status === "THRESHOLD_REACHED" && !container.metashipOrderNo && (
                                                 <Button
@@ -818,7 +859,7 @@ export function AdminBookingsGrid() {
                                                                     )}
                                                                 </div>
                                                             </TableCell>
-                                                            <TableCell className="text-center text-white font-black">{alloc.allocation.palletCount}</TableCell>
+                                                            <TableCell className="text-center text-white font-black">{formatAllocationVolume(alloc.allocation)}</TableCell>
                                                             <TableCell className="text-center text-xs text-slate-400">
                                                                 {alloc.allocation.nettWeight ? `${alloc.allocation.nettWeight}N` : "—"} / {alloc.allocation.grossWeight ? `${alloc.allocation.grossWeight}G` : "—"}
                                                             </TableCell>
@@ -883,7 +924,7 @@ export function AdminBookingsGrid() {
                                         <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Reference</TableHead>
                                         <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Client</TableHead>
                                         <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Product</TableHead>
-                                        <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-center">Pallets</TableHead>
+                                        <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-center">Volume</TableHead>
                                         <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Vessel / Route</TableHead>
                                         <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-center">Deposit</TableHead>
                                         <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-right">Action</TableHead>
@@ -908,7 +949,7 @@ export function AdminBookingsGrid() {
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-slate-300 text-sm">{r.allocation.commodityName || "—"}</TableCell>
-                                            <TableCell className="text-center text-white font-mono font-bold">{r.allocation.palletCount}</TableCell>
+                                            <TableCell className="text-center text-white font-mono font-bold">{formatAllocationVolume(r.allocation)}</TableCell>
                                             <TableCell>
                                                 <div className="flex flex-col gap-0.5">
                                                     <span className="text-xs text-white font-bold">{r.container?.vessel || "—"}</span>
@@ -981,7 +1022,7 @@ export function AdminBookingsGrid() {
                                             <TableCell>
                                                 <div className="flex flex-col gap-0.5">
                                                     <span className="text-sm text-white">{r.allocation.commodityName || "—"}</span>
-                                                    <span className="text-[10px] text-slate-500 font-mono">{r.allocation.palletCount} pallet{r.allocation.palletCount === 1 ? "" : "s"}</span>
+                                                    <span className="text-[10px] text-slate-500 font-mono">{formatAllocationVolume(r.allocation)} {allocationVolumeUnit(r.allocation) === "m³" ? "" : (r.allocation.palletCount === 1 ? "pallet" : "pallets")}</span>
                                                 </div>
                                             </TableCell>
                                             <TableCell>
@@ -1435,7 +1476,7 @@ export function AdminBookingsGrid() {
                                                                 )}
                                                             </div>
                                                         </TableCell>
-                                                        <TableCell className="text-center text-white font-black">{alloc.allocation.palletCount}</TableCell>
+                                                        <TableCell className="text-center text-white font-black">{formatAllocationVolume(alloc.allocation)}</TableCell>
                                                         <TableCell className="text-center text-xs text-slate-400">{alloc.allocation.nettWeight || "—"}</TableCell>
                                                         <TableCell className="text-center text-xs text-slate-400">{alloc.allocation.grossWeight || "—"}</TableCell>
                                                         <TableCell className="text-center text-xs">
@@ -1473,12 +1514,14 @@ export function AdminBookingsGrid() {
                                             </TableBody>
                                         </Table>
                                     </div>
-                                    {/* Totals row */}
+                                    {/* Totals row — render m³ for CUBE containers, pallet count for PALLET */}
                                     <div className="flex items-center justify-between mt-2 px-3 py-2 bg-slate-900/50 rounded-lg border border-slate-800 text-xs">
                                         <span className="text-slate-500 font-bold uppercase">Totals</span>
                                         <div className="flex items-center gap-6">
                                             <span className="text-white font-black">
-                                                {detailDialog.allocations.reduce((sum, a) => sum + a.allocation.palletCount, 0)} pallets
+                                                {detailDialog.cargoType === "CUBE"
+                                                    ? `${detailDialog.allocations.reduce((sum, a) => sum + Number(a.allocation.cbmVolume || 0), 0).toFixed(2)} m³`
+                                                    : `${detailDialog.allocations.reduce((sum, a) => sum + a.allocation.palletCount, 0)} pallets`}
                                             </span>
                                             <span className="text-slate-400 flex items-center gap-1">
                                                 <Weight className="h-3 w-3" />
@@ -1552,7 +1595,7 @@ export function AdminBookingsGrid() {
                                 {bookingDialog.allocations.map((alloc) => (
                                     <div key={alloc.allocation.id} className="flex justify-between items-center py-1.5 border-b border-slate-800 last:border-0 text-sm">
                                         <span className="text-slate-300">{alloc.userName} <span className="text-slate-600 font-mono text-xs">({alloc.accountNumber})</span></span>
-                                        <span className="text-white font-bold">{alloc.allocation.palletCount} pallets</span>
+                                        <span className="text-white font-bold">{formatAllocationVolume(alloc.allocation)}{alloc.allocation.cargoType === "CUBE" ? "" : " pallets"}</span>
                                     </div>
                                 ))}
                             </div>
@@ -1647,8 +1690,8 @@ export function AdminBookingsGrid() {
                                         </div>
                                     </div>
                                     <div className="px-4 py-2.5 flex items-center justify-between">
-                                        <span className="text-xs text-slate-500 font-semibold">Pallets</span>
-                                        <span className="text-2xl font-black text-white">{clientDialog.alloc.allocation.palletCount}</span>
+                                        <span className="text-xs text-slate-500 font-semibold">{clientDialog.alloc.allocation.cargoType === "CUBE" ? "Volume" : "Pallets"}</span>
+                                        <span className="text-2xl font-black text-white">{formatAllocationVolume(clientDialog.alloc.allocation)}</span>
                                     </div>
                                     <div className="px-4 py-2.5 flex items-center justify-between">
                                         <span className="text-xs text-slate-500 font-semibold">Temperature</span>
@@ -1744,9 +1787,16 @@ export function AdminBookingsGrid() {
                                             <p className="text-[10px] font-mono text-slate-500 mt-0.5">Account: {reviewRequest.user.accountNumber}</p>
                                         )}
                                     </div>
-                                    <Badge className={reviewRequest.container?.salesRateTypeId === "scs" ? "bg-emerald-500/20 text-emerald-400 border-none" : "bg-blue-500/20 text-blue-400 border-none"}>
-                                        {reviewRequest.container?.salesRateTypeId?.toUpperCase() || "SRS"}
-                                    </Badge>
+                                    <div className="flex items-center gap-2">
+                                        <Badge className={reviewRequest.container?.salesRateTypeId === "scs" ? "bg-emerald-500/20 text-emerald-400 border-none" : "bg-blue-500/20 text-blue-400 border-none"}>
+                                            {reviewRequest.container?.salesRateTypeId?.toUpperCase() || "SRS"}
+                                        </Badge>
+                                        {reviewRequest.allocation.cargoType === "CUBE" && (
+                                            <Badge className="bg-purple-500/20 text-purple-400 border-none font-mono text-[10px]">
+                                                m³ Cube
+                                            </Badge>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* Cargo details grid */}
@@ -1759,8 +1809,8 @@ export function AdminBookingsGrid() {
                                         )}
                                     </div>
                                     <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/50">
-                                        <p className="text-[10px] font-bold uppercase text-slate-500">Pallets</p>
-                                        <p className="text-xl font-black text-white mt-0.5">{reviewRequest.allocation.palletCount}</p>
+                                        <p className="text-[10px] font-bold uppercase text-slate-500">{reviewRequest.allocation.cargoType === "CUBE" ? "Volume" : "Pallets"}</p>
+                                        <p className="text-xl font-black text-white mt-0.5">{formatAllocationVolume(reviewRequest.allocation)}</p>
                                     </div>
                                     <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/50">
                                         <p className="text-[10px] font-bold uppercase text-slate-500">Temperature</p>

@@ -27,11 +27,19 @@ export async function PUT(
             return NextResponse.json({ error: "Container not found" }, { status: 404 });
         }
 
+        // cargoType is locked at creation — refuse any change.
+        if (body.cargoType !== undefined && body.cargoType !== existing.cargoType) {
+            return NextResponse.json(
+                { error: `Cargo type is locked after creation (current: ${existing.cargoType}). Create a new container instead.` },
+                { status: 400 }
+            );
+        }
+
         const updates: Record<string, unknown> = { updatedAt: new Date() };
 
         if (body.route !== undefined) updates.route = body.route;
 
-        // Container type change: also updates size, maxCapacity, salesRateTypeId
+        // Container type change: also updates size, maxCapacity, maxCapacityCBM, salesRateTypeId
         let containerCategory: "REEFER" | "DRY" | null = null;
         if (body.containerTypeId !== undefined) {
             const [ct] = await db.select().from(containerTypes).where(eq(containerTypes.id, body.containerTypeId)).limit(1);
@@ -39,6 +47,7 @@ export async function PUT(
             updates.containerTypeId = ct.id;
             updates.type = ct.size;
             updates.maxCapacity = ct.maxPallets;
+            updates.maxCapacityCBM = ct.volumeCBM ?? null;
             updates.salesRateTypeId = ct.type === "DRY" ? "scs" : "srs";
             containerCategory = ct.type as "REEFER" | "DRY";
         } else if (existing.containerTypeId) {

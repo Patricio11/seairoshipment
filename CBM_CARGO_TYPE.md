@@ -133,7 +133,7 @@ C · Tools hub + saved calcs       ✅ DONE
    C.3 share + PDF + bulk paste   ✅ DONE  → docs/cbm-cargo-type/phase-c3-share-pdf-bulk-paste.md
 D · Booking wizard integration    ✅ DONE  → docs/cbm-cargo-type/phase-d-booking-integration.md
 E · Admin rate cards              ✅ DONE  → docs/cbm-cargo-type/phase-e-admin-rate-cards.md
-F · Container creation + admin views ~Fleet scheduler picks cargo type; grid columns polymorphic
+F · Container creation + admin views ✅ DONE  → docs/cbm-cargo-type/phase-f-container-creation-and-admin-views.md
 G · Display surfaces              ~dashboard widgets, invoices, recent shipments
 H · Polish + tracker updates      ~empty states, copy, related doc tweaks
 ```
@@ -349,25 +349,27 @@ Easy to expand later — the seed lives in `app/api/admin/cargo-item-presets/see
 
 ---
 
-## Phase F — Container creation + admin views
+## Phase F — Container creation + admin views ✅ DONE
 
-**Goal**: admin picks cargo type when creating a container; downstream admin UIs render appropriately.
+**Detailed write-up:** [docs/cbm-cargo-type/phase-f-container-creation-and-admin-views.md](docs/cbm-cargo-type/phase-f-container-creation-and-admin-views.md)
 
-- [ ] `components/admin/fleet-scheduler.tsx`
-  - Add **Cargo Type** field to the container creation form. Position: right after Container Type pick.
-  - Locked when editing an existing container (same pattern as `salesRateTypeId`).
-  - Auto-pull `volumeCBM` from the chosen container type to set `maxCapacityCBM` on insert.
-  - Container row badges: "Pallet" or "Cube" pill alongside the existing type / temperature pills.
-  - Capacity bar swaps to CBM mode for Cube containers (`totalCBM / maxCapacityCBM`).
-- [ ] `app/api/admin/containers/route.ts` (POST/PATCH)
-  - Accept `cargoType`. Reject changes to it on PATCH (only allowed at create).
-  - On create, hydrate `maxCapacityCBM` from container_types.volumeCBM.
-- [ ] `components/admin/admin-bookings-grid.tsx`
-  - Volume column shows `{N} pallets` OR `{X.XX} m³` based on `allocation.cargoType`.
-  - Filter chip: Pallet / Cube alongside existing filters.
-- [ ] Admin review modal — show `cargoType` + line-item snapshot for Cube allocations; link to source calculation.
+- [x] `components/admin/fleet-scheduler.tsx`
+  - Added **Cargo Type** field to the container creation form (Step 3b). Visible only for DRY (SCS); REEFER (SRS) is silently forced to PALLET.
+  - Locked when editing an existing container (buttons disabled).
+  - `volumeCBM` is hydrated server-side from the chosen container type onto `maxCapacityCBM`.
+  - Container row badges: purple "m³ Cube" pill alongside the existing type / temperature pills.
+  - Capacity counter swaps to CBM mode for Cube containers (`totalCBM / maxCapacityCBM`).
+- [x] `app/api/admin/containers/route.ts` (POST + `[id]/route.ts` PUT)
+  - POST accepts `cargoType`, defaults to PALLET when SRS, and hydrates `maxCapacityCBM` from `containerTypes.volumeCBM`.
+  - PUT refuses any cargoType change after creation. When `containerTypeId` changes, `maxCapacityCBM` is re-hydrated from the new container type.
+- [x] `components/admin/admin-bookings-grid.tsx`
+  - Volume column shows `{N}` (pallets) OR `{X.XX} m³` based on `allocation.cargoType`, via new `formatAllocationVolume()` helper.
+  - Container-header CUBE badge mirrors the fleet scheduler.
+  - Capacity counter on each container card swaps to CBM mode for Cube.
+  - Review-request modal labels the volume box "Volume"/"Pallets" appropriately and shows a CUBE chip next to the rate-type badge.
+- [x] No further filter chip needed: rate-type chip (SRS/SCS) already separates the two cleanly, and Cube only exists under SCS — the m³ chip is the visual filter.
 
-**Done when**: admin can create a Cube container, allocate Cube bookings to it, and see correct capacity / units everywhere.
+**Done when**: admin can create a Cube container, allocate Cube bookings to it, and see correct capacity / units everywhere. ✅
 
 ---
 
