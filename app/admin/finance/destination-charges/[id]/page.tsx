@@ -30,6 +30,8 @@ export default async function EditDestinationChargePage({
             effectiveTo: destinationCharges.effectiveTo,
             active: destinationCharges.active,
             containerDisplayName: containerTypes.displayName,
+            containerVolumeCBM: containerTypes.volumeCBM,
+            containerMaxPallets: containerTypes.maxPallets,
             salesRateTypeName: salesRateTypes.name,
         })
         .from(destinationCharges)
@@ -57,6 +59,8 @@ export default async function EditDestinationChargePage({
         destinationPortCode: header.destinationPortCode,
         containerId: header.containerId,
         containerDisplayName: header.containerDisplayName || header.containerId,
+        containerVolumeCBM: header.containerVolumeCBM ? Number(header.containerVolumeCBM) : null,
+        containerMaxPallets: header.containerMaxPallets ?? null,
         cargoType: (header.cargoType || "PALLET") as "PALLET" | "CUBE",
         currency: header.currency as "GBP" | "EUR" | "USD",
         exchangeRateToZAR: Number(header.exchangeRateToZAR),

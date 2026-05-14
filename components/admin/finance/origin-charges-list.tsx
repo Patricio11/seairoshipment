@@ -56,6 +56,8 @@ interface OriginChargeData {
     createdAt: string
     updatedAt: string
     containerDisplayName: string | null
+    containerVolumeCBM: string | null
+    containerMaxPallets: number | null
     salesRateTypeName: string | null
     items: { chargeType: string; unitCost: string | null; containerCost: string | null }[]
 }
@@ -139,16 +141,18 @@ export function OriginChargesList() {
         return matchesSearch && matchesOrigin && matchesContainer && matchesStatus
     })
 
-    // Calculate totals matching the editor logic. Per-unit container factor
-    // depends on cargo type — 20 pallets for a 40ft HC Reefer (PALLET cards),
-    // 67.7 m³ for a 40ft HC Cube (CUBE cards). These are the same defaults
-    // the editor uses; once we thread real container dimensions through the
-    // API we can swap them for the actual volume / max pallets.
+    // Calculate totals using each rate card's *actual* container dimensions
+    // (joined in by the API). Cube cards multiply PER_CBM rows by the
+    // container's volumeCBM; pallet cards multiply PER_PALLET rows by the
+    // container's maxPallets. Falls back to 40ft HC defaults (67.7 / 20)
+    // only on legacy rows where the join couldn't find a container type.
     const calculateTotal = (charge: OriginChargeData) => {
         if (!charge.items) return { totalPerContainer: 0, totalPerPallet: 0, totalItems: 0 }
 
         const isCube = charge.cargoType === "CUBE"
-        const containerFactor = isCube ? 67.7 : 20
+        const containerFactor = isCube
+            ? (charge.containerVolumeCBM ? Number(charge.containerVolumeCBM) : 67.7)
+            : (charge.containerMaxPallets ?? 20)
 
         let totalPerContainer = 0
 
@@ -156,18 +160,17 @@ export function OriginChargesList() {
             if (item.chargeType === "PER_CONTAINER" && item.containerCost) {
                 totalPerContainer += Number(item.containerCost)
             } else if (item.chargeType === "PER_PALLET" && item.unitCost) {
-                totalPerContainer += Number(item.unitCost) * 20
+                totalPerContainer += Number(item.unitCost) * containerFactor
             } else if (item.chargeType === "PER_CBM" && item.unitCost) {
-                totalPerContainer += Number(item.unitCost) * 67.7
+                totalPerContainer += Number(item.unitCost) * containerFactor
             }
         })
 
         return {
             totalPerContainer,
-            // "totalPerPallet" is the per-unit summary — pallets for PALLET
-            // cards, m³ for CUBE cards. Column header in the table is generic
-            // ("Equiv. Pallet Cost") so we render it the same way; future
-            // polish: rename the column to "Per Unit Cost".
+            // Per-unit summary — m³ for CUBE cards, pallets for PALLET cards.
+            // Column header in the table still reads "Equiv. Pallet Cost"
+            // generically; future polish: rename to "Per Unit Cost".
             totalPerPallet: totalPerContainer / containerFactor,
             totalItems: charge.items.length
         }

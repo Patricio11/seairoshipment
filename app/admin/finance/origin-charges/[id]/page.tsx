@@ -29,6 +29,8 @@ export default async function OriginChargeDetailPage({
             currency: originCharges.currency,
             active: originCharges.active,
             containerDisplayName: containerTypes.displayName,
+            containerVolumeCBM: containerTypes.volumeCBM,
+            containerMaxPallets: containerTypes.maxPallets,
             salesRateTypeName: salesRateTypes.name,
         })
         .from(originCharges)
@@ -54,6 +56,8 @@ export default async function OriginChargeDetailPage({
         originName: header.originName,
         containerId: header.containerId,
         containerDisplayName: header.containerDisplayName || header.containerId,
+        containerVolumeCBM: header.containerVolumeCBM ? Number(header.containerVolumeCBM) : null,
+        containerMaxPallets: header.containerMaxPallets ?? null,
         cargoType: header.cargoType,
         effectiveFrom: header.effectiveFrom,
         effectiveTo: header.effectiveTo,

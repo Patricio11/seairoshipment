@@ -137,6 +137,10 @@ export interface DestinationCharge {
     destinationPortCode: string;
     containerId: string;
     containerDisplayName: string;
+    /** Interior CBM of the chosen container type (m³). Null on legacy rows. */
+    containerVolumeCBM?: number | null;
+    /** Pallet capacity of the chosen container type. Null on legacy rows. */
+    containerMaxPallets?: number | null;
     cargoType?: CargoType;
     currency: 'GBP' | 'EUR' | 'USD';
     exchangeRateToZAR: number;

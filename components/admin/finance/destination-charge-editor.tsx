@@ -68,7 +68,10 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
 
     const isCube = initialData?.cargoType === "CUBE"
     const unitLabel = isCube ? "m³" : "pallet"
-    const unitDivisor = isCube ? 67.7 : 20
+    // Prefer the actual container's capacity; fall back to 40ft HC defaults.
+    const unitDivisor = isCube
+        ? (initialData?.containerVolumeCBM ?? 67.7)
+        : (initialData?.containerMaxPallets ?? 20)
 
     // Form State
     const [currency, setCurrency] = useState<'GBP' | 'EUR' | 'USD'>(initialData?.currency || 'GBP')

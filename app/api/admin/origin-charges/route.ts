@@ -29,6 +29,8 @@ export async function GET(request: NextRequest) {
             createdAt: originCharges.createdAt,
             updatedAt: originCharges.updatedAt,
             containerDisplayName: containerTypes.displayName,
+            containerVolumeCBM: containerTypes.volumeCBM,
+            containerMaxPallets: containerTypes.maxPallets,
             salesRateTypeName: salesRateTypes.name,
         };
         if (originId) {

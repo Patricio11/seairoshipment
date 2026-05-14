@@ -22,7 +22,11 @@ export default async function NewOriginChargePage({
     const effectiveFrom = (params.effectiveFrom as string) || new Date().toISOString().split("T")[0]
 
     const [container] = await db
-        .select({ displayName: containerTypes.displayName })
+        .select({
+            displayName: containerTypes.displayName,
+            volumeCBM: containerTypes.volumeCBM,
+            maxPallets: containerTypes.maxPallets,
+        })
         .from(containerTypes)
         .where(eq(containerTypes.id, containerId))
         .limit(1)
@@ -35,6 +39,8 @@ export default async function NewOriginChargePage({
         country,
         containerId,
         containerDisplayName: container?.displayName || "40ft HC Reefer",
+        containerVolumeCBM: container?.volumeCBM ? Number(container.volumeCBM) : null,
+        containerMaxPallets: container?.maxPallets ?? null,
         cargoType,
         effectiveFrom,
         effectiveTo: null,

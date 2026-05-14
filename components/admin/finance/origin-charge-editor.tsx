@@ -77,6 +77,10 @@ interface OriginChargeEditorProps {
         country?: string
         containerId: string
         containerDisplayName: string
+        /** Interior CBM of the chosen container type. Null on legacy rows. */
+        containerVolumeCBM?: number | null
+        /** Pallet capacity of the chosen container type. Null on legacy rows. */
+        containerMaxPallets?: number | null
         cargoType?: "PALLET" | "CUBE"
         effectiveFrom: string
         effectiveTo: string | null
@@ -93,11 +97,18 @@ interface UIOriginChargeItem extends OriginChargeItem {
 
 export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
     const router = useRouter()
-    // Cargo type drives per-unit pricing — PER_PALLET (factor 20) on pallet
-    // cards, PER_CBM (factor 67.7 = 40ft HC interior) on cube cards.
+    // Cargo type drives per-unit pricing — PER_PALLET on pallet cards,
+    // PER_CBM on cube cards. The "container factor" turns a per-unit cost
+    // into a container-equivalent total for the summary column. Prefer the
+    // actual container type's volume / pallet count (passed by the page);
+    // fall back to 40ft HC defaults (67.7 m³ / 20 pallets) for legacy rows
+    // where the join didn't return a value.
     const isCube = initialData?.cargoType === "CUBE"
     const perUnitChargeType: "PER_PALLET" | "PER_CBM" = isCube ? "PER_CBM" : "PER_PALLET"
-    const containerFactor = isCube ? 67.7 : 20
+    const containerFactor = isCube
+        ? (initialData?.containerVolumeCBM ?? 67.7)
+        : (initialData?.containerMaxPallets ?? 20)
+    const containerLabel = initialData?.containerDisplayName || (isCube ? "40ft HC Cube" : "40ft HC Reefer")
 
     // Initialize items checking if they match predefined list or should be custom
     const [items, setItems] = useState<UIOriginChargeItem[]>(
@@ -319,9 +330,9 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                                     </span>
                                 </TableHead>
                                 <TableHead className="w-[250px] text-right bg-blue-900/15">
-                                    <span className="text-blue-400 font-bold uppercase tracking-wider text-[10px]">40ft HC {isCube ? "Cube" : "Reefer"}</span>
+                                    <span className="text-blue-400 font-bold uppercase tracking-wider text-[10px]">{containerLabel}</span>
                                     <span className="block text-[10px] font-normal text-slate-500 normal-case tracking-normal">
-                                        {isCube ? `${containerFactor} m³ per container` : `${containerFactor} pallets per reefer`}
+                                        {isCube ? `${containerFactor} m³ per container` : `${containerFactor} pallets per container`}
                                     </span>
                                 </TableHead>
                                 <TableHead className="w-[60px]"></TableHead>
@@ -485,9 +496,9 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                                                             const wasPerUnit = item.chargeType === "PER_PALLET" || item.chargeType === "PER_CBM"
                                                             const isPerUnit = value === "PER_PALLET" || value === "PER_CBM"
                                                             const currentVal = wasPerUnit ? item.unitCost : item.containerCost
-                                                            // Conversion factor — pallet rate cards default to 20 pallets,
-                                                            // CBM rate cards default to a 67.7 m³ (40ft HC) baseline.
-                                                            const factor = isCube ? 67.7 : 20
+                                                            // Conversion factor reflects the actual container's capacity
+                                                            // (m³ for cube cards, pallets for pallet cards).
+                                                            const factor = containerFactor
                                                             if (isPerUnit) {
                                                                 updateItem(item.id, {
                                                                     chargeType: value,
@@ -562,8 +573,8 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                                 </div>
                                 <div className="pt-2 text-xs text-slate-500 font-medium">
                                     {isCube
-                                        ? `* Calculations based on standard 40ft HC Cube capacity (${containerFactor} m³)`
-                                        : `* Calculations based on standard 40ft HC Reefer capacity (${containerFactor} pallets)`}
+                                        ? `* Calculations based on ${containerLabel} capacity (${containerFactor} m³)`
+                                        : `* Calculations based on ${containerLabel} capacity (${containerFactor} pallets)`}
                                 </div>
                             </div>
                         </div>

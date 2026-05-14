@@ -30,6 +30,10 @@ function NewDestinationChargeContent() {
         destinationPortCode,
         containerId,
         containerDisplayName: "",
+        // Container dims are filled by the API on next reload; leave null here
+        // so the editor falls back to 40ft HC defaults until then.
+        containerVolumeCBM: null,
+        containerMaxPallets: null,
         cargoType,
         currency: currency as DestinationCharge["currency"],
         exchangeRateToZAR: parseFloat(exchangeRateToZAR),
