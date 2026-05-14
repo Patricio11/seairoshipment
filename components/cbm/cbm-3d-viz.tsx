@@ -191,14 +191,21 @@ function ContainerOutline({ length, width, height }: { length: number; width: nu
 }
 
 /**
- * Pack cargo blocks into the container floor using a simple shelf algorithm:
- *   - sort items largest-first
- *   - lay them along the length axis, starting from the back of the container
- *   - when a row reaches the front, shift up to start a new shelf
- *   - if a single unit is taller than the container, clamp visually
+ * Pack cargo blocks into the container using a 3-axis shelf algorithm:
  *
- * Not optimal — a real 3D bin-packer is a separate (Tier 3) tool. Goal here
- * is "looks plausible at a glance" so the user trusts the volume figure.
+ *   1. Place along the **length** axis (Z), starting from the back of the
+ *      container.
+ *   2. When the length row fills, advance across **width** (X) — start a new
+ *      row beside the previous one. Row width = the widest box that was in
+ *      the row that just closed.
+ *   3. When both length and width are exhausted, advance up in **height**
+ *      (Y) — start a new layer on top. Layer height = tallest box in the
+ *      layer that just closed.
+ *   4. When the container's height is exhausted, stop placing.
+ *
+ * Not a real 3D bin-packer — a proper one is the Phase-3 "Container Loading
+ * Planner" tool. Goal here is "looks plausible at a glance" so the user
+ * trusts the volume figure.
  */
 function buildBlocks(items: CargoItem[], dim: { length: number; width: number; height: number }): PlacedBox[] {
     // Expand quantities into per-unit blocks, capping at 60 for scene perf
@@ -217,29 +224,51 @@ function buildBlocks(items: CargoItem[], dim: { length: number; width: number; h
     )
 
     const placed: PlacedBox[] = []
-    let cursorZ = -dim.length / 2 // start at back
-    let cursorY = 0                // floor
-    let rowMaxHeight = 0
-    const lengthEpsilon = 0.001
+    const gap = 0.02
+
+    // 3-axis cursor. Container coordinates centred on origin:
+    //   X spans [-W/2, +W/2] (width)
+    //   Y spans [0, H]       (height, container floor at 0)
+    //   Z spans [-L/2, +L/2] (length, back at -L/2)
+    let cursorX = -dim.width / 2
+    let cursorY = 0
+    let cursorZ = -dim.length / 2
+
+    let rowMaxWidth = 0   // widest box (X-axis) in the current Z-row
+    let layerMaxHeight = 0 // tallest box in the current XY-floor layer
+
+    const eps = 0.001
 
     for (const { item, index } of expanded) {
         const w = Math.min(item.widthMm / 1000, dim.width)
         const h = Math.min(item.heightMm / 1000, dim.height)
         const d = Math.min(item.lengthMm / 1000, dim.length)
 
-        if (cursorZ + d > dim.length / 2 + lengthEpsilon) {
-            // Start a new shelf above
-            cursorY += rowMaxHeight + 0.02
+        // 1. Doesn't fit in this row along length — start a new row across width.
+        if (cursorZ + d > dim.length / 2 + eps) {
+            cursorX += rowMaxWidth + gap
             cursorZ = -dim.length / 2
-            rowMaxHeight = 0
+            rowMaxWidth = 0
         }
-        if (cursorY + h > dim.height) {
-            // Out of room — stop placing
+
+        // 2. Doesn't fit in this layer along width — start a new layer above.
+        if (cursorX + w > dim.width / 2 + eps) {
+            cursorY += layerMaxHeight + gap
+            cursorX = -dim.width / 2
+            cursorZ = -dim.length / 2
+            rowMaxWidth = 0
+            layerMaxHeight = 0
+        }
+
+        // 3. Doesn't fit in container height — stop. The remaining items are
+        //    silently dropped from the viz; the totals overlay still reflects
+        //    their volume from `totalCbm()`, so this is honest.
+        if (cursorY + h > dim.height + eps) {
             break
         }
 
         placed.push({
-            x: 0,
+            x: cursorX + w / 2,
             y: cursorY + h / 2,
             z: cursorZ + d / 2,
             w, h, d,
@@ -247,8 +276,9 @@ function buildBlocks(items: CargoItem[], dim: { length: number; width: number; h
             label: item.label || `Item ${index + 1}`,
         })
 
-        cursorZ += d + 0.02
-        if (h > rowMaxHeight) rowMaxHeight = h
+        cursorZ += d + gap
+        if (w > rowMaxWidth) rowMaxWidth = w
+        if (h > layerMaxHeight) layerMaxHeight = h
     }
 
     return placed
