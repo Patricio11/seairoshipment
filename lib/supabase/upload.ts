@@ -7,16 +7,30 @@ export interface UploadResult {
     error?: string;
 }
 
-function generateUniqueFileName(originalName: string): string {
+/**
+ * Build a Supabase-safe storage key. Always sanitises (Supabase rejects keys
+ * with spaces, parens, accents, etc.) and always adds a timestamp + random
+ * suffix so retries don't trip "resource already exists" with upsert: false.
+ *
+ * Callers can pass a `preferredBase` (e.g. an account-prefixed filename) to
+ * keep the stored key human-readable for admin browsing — it gets the same
+ * sanitiser + suffix treatment as a raw filename.
+ */
+function generateUniqueFileName(originalName: string, preferredBase?: string): string {
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2, 10);
-    const ext = originalName.slice(originalName.lastIndexOf('.'));
-    const base = originalName
-        .slice(0, originalName.lastIndexOf('.'))
+    const dotIdx = originalName.lastIndexOf('.');
+    const ext = dotIdx >= 0 ? originalName.slice(dotIdx) : '';
+    // Use the preferred base if given, else strip the extension off the original.
+    // Either way, strip any trailing extension on the base to avoid "name.pdf-ts-rand.pdf".
+    const baseSource = preferredBase ?? (dotIdx >= 0 ? originalName.slice(0, dotIdx) : originalName);
+    const base = baseSource
+        .replace(/\.[^.]+$/, '')
         .replace(/[^a-zA-Z0-9-_]/g, '-')
         .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
         .toLowerCase()
-        .substring(0, 60);
+        .substring(0, 60) || 'file';
     return `${base}-${timestamp}-${random}${ext}`;
 }
 
@@ -33,7 +47,11 @@ export async function uploadFile(
         return { success: false, error: 'Document storage is not configured (missing env vars).' };
     }
     try {
-        const fileName = customFileName || generateUniqueFileName(file.name);
+        // Always sanitise + uniquify, even when a customFileName is passed.
+        // Passing the raw customFileName as a storage key (with spaces, parens,
+        // accents, etc.) makes Supabase reject the upload, and an unsuffixed key
+        // collides on retry because we use upsert: false.
+        const fileName = generateUniqueFileName(file.name, customFileName);
         const filePath = `${storagePath}/${fileName}`;
 
         console.log(`[uploadFile] Uploading "${fileName}" to bucket "${STORAGE_BUCKET}" at path "${filePath}"`);

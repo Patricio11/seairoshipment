@@ -99,8 +99,8 @@ export function UploadDialog({ allocationId, bookingRef, onUploaded }: UploadDia
 
         setUploading(true)
         try {
-            const finalName = storedName ?? file.name
-            const result = await uploadFile(file, STORAGE_PATHS.BOOKING_DOCUMENTS, finalName)
+            const preferredBase = storedName ?? file.name
+            const result = await uploadFile(file, STORAGE_PATHS.BOOKING_DOCUMENTS, preferredBase)
             if (!result.success || !result.url) {
                 toast.error(result.error || "Upload failed")
                 return
@@ -111,7 +111,9 @@ export function UploadDialog({ allocationId, bookingRef, onUploaded }: UploadDia
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     originalName: file.name,
-                    storedName: finalName,
+                    // Use the path the storage layer actually wrote to, not the
+                    // requested name — they differ after sanitisation + uniquify.
+                    storedName: result.path,
                     url: result.url,
                     type: DOC_TYPE_TO_ENUM[docType] ?? "OTHER",
                     mimeType: file.type || null,
@@ -124,7 +126,7 @@ export function UploadDialog({ allocationId, bookingRef, onUploaded }: UploadDia
                 return
             }
 
-            toast.success("Document uploaded", { description: `Saved as: ${finalName}` })
+            toast.success("Document uploaded", { description: `Saved as: ${file.name}` })
             reset()
             setIsOpen(false)
             onUploaded?.()
