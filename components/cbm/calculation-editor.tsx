@@ -16,6 +16,7 @@ import { LiveQuotePanel } from "@/components/cbm/live-quote-panel"
 import { SmartMatchPanel } from "@/components/cbm/smart-match-panel"
 import { ShareLinkButton } from "@/components/cbm/share-link-button"
 import { DownloadPdfButton } from "@/components/cbm/download-pdf-button"
+import { ActivityPanel } from "@/components/cbm/activity-panel"
 import type { CargoItem } from "@/lib/db/schema/pallet-allocations"
 
 export interface CalculationEditorInitial {
@@ -237,6 +238,15 @@ export function CalculationEditor({ initial }: CalculationEditorProps) {
                     <CBM3DViz items={items} containerVolumeCBM={67.7} />
                     <LiveQuotePanel calculationId={initial?.id ?? null} refreshKey={panelRefreshKey} />
                     <SmartMatchPanel calculationId={initial?.id ?? null} refreshKey={panelRefreshKey} />
+                    <ActivityPanel
+                        calculationId={initial?.id ?? null}
+                        refreshKey={panelRefreshKey}
+                        onReverted={() => {
+                            // Pull the freshly-reverted items back into the editor.
+                            setPanelRefreshKey(k => k + 1)
+                            router.refresh()
+                        }}
+                    />
                 </div>
             </div>
         </div>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Share2, Loader2, Copy, Check, AlertCircle, Trash2 } from "lucide-react"
+import { Share2, Loader2, Copy, Check, AlertCircle, Trash2, ThumbsUp, PencilLine } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
@@ -19,6 +19,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 
 interface Share {
     token: string
@@ -27,6 +28,8 @@ interface Share {
     revokedAt: string | null
     accessCount: number
     lastAccessedAt: string | null
+    allowApprove: boolean
+    allowEdit: boolean
     createdAt: string
 }
 
@@ -52,6 +55,8 @@ export function ShareLinkButton({ calculationId }: ShareLinkButtonProps) {
     const [loading, setLoading] = useState(false)
     const [creating, setCreating] = useState(false)
     const [expiryDays, setExpiryDays] = useState<string>("30")
+    const [allowApprove, setAllowApprove] = useState(false)
+    const [allowEdit, setAllowEdit] = useState(false)
     const [copiedToken, setCopiedToken] = useState<string | null>(null)
 
     const refresh = async () => {
@@ -78,7 +83,7 @@ export function ShareLinkButton({ calculationId }: ShareLinkButtonProps) {
             const res = await fetch(`/api/dashboard/cbm-calculations/${calculationId}/share`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ expiresInDays }),
+                body: JSON.stringify({ expiresInDays, allowApprove, allowEdit }),
             })
             const data = await res.json().catch(() => ({}))
             if (!res.ok) {
@@ -147,8 +152,8 @@ export function ShareLinkButton({ calculationId }: ShareLinkButtonProps) {
                     </DialogHeader>
 
                     <div className="space-y-4">
-                        <div className="flex items-end gap-2">
-                            <div className="flex-1">
+                        <div className="space-y-3">
+                            <div>
                                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Expires</p>
                                 <Select value={expiryDays} onValueChange={setExpiryDays}>
                                     <SelectTrigger className="h-9">
@@ -163,7 +168,37 @@ export function ShareLinkButton({ calculationId }: ShareLinkButtonProps) {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <Button onClick={handleCreate} disabled={creating} className="bg-brand-blue hover:bg-brand-blue/90">
+
+                            {/* Permission toggles — default off so the link stays
+                                read-only unless the owner explicitly opens it up. */}
+                            <div className="space-y-2 rounded-lg border border-slate-200 dark:border-slate-800 p-3 bg-slate-50 dark:bg-slate-900/40">
+                                <label className="flex items-start gap-3 cursor-pointer">
+                                    <Switch checked={allowApprove} onCheckedChange={setAllowApprove} />
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-1.5 text-sm font-semibold">
+                                            <ThumbsUp className="h-3.5 w-3.5 text-emerald-500" />
+                                            Allow approve
+                                        </div>
+                                        <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                                            Adds an Approve button to the share page. Viewers enter their name + email and you get notified.
+                                        </p>
+                                    </div>
+                                </label>
+                                <label className="flex items-start gap-3 cursor-pointer">
+                                    <Switch checked={allowEdit} onCheckedChange={setAllowEdit} />
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-1.5 text-sm font-semibold">
+                                            <PencilLine className="h-3.5 w-3.5 text-amber-500" />
+                                            Allow edit
+                                        </div>
+                                        <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                                            Viewers can update cargo items. Every save is logged and you can revert from the activity timeline.
+                                        </p>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <Button onClick={handleCreate} disabled={creating} className="bg-brand-blue hover:bg-brand-blue/90 w-full">
                                 {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Share2 className="mr-2 h-4 w-4" />}
                                 Generate new link
                             </Button>
@@ -208,7 +243,7 @@ export function ShareLinkButton({ calculationId }: ShareLinkButtonProps) {
                                                     </button>
                                                 </div>
                                                 <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-500">
-                                                    <span>
+                                                    <span className="flex items-center gap-1.5 flex-wrap">
                                                         Created {new Date(s.createdAt).toLocaleDateString("en-ZA")}
                                                         {s.expiresAt && (
                                                             <>
@@ -217,6 +252,16 @@ export function ShareLinkButton({ calculationId }: ShareLinkButtonProps) {
                                                                     : <>expires {new Date(s.expiresAt).toLocaleDateString("en-ZA")}</>
                                                                 }
                                                             </>
+                                                        )}
+                                                        {s.allowApprove && (
+                                                            <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 font-semibold">
+                                                                <ThumbsUp className="h-2.5 w-2.5" /> approve
+                                                            </span>
+                                                        )}
+                                                        {s.allowEdit && (
+                                                            <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 font-semibold">
+                                                                <PencilLine className="h-2.5 w-2.5" /> edit
+                                                            </span>
                                                         )}
                                                     </span>
                                                     <span className="font-mono">
