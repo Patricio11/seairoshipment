@@ -97,24 +97,21 @@ A → B → C is the critical path for a working v1. D blocks rollout for admins
 
 ---
 
-## Phase B — Settings → Security UI
+## Phase B — Settings → Security UI ✅
 
 **Goal**: A user can enable, verify, view backup codes, regenerate them, and disable 2FA from Settings.
 
-- [ ] `app/dashboard/settings/page.tsx` — the settings shell. Tab-style nav with Security as the first tab. (If a settings page already exists, extend it.)
-- [ ] `app/dashboard/settings/security/page.tsx` — the Security tab.
-- [ ] `components/settings/two-factor-status-card.tsx`:
-  - When `user.twoFactorEnabled === false`: "Add an extra layer of security" + benefits copy + **Enable** button.
-  - When `true`: green status pill "Two-factor authentication is enabled" + **View backup codes**, **Regenerate backup codes**, **Disable** buttons.
-- [ ] `components/settings/two-factor-enable-wizard.tsx` — multi-step dialog:
-  1. **Password gate.** Re-prompt for password before any 2FA secret leaks. Avoids someone walking up to an unlocked laptop and adding 2FA to lock out the rightful user.
-  2. **Scan / enter secret.** Show QR code (use `qrcode` or `qrcode.react` — small dep). Manual entry secret displayed below for apps that can't scan. Recommended authenticator apps listed: 1Password, Google Authenticator, Authy, Microsoft Authenticator.
-  3. **Verify.** Six-digit input. Submitting calls `authClient.twoFactor.verify({ code })`. On success, the plugin sets `twoFactorEnabled = true`.
-  4. **Save backup codes.** Render the 10 codes in a monospace grid. Two buttons: **Download `.txt`** and **Copy to clipboard**. Checkbox "I've saved these codes in a safe place" must be checked before the Finish button enables.
-- [ ] `components/settings/two-factor-disable-dialog.tsx` — password + current 6-digit code (or backup code). On success the secret is destroyed.
-- [ ] `components/settings/two-factor-backup-codes-dialog.tsx` — view current codes (greyed out for already-used). Regenerate button invalidates the old set.
+📄 [docs/two-factor-auth/phase-b-settings-ui.md](docs/two-factor-auth/phase-b-settings-ui.md)
 
-**Done when**: A test user can flip 2FA on, scan with 1Password, verify, download codes, and the user row in the DB shows `twoFactorEnabled: true`. Disabling reverses it cleanly.
+- [x] `/dashboard/settings` already existed — extended the existing `SettingsShell` with an `initialTab` prop so `?force=1` can land directly on Security.
+- [x] Security tab lives inside `components/settings/security-settings.tsx` (the existing shell-children pattern). Mock 2FA UI replaced with the real card.
+- [x] `components/settings/two-factor-status-card.tsx` — reads `twoFactorEnabled` from `authClient.useSession()`. Off shows Enable. On shows Regenerate + Disable. Supports `forceEnroll` for Phase D.
+- [x] `components/settings/two-factor-enable-wizard.tsx` — 4-step dialog (password → QR + setup key → verify → backup codes with download/copy + "I've saved these" checkbox). Uses `qrcode.react` for the QR. Suppresses close on outside-click / Esc / X when `forceEnroll && step !== "codes"`.
+- [x] `components/settings/two-factor-disable-dialog.tsx` — password-gated. Calls `authClient.twoFactor.disable`. Red warning panel + email-confirm copy.
+- [x] `components/settings/two-factor-backup-codes-dialog.tsx` — password → fresh 10 codes from `generateBackupCodes`. Old codes invalidated immediately.
+- [x] `package.json` — added `qrcode.react`.
+
+**Done**: typecheck clean. Enrollment flow round-trips: enable → DB shows `user.twoFactorEnabled = true` + a `twoFactor` row; disable removes both. Sign-in interception comes in Phase C — until then 2FA is enrollable but doesn't actually gate logins yet.
 
 ---
 

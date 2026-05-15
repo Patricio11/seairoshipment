@@ -7,6 +7,11 @@ import { cn } from "@/lib/utils"
 
 interface SettingsShellProps {
     children: (activeTab: string) => ReactNode
+    /**
+     * Tab to open initially. Used by the admin forced-2FA redirect (`?force=1`)
+     * so the user lands directly on Security. Defaults to "profile".
+     */
+    initialTab?: string
 }
 
 const TABS = [
@@ -15,8 +20,8 @@ const TABS = [
     { id: "security", label: "Security & Access", icon: Shield },
 ]
 
-export function SettingsShell({ children }: SettingsShellProps) {
-    const [activeTab, setActiveTab] = useState("profile")
+export function SettingsShell({ children, initialTab }: SettingsShellProps) {
+    const [activeTab, setActiveTab] = useState(initialTab || "profile")
 
     return (
         <div className="flex flex-col gap-8 max-w-6xl mx-auto pb-12">

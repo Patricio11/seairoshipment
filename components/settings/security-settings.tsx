@@ -1,16 +1,22 @@
 "use client"
 
-import { useState } from "react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Shield, Key, Smartphone, QrCode, CheckCircle2 } from "lucide-react"
+import { Shield, Key, Smartphone } from "lucide-react"
+import { TwoFactorStatusCard } from "./two-factor-status-card"
 
-export function SecuritySettings() {
-    const [is2FAEnabled, setIs2FAEnabled] = useState(false)
-    const [showQR, setShowQR] = useState(false)
+interface SecuritySettingsProps {
+    /**
+     * When true, forces the 2FA enable wizard open on mount and prevents the user
+     * from dismissing it. Used by the admin forced-enrollment flow in Phase D
+     * (`/dashboard/settings?force=1` redirect from the admin layout).
+     */
+    forceTwoFactorEnroll?: boolean
+}
 
+export function SecuritySettings({ forceTwoFactorEnroll = false }: SecuritySettingsProps) {
     return (
         <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -21,7 +27,7 @@ export function SecuritySettings() {
                 <div>
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white">Security & Access</h2>
                     <p className="text-sm text-slate-500 mt-1">
-                        Manage your password and encryption layers.
+                        Manage your password and two-factor authentication.
                     </p>
                 </div>
                 <div className="h-12 w-12 rounded-2xl bg-emerald-50 dark:bg-slate-800 flex items-center justify-center">
@@ -70,70 +76,7 @@ export function SecuritySettings() {
                     <h3 className="font-bold text-slate-900 dark:text-white">Two-Factor Authentication</h3>
                 </div>
 
-                <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-8 text-white relative overflow-hidden">
-                    {/* Decorative mesh */}
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl -mr-32 -mt-32" />
-
-                    <div className="relative z-10 flex flex-col md:flex-row gap-8 items-center">
-                        <div className="flex-1 space-y-4">
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wider">
-                                {is2FAEnabled ? "Active & Secure" : "Recommended"}
-                            </div>
-                            <h4 className="text-2xl font-black">
-                                {is2FAEnabled ? "2FA is Enabled" : "Secure your account"}
-                            </h4>
-                            <p className="text-slate-400 text-sm leading-relaxed max-w-sm">
-                                {is2FAEnabled
-                                    ? "Your account is protected with an extra layer of security. Nice work."
-                                    : "Add an extra layer of security by requiring a code from your authenticator app."}
-                            </p>
-
-                            {!is2FAEnabled && !showQR && (
-                                <Button
-                                    onClick={() => setShowQR(true)}
-                                    className="bg-white text-slate-900 hover:bg-slate-100 font-bold border-none"
-                                >
-                                    Enable 2FA
-                                </Button>
-                            )}
-
-                            {/* Mock Code Input to "Verify" */}
-                            {showQR && !is2FAEnabled && (
-                                <div className="space-y-3">
-                                    <div className="flex gap-2">
-                                        {[1, 2, 3, 4, 5, 6].map(i => (
-                                            <div key={i} className="h-10 w-8 rounded bg-white/10 border border-white/20" />
-                                        ))}
-                                    </div>
-                                    <Button
-                                        onClick={() => setIs2FAEnabled(true)}
-                                        className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold w-full"
-                                    >
-                                        Verify Code
-                                    </Button>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="bg-white p-4 rounded-xl shadow-2xl">
-                            {is2FAEnabled ? (
-                                <div className="h-32 w-32 flex items-center justify-center text-emerald-500">
-                                    <CheckCircle2 className="h-16 w-16" />
-                                </div>
-                            ) : (
-                                <div className="h-32 w-32 bg-slate-900 flex items-center justify-center relative">
-                                    <QrCode className="h-24 w-24 text-white opacity-90" />
-                                    {/* Scan Line Animation */}
-                                    <motion.div
-                                        animate={{ top: ["10%", "90%", "10%"] }}
-                                        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                                        className="absolute left-2 right-2 h-0.5 bg-brand-blue shadow-[0_0_10px_2px_rgba(0,154,222,0.5)]"
-                                    />
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
+                <TwoFactorStatusCard forceEnroll={forceTwoFactorEnroll} />
             </div>
         </motion.div>
     )
