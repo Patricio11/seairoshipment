@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { authClient } from "@/lib/auth/client"
+import { logAuthEvent } from "@/lib/auth/events"
 
 interface TwoFactorBackupCodesDialogProps {
     open: boolean
@@ -61,6 +62,7 @@ export function TwoFactorBackupCodesDialog({ open, onOpenChange }: TwoFactorBack
             const data = res.data as { backupCodes?: string[] } | null
             setCodes(data?.backupCodes || [])
             setPhase("codes")
+            void logAuthEvent("TWO_FACTOR_BACKUP_CODES_REGENERATED")
             toast.success("New backup codes generated — old codes are no longer valid")
         } catch (e) {
             setError(e instanceof Error ? e.message : "Something went wrong")

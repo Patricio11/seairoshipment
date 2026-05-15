@@ -6,6 +6,7 @@ import { ShieldCheck, KeyRound, ArrowRight, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 import { authClient } from "@/lib/auth/client"
+import { logAuthEvent } from "@/lib/auth/events"
 
 type Mode = "totp" | "backup"
 
@@ -54,10 +55,22 @@ export function TwoFactorForm() {
                 : await authClient.twoFactor.verifyBackupCode({ code: code.trim() })
 
             if (res.error) {
+                // Audit the failed attempt. The session isn't fully issued
+                // yet at this point — the helper falls back to the userId
+                // carried in the verify response if present, otherwise the
+                // event is skipped server-side (no auth → 401).
+                void logAuthEvent("TWO_FACTOR_VERIFY_FAILED")
                 setError(res.error.message || "That code didn't match — try the latest one")
                 setCode("")
                 return
             }
+
+            // Success: the session is now real. Audit the success, and for
+            // backup codes specifically — flag it loudly because using a
+            // backup code is a meaningful "user lost their authenticator"
+            // signal worth tracking separately.
+            void logAuthEvent("TWO_FACTOR_VERIFY_SUCCESS")
+            if (mode === "backup") void logAuthEvent("TWO_FACTOR_BACKUP_CODE_USED")
 
             toast.success("Signed in")
             router.push(next)

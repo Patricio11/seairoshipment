@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/server";
 import { db } from "@/lib/db";
-import { user, twoFactor, clientNotifications } from "@/lib/db/schema";
+import { user, twoFactor, clientNotifications, authEvents } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { sendTwoFactorDisabledEmail } from "@/lib/email";
 
 /**
  * Admin break-glass: disables 2FA on a target user account.
@@ -22,17 +23,17 @@ import { nanoid } from "nanoid";
  *  - Self-disable through this endpoint is rejected for the same reason.
  *    Use Settings instead.
  *
- * What it does:
+ * What it does (in this order):
  *  - Sets `user.twoFactorEnabled = false`.
  *  - Deletes the `twoFactor` row (secret + backup codes).
- *  - Fires an in-app notification to the user so they know support touched
- *    their security setting.
- *
- * Audit log row gets added in Phase F together with the rest of the
- * auth-event instrumentation.
+ *  - Fires an in-app notification so the user sees the reset.
+ *  - Inserts a `TWO_FACTOR_ADMIN_RESET` row in `auth_events` with the
+ *    acting admin's id, IP, and user-agent.
+ *  - Sends a "support reset your 2FA" email so the user is alerted out-of-
+ *    band if their dashboard isn't open.
  */
 export async function POST(
-    _req: NextRequest,
+    req: NextRequest,
     { params }: { params: Promise<{ id: string }> },
 ) {
     try {
@@ -81,6 +82,27 @@ export async function POST(
             message: "Support has reset your two-factor authentication at your request. Sign in with your password, then re-enable 2FA from Settings → Security.",
             isRead: false,
         });
+
+        // Audit log — the actorId captures *which* admin did the reset.
+        const fwd = req.headers.get("x-forwarded-for");
+        const ip = fwd ? fwd.split(",")[0].trim() : req.headers.get("x-real-ip");
+        const ua = (req.headers.get("user-agent") || "").slice(0, 500);
+        await db.insert(authEvents).values({
+            id: `AE-${nanoid(12)}`,
+            userId: id,
+            event: "TWO_FACTOR_ADMIN_RESET",
+            actorId: session.user.id,
+            ip,
+            userAgent: ua,
+        });
+
+        // Email the affected user so they know their security setting was
+        // touched. Best-effort — SMTP failures don't undo the reset.
+        try {
+            await sendTwoFactorDisabledEmail(target.email, target.name, "admin-reset");
+        } catch (mailErr) {
+            console.warn("[admin:disable-2fa] confirmation email failed", mailErr);
+        }
 
         return NextResponse.json({ success: true });
     } catch (err) {

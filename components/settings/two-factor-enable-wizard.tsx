@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { authClient } from "@/lib/auth/client"
+import { logAuthEvent } from "@/lib/auth/events"
 
 interface TwoFactorEnableWizardProps {
     open: boolean
@@ -139,6 +140,9 @@ export function TwoFactorEnableWizard({ open, onOpenChange, onEnabled, forceEnro
                 setError(res.error.message || "Code did not match — try the latest code")
                 return
             }
+            // Fire the audit + confirmation-email side-effect. Don't await —
+            // the user's flow is done, this is housekeeping.
+            void logAuthEvent("TWO_FACTOR_ENABLED")
             toast.success("Two-factor authentication enabled")
             setStep("codes")
         } catch (e) {

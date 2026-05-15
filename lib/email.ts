@@ -510,6 +510,123 @@ export async function sendCbmShareEditedEmail(params: CbmShareNotificationParams
 }
 
 /* -------------------------------------------------------------------------- */
+/* Two-factor authentication                                                   */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Confirmation to the user that 2FA is now enabled on their account. Fired
+ * from POST /api/auth/events when a TWO_FACTOR_ENABLED event lands.
+ */
+export async function sendTwoFactorEnabledEmail(to: string, name: string | null) {
+    const greeting = name ? `Hi ${escapeHtml(name)},` : "Hi,";
+    await sendEmail({
+        to,
+        subject: "Two-factor authentication is now active — Seairo Cargo",
+        html: emailLayout({
+            accentColor: "#10b981",
+            heading: "Two-factor authentication is on",
+            intro: `${greeting} two-factor authentication has just been enabled on your Seairo account.`,
+            contentHtml: `
+                <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 10px; padding: 16px 18px; margin-bottom: 20px;">
+                    <p style="color: #065f46; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 6px;">What changes</p>
+                    <p style="color: #064e3b; font-size: 13px; line-height: 1.55; margin: 0;">
+                        From now on, signing in asks for a 6-digit code from your authenticator app after your password. If you ever lose the app, use one of the backup codes you saved during setup — each one works once.
+                    </p>
+                </div>
+                <p style="color: #475569; font-size: 14px; line-height: 1.65; margin: 0 0 12px;">
+                    Misplaced your backup codes? Go to <strong>Settings → Security</strong> and click <strong>Regenerate backup codes</strong> to issue a fresh set (the old ones stop working immediately).
+                </p>
+                ${ctaButton(`${appUrl}/dashboard/settings`, "Open settings", "#10b981")}
+                <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 14px 16px; margin-top: 16px;">
+                    <p style="color: #991b1b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 6px;">Wasn't you?</p>
+                    <p style="color: #7f1d1d; font-size: 13px; line-height: 1.55; margin: 0;">
+                        If you didn't enable this, change your password immediately and contact <a href="mailto:${supportEmail}" style="color: #991b1b;">${supportEmail}</a> — someone may have access to your account.
+                    </p>
+                </div>
+            `,
+        }),
+    });
+}
+
+/**
+ * Confirmation to the user that 2FA was disabled on their account. Triggered
+ * both when the user disables it from Settings (self-action) and when an
+ * admin break-glass disables it (`reason: "admin-reset"`).
+ */
+export async function sendTwoFactorDisabledEmail(
+    to: string,
+    name: string | null,
+    reason: "self" | "admin-reset" = "self",
+) {
+    const greeting = name ? `Hi ${escapeHtml(name)},` : "Hi,";
+    const introCopy = reason === "admin-reset"
+        ? `${greeting} our support team has just reset the two-factor authentication on your Seairo account at your request.`
+        : `${greeting} two-factor authentication has just been turned off on your Seairo account.`;
+    const explainerCopy = reason === "admin-reset"
+        ? "Sign in with your password as usual, then head straight to Settings → Security to re-enable 2FA with a fresh authenticator setup."
+        : "Sign-ins will now only require your password. We strongly recommend re-enabling 2FA — it's the single biggest defence against a compromised password.";
+    return await sendEmail({
+        to,
+        subject: reason === "admin-reset"
+            ? "Two-factor authentication reset — Seairo Cargo"
+            : "Two-factor authentication turned off — Seairo Cargo",
+        html: emailLayout({
+            accentColor: "#f59e0b",
+            heading: reason === "admin-reset" ? "2FA reset by support" : "Two-factor authentication is off",
+            intro: introCopy,
+            contentHtml: `
+                <p style="color: #475569; font-size: 14px; line-height: 1.65; margin: 0 0 16px;">
+                    ${explainerCopy}
+                </p>
+                ${ctaButton(`${appUrl}/dashboard/settings`, "Re-enable 2FA", "#f59e0b")}
+                ${reason === "self" ? `
+                <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 14px 16px; margin-top: 16px;">
+                    <p style="color: #991b1b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 6px;">Wasn't you?</p>
+                    <p style="color: #7f1d1d; font-size: 13px; line-height: 1.55; margin: 0;">
+                        If you didn't disable 2FA, change your password immediately and contact <a href="mailto:${supportEmail}" style="color: #991b1b;">${supportEmail}</a>. We can lock the account while we investigate.
+                    </p>
+                </div>` : ""}
+            `,
+        }),
+    });
+}
+
+/**
+ * Heads-up to the security inbox that an admin user has finished 2FA
+ * enrollment. Fires once per admin per enrollment. If ADMIN_ALERT_EMAIL is
+ * unset, the function logs and returns — no error — so missing config never
+ * breaks the user flow.
+ */
+export async function sendAdminTwoFactorEnabledEmail(adminName: string, adminEmail: string) {
+    const securityInbox = process.env.ADMIN_ALERT_EMAIL;
+    if (!securityInbox) {
+        console.log("[email] ADMIN_ALERT_EMAIL unset — skipping admin 2FA notification");
+        return;
+    }
+    await sendEmail({
+        to: securityInbox,
+        subject: `Admin enrolled in 2FA — ${adminName}`,
+        html: emailLayout({
+            accentColor: "#10b981",
+            heading: "Admin enrolled in 2FA",
+            intro: `<strong>${escapeHtml(adminName)}</strong> (${escapeHtml(adminEmail)}) just completed two-factor enrollment on their admin account.`,
+            contentHtml: `
+                <p style="color: #475569; font-size: 14px; line-height: 1.65; margin: 0 0 12px;">
+                    This is an informational alert — no action required. We send one of these every time an admin completes the forced 2FA setup so the security team can see new admin sessions hardening.
+                </p>
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0;">
+                    <tbody>
+                        <tr><td style="padding: 6px 0; color: #64748b; font-weight: 600; width: 120px;">Admin</td><td style="padding: 6px 0; color: #0f172a;">${escapeHtml(adminName)}</td></tr>
+                        <tr><td style="padding: 6px 0; color: #64748b; font-weight: 600;">Email</td><td style="padding: 6px 0; color: #0f172a;">${escapeHtml(adminEmail)}</td></tr>
+                        <tr><td style="padding: 6px 0; color: #64748b; font-weight: 600;">When</td><td style="padding: 6px 0; color: #0f172a;">${new Date().toISOString()}</td></tr>
+                    </tbody>
+                </table>
+            `,
+        }),
+    });
+}
+
+/* -------------------------------------------------------------------------- */
 /* Helpers                                                                     */
 /* -------------------------------------------------------------------------- */
 

@@ -55,7 +55,7 @@ export function TwoFactorStatusCard({ forceEnroll = false }: TwoFactorStatusCard
                         <p className="text-slate-400 text-sm leading-relaxed max-w-md">
                             {enabled
                                 ? "Sign-ins to your account require a 6-digit code from your authenticator app in addition to your password."
-                                : "Add a code from an authenticator app (1Password, Google Authenticator, Authy) as a second step after your password."}
+                                : "Add a code from an authenticator app (1Password, Google Authenticator, Authy, Microsoft Authenticator) as a second step after your password."}
                         </p>
 
                         <div className="flex flex-wrap gap-2 pt-2">

@@ -170,6 +170,24 @@ See [docs/cbm-cargo-type/phase-g-display-surfaces.md](docs/cbm-cargo-type/phase-
 
 ---
 
+## Phase 4 — Settings → Security (two-factor authentication) ✅ DONE
+
+Settings already had Company Profile / Notifications / Security tabs. The Security tab now hosts real two-factor authentication (TOTP) instead of the mock UI it shipped with.
+
+### What landed
+
+- **Enable wizard** — 4 steps inside `<TwoFactorStatusCard />`: password → QR scan + setup key fallback → 6-digit verify → save backup codes (download `.txt`, copy all, "I've saved these" gate).
+- **Disable** — password gate, red warning, sends a "2FA turned off" confirmation email.
+- **Regenerate backup codes** — password gate, fresh 10-code set, old codes invalidated immediately.
+- **Sign-in challenge at `/auth/2fa`** — after a correct password, an enrolled user is bounced here for a 6-digit code (or a single-use backup code).
+- **Admin enforcement** — admins can't reach any `/admin/*` route until they've enrolled; unenrolled admins land on `/auth/setup-2fa` for a forced flow they can't dismiss.
+- **Audit log** — `auth_events` table records every enable / disable / verify / regen, and admin break-glass resets carry an `actorId` so you can answer "which admin reset whose 2FA, when, and from what IP?".
+- **Emails** — confirmations on enable / disable (self + admin-reset variants) + an optional admin-enrollment heads-up to a configured security inbox (`ADMIN_ALERT_EMAIL`).
+
+Full design + per-phase notes in [TWO_FACTOR_AUTH.md](TWO_FACTOR_AUTH.md) and [docs/two-factor-auth/](docs/two-factor-auth/).
+
+---
+
 ## Reality check / deferred items
 
 - **Cut-off accuracy** — `etd - 48h` is industry-typical but not authoritative. If MetaShip exposes a real `cutoffAt`, swap [app/api/dashboard/overview/route.ts:cutoffFromEtd](app/api/dashboard/overview/route.ts) for that field.

@@ -163,17 +163,31 @@ A → B → C is the critical path for a working v1. D blocks rollout for admins
 
 ---
 
-## Phase F — Polish
+## Phase F — Polish ✅
 
-- [ ] **Audit log table** `auth_events` — one row per security event: `userId`, `event` (`2FA_ENABLED` | `2FA_DISABLED` | `2FA_VERIFY_SUCCESS` | `2FA_VERIFY_FAILED` | `2FA_ADMIN_RESET` | `2FA_BACKUP_CODES_REGENERATED`), `ip`, `userAgent`, `createdAt`. Insert from every server-side touchpoint. Optional: surface as a section on the user's Settings page so they can see their own history.
-- [ ] **Email templates** in `lib/email.ts`:
-  - `sendTwoFactorEnabledEmail` — to user, "Two-factor authentication is now active on your Seairo account".
-  - `sendTwoFactorDisabledEmail` — to user, "Two-factor authentication has been turned off on your account" + "If this wasn't you, contact support immediately".
-  - `sendAdminTwoFactorEnabledEmail` — to admin inbox, "Admin {name} just enrolled in 2FA".
-- [ ] Copy review: every page that mentions 2FA — sign-in form, settings card, forced-enrollment banner, emails. One pass for tone consistency.
-- [ ] Update `CLIENT_DASHBOARD.md` with a note on the new Settings → Security area.
+📄 [docs/two-factor-auth/phase-f-polish.md](docs/two-factor-auth/phase-f-polish.md)
 
-**Done when**: emails fire on every state change, audit log captures every event, copy reads consistently.
+- [x] **Audit log table** [`auth_events`](lib/db/schema/auth-events.ts) — 7-value closed enum, indexed on `userId` and `createdAt`, with an `actorId` FK so admin break-glass resets carry the acting admin's id. Insert paths: client-attested via [POST /api/auth/events](app/api/auth/events/route.ts) for user-initiated flows, server-direct from the admin break-glass route for `TWO_FACTOR_ADMIN_RESET`. (Activity-panel surface deferred — data is captured, UI on top is a follow-up.)
+- [x] **Email templates** in [lib/email.ts](lib/email.ts):
+  - `sendTwoFactorEnabledEmail` — emerald accent, recovery hint about Regenerate backup codes, red "Wasn't you?" callout.
+  - `sendTwoFactorDisabledEmail(reason)` — amber accent, copy switches between `self` and `admin-reset` variants.
+  - `sendAdminTwoFactorEnabledEmail` — heads-up to `ADMIN_ALERT_EMAIL` (skipped silently if unset).
+- [x] **Copy review** — recommended-apps list unified (status card + wizard now both mention 1Password / Google Authenticator / Authy / Microsoft Authenticator). All forced-enroll, disable, and challenge surfaces read consistently.
+- [x] **[CLIENT_DASHBOARD.md](CLIENT_DASHBOARD.md)** — new "Phase 4 — Settings → Security" section pointing at the full design tracker.
+
+**Done**: every state change fires the right email and writes an audit row. Closed-enum table is safe to query for "show me every security event for this user". `ADMIN_ALERT_EMAIL` is the one optional env (missing → admin enrolment alert is skipped, nothing else regresses).
+
+---
+
+## Required setup (post-rollout)
+
+After deploying, run `npm run db:push` once. Pending schema additions across all phases:
+
+- Phase A: `user.twoFactorEnabled boolean`, new `twoFactor` table
+- Phase F: new `auth_events` table + `auth_event_type` enum
+
+Optional env (Phase F):
+- `ADMIN_ALERT_EMAIL` — security inbox for admin-enrolment alerts. Unset → no admin alerts, no error.
 
 ---
 

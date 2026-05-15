@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { authClient } from "@/lib/auth/client"
+import { logAuthEvent } from "@/lib/auth/events"
 
 interface TwoFactorDisableDialogProps {
     open: boolean
@@ -44,6 +45,7 @@ export function TwoFactorDisableDialog({ open, onOpenChange, onDisabled }: TwoFa
                 setError(res.error.message || "Could not disable two-factor")
                 return
             }
+            void logAuthEvent("TWO_FACTOR_DISABLED")
             toast.success("Two-factor authentication disabled")
             onDisabled?.()
             onOpenChange(false)
