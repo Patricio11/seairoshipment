@@ -78,7 +78,10 @@ export async function calculateQuote(
         // Use fallback codes as names
     }
 
-    // 1. Origin charges — find active rate by originId (derived short code)
+    // 1. Origin charges — find active rate by originId (derived short code).
+    // calculateQuote is the PALLET path; CUBE bookings go through
+    // calculateCubeQuote instead. Pin cargoType=PALLET so an SCS-Cube card
+    // for the same origin/container can't leak into a PALLET quote.
     let originPerPallet = 0;
     let hasOriginRates = false;
     {
@@ -90,6 +93,7 @@ export async function calculateQuote(
                     eq(originCharges.originId, originId),
                     eq(originCharges.containerId, containerTypeId),
                     eq(originCharges.salesRateTypeId, salesRateTypeId),
+                    eq(originCharges.cargoType, "PALLET"),
                     eq(originCharges.active, true)
                 )
             )
@@ -131,6 +135,7 @@ export async function calculateQuote(
                     eq(oceanFreightRates.destinationPortCode, destinationCode),
                     eq(oceanFreightRates.containerId, containerTypeId),
                     eq(oceanFreightRates.salesRateTypeId, salesRateTypeId),
+                    eq(oceanFreightRates.cargoType, "PALLET"),
                     eq(oceanFreightRates.active, true)
                 )
             )
@@ -155,6 +160,7 @@ export async function calculateQuote(
                     eq(destinationCharges.destinationPortCode, destinationCode),
                     eq(destinationCharges.containerId, containerTypeId),
                     eq(destinationCharges.salesRateTypeId, salesRateTypeId),
+                    eq(destinationCharges.cargoType, "PALLET"),
                     eq(destinationCharges.active, true)
                 )
             )
