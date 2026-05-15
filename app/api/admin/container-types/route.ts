@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
         if (error) return error;
 
         const body = await request.json();
-        const { id, size, type, variant, code, displayName, maxPallets, active } = body;
+        const { id, size, type, variant, code, displayName, maxPallets, volumeCBM, active } = body;
 
         if (!id || !size || !type || !code || !displayName || !maxPallets) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -43,6 +43,10 @@ export async function POST(request: NextRequest) {
                 code,
                 displayName,
                 maxPallets,
+                // Interior CBM is critical for Cube booking flows — every Cube
+                // container needs a positive volumeCBM or its capacity check
+                // evaluates to 0 and the client never sees the container.
+                volumeCBM: volumeCBM != null ? String(volumeCBM) : null,
                 active: active !== false,
             })
             .returning();
@@ -61,7 +65,7 @@ export async function PUT(request: NextRequest) {
         if (error) return error;
 
         const body = await request.json();
-        const { id, displayName, maxPallets, active } = body;
+        const { id, displayName, maxPallets, volumeCBM, active } = body;
 
         if (!id) {
             return NextResponse.json({ error: "Container type ID is required" }, { status: 400 });
@@ -70,6 +74,7 @@ export async function PUT(request: NextRequest) {
         const updates: Record<string, unknown> = { updatedAt: new Date() };
         if (displayName !== undefined) updates.displayName = displayName;
         if (maxPallets !== undefined) updates.maxPallets = maxPallets;
+        if (volumeCBM !== undefined) updates.volumeCBM = volumeCBM != null ? String(volumeCBM) : null;
         if (active !== undefined) updates.active = active;
 
         const [updated] = await db

@@ -39,17 +39,18 @@ async function seed() {
         ])
         .onConflictDoNothing();
 
-    // 2. Container Types
+    // 2. Container Types — volumeCBM values are interior CBM per ISO/ITC
+    // reference sheets. Reefers lose ~5 m³ to insulation vs. equivalent dry.
     console.log("  → Container types...");
     await db
         .insert(containerTypes)
         .values([
-            { id: "20ft-reefer-std", size: "20FT", type: "REEFER", variant: "STD", code: "20FT-REEFER-STD", displayName: "20ft Reefer", maxPallets: 10, active: true },
-            { id: "20ft-dry-std", size: "20FT", type: "DRY", variant: "STD", code: "20FT-DRY-STD", displayName: "20ft Dry Container", maxPallets: 11, active: true },
-            { id: "40ft-reefer-std", size: "40FT", type: "REEFER", variant: "STD", code: "40FT-REEFER-STD", displayName: "40ft Reefer", maxPallets: 20, active: true },
-            { id: "40ft-reefer-hc", size: "40FT", type: "REEFER", variant: "HC", code: "40FT-REEFER-HC", displayName: "40ft HC Reefer", maxPallets: 20, active: true },
-            { id: "40ft-dry-std", size: "40FT", type: "DRY", variant: "STD", code: "40FT-DRY-STD", displayName: "40ft Dry Container", maxPallets: 22, active: true },
-            { id: "40ft-dry-hc", size: "40FT", type: "DRY", variant: "HC", code: "40FT-DRY-HC", displayName: "40ft HC Dry Container", maxPallets: 22, active: true },
+            { id: "20ft-reefer-std", size: "20FT", type: "REEFER", variant: "STD", code: "20FT-REEFER-STD", displayName: "20ft Reefer",          maxPallets: 10, volumeCBM: "28.30",  active: true },
+            { id: "20ft-dry-std",    size: "20FT", type: "DRY",    variant: "STD", code: "20FT-DRY-STD",    displayName: "20ft Dry Container",   maxPallets: 11, volumeCBM: "33.20",  active: true },
+            { id: "40ft-reefer-std", size: "40FT", type: "REEFER", variant: "STD", code: "40FT-REEFER-STD", displayName: "40ft Reefer",          maxPallets: 20, volumeCBM: "58.10",  active: true },
+            { id: "40ft-reefer-hc",  size: "40FT", type: "REEFER", variant: "HC",  code: "40FT-REEFER-HC",  displayName: "40ft HC Reefer",       maxPallets: 20, volumeCBM: "67.00",  active: true },
+            { id: "40ft-dry-std",    size: "40FT", type: "DRY",    variant: "STD", code: "40FT-DRY-STD",    displayName: "40ft Dry Container",   maxPallets: 22, volumeCBM: "67.50",  active: true },
+            { id: "40ft-dry-hc",     size: "40FT", type: "DRY",    variant: "HC",  code: "40FT-DRY-HC",     displayName: "40ft HC Dry Container", maxPallets: 22, volumeCBM: "76.40",  active: true },
         ])
         .onConflictDoNothing();
 
