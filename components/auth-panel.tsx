@@ -89,12 +89,23 @@ export function AuthPanel({ isOpen, onClose, initialMode = 'login' }: AuthPanelP
                     password: formData.password
                 }, {
                     onSuccess: async (ctx) => {
+                        // 2FA-enabled accounts get a `twoFactorRedirect: true` flag
+                        // instead of a full user object. The session isn't issued yet
+                        // — the user has to clear /auth/2fa before any role-routing
+                        // can happen.
+                        const data = ctx.data as { twoFactorRedirect?: boolean; user?: { role?: string } } | undefined;
+                        if (data?.twoFactorRedirect) {
+                            onClose();
+                            router.push('/auth/2fa');
+                            return;
+                        }
+
                         toast.success("Welcome back!", {
                             description: "You have been successfully signed in."
                         });
 
                         // Redirect based on role
-                        const userRole = ctx.data.user.role;
+                        const userRole = data?.user?.role;
                         if (userRole === 'admin') {
                             router.push('/admin');
                         } else {

@@ -115,20 +115,18 @@ A → B → C is the critical path for a working v1. D blocks rollout for admins
 
 ---
 
-## Phase C — Login challenge page
+## Phase C — Login challenge page ✅
 
 **Goal**: After a correct password, a user with 2FA enabled is redirected to `/auth/2fa` instead of straight to the dashboard.
 
-- [ ] Modify the sign-in flow in `components/auth/auth-panel.tsx` (or wherever sign-in happens). Better Auth's sign-in response includes a `twoFactorRedirect` flag when the password was correct but 2FA hasn't been challenged yet. If present, push to `/auth/2fa`.
-- [ ] `app/auth/2fa/page.tsx` — server-rendered shell.
-- [ ] `components/auth/two-factor-form.tsx`:
-  - Six-digit input (auto-advance between digits, paste-to-fill).
-  - Submit calls `authClient.twoFactor.verifyOtp({ code })`. On success, the session completes and we redirect to `/dashboard` (or the original destination if we tracked `?next=`).
-  - Failed verification toasts the error. Rate-limited (Better Auth handles this) — after N failed attempts the session aborts and the user starts again from sign-in.
-  - "Use a backup code instead" link toggles the input to an 8-char/word backup-code field.
-- [ ] Wire `?next=…` so the post-2FA redirect lands the user where they were trying to go (e.g. a deep link to a booking).
+📄 [docs/two-factor-auth/phase-c-login-challenge.md](docs/two-factor-auth/phase-c-login-challenge.md)
 
-**Done when**: end-to-end smoke test passes — sign in with a 2FA-enabled account, get bounced to `/auth/2fa`, enter the code from 1Password, land on the dashboard.
+- [x] [components/auth-panel.tsx](components/auth-panel.tsx) — `onSuccess` reads `ctx.data.twoFactorRedirect`; when present, closes the panel and pushes `/auth/2fa`. Toast + role-redirect now only fire for the no-2FA branch.
+- [x] [app/auth/2fa/page.tsx](app/auth/2fa/page.tsx) — server-rendered shell using the same gradient/glass layout as `/auth/reset-password`. `<Suspense>` wraps the form so search-param reads don't break SSG.
+- [x] [components/auth/two-factor-form.tsx](components/auth/two-factor-form.tsx) — 6-digit `inputMode="numeric"` field with `autoComplete="one-time-code"`. Submit hits `authClient.twoFactor.verifyTotp`. Inline error on bad code. Toggle "Use a backup code instead" swaps to a free-text 20-char field that calls `verifyBackupCode`. Auto-focus on mode change.
+- [x] `?next=` plumbing on the receiver side — `safeNext()` allows only same-origin paths (`/foo`), rejects `//evil.com` and absolute URLs. Producer side (auth panel passing `?next`) is left as a one-line seam since the landing-page panel has no intended destination today.
+
+**Done**: sign in with a 2FA-enabled account → bounced to `/auth/2fa` → 6-digit code accepted → lands on `/dashboard` (admin role-routing kicks in). Backup-code branch works the same way. Better Auth's built-in rate limiting handles brute-force protection.
 
 ---
 
