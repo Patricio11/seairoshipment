@@ -1,0 +1,254 @@
+# Two-Factor Authentication — Progress Tracker
+
+## Goal
+
+Add **TOTP-based two-factor authentication** to the Seairo platform for both admin and client accounts. After a correct password the user is asked for a 6-digit code from their authenticator app (Google Authenticator, 1Password, Authy, etc.) before the session is fully issued.
+
+- **Optional for clients**, enrolled from Settings → Security.
+- **Mandatory for admins** — first login after this ships forces enrollment.
+- **Backup codes** are the only recovery path. 10 single-use codes shown once at setup, must be downloaded or copied before the user can leave the screen.
+
+Built on Better Auth's [`twoFactor` plugin](https://www.better-auth.com/docs/plugins/2fa) — handles the cryptographic primitives (TOTP secret generation, code verification, backup-code hashing) and the session-state interception so we don't have to reinvent any of that. We build the UI and the orchestration around it.
+
+---
+
+## Architecture at a glance
+
+```
+LOGIN FLOW
+─────────────────────────────────────────────────
+[1] /auth/sign-in        →   email + password
+                              ↓ correct?
+                                                 (no 2FA enabled)
+                                                 ─────────────────→ /dashboard
+[2] /auth/2fa            ←   "2FA required" intercepted
+     ↓ 6-digit code OR backup code
+     ↓ verified?
+                                                 → /dashboard
+
+ADMIN FORCED FLOW (one-time)
+─────────────────────────────────────────────────
+[1] admin logs in        →   no 2FA enrolled
+                              ↓
+[2] /dashboard/settings/security?force=1
+                              ↓ enable + verify + save codes
+                              ↓
+                                                 → /admin/...
+
+SETTINGS / OWNER MANAGEMENT
+─────────────────────────────────────────────────
+/dashboard/settings/security
+  ├─ status (Off | Enabled)
+  ├─ Enable wizard (password gate → QR + secret → verify → codes)
+  ├─ Disable (password + current code)
+  └─ View / regenerate backup codes
+```
+
+---
+
+## Decisions — locked in
+
+| Question | Answer |
+|---|---|
+| Second-factor method | **TOTP via authenticator app**. SMS is NIST-deprecated; email OTP is too vulnerable for primary 2FA. |
+| Recovery | **Backup codes only.** 10 single-use, generated at setup, shown once. Lost → admin break-glass via user-vetting page. |
+| Admin enforcement | **Forced.** Admin role can't reach any `/admin/...` page until 2FA is enabled. |
+| Trust this device for 30 days | **Deferred.** v1 prompts on every login. Add to v2 if friction becomes a real complaint. |
+| Email-OTP recovery | **Deferred.** Backup codes are the only recovery path in v1. |
+| Plugin choice | **Better Auth's `twoFactor`.** Already on 1.4.17. The plugin owns the schema, the verification crypto, and the auth-flow hooks. |
+| Settings location | `/dashboard/settings/security`. Same path for clients and admins. |
+| Login challenge page | `/auth/2fa`. Server-rendered shell, client form. |
+| Backup-code presentation | Downloadable as a `.txt` file AND copy-to-clipboard. User must check "I've saved these" before the dialog closes. |
+| Backup-code regeneration | Available from the same settings page. Regenerating invalidates the old set. |
+| 2FA-required indicator on user vetting list | Yes — small chip next to each admin row showing whether they've enrolled. |
+| Audit log | One entry per: enable, disable, successful verify, failed verify (rate-limited per user), admin reset. |
+
+---
+
+## Phases at a glance
+
+```
+A · Foundation — install & wire the plugin           → docs/two-factor-auth/phase-a-foundation.md
+B · Settings UI — enable, disable, view backup codes → docs/two-factor-auth/phase-b-settings-ui.md
+C · Login interception + /auth/2fa challenge page    → docs/two-factor-auth/phase-c-login-challenge.md
+D · Admin enforcement + forced enrollment            → docs/two-factor-auth/phase-d-admin-enforcement.md
+E · Admin user-management touchups (break-glass + indicators) → docs/two-factor-auth/phase-e-admin-management.md
+F · Polish — emails, audit log, copy review          → docs/two-factor-auth/phase-f-polish.md
+```
+
+A → B → C is the critical path for a working v1. D blocks rollout for admins. E + F are polish that can ship same week.
+
+---
+
+## Phase A — Foundation
+
+**Goal**: Better Auth's `twoFactor` plugin is wired into the server, the schema has migrated, and the client SDK exposes the new methods. Nothing user-facing yet.
+
+- [ ] `pnpm add @better-auth/two-factor` (or whichever installer Better Auth ships)
+- [ ] `lib/auth/server.ts` — add the plugin to `betterAuth({ plugins: [twoFactor({ ... })] })`. Configure:
+  - `issuer: "Seairo Cargo"` (shown inside the user's authenticator app)
+  - `period: 30` (standard TOTP window)
+  - `digits: 6`
+- [ ] `lib/auth/client.ts` — extend the auth client with the matching `twoFactorClient` so the React side has `authClient.twoFactor.*` methods.
+- [ ] Run `npm run db:push` — the plugin's [drizzle schema](https://www.better-auth.com/docs/plugins/2fa#schema) adds `user.twoFactorEnabled boolean` + a `twoFactor` table for the secret + hashed backup codes.
+- [ ] Sanity test against a local sign-in to confirm the plugin endpoints respond.
+
+**Done when**: `authClient.twoFactor.enable(...)`, `verify(...)`, `disable(...)`, and the server's `/api/auth/two-factor/*` endpoints all exist and return 200/401 correctly. No UI yet.
+
+---
+
+## Phase B — Settings → Security UI
+
+**Goal**: A user can enable, verify, view backup codes, regenerate them, and disable 2FA from Settings.
+
+- [ ] `app/dashboard/settings/page.tsx` — the settings shell. Tab-style nav with Security as the first tab. (If a settings page already exists, extend it.)
+- [ ] `app/dashboard/settings/security/page.tsx` — the Security tab.
+- [ ] `components/settings/two-factor-status-card.tsx`:
+  - When `user.twoFactorEnabled === false`: "Add an extra layer of security" + benefits copy + **Enable** button.
+  - When `true`: green status pill "Two-factor authentication is enabled" + **View backup codes**, **Regenerate backup codes**, **Disable** buttons.
+- [ ] `components/settings/two-factor-enable-wizard.tsx` — multi-step dialog:
+  1. **Password gate.** Re-prompt for password before any 2FA secret leaks. Avoids someone walking up to an unlocked laptop and adding 2FA to lock out the rightful user.
+  2. **Scan / enter secret.** Show QR code (use `qrcode` or `qrcode.react` — small dep). Manual entry secret displayed below for apps that can't scan. Recommended authenticator apps listed: 1Password, Google Authenticator, Authy, Microsoft Authenticator.
+  3. **Verify.** Six-digit input. Submitting calls `authClient.twoFactor.verify({ code })`. On success, the plugin sets `twoFactorEnabled = true`.
+  4. **Save backup codes.** Render the 10 codes in a monospace grid. Two buttons: **Download `.txt`** and **Copy to clipboard**. Checkbox "I've saved these codes in a safe place" must be checked before the Finish button enables.
+- [ ] `components/settings/two-factor-disable-dialog.tsx` — password + current 6-digit code (or backup code). On success the secret is destroyed.
+- [ ] `components/settings/two-factor-backup-codes-dialog.tsx` — view current codes (greyed out for already-used). Regenerate button invalidates the old set.
+
+**Done when**: A test user can flip 2FA on, scan with 1Password, verify, download codes, and the user row in the DB shows `twoFactorEnabled: true`. Disabling reverses it cleanly.
+
+---
+
+## Phase C — Login challenge page
+
+**Goal**: After a correct password, a user with 2FA enabled is redirected to `/auth/2fa` instead of straight to the dashboard.
+
+- [ ] Modify the sign-in flow in `components/auth/auth-panel.tsx` (or wherever sign-in happens). Better Auth's sign-in response includes a `twoFactorRedirect` flag when the password was correct but 2FA hasn't been challenged yet. If present, push to `/auth/2fa`.
+- [ ] `app/auth/2fa/page.tsx` — server-rendered shell.
+- [ ] `components/auth/two-factor-form.tsx`:
+  - Six-digit input (auto-advance between digits, paste-to-fill).
+  - Submit calls `authClient.twoFactor.verifyOtp({ code })`. On success, the session completes and we redirect to `/dashboard` (or the original destination if we tracked `?next=`).
+  - Failed verification toasts the error. Rate-limited (Better Auth handles this) — after N failed attempts the session aborts and the user starts again from sign-in.
+  - "Use a backup code instead" link toggles the input to an 8-char/word backup-code field.
+- [ ] Wire `?next=…` so the post-2FA redirect lands the user where they were trying to go (e.g. a deep link to a booking).
+
+**Done when**: end-to-end smoke test passes — sign in with a 2FA-enabled account, get bounced to `/auth/2fa`, enter the code from 1Password, land on the dashboard.
+
+---
+
+## Phase D — Admin forced enrollment
+
+**Goal**: Admin-role users can't access any `/admin/...` route until they've enrolled 2FA.
+
+- [ ] `app/admin/layout.tsx` — server-side check: if `session.user.role === "admin"` and `session.user.twoFactorEnabled !== true`, redirect to `/dashboard/settings/security?force=1`.
+- [ ] `components/settings/two-factor-enable-wizard.tsx` — when `?force=1` is present:
+  - Banner at the top: "Two-factor authentication is required for admin accounts."
+  - No "Cancel" button. The wizard stays open until enrollment completes.
+  - Sign-out link in the banner so the admin can bail out completely if they need to.
+- [ ] After successful enrollment under `?force=1`, redirect to `/admin/dashboard`.
+- [ ] Email confirmation: when an admin successfully enrolls, fire `sendAdminTwoFactorEnabledEmail` (Phase F template) to the admin notifications inbox so the security team sees the event.
+
+**Done when**: A fresh admin account, on its first login after this ships, gets forced through enrollment before it can see `/admin/dashboard`. Once enrolled, all subsequent logins behave like Phase C.
+
+---
+
+## Phase E — Admin user-management touchups
+
+**Goal**: Break-glass support + visibility into who has 2FA enabled.
+
+- [ ] User vetting list (`app/admin/users/page.tsx`) — small chip next to each row showing whether the user has 2FA enabled (slate "Off" / emerald "On" / red "Off — required" for admins).
+- [ ] Per-user actions menu — add **Disable 2FA** option (admins only, for clients only — admins can't disable each other's 2FA from this UI, only their own from Settings). On click, confirm dialog explaining "the user will sign in with password only on next attempt; recommend asking them to re-enroll".
+- [ ] New API route `POST /api/admin/users/[id]/disable-2fa` — `requireAdmin`, sets the user's `twoFactorEnabled = false` and destroys the secret/backup-codes rows. Logs an entry to the audit log.
+
+**Done when**: A user who lost their authenticator AND their backup codes can email support, an admin opens their row, clicks "Disable 2FA", and the user can sign in with password alone. The user is told to re-enroll immediately.
+
+---
+
+## Phase F — Polish
+
+- [ ] **Audit log table** `auth_events` — one row per security event: `userId`, `event` (`2FA_ENABLED` | `2FA_DISABLED` | `2FA_VERIFY_SUCCESS` | `2FA_VERIFY_FAILED` | `2FA_ADMIN_RESET` | `2FA_BACKUP_CODES_REGENERATED`), `ip`, `userAgent`, `createdAt`. Insert from every server-side touchpoint. Optional: surface as a section on the user's Settings page so they can see their own history.
+- [ ] **Email templates** in `lib/email.ts`:
+  - `sendTwoFactorEnabledEmail` — to user, "Two-factor authentication is now active on your Seairo account".
+  - `sendTwoFactorDisabledEmail` — to user, "Two-factor authentication has been turned off on your account" + "If this wasn't you, contact support immediately".
+  - `sendAdminTwoFactorEnabledEmail` — to admin inbox, "Admin {name} just enrolled in 2FA".
+- [ ] Copy review: every page that mentions 2FA — sign-in form, settings card, forced-enrollment banner, emails. One pass for tone consistency.
+- [ ] Update `CLIENT_DASHBOARD.md` with a note on the new Settings → Security area.
+
+**Done when**: emails fire on every state change, audit log captures every event, copy reads consistently.
+
+---
+
+## Files most affected (rolling)
+
+### Auth core (A)
+- `lib/auth/server.ts` (plugin wiring)
+- `lib/auth/client.ts` (twoFactor client extension)
+- Better Auth schema (handled by plugin + drizzle-kit)
+
+### Settings (B)
+- `app/dashboard/settings/page.tsx` (shell, new)
+- `app/dashboard/settings/security/page.tsx` (new)
+- `components/settings/two-factor-status-card.tsx` (new)
+- `components/settings/two-factor-enable-wizard.tsx` (new)
+- `components/settings/two-factor-disable-dialog.tsx` (new)
+- `components/settings/two-factor-backup-codes-dialog.tsx` (new)
+
+### Login challenge (C)
+- `components/auth/auth-panel.tsx` (intercept 2FA response)
+- `app/auth/2fa/page.tsx` (new)
+- `components/auth/two-factor-form.tsx` (new)
+
+### Admin enforcement (D)
+- `app/admin/layout.tsx` (force-redirect check)
+
+### Admin user management (E)
+- `app/admin/users/page.tsx` (chip + action menu)
+- `app/api/admin/users/[id]/disable-2fa/route.ts` (new)
+
+### Polish (F)
+- `lib/db/schema/auth-events.ts` (new)
+- `lib/email.ts` (three new templates)
+
+---
+
+## Risk areas
+
+- **Locked-out admins.** If all admins enable 2FA, lose their devices, and have no backup codes, nobody can reset anyone. Mitigation: at least one admin must always retain backup codes in a secure location (password manager, physical safe). Document this in onboarding for the next admin who gets approved.
+- **Better Auth schema collisions.** The plugin owns the `twoFactor` table. If we ever add columns to it manually they'll get overwritten on plugin update. Don't extend the plugin's tables — add a sibling table if we need more fields.
+- **Backup-code UX.** Users notoriously close the dialog without saving the codes, then panic when they lose their phone. The "I've saved these codes" checkbox is a forcing function but isn't bulletproof. Fallback is admin reset.
+- **TOTP clock drift.** Authenticator apps and our server clocks can drift up to ±30 seconds. Better Auth's plugin tolerates a 1-window drift by default (so codes from the previous or next window also pass). Don't tighten this without good reason.
+- **Phishing resistance.** TOTP is not phishing-resistant — a real-time MITM proxy can capture the 6-digit code and replay it. WebAuthn / passkeys are the proper fix. Out of scope for v1; consider for a future hardening phase.
+- **Rate limiting.** Better Auth rate-limits verify attempts per user. Confirm our overall API rate limiter doesn't block 2FA traffic before that — would lock people out for the wrong reason.
+- **Recovery codes in transit.** If we ever email codes (we don't right now), that's a downgrade — email accounts get compromised. Backup codes shown once at setup is the right model; don't add an "email me my codes" button.
+
+---
+
+## Out of scope for v1
+
+- **WebAuthn / passkeys / hardware keys.** Stronger and phishing-resistant. Future phase G.
+- **SMS second factor.** NIST-deprecated for a reason. Won't add even on request.
+- **Trust this device for N days.** Defer to a v2 phase if friction is a real complaint. Adds a `trusted_devices` table and a "remember me" checkbox on `/auth/2fa`.
+- **Email OTP as a primary factor.** Email accounts are too commonly compromised to count as a second factor.
+- **Per-role grace period.** Once an admin's 2FA enforcement ships, every admin is required immediately. No "you have 7 days to enroll".
+- **Step-up authentication.** Forcing a re-verification before sensitive actions (delete account, change email). Useful but separate work.
+- **Admin-side bulk disable.** Each break-glass disable is per-user only.
+
+---
+
+## Open questions
+
+- [ ] Should the audit log surface on the user's own Settings page ("Your recent security events"), or only in the admin user-vetting view? Default: both, read-only for the user.
+- [ ] Authenticator app recommendations list — should it include only the four big ones (1Password, Google Authenticator, Authy, Microsoft Authenticator) or also FreeOTP / Aegis (free / open-source)? Default: the four big ones, smaller "or any TOTP-compatible app" footnote.
+- [ ] Copy tone on the forced-enrollment banner. Default: matter-of-fact, "this protects the platform for everyone". Avoid blame.
+
+---
+
+## Manual steps the user does after each phase
+
+| Phase | Manual step |
+|---|---|
+| A | `npm run db:push` to add the plugin's schema |
+| B | Smoke-test enable/disable flow end-to-end with a test client account |
+| C | Smoke-test login interception with that test account |
+| D | First admin enrolls under forced flow; verify break-glass on user-vetting page works |
+| E | (none — covered above) |
+| F | (none — emails just start sending) |
