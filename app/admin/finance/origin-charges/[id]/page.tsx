@@ -72,6 +72,11 @@ export default async function OriginChargeDetailPage({
             category: (item.category || "OTHER") as ChargeCategory,
             unitCost: item.unitCost ? Number(item.unitCost) : null,
             containerCost: item.containerCost ? Number(item.containerCost) : null,
+            // Buy-side amounts — the editor's hidden Cost Price column.
+            // These are saved by the POST/PUT path but were being dropped
+            // here on load, so the field appeared empty after every save.
+            buyUnitCost: item.buyUnitCost ? Number(item.buyUnitCost) : null,
+            buyContainerCost: item.buyContainerCost ? Number(item.buyContainerCost) : null,
             mandatory: item.mandatory,
             sortOrder: item.sortOrder || 0,
             notes: item.notes,

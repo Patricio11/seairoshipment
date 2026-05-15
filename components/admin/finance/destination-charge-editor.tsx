@@ -280,7 +280,7 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
             </div>
 
             {/* Main Settings Card */}
-            <Card className="p-6">
+            <Card className="p-6 bg-slate-900 border-slate-800 shadow-none">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-500">Destination Port</label>
@@ -345,8 +345,8 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
             </Card>
 
             {/* Charge Items Table */}
-            <Card className="overflow-hidden">
-                <div className="p-6 border-b border-slate-800 bg-slate-900/50">
+            <Card className="overflow-hidden bg-slate-900 border-slate-800 shadow-none py-0">
+                <div className="p-6 border-b border-slate-800 bg-slate-950">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-lg bg-blue-900/30 flex items-center justify-center">
@@ -367,23 +367,23 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
                 <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
-                            <TableRow className="bg-slate-900">
-                                <TableHead className="w-[50px]">#</TableHead>
+                            <TableRow className="bg-slate-950 border-slate-800 hover:bg-slate-950">
+                                <TableHead className="w-[50px] text-slate-400 font-bold uppercase tracking-wider text-[10px]">#</TableHead>
                                 <TableHead className="min-w-[300px]">
-                                    <span className="font-bold">Charge Description</span>
+                                    <span className="text-slate-300 font-bold uppercase tracking-wider text-[10px]">Charge Description</span>
                                 </TableHead>
                                 <TableHead className="w-[160px] text-right">
-                                    <span className="font-bold">Amount ({currency})</span>
+                                    <span className="text-slate-300 font-bold uppercase tracking-wider text-[10px]">Amount ({currency})</span>
                                 </TableHead>
                                 <TableHead className="w-[200px] text-right bg-amber-900/10">
-                                    <span className="font-bold text-amber-400">Buy (ZAR)</span>
-                                    <span className="block text-xs font-normal text-slate-500 max-w-[180px] truncate ml-auto">
+                                    <span className="text-amber-400 font-bold uppercase tracking-wider text-[10px]">Buy (ZAR)</span>
+                                    <span className="block text-[10px] font-normal text-slate-500 max-w-[180px] truncate ml-auto normal-case tracking-normal">
                                         @{buyExchangeRate.toFixed(2)} ROE
                                     </span>
                                 </TableHead>
-                                <TableHead className="w-[200px] text-right bg-blue-900/20">
-                                    <span className="font-bold">Sell (ZAR)</span>
-                                    <span className="block text-xs font-normal text-slate-500 max-w-[180px] truncate ml-auto">
+                                <TableHead className="w-[200px] text-right bg-blue-900/15">
+                                    <span className="text-blue-400 font-bold uppercase tracking-wider text-[10px]">Sell (ZAR)</span>
+                                    <span className="block text-[10px] font-normal text-slate-500 max-w-[180px] truncate ml-auto normal-case tracking-normal">
                                         @{exchangeRate.toFixed(2)} ROE
                                     </span>
                                 </TableHead>
@@ -392,14 +392,14 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
                         </TableHeader>
                         <TableBody>
                             {items.length === 0 ? (
-                                <TableRow>
+                                <TableRow className="border-slate-800 hover:bg-transparent">
                                     <TableCell colSpan={6} className="h-32 text-center text-slate-500">
                                         No charge items yet. Click &quot;Add Item&quot; to get started.
                                     </TableCell>
                                 </TableRow>
                             ) : (
                                 items.map((item, index) => (
-                                    <TableRow key={item.id} className="group hover:bg-slate-900/50">
+                                    <TableRow key={item.id} className="group border-slate-800 hover:bg-slate-950/60">
                                         <TableCell className="font-mono text-xs text-slate-500 align-top pt-4">
                                             {index + 1}
                                         </TableCell>
@@ -517,7 +517,7 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
 
                 {/* Totals Section */}
                 {items.length > 0 && (
-                    <div className="border-t-4 border-white bg-gradient-to-r from-blue-50 to-emerald-900/20 p-8">
+                    <div className="border-t border-slate-800 bg-slate-950/60 p-8">
                         <div className="grid grid-cols-3 gap-8 max-w-3xl ml-auto">
                             <div className="text-right space-y-1">
                                 <div className="text-xs font-bold text-amber-400 uppercase tracking-widest mb-2">Buy Total (ZAR)</div>

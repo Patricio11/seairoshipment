@@ -26,6 +26,7 @@ export default async function EditDestinationChargePage({
             cargoType: destinationCharges.cargoType,
             currency: destinationCharges.currency,
             exchangeRateToZAR: destinationCharges.exchangeRateToZAR,
+            buyExchangeRateToZAR: destinationCharges.buyExchangeRateToZAR,
             effectiveFrom: destinationCharges.effectiveFrom,
             effectiveTo: destinationCharges.effectiveTo,
             active: destinationCharges.active,
@@ -64,6 +65,7 @@ export default async function EditDestinationChargePage({
         cargoType: (header.cargoType || "PALLET") as "PALLET" | "CUBE",
         currency: header.currency as "GBP" | "EUR" | "USD",
         exchangeRateToZAR: Number(header.exchangeRateToZAR),
+        buyExchangeRateToZAR: header.buyExchangeRateToZAR ? Number(header.buyExchangeRateToZAR) : null,
         effectiveFrom: header.effectiveFrom,
         effectiveTo: header.effectiveTo,
         active: header.active,
@@ -77,6 +79,10 @@ export default async function EditDestinationChargePage({
             chargeType: (item.chargeType || "PER_CONTAINER") as "PER_CONTAINER" | "FIXED" | "PER_CBM" | "PER_PALLET",
             amountLocal: Number(item.amountLocal),
             amountZAR: Number(item.amountZAR),
+            // Buy-side ZAR — saved by the POST/PUT path but was being
+            // dropped here on load, so the per-item buy cell read 0.00
+            // after every save.
+            buyAmountZAR: item.buyAmountZAR ? Number(item.buyAmountZAR) : null,
             sortOrder: item.sortOrder || 0,
             notes: item.notes,
             createdAt: item.createdAt.toISOString(),

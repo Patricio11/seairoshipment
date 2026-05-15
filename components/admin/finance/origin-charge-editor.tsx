@@ -291,8 +291,8 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
 
 
             {/* Charge Items Table */}
-            <Card className="overflow-hidden">
-                <div className="p-6 border-b border-slate-800 bg-slate-900/50">
+            <Card className="overflow-hidden bg-slate-900 border-slate-800 shadow-none py-0">
+                <div className="p-6 border-b border-slate-800 bg-slate-950">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-lg bg-blue-900/30 flex items-center justify-center">
@@ -340,7 +340,7 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                         </TableHeader>
                         <TableBody>
                             {items.length === 0 ? (
-                                <TableRow>
+                                <TableRow className="border-slate-800 hover:bg-transparent">
                                     <TableCell colSpan={6} className="h-32 text-center text-slate-500">
                                         No charge items yet. Click &quot;Add Service&quot; to get started.
                                     </TableCell>
@@ -356,7 +356,7 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                                         : item.containerCost || 0
 
                                     return (
-                                        <TableRow key={item.id} className="group hover:bg-slate-900/50">
+                                        <TableRow key={item.id} className="group border-slate-800 hover:bg-slate-950/60">
                                             <TableCell className="font-mono text-xs text-slate-500 align-top pt-4">
                                                 {index + 1}
                                             </TableCell>
