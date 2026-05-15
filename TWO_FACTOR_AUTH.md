@@ -80,20 +80,20 @@ A → B → C is the critical path for a working v1. D blocks rollout for admins
 
 ---
 
-## Phase A — Foundation
+## Phase A — Foundation ✅
 
 **Goal**: Better Auth's `twoFactor` plugin is wired into the server, the schema has migrated, and the client SDK exposes the new methods. Nothing user-facing yet.
 
-- [ ] `pnpm add @better-auth/two-factor` (or whichever installer Better Auth ships)
-- [ ] `lib/auth/server.ts` — add the plugin to `betterAuth({ plugins: [twoFactor({ ... })] })`. Configure:
-  - `issuer: "Seairo Cargo"` (shown inside the user's authenticator app)
-  - `period: 30` (standard TOTP window)
-  - `digits: 6`
-- [ ] `lib/auth/client.ts` — extend the auth client with the matching `twoFactorClient` so the React side has `authClient.twoFactor.*` methods.
-- [ ] Run `npm run db:push` — the plugin's [drizzle schema](https://www.better-auth.com/docs/plugins/2fa#schema) adds `user.twoFactorEnabled boolean` + a `twoFactor` table for the secret + hashed backup codes.
-- [ ] Sanity test against a local sign-in to confirm the plugin endpoints respond.
+📄 [docs/two-factor-auth/phase-a-foundation.md](docs/two-factor-auth/phase-a-foundation.md)
 
-**Done when**: `authClient.twoFactor.enable(...)`, `verify(...)`, `disable(...)`, and the server's `/api/auth/two-factor/*` endpoints all exist and return 200/401 correctly. No UI yet.
+- [x] No separate install — `twoFactor` ships inside `better-auth@^1.4.17` (no `@better-auth/two-factor` package needed).
+- [x] `lib/auth/server.ts` — plugin added with `issuer: "Seairo Cargo"`, `totpOptions: { digits: 6, period: 30 }`. `twoFactor` table registered in the drizzle adapter mapping.
+- [x] `lib/auth/client.ts` — extended with `twoFactorClient()` so `authClient.twoFactor.*` exists and sign-in returns `twoFactorRedirect`.
+- [x] `lib/db/schema/users.ts` — `user.twoFactorEnabled boolean default false` + new `twoFactor` table (`id`, `userId` FK cascade, `secret`, `backupCodes`).
+- [x] `npm run db:push` applied — column + table created.
+- [x] Smoke test: `POST /api/auth/two-factor/enable` returns `401` on a bad password — endpoint is mounted and password-gated.
+
+**Done**: `/api/auth/two-factor/*` endpoints exist and respond correctly. No UI yet — Phase B owns that.
 
 ---
 

@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { twoFactor } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
@@ -21,9 +22,23 @@ export const auth = betterAuth({
             user: schema.user,
             session: schema.session,
             account: schema.account,
-            verification: schema.verification
+            verification: schema.verification,
+            twoFactor: schema.twoFactor,
         },
     }),
+    plugins: [
+        // TOTP-based 2FA. Authenticator-app codes (6 digits, 30s period) + 10 single-use
+        // backup codes shown once at enrollment. Sign-in flow: after a correct password,
+        // Better Auth intercepts with `twoFactorRedirect: true` and the client must call
+        // /two-factor/verify-totp (or verify-backup-code) before the session is issued.
+        twoFactor({
+            issuer: "Seairo Cargo",
+            totpOptions: {
+                digits: 6,
+                period: 30,
+            },
+        }),
+    ],
     session: {
         expiresIn: 60 * 60 * 24 * 30, // 30 days
         updateAge: 60 * 60 * 4, // refresh session every 4 hours

@@ -35,6 +35,22 @@ export const user = pgTable("user", {
     companyAddress: text("company_address"),
     companyCountry: text("company_country"), // 2-letter ISO code
     vatNumber: text("vat_number"),
+
+    // Two-factor auth (Better Auth twoFactor plugin).
+    // input: false → never settable from client; only the plugin's enable/disable flows flip it.
+    twoFactorEnabled: boolean("twoFactorEnabled").default(false),
+});
+
+// Better Auth twoFactor plugin storage: one row per user with an enrolled TOTP.
+// Created/deleted by the plugin itself — we just declare the table shape so Drizzle/Postgres
+// has the right columns. `secret` and `backupCodes` are stored as plaintext-from-the-plugin
+// (Better Auth signs them internally); `returned: false` in the plugin schema means they're
+// never echoed in API responses.
+export const twoFactor = pgTable("twoFactor", {
+    id: text("id").primaryKey(),
+    userId: text("userId").notNull().references(() => user.id, { onDelete: "cascade" }),
+    secret: text("secret").notNull(),
+    backupCodes: text("backupCodes").notNull(),
 });
 
 export const session = pgTable("session", {
