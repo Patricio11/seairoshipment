@@ -130,19 +130,20 @@ A → B → C is the critical path for a working v1. D blocks rollout for admins
 
 ---
 
-## Phase D — Admin forced enrollment
+## Phase D — Admin forced enrollment ✅
 
 **Goal**: Admin-role users can't access any `/admin/...` route until they've enrolled 2FA.
 
-- [ ] `app/admin/layout.tsx` — server-side check: if `session.user.role === "admin"` and `session.user.twoFactorEnabled !== true`, redirect to `/dashboard/settings/security?force=1`.
-- [ ] `components/settings/two-factor-enable-wizard.tsx` — when `?force=1` is present:
-  - Banner at the top: "Two-factor authentication is required for admin accounts."
-  - No "Cancel" button. The wizard stays open until enrollment completes.
-  - Sign-out link in the banner so the admin can bail out completely if they need to.
-- [ ] After successful enrollment under `?force=1`, redirect to `/admin/dashboard`.
-- [ ] Email confirmation: when an admin successfully enrolls, fire `sendAdminTwoFactorEnabledEmail` (Phase F template) to the admin notifications inbox so the security team sees the event.
+📄 [docs/two-factor-auth/phase-d-admin-enforcement.md](docs/two-factor-auth/phase-d-admin-enforcement.md)
 
-**Done when**: A fresh admin account, on its first login after this ships, gets forced through enrollment before it can see `/admin/dashboard`. Once enrolled, all subsequent logins behave like Phase C.
+- [x] [app/admin/layout.tsx](app/admin/layout.tsx) — after `requireRole(["admin"])`, reads `user.twoFactorEnabled` from the DB and redirects to `/auth/setup-2fa` if false. DB read (not session cache) so a fresh enrollment clears the gate on next nav.
+- [x] [app/auth/setup-2fa/page.tsx](app/auth/setup-2fa/page.tsx) — **role-agnostic** forced-enrollment page. Avoids the redirect loop that would happen if we sent admins to `/dashboard/settings` (which `requireRole(["client"])` bounces back to `/admin`).
+- [x] [components/auth/forced-two-factor-setup.tsx](components/auth/forced-two-factor-setup.tsx) — full-page chrome around the wizard (gradient background, title, explainer copy).
+- [x] [components/settings/two-factor-enable-wizard.tsx](components/settings/two-factor-enable-wizard.tsx) — banner now has a **"Sign out instead"** escape hatch. New `forceEnrollRedirectTo` prop drives the post-codes-step redirect (default `/admin`, set to `/dashboard` for non-admins).
+- [x] After codes-step, the wizard pushes to the configured destination + `router.refresh()` so the admin layout's gate sees the new DB state.
+- ⏸ `sendAdminTwoFactorEnabledEmail` notification — **deferred to Phase F** (lives with the email-templates batch).
+
+**Done**: A fresh admin lands on `/admin` → bounced to `/auth/setup-2fa` → must enrol or sign out. After enrollment, immediate access to `/admin`. Sign-out escape works. No redirect loops in any role/state combination.
 
 ---
 

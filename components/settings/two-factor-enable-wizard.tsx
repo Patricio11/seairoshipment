@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import { QRCodeSVG } from "qrcode.react"
-import { Copy, Check, Loader2, Download, ShieldCheck, KeyRound, ScanLine, FileText, AlertCircle } from "lucide-react"
+import { Copy, Check, Loader2, Download, ShieldCheck, KeyRound, ScanLine, FileText, AlertCircle, LogOut } from "lucide-react"
 import { toast } from "sonner"
 import {
     Dialog,
@@ -28,6 +29,14 @@ interface TwoFactorEnableWizardProps {
      * and clicking outside / pressing Esc is suppressed.
      */
     forceEnroll?: boolean
+    /**
+     * Where to send the user after they click Done on the backup-codes step.
+     * Only used when `forceEnroll` is true — in the regular Settings flow the
+     * wizard just closes and the underlying page stays put. Defaults to
+     * "/admin" because the only producer of forced enrollment today is the
+     * admin layout gate.
+     */
+    forceEnrollRedirectTo?: string
 }
 
 type Step = "password" | "scan" | "verify" | "codes"
@@ -49,7 +58,8 @@ function chunkSecret(secret: string): string {
     return secret.replace(/(.{4})/g, "$1 ").trim()
 }
 
-export function TwoFactorEnableWizard({ open, onOpenChange, onEnabled, forceEnroll = false }: TwoFactorEnableWizardProps) {
+export function TwoFactorEnableWizard({ open, onOpenChange, onEnabled, forceEnroll = false, forceEnrollRedirectTo = "/admin" }: TwoFactorEnableWizardProps) {
+    const router = useRouter()
     const [step, setStep] = useState<Step>("password")
     const [password, setPassword] = useState("")
     const [code, setCode] = useState("")
@@ -175,6 +185,21 @@ export function TwoFactorEnableWizard({ open, onOpenChange, onEnabled, forceEnro
         if (!savedConfirmed) return
         onEnabled?.()
         onOpenChange(false)
+        if (forceEnroll) {
+            // Forced flow: bounce to the producer's chosen destination
+            // (admin layout uses /admin; could widen to other gates later).
+            router.push(forceEnrollRedirectTo)
+            router.refresh()
+        }
+    }
+
+    const handleSignOut = async () => {
+        try {
+            await authClient.signOut()
+        } finally {
+            router.push("/")
+            router.refresh()
+        }
     }
 
     return (
@@ -201,9 +226,19 @@ export function TwoFactorEnableWizard({ open, onOpenChange, onEnabled, forceEnro
                 </DialogHeader>
 
                 {forceEnroll && step !== "codes" && (
-                    <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300 flex gap-2">
-                        <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                        <span>Two-factor authentication is required for admin accounts. Complete the steps to continue.</span>
+                    <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300 flex flex-col gap-2">
+                        <div className="flex gap-2">
+                            <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                            <span>Two-factor authentication is required for admin accounts. Complete the steps to continue.</span>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={handleSignOut}
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold underline-offset-2 hover:underline self-start ml-6"
+                        >
+                            <LogOut className="h-3 w-3" />
+                            Sign out instead
+                        </button>
                     </div>
                 )}
 
