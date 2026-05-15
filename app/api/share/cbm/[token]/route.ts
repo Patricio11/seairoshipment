@@ -68,7 +68,14 @@ export async function GET(
             .where(eq(cargoCalculationShares.token, token))
             .catch(() => { /* non-fatal */ });
 
-        return NextResponse.json({ calculation: calc, expiresAt: share.expiresAt });
+        return NextResponse.json({
+            calculation: calc,
+            expiresAt: share.expiresAt,
+            // Expose permission toggles so the public viewer can render the
+            // Approve / Edit affordances when allowed.
+            allowApprove: share.allowApprove,
+            allowEdit: share.allowEdit,
+        });
     } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to load shared calculation";
         return NextResponse.json({ error: message }, { status: 500 });

@@ -70,6 +70,11 @@ export async function POST(
             expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
         }
 
+        // Optional toggles — default false so existing share-link callers
+        // keep getting strictly read-only tokens.
+        const allowApprove = body?.allowApprove === true;
+        const allowEdit = body?.allowEdit === true;
+
         const token = randomBytes(24).toString("base64url"); // 32 chars, URL-safe
         const [created] = await db
             .insert(cargoCalculationShares)
@@ -77,6 +82,8 @@ export async function POST(
                 token,
                 calculationId: id,
                 expiresAt,
+                allowApprove,
+                allowEdit,
             })
             .returning();
 

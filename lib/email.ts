@@ -397,6 +397,119 @@ export async function sendContactConfirmationEmail(inquiry: ContactInquiry) {
 }
 
 /* -------------------------------------------------------------------------- */
+/* CBM share-link guest actions                                                */
+/* -------------------------------------------------------------------------- */
+
+export interface CbmShareNotificationParams {
+    to: string;
+    ownerName?: string | null;
+    calculationName: string;
+    calculationId: string;
+    guestName: string;
+    guestEmail: string;
+    note?: string | null;
+}
+
+/**
+ * Sent to the calc owner when a share-link guest clicks Approve.
+ * In-app bell notification fires alongside this email.
+ */
+export async function sendCbmShareApprovedEmail(params: CbmShareNotificationParams) {
+    const { to, ownerName, calculationName, calculationId, guestName, guestEmail, note } = params;
+    const calcUrl = `${appUrl}/dashboard/tools/cbm-calculator/${encodeURIComponent(calculationId)}`;
+    await sendEmail({
+        to,
+        replyTo: guestEmail,
+        subject: `${guestName} approved your calculation — ${calculationName}`,
+        html: emailLayout({
+            accentColor: "#10b981",
+            heading: "Your calculation was approved",
+            intro: `Hi${ownerName ? ` ${escapeHtml(ownerName)}` : ""}, <strong>${escapeHtml(guestName)}</strong> just approved your shared calculation <strong>${escapeHtml(calculationName)}</strong>.`,
+            contentHtml: `
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px;">
+                    <tbody>
+                        <tr>
+                            <td style="padding: 8px 0; color: #64748b; font-weight: 600; width: 110px;">Approver</td>
+                            <td style="padding: 8px 0; color: #0f172a;">${escapeHtml(guestName)}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #64748b; font-weight: 600;">Email</td>
+                            <td style="padding: 8px 0; color: #0f172a;">
+                                <a href="mailto:${escapeHtml(guestEmail)}" style="color: #2563eb; text-decoration: none;">${escapeHtml(guestEmail)}</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #64748b; font-weight: 600;">Calculation</td>
+                            <td style="padding: 8px 0; color: #0f172a;">${escapeHtml(calculationName)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                ${note ? `
+                <div style="background: #ecfdf5; border-left: 3px solid #10b981; border-radius: 6px; padding: 14px 18px; margin: 16px 0;">
+                    <p style="color: #065f46; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 6px;">Note from ${escapeHtml(guestName)}</p>
+                    <p style="color: #0f172a; font-size: 14px; line-height: 1.65; margin: 0; white-space: pre-wrap;">${escapeHtml(note)}</p>
+                </div>` : ""}
+                ${ctaButton(calcUrl, "View calculation", "#10b981")}
+                <p style="color: #94a3b8; font-size: 12px; line-height: 1.6; margin: 18px 0 0;">
+                    Reply to this email to talk to ${escapeHtml(guestName)} directly — we've set the reply-to to their address.
+                </p>
+            `,
+        }),
+    });
+}
+
+/**
+ * Sent to the calc owner when a share-link guest saves edits.
+ * In-app bell notification fires alongside this email.
+ */
+export async function sendCbmShareEditedEmail(params: CbmShareNotificationParams) {
+    const { to, ownerName, calculationName, calculationId, guestName, guestEmail, note } = params;
+    const calcUrl = `${appUrl}/dashboard/tools/cbm-calculator/${encodeURIComponent(calculationId)}`;
+    await sendEmail({
+        to,
+        replyTo: guestEmail,
+        subject: `${guestName} edited your calculation — ${calculationName}`,
+        html: emailLayout({
+            accentColor: "#f59e0b",
+            heading: "Your calculation was edited",
+            intro: `Hi${ownerName ? ` ${escapeHtml(ownerName)}` : ""}, <strong>${escapeHtml(guestName)}</strong> just saved changes to your shared calculation <strong>${escapeHtml(calculationName)}</strong>.`,
+            contentHtml: `
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px;">
+                    <tbody>
+                        <tr>
+                            <td style="padding: 8px 0; color: #64748b; font-weight: 600; width: 110px;">Edited by</td>
+                            <td style="padding: 8px 0; color: #0f172a;">${escapeHtml(guestName)}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #64748b; font-weight: 600;">Email</td>
+                            <td style="padding: 8px 0; color: #0f172a;">
+                                <a href="mailto:${escapeHtml(guestEmail)}" style="color: #2563eb; text-decoration: none;">${escapeHtml(guestEmail)}</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #64748b; font-weight: 600;">Calculation</td>
+                            <td style="padding: 8px 0; color: #0f172a;">${escapeHtml(calculationName)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                ${note ? `
+                <div style="background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 6px; padding: 14px 18px; margin: 16px 0;">
+                    <p style="color: #92400e; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 6px;">Note from ${escapeHtml(guestName)}</p>
+                    <p style="color: #0f172a; font-size: 14px; line-height: 1.65; margin: 0; white-space: pre-wrap;">${escapeHtml(note)}</p>
+                </div>` : ""}
+                <div style="background: #fef3c7; border: 1px solid #fde68a; border-radius: 10px; padding: 14px 16px; margin: 16px 0;">
+                    <p style="color: #92400e; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 6px;">Need to undo?</p>
+                    <p style="color: #78350f; font-size: 13px; line-height: 1.55; margin: 0;">
+                        Open the calculation, scroll to the Activity timeline, and click <em>Revert</em> on this entry to restore the items as they were before this edit.
+                    </p>
+                </div>
+                ${ctaButton(calcUrl, "Review changes", "#f59e0b")}
+            `,
+        }),
+    });
+}
+
+/* -------------------------------------------------------------------------- */
 /* Helpers                                                                     */
 /* -------------------------------------------------------------------------- */
 
