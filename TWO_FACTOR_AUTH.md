@@ -147,15 +147,19 @@ A → B → C is the critical path for a working v1. D blocks rollout for admins
 
 ---
 
-## Phase E — Admin user-management touchups
+## Phase E — Admin user-management touchups ✅
 
 **Goal**: Break-glass support + visibility into who has 2FA enabled.
 
-- [ ] User vetting list (`app/admin/users/page.tsx`) — small chip next to each row showing whether the user has 2FA enabled (slate "Off" / emerald "On" / red "Off — required" for admins).
-- [ ] Per-user actions menu — add **Disable 2FA** option (admins only, for clients only — admins can't disable each other's 2FA from this UI, only their own from Settings). On click, confirm dialog explaining "the user will sign in with password only on next attempt; recommend asking them to re-enroll".
-- [ ] New API route `POST /api/admin/users/[id]/disable-2fa` — `requireAdmin`, sets the user's `twoFactorEnabled = false` and destroys the secret/backup-codes rows. Logs an entry to the audit log.
+📄 [docs/two-factor-auth/phase-e-admin-management.md](docs/two-factor-auth/phase-e-admin-management.md)
 
-**Done when**: A user who lost their authenticator AND their backup codes can email support, an admin opens their row, clicks "Disable 2FA", and the user can sign in with password alone. The user is told to re-enroll immediately.
+- [x] [components/admin/user-vetting-table.tsx](components/admin/user-vetting-table.tsx) — inline 2FA chip next to each user's email. Emerald `2FA` when on, slate `2FA Off` when off. ("Off — required" red variant scoped out — the vetting list is client-only and clients aren't forced.)
+- [x] [components/admin/user-review-modal.tsx](components/admin/user-review-modal.tsx) — **Disable 2FA** button in the footer (left group, separated from vetting actions). Only visible when `user.twoFactorEnabled` is true. Red confirm card spells out "verify identity out-of-band first".
+- [x] [app/api/admin/users/[id]/disable-2fa/route.ts](app/api/admin/users/[id]/disable-2fa/route.ts) — POST, `requireAdmin`. Rejects self-disable (use Settings), rejects admin→admin disable, rejects no-op. Wipes `twoFactor` row + clears the user flag + fires in-app notification.
+- [x] [app/api/admin/users/vetting/route.ts](app/api/admin/users/vetting/route.ts) — projection extended with `twoFactorEnabled`.
+- ⏸ Audit-log row + email notification on disable — deferred to Phase F.
+
+**Done**: A user who's lost their authenticator + backup codes can be unblocked end-to-end. Identity-verified out-of-band, admin clicks Disable 2FA, user signs in with password only, gets a notification to re-enrol immediately.
 
 ---
 

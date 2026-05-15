@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import {
-    Building2, Hash, Globe2, MapPin, Receipt, FileText, ExternalLink, Mail, CheckCircle2, XCircle, MessageSquareWarning, Loader2, MailWarning, RefreshCw, Hourglass,
+    Building2, Hash, Globe2, MapPin, Receipt, FileText, ExternalLink, Mail, CheckCircle2, XCircle, MessageSquareWarning, Loader2, MailWarning, RefreshCw, Hourglass, ShieldOff,
 } from "lucide-react"
 import {
     Dialog,
@@ -31,6 +31,7 @@ export interface VettingUser {
     vettingRejectionReason: string | null
     vettingAdminNote: string | null
     emailVerified: boolean
+    twoFactorEnabled: boolean | null
     createdAt: string | Date
     updatedAt: string | Date
     documents: Array<{
@@ -72,7 +73,7 @@ const DOC_LABELS: Record<VettingUser["documents"][number]["type"], string> = {
     OTHER: "Other",
 }
 
-type Action = "approve" | "reject" | "request-changes" | "resend-verification" | null
+type Action = "approve" | "reject" | "request-changes" | "resend-verification" | "disable-2fa" | null
 
 export function UserReviewModal({ user, open, onClose, onActionComplete }: UserReviewModalProps) {
     const [pendingAction, setPendingAction] = useState<Action>(null)
@@ -109,8 +110,13 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
             if (action === "reject") body = { reason: reasonInput.trim() }
             if (action === "request-changes") body = { note: reasonInput.trim() }
 
+            // disable-2fa is a destructive break-glass — POST verb. Other
+            // vetting actions are PATCH because they mutate fields on the
+            // existing user row.
+            const method = action === "disable-2fa" ? "POST" : "PATCH"
+
             const res = await fetch(url, {
-                method: "PATCH",
+                method,
                 headers: body ? { "Content-Type": "application/json" } : undefined,
                 body: body ? JSON.stringify(body) : undefined,
             })
@@ -125,11 +131,13 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
                 action === "approve" ? "User approved — welcome notification sent" :
                 action === "reject" ? "User rejected" :
                 action === "resend-verification" ? "Verification email resent" :
+                action === "disable-2fa" ? "2FA disabled — user notified" :
                 "Changes requested — user can edit & resubmit"
             toast.success(successCopy)
             onActionComplete()
-            // resend-verification doesn't change state — leave modal open so admin can confirm
-            if (action !== "resend-verification") closeAll()
+            // resend-verification and disable-2fa don't change vetting state —
+            // leave the modal open so the admin can confirm + close manually.
+            if (action !== "resend-verification" && action !== "disable-2fa") closeAll()
             else setSubmitting(false)
         } catch {
             toast.error("Action failed")
@@ -258,6 +266,18 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
                             </div>
                         </motion.div>
                     )}
+
+                    {pendingAction === "disable-2fa" && (
+                        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-red-500/30 bg-red-500/5 p-4 flex items-start gap-3">
+                            <ShieldOff className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
+                            <div className="text-sm">
+                                <p className="font-bold text-red-200">Disable two-factor authentication?</p>
+                                <p className="text-red-200/70 mt-0.5">
+                                    This is a break-glass action for users who&apos;ve lost both their authenticator and their backup codes. Verify their identity out-of-band first. After this, they&apos;ll sign in with password only — recommend they re-enable 2FA from Settings → Security immediately. They&apos;ll get an in-app notification confirming the reset.
+                                </p>
+                            </div>
+                        </motion.div>
+                    )}
                 </div>
 
                 {/* Status-specific informational cards (no actions) */}
@@ -286,7 +306,19 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
 
                 {/* Footer actions */}
                 <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2 pt-3 border-t border-slate-800 mt-2">
-                    <Button variant="ghost" onClick={closeAll} className="text-slate-400 hover:text-white">Close</Button>
+                    <div className="flex items-center gap-2">
+                        <Button variant="ghost" onClick={closeAll} className="text-slate-400 hover:text-white">Close</Button>
+                        {pendingAction === null && user.twoFactorEnabled && (
+                            <Button
+                                variant="ghost"
+                                onClick={() => setPendingAction("disable-2fa")}
+                                className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                                title="Break-glass: reset this user's 2FA after verifying identity out of band"
+                            >
+                                <ShieldOff className="h-4 w-4 mr-1.5" /> Disable 2FA
+                            </Button>
+                        )}
+                    </div>
 
                     {pendingAction === null ? (
                         <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
@@ -338,6 +370,7 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
                                     pendingAction === "approve" ? "bg-emerald-600 hover:bg-emerald-700 text-white font-bold" :
                                     pendingAction === "reject" ? "bg-red-600 hover:bg-red-700 text-white font-bold" :
                                     pendingAction === "resend-verification" ? "bg-brand-blue hover:bg-brand-blue/90 text-white font-bold" :
+                                    pendingAction === "disable-2fa" ? "bg-red-600 hover:bg-red-700 text-white font-bold" :
                                     "bg-amber-600 hover:bg-amber-700 text-white font-bold"
                                 }
                             >
@@ -346,6 +379,7 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
                                 {pendingAction === "reject" && "Confirm rejection"}
                                 {pendingAction === "request-changes" && "Send request"}
                                 {pendingAction === "resend-verification" && "Send it now"}
+                                {pendingAction === "disable-2fa" && "Yes, disable 2FA"}
                             </Button>
                         </div>
                     )}

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Search, Eye, Loader2, Inbox, RefreshCw } from "lucide-react"
+import { Search, Eye, Loader2, Inbox, RefreshCw, ShieldCheck, ShieldOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -181,9 +181,12 @@ export function UserVettingTable() {
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <div className="flex flex-col">
+                                            <div className="flex flex-col gap-1">
                                                 <span className="text-xs font-medium text-slate-300">{u.name}</span>
-                                                <span className="text-[10px] text-slate-500">{u.email}</span>
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-[10px] text-slate-500">{u.email}</span>
+                                                    <TwoFactorChip enabled={Boolean(u.twoFactorEnabled)} />
+                                                </div>
                                             </div>
                                         </TableCell>
                                         <TableCell>
@@ -244,4 +247,27 @@ function StatusBadge({ status, accountNumber }: { status: VettingUser["vettingSt
         return <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/30 text-[10px] uppercase tracking-widest font-black">Onboarding</Badge>
     }
     return <Badge className="bg-slate-500/10 text-slate-400 border-slate-500/30 text-[10px] uppercase tracking-widest font-black">Email Pending</Badge>
+}
+
+/**
+ * Tiny inline pill next to the email so an admin can scan the vetting queue
+ * and see at a glance who has 2FA on. No "Off — required" red variant: this
+ * list is client-only, and clients aren't forced into 2FA.
+ */
+function TwoFactorChip({ enabled }: { enabled: boolean }) {
+    return enabled ? (
+        <span
+            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+            title="2FA enabled"
+        >
+            <ShieldCheck className="h-2.5 w-2.5" /> 2FA
+        </span>
+    ) : (
+        <span
+            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-slate-500/10 text-slate-500 border border-slate-500/30"
+            title="2FA disabled"
+        >
+            <ShieldOff className="h-2.5 w-2.5" /> 2FA
+        </span>
+    )
 }
