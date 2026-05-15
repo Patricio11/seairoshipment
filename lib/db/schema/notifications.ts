@@ -24,6 +24,8 @@ export const clientNotificationTypeEnum = pgEnum("client_notification_type", [
     "PAYMENT_REMINDER",
     "DOCUMENT_REQUEST",
     "SHIPMENT_UPDATE",
+    "CBM_SHARE_APPROVED",
+    "CBM_SHARE_EDITED",
     "GENERAL",
 ]);
 
