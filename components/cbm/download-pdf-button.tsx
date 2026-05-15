@@ -90,7 +90,11 @@ export function DownloadPdfButton({ calculationName, items }: DownloadPdfButtonP
             doc.setTextColor(40)
             doc.text(formatKg(weight), left + 50, y + 14)
             doc.text(formatKg(volumetric), left + 97, y + 14)
-            doc.text(`≈ ${pallets.toFixed(1)}`, left + 145, y + 14)
+            // jsPDF's default Helvetica is WinAnsi-encoded — it can't render
+            // characters outside that set (≈, subscripts, emojis, etc.) and
+            // they come out as garbage. Stick to ASCII fallbacks: ~ for ≈,
+            // CO2 for CO₂.
+            doc.text(`~ ${pallets.toFixed(1)}`, left + 145, y + 14)
             y += 24
 
             // Sustainability line
@@ -98,7 +102,7 @@ export function DownloadPdfButton({ calculationName, items }: DownloadPdfButtonP
             doc.setFontSize(9)
             doc.setTextColor(80, 140, 80)
             doc.text(
-                `Estimated ~${sustainability.kgCO2eqSea.toFixed(0)} kg CO₂eq via ocean SCS — about ${sustainability.percentLessThanAir.toFixed(0)}% less than air for this volume.`,
+                `Estimated ~${sustainability.kgCO2eqSea.toFixed(0)} kg CO2eq via ocean SCS - about ${sustainability.percentLessThanAir.toFixed(0)}% less than air for this volume.`,
                 left, y,
             )
             y += 6
