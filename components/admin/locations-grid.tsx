@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Search, MoreVertical, Edit, Trash, Anchor, Calculator, Ship, Loader2 } from "lucide-react"
+import { Search, MoreVertical, Edit, Trash, Anchor, Calculator, Ship, Loader2, CheckSquare, Square } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -131,7 +131,9 @@ export function LocationsGrid() {
                             onClick={toggleAll}
                             className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-900 text-[10px] font-bold uppercase tracking-wider text-slate-400 hover:text-white"
                         >
-                            <Checkbox checked={visibleAllSelected} className="pointer-events-none" />
+                            {visibleAllSelected
+                                ? <CheckSquare className="h-3.5 w-3.5 text-brand-blue" />
+                                : <Square className="h-3.5 w-3.5" />}
                             {visibleAllSelected ? "Unselect all" : "Select all"}
                         </button>
                     )}

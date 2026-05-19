@@ -33,6 +33,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
+import { CheckSquare, Square } from "lucide-react"
 import { BulkDeleteBar } from "./bulk-delete-bar"
 import {
     Select,
@@ -590,7 +591,9 @@ export function FleetScheduler() {
                             onClick={toggleAllContainers}
                             className="flex items-center gap-2 px-3 h-9 rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-900 text-[10px] font-bold uppercase tracking-wider text-slate-400 hover:text-white"
                         >
-                            <Checkbox checked={allVisibleContainersSelected} className="pointer-events-none" />
+                            {allVisibleContainersSelected
+                                ? <CheckSquare className="h-3.5 w-3.5 text-brand-blue" />
+                                : <Square className="h-3.5 w-3.5" />}
                             {allVisibleContainersSelected ? "Unselect all" : "Select all"}
                         </button>
                     )}
