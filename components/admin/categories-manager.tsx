@@ -42,6 +42,7 @@ import {
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { DOCUMENT_TYPES, documentLabel } from "@/lib/constants/document-types"
+import { BulkDeleteBar } from "./bulk-delete-bar"
 
 type Temperature = "frozen" | "chilled" | "ambient"
 
@@ -119,6 +120,9 @@ export function CategoriesManager() {
     // Delete confirm
     const [deleteDialog, setDeleteDialog] = useState<Category | null>(null)
     const [deleting, setDeleting] = useState(false)
+
+    // Bulk selection
+    const [selectedCats, setSelectedCats] = useState<Set<string>>(new Set())
 
     // Seed
     const [seeding, setSeeding] = useState(false)
@@ -386,6 +390,27 @@ export function CategoriesManager() {
         const q = search.toLowerCase()
         return c.name.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q)
     })
+
+    const allVisibleSelected = filtered.length > 0 && filtered.every(c => selectedCats.has(c.id))
+    const toggleAllCats = () => {
+        setSelectedCats(prev => {
+            if (allVisibleSelected) {
+                const next = new Set(prev)
+                for (const c of filtered) next.delete(c.id)
+                return next
+            }
+            const next = new Set(prev)
+            for (const c of filtered) next.add(c.id)
+            return next
+        })
+    }
+    const toggleOneCat = (id: string) => {
+        setSelectedCats(prev => {
+            const next = new Set(prev)
+            if (next.has(id)) next.delete(id); else next.add(id)
+            return next
+        })
+    }
 
     // Shared dialogs — rendered in both views so Edit/Delete buttons work everywhere
     const dialogs = (
@@ -831,6 +856,13 @@ export function CategoriesManager() {
                     <Table>
                         <TableHeader>
                             <TableRow className="bg-slate-900/80 border-slate-800">
+                                <TableHead className="w-10">
+                                    <Checkbox
+                                        checked={allVisibleSelected}
+                                        onCheckedChange={toggleAllCats}
+                                        aria-label="Select all categories"
+                                    />
+                                </TableHead>
                                 <TableHead className="text-slate-400 text-xs font-bold uppercase">Name</TableHead>
                                 <TableHead className="text-slate-400 text-xs font-bold uppercase">Service</TableHead>
                                 <TableHead className="text-slate-400 text-xs font-bold uppercase">Allowed Temps</TableHead>
@@ -843,7 +875,14 @@ export function CategoriesManager() {
                         </TableHeader>
                         <TableBody>
                             {filtered.map(cat => (
-                                <TableRow key={cat.id} className="border-slate-800 hover:bg-slate-900/50 cursor-pointer" onClick={() => openDetail(cat)}>
+                                <TableRow key={cat.id} className={`border-slate-800 hover:bg-slate-900/50 cursor-pointer ${selectedCats.has(cat.id) ? "bg-red-950/20" : ""}`} onClick={() => openDetail(cat)}>
+                                    <TableCell onClick={(e) => e.stopPropagation()}>
+                                        <Checkbox
+                                            checked={selectedCats.has(cat.id)}
+                                            onCheckedChange={() => toggleOneCat(cat.id)}
+                                            aria-label={`Select ${cat.name}`}
+                                        />
+                                    </TableCell>
                                     <TableCell>
                                         <div className="flex flex-col">
                                             <span className="font-bold text-white">{cat.name}</span>
@@ -924,6 +963,16 @@ export function CategoriesManager() {
             )}
 
             {dialogs}
+
+            <BulkDeleteBar
+                count={selectedCats.size}
+                resourceLabel="category"
+                resourceLabelPlural="categories"
+                endpoint="/api/admin/product-categories/bulk-delete"
+                ids={Array.from(selectedCats)}
+                onDeleted={() => { setSelectedCats(new Set()); fetchCategories() }}
+                onClearSelection={() => setSelectedCats(new Set())}
+            />
         </div>
     )
 }

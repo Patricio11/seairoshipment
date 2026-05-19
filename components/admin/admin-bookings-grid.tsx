@@ -31,6 +31,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
+import { BulkDeleteBar } from "./bulk-delete-bar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
     Table,
@@ -296,6 +298,7 @@ export function AdminBookingsGrid() {
     const [loadingPending, setLoadingPending] = useState(false)
     const [cancelledRequests, setCancelledRequests] = useState<PendingRequest[]>([])
     const [loadingCancelled, setLoadingCancelled] = useState(false)
+    const [selectedAllocations, setSelectedAllocations] = useState<Set<string>>(new Set())
     const [containerRequests, setContainerRequests] = useState<AdminContainerRequest[]>([])
     const [loadingContainerRequests, setLoadingContainerRequests] = useState(false)
     const [respondingRequest, setRespondingRequest] = useState<AdminContainerRequest | null>(null)
@@ -644,6 +647,23 @@ export function AdminBookingsGrid() {
         }
     }
 
+    const toggleAlloc = (id: string) => {
+        setSelectedAllocations(prev => {
+            const next = new Set(prev)
+            if (next.has(id)) next.delete(id); else next.add(id)
+            return next
+        })
+    }
+    const toggleAllocs = (ids: string[]) => {
+        const allSelected = ids.length > 0 && ids.every(id => selectedAllocations.has(id))
+        setSelectedAllocations(prev => {
+            const next = new Set(prev)
+            if (allSelected) { for (const id of ids) next.delete(id) }
+            else { for (const id of ids) next.add(id) }
+            return next
+        })
+    }
+
     const filteredContainers = containerData.filter(c => {
         const matchesSearch = (
             c.route.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -983,6 +1003,27 @@ export function AdminBookingsGrid() {
                             <Table>
                                 <TableHeader className="bg-slate-900">
                                     <TableRow className="hover:bg-transparent border-slate-800">
+                                        <TableHead className="w-10">
+                                            {(() => {
+                                                const visibleIds = pendingRequests.filter(r => {
+                                                    if (rateTypeFilter !== "all" && r.container?.salesRateTypeId !== rateTypeFilter) return false
+                                                    if (!searchTerm) return true
+                                                    const q = searchTerm.toLowerCase()
+                                                    return r.user?.name?.toLowerCase().includes(q) ||
+                                                        r.user?.email.toLowerCase().includes(q) ||
+                                                        r.container?.vessel.toLowerCase().includes(q) ||
+                                                        r.allocation.id.toLowerCase().includes(q)
+                                                }).map(r => r.allocation.id)
+                                                const allSelected = visibleIds.length > 0 && visibleIds.every(id => selectedAllocations.has(id))
+                                                return (
+                                                    <Checkbox
+                                                        checked={allSelected}
+                                                        onCheckedChange={() => toggleAllocs(visibleIds)}
+                                                        aria-label="Select all pending bookings"
+                                                    />
+                                                )
+                                            })()}
+                                        </TableHead>
                                         <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Reference</TableHead>
                                         <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Client</TableHead>
                                         <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Product</TableHead>
@@ -1002,7 +1043,14 @@ export function AdminBookingsGrid() {
                                             r.container?.vessel.toLowerCase().includes(q) ||
                                             r.allocation.id.toLowerCase().includes(q)
                                     }).map((r) => (
-                                        <TableRow key={r.allocation.id} className="border-slate-800 hover:bg-slate-900/40">
+                                        <TableRow key={r.allocation.id} className={`border-slate-800 hover:bg-slate-900/40 ${selectedAllocations.has(r.allocation.id) ? "bg-red-950/20" : ""}`}>
+                                            <TableCell>
+                                                <Checkbox
+                                                    checked={selectedAllocations.has(r.allocation.id)}
+                                                    onCheckedChange={() => toggleAlloc(r.allocation.id)}
+                                                    aria-label="Select pending booking"
+                                                />
+                                            </TableCell>
                                             <TableCell className="font-mono text-white font-bold text-xs">{r.allocation.id}</TableCell>
                                             <TableCell className="text-slate-300">
                                                 <div className="flex flex-col gap-0.5">
@@ -1055,6 +1103,27 @@ export function AdminBookingsGrid() {
                             <Table>
                                 <TableHeader className="bg-slate-900">
                                     <TableRow className="hover:bg-transparent border-slate-800">
+                                        <TableHead className="w-10">
+                                            {(() => {
+                                                const visibleIds = cancelledRequests.filter(r => {
+                                                    if (rateTypeFilter !== "all" && r.container?.salesRateTypeId !== rateTypeFilter) return false
+                                                    if (!searchTerm) return true
+                                                    const q = searchTerm.toLowerCase()
+                                                    return r.user?.name?.toLowerCase().includes(q) ||
+                                                        r.user?.email.toLowerCase().includes(q) ||
+                                                        r.container?.vessel.toLowerCase().includes(q) ||
+                                                        r.allocation.id.toLowerCase().includes(q)
+                                                }).map(r => r.allocation.id)
+                                                const allSelected = visibleIds.length > 0 && visibleIds.every(id => selectedAllocations.has(id))
+                                                return (
+                                                    <Checkbox
+                                                        checked={allSelected}
+                                                        onCheckedChange={() => toggleAllocs(visibleIds)}
+                                                        aria-label="Select all cancelled bookings"
+                                                    />
+                                                )
+                                            })()}
+                                        </TableHead>
                                         <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Reference</TableHead>
                                         <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Client</TableHead>
                                         <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Product / Pallets</TableHead>
@@ -1073,7 +1142,14 @@ export function AdminBookingsGrid() {
                                             r.container?.vessel.toLowerCase().includes(q) ||
                                             r.allocation.id.toLowerCase().includes(q)
                                     }).map((r) => (
-                                        <TableRow key={r.allocation.id} className="border-slate-800 hover:bg-slate-900/40">
+                                        <TableRow key={r.allocation.id} className={`border-slate-800 hover:bg-slate-900/40 ${selectedAllocations.has(r.allocation.id) ? "bg-red-950/20" : ""}`}>
+                                            <TableCell>
+                                                <Checkbox
+                                                    checked={selectedAllocations.has(r.allocation.id)}
+                                                    onCheckedChange={() => toggleAlloc(r.allocation.id)}
+                                                    aria-label="Select cancelled booking"
+                                                />
+                                            </TableCell>
                                             <TableCell className="font-mono text-white font-bold text-xs">{r.allocation.id}</TableCell>
                                             <TableCell className="text-slate-300">
                                                 <div className="flex flex-col gap-0.5">
@@ -2239,6 +2315,21 @@ export function AdminBookingsGrid() {
                     </div>
                 </DialogContent>
             </Dialog>
+
+            <BulkDeleteBar
+                count={selectedAllocations.size}
+                resourceLabel="booking"
+                resourceLabelPlural="bookings"
+                endpoint="/api/admin/allocations/bulk-delete"
+                ids={Array.from(selectedAllocations)}
+                onDeleted={() => {
+                    setSelectedAllocations(new Set())
+                    fetchContainers()
+                    fetchPendingRequests()
+                    fetchCancelledRequests()
+                }}
+                onClearSelection={() => setSelectedAllocations(new Set())}
+            />
         </div>
     )
 }

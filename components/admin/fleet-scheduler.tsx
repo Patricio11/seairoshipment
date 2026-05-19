@@ -32,6 +32,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
+import { BulkDeleteBar } from "./bulk-delete-bar"
 import {
     Select,
     SelectContent,
@@ -220,6 +222,7 @@ export function FleetScheduler() {
     // Delete confirmation
     const [deleteDialog, setDeleteDialog] = useState<ContainerData | null>(null)
     const [deleting, setDeleting] = useState(false)
+    const [selectedContainers, setSelectedContainers] = useState<Set<string>>(new Set())
 
     // Delete-allocation confirmation. Holds the row clicked on so the dialog
     // can show the client + pallet count for verification.
@@ -296,6 +299,27 @@ export function FleetScheduler() {
         (c.metashipOrderNo && c.metashipOrderNo.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (c.voyageNumber && c.voyageNumber.toLowerCase().includes(searchTerm.toLowerCase()))
     )
+
+    const allVisibleContainersSelected = filteredContainers.length > 0 && filteredContainers.every(c => selectedContainers.has(c.id))
+    const toggleAllContainers = () => {
+        setSelectedContainers(prev => {
+            if (allVisibleContainersSelected) {
+                const next = new Set(prev)
+                for (const c of filteredContainers) next.delete(c.id)
+                return next
+            }
+            const next = new Set(prev)
+            for (const c of filteredContainers) next.add(c.id)
+            return next
+        })
+    }
+    const toggleOneContainer = (id: string) => {
+        setSelectedContainers(prev => {
+            const next = new Set(prev)
+            if (next.has(id)) next.delete(id); else next.add(id)
+            return next
+        })
+    }
 
     const handleOpenCreate = () => {
         setEditingContainer(null)
@@ -560,6 +584,16 @@ export function FleetScheduler() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
+                    {filteredContainers.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={toggleAllContainers}
+                            className="flex items-center gap-2 px-3 h-9 rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-900 text-[10px] font-bold uppercase tracking-wider text-slate-400 hover:text-white"
+                        >
+                            <Checkbox checked={allVisibleContainersSelected} className="pointer-events-none" />
+                            {allVisibleContainersSelected ? "Unselect all" : "Select all"}
+                        </button>
+                    )}
                     <Button
                         className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold h-9"
                         onClick={handleOpenCreate}
@@ -590,10 +624,15 @@ export function FleetScheduler() {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: i * 0.05 }}
-                                className="bg-slate-900 border border-slate-800 rounded-xl p-6 hover:border-slate-700 transition-all"
+                                className={`bg-slate-900 border rounded-xl p-6 transition-all ${selectedContainers.has(container.id) ? "border-red-500/40 ring-1 ring-red-500/20" : "border-slate-800 hover:border-slate-700"}`}
                             >
                                 <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center mb-4">
                                     <div className="flex items-center gap-4">
+                                        <Checkbox
+                                            checked={selectedContainers.has(container.id)}
+                                            onCheckedChange={() => toggleOneContainer(container.id)}
+                                            aria-label={`Select container ${container.id}`}
+                                        />
                                         <div className="h-12 w-12 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center border border-blue-500/20">
                                             <Container className="h-6 w-6" />
                                         </div>
@@ -1497,6 +1536,16 @@ export function FleetScheduler() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <BulkDeleteBar
+                count={selectedContainers.size}
+                resourceLabel="container"
+                resourceLabelPlural="containers"
+                endpoint="/api/admin/containers/bulk-delete"
+                ids={Array.from(selectedContainers)}
+                onDeleted={() => { setSelectedContainers(new Set()); fetchContainers() }}
+                onClearSelection={() => setSelectedContainers(new Set())}
+            />
         </div>
     )
 }

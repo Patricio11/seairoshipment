@@ -41,7 +41,9 @@ import { Search, MoreVertical, Edit, Trash2, ArrowRightLeft } from "lucide-react
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { Checkbox } from "@/components/ui/checkbox"
 import { CreateDestinationChargeDialog } from "./create-destination-charge-dialog"
+import { BulkDeleteBar } from "@/components/admin/bulk-delete-bar"
 import { toast } from "sonner"
 
 interface DestinationChargeData {
@@ -69,6 +71,7 @@ export function DestinationChargesList() {
     const [deleteId, setDeleteId] = useState<string | null>(null)
     const [deleting, setDeleting] = useState(false)
     const [loading, setLoading] = useState(true)
+    const [selected, setSelected] = useState<Set<string>>(new Set())
 
     const fetchCharges = async () => {
         try {
@@ -88,6 +91,27 @@ export function DestinationChargesList() {
         const matchesCurrency = selectedCurrency === "all" || charge.currency === selectedCurrency
         return matchesSearch && matchesCurrency
     })
+
+    const allVisibleSelected = filteredCharges.length > 0 && filteredCharges.every(c => selected.has(c.id))
+    const toggleAll = () => {
+        setSelected(prev => {
+            if (allVisibleSelected) {
+                const next = new Set(prev)
+                for (const c of filteredCharges) next.delete(c.id)
+                return next
+            }
+            const next = new Set(prev)
+            for (const c of filteredCharges) next.add(c.id)
+            return next
+        })
+    }
+    const toggleOne = (id: string) => {
+        setSelected(prev => {
+            const next = new Set(prev)
+            if (next.has(id)) next.delete(id); else next.add(id)
+            return next
+        })
+    }
 
     const calculateTotals = (charge: DestinationChargeData) => {
         if (!charge.items) return { totalLocal: 0, totalZAR: 0, itemCount: 0 }
@@ -186,6 +210,13 @@ export function DestinationChargesList() {
                 <Table>
                     <TableHeader>
                         <TableRow className="bg-slate-950 border-slate-800 hover:bg-slate-950">
+                            <TableHead className="w-10">
+                                <Checkbox
+                                    checked={allVisibleSelected}
+                                    onCheckedChange={toggleAll}
+                                    aria-label="Select all rate cards"
+                                />
+                            </TableHead>
                             <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Destination Port</TableHead>
                             <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Container</TableHead>
                             <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Rate Type</TableHead>
@@ -211,7 +242,7 @@ export function DestinationChargesList() {
                             ))
                         ) : filteredCharges.length === 0 ? (
                             <TableRow className="border-slate-800 hover:bg-transparent">
-                                <TableCell colSpan={10} className="text-center py-12 text-slate-500">
+                                <TableCell colSpan={11} className="text-center py-12 text-slate-500">
                                     No destination charges found
                                 </TableCell>
                             </TableRow>
@@ -219,7 +250,14 @@ export function DestinationChargesList() {
                             filteredCharges.map((charge) => {
                                 const totals = calculateTotals(charge)
                                 return (
-                                    <TableRow key={charge.id} className="group border-slate-800 hover:bg-slate-950/60">
+                                    <TableRow key={charge.id} className={`group border-slate-800 hover:bg-slate-950/60 ${selected.has(charge.id) ? "bg-red-950/20" : ""}`}>
+                                        <TableCell>
+                                            <Checkbox
+                                                checked={selected.has(charge.id)}
+                                                onCheckedChange={() => toggleOne(charge.id)}
+                                                aria-label="Select rate card"
+                                            />
+                                        </TableCell>
                                         <TableCell>
                                             <div className="flex flex-col">
                                                 <span className="font-semibold text-white">
@@ -327,6 +365,16 @@ export function DestinationChargesList() {
                     </TableBody>
                 </Table>
             </Card>
+
+            <BulkDeleteBar
+                count={selected.size}
+                resourceLabel="rate card"
+                resourceLabelPlural="rate cards"
+                endpoint="/api/admin/destination-charges/bulk-delete"
+                ids={Array.from(selected)}
+                onDeleted={() => { setSelected(new Set()); fetchCharges() }}
+                onClearSelection={() => setSelected(new Set())}
+            />
         </div>
     )
 }

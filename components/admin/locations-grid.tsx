@@ -6,8 +6,10 @@ import { Search, MoreVertical, Edit, Trash, Anchor, Calculator, Ship, Loader2 } 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import Link from "next/link"
 import { CreateLocationDialog } from "./create-location-dialog"
+import { BulkDeleteBar } from "./bulk-delete-bar"
 import { toast } from "sonner"
 
 interface Location {
@@ -27,6 +29,7 @@ export function LocationsGrid() {
     const [loading, setLoading] = useState(true)
     const [editingLocation, setEditingLocation] = useState<Location | null>(null)
     const [editDialogOpen, setEditDialogOpen] = useState(false)
+    const [selected, setSelected] = useState<Set<string>>(new Set())
 
     const fetchLocations = useCallback(async () => {
         try {
@@ -76,6 +79,27 @@ export function LocationsGrid() {
             loc.code.toLowerCase().includes(searchTerm.toLowerCase()))
     )
 
+    const toggleOne = (id: string) => {
+        setSelected(prev => {
+            const next = new Set(prev)
+            if (next.has(id)) next.delete(id); else next.add(id)
+            return next
+        })
+    }
+    const visibleAllSelected = filteredLocs.length > 0 && filteredLocs.every(l => selected.has(l.id))
+    const toggleAll = () => {
+        setSelected(prev => {
+            if (visibleAllSelected) {
+                const next = new Set(prev)
+                for (const l of filteredLocs) next.delete(l.id)
+                return next
+            }
+            const next = new Set(prev)
+            for (const l of filteredLocs) next.add(l.id)
+            return next
+        })
+    }
+
     return (
         <div className="space-y-6">
             {/* Toolbar */}
@@ -101,6 +125,16 @@ export function LocationsGrid() {
                             </button>
                         ))}
                     </div>
+                    {filteredLocs.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={toggleAll}
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-900 text-[10px] font-bold uppercase tracking-wider text-slate-400 hover:text-white"
+                        >
+                            <Checkbox checked={visibleAllSelected} className="pointer-events-none" />
+                            {visibleAllSelected ? "Unselect all" : "Select all"}
+                        </button>
+                    )}
                 </div>
                 <CreateLocationDialog onSuccess={fetchLocations} />
             </div>
@@ -128,12 +162,20 @@ export function LocationsGrid() {
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 transition={{ delay: i * 0.05 }}
-                                className="bg-slate-900 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-colors group relative overflow-hidden flex flex-col"
+                                className={`bg-slate-900 border rounded-xl p-5 transition-colors group relative overflow-hidden flex flex-col ${selected.has(loc.id) ? "border-red-500/50 ring-1 ring-red-500/20" : "border-slate-800 hover:border-slate-700"}`}
                             >
+                                {/* Selection checkbox */}
+                                <div className="absolute top-3 left-3 z-20" onClick={(e) => e.stopPropagation()}>
+                                    <Checkbox
+                                        checked={selected.has(loc.id)}
+                                        onCheckedChange={() => toggleOne(loc.id)}
+                                    />
+                                </div>
+
                                 {/* Status Indicator */}
                                 <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl ${loc.active ? "from-emerald-500/10" : "from-red-500/10"} to-transparent -mr-10 -mt-10 rounded-full blur-xl`} />
 
-                                <div className="flex justify-between items-start mb-4 relative z-10">
+                                                <div className="flex justify-between items-start mb-4 relative z-10 pl-8">
                                     <div className="flex items-center gap-3">
                                         <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${loc.type === 'ORIGIN' ? "bg-amber-500/10 text-amber-500" : "bg-blue-500/10 text-blue-500"}`}>
                                             <Anchor className="h-5 w-5" />
@@ -210,6 +252,16 @@ export function LocationsGrid() {
                     </AnimatePresence>
                 </div>
             )}
+
+            <BulkDeleteBar
+                count={selected.size}
+                resourceLabel="location"
+                resourceLabelPlural="locations"
+                endpoint="/api/admin/locations/bulk-delete"
+                ids={Array.from(selected)}
+                onDeleted={() => { setSelected(new Set()); fetchLocations() }}
+                onClearSelection={() => setSelected(new Set())}
+            />
         </div>
     )
 }

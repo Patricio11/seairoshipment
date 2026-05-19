@@ -31,7 +31,9 @@ import {
 import { MoreVertical, Search, Filter, Eye, Trash2, Edit, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { Checkbox } from "@/components/ui/checkbox"
 import { CreateOriginChargeDialog } from "./create-origin-charge-dialog"
+import { BulkDeleteBar } from "@/components/admin/bulk-delete-bar"
 import {
     Dialog,
     DialogContent,
@@ -88,6 +90,7 @@ export function OriginChargesList() {
     const [deleteDialog, setDeleteDialog] = useState<OriginChargeData | null>(null)
     const [deleting, setDeleting] = useState(false)
     const [loading, setLoading] = useState(true)
+    const [selected, setSelected] = useState<Set<string>>(new Set())
 
     const fetchCharges = async () => {
         try {
@@ -140,6 +143,27 @@ export function OriginChargesList() {
 
         return matchesSearch && matchesOrigin && matchesContainer && matchesStatus
     })
+
+    const allVisibleSelected = filteredCharges.length > 0 && filteredCharges.every(c => selected.has(c.id))
+    const toggleAll = () => {
+        setSelected(prev => {
+            if (allVisibleSelected) {
+                const next = new Set(prev)
+                for (const c of filteredCharges) next.delete(c.id)
+                return next
+            }
+            const next = new Set(prev)
+            for (const c of filteredCharges) next.add(c.id)
+            return next
+        })
+    }
+    const toggleOne = (id: string) => {
+        setSelected(prev => {
+            const next = new Set(prev)
+            if (next.has(id)) next.delete(id); else next.add(id)
+            return next
+        })
+    }
 
     // Calculate totals using each rate card's *actual* container dimensions
     // (joined in by the API). Cube cards multiply PER_CBM rows by the
@@ -265,6 +289,13 @@ export function OriginChargesList() {
                 <Table>
                     <TableHeader>
                         <TableRow className="bg-slate-950 border-slate-800 hover:bg-slate-950">
+                            <TableHead className="w-10">
+                                <Checkbox
+                                    checked={allVisibleSelected}
+                                    onCheckedChange={toggleAll}
+                                    aria-label="Select all rate cards"
+                                />
+                            </TableHead>
                             <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Origin</TableHead>
                             <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Container</TableHead>
                             <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Rate Type</TableHead>
@@ -289,7 +320,7 @@ export function OriginChargesList() {
                             ))
                         ) : filteredCharges.length === 0 ? (
                             <TableRow className="border-slate-800 hover:bg-transparent">
-                                <TableCell colSpan={9} className="text-center py-12 text-slate-500">
+                                <TableCell colSpan={10} className="text-center py-12 text-slate-500">
                                     No origin charges found matching your criteria
                                 </TableCell>
                             </TableRow>
@@ -299,9 +330,16 @@ export function OriginChargesList() {
                                 return (
                                     <TableRow
                                         key={charge.id}
-                                        className="group border-slate-800 hover:bg-slate-950/60 cursor-pointer"
+                                        className={`group border-slate-800 hover:bg-slate-950/60 cursor-pointer ${selected.has(charge.id) ? "bg-red-950/20" : ""}`}
                                         onClick={() => handleRowClick(charge.id)}
                                     >
+                                        <TableCell onClick={(e) => e.stopPropagation()}>
+                                            <Checkbox
+                                                checked={selected.has(charge.id)}
+                                                onCheckedChange={() => toggleOne(charge.id)}
+                                                aria-label="Select rate card"
+                                            />
+                                        </TableCell>
                                         <TableCell className="font-medium">
                                             <div className="flex flex-col">
                                                 <span className="font-semibold text-white">
@@ -430,6 +468,16 @@ export function OriginChargesList() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <BulkDeleteBar
+                count={selected.size}
+                resourceLabel="rate card"
+                resourceLabelPlural="rate cards"
+                endpoint="/api/admin/origin-charges/bulk-delete"
+                ids={Array.from(selected)}
+                onDeleted={() => { setSelected(new Set()); fetchCharges() }}
+                onClearSelection={() => setSelected(new Set())}
+            />
         </div>
     )
 }

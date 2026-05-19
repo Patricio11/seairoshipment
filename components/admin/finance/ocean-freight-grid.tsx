@@ -45,7 +45,9 @@ import {
 import { ChevronDown, ChevronRight, Search, MoreVertical, Edit, Trash2, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useSearchParams } from "next/navigation"
+import { Checkbox } from "@/components/ui/checkbox"
 import { CreateOceanFreightDialog, type OceanFreightEditData } from "./create-ocean-freight-dialog"
+import { BulkDeleteBar } from "@/components/admin/bulk-delete-bar"
 import { toast } from "sonner"
 
 interface OceanFreightRate {
@@ -83,6 +85,7 @@ export function OceanFreightGrid() {
     const [deleteId, setDeleteId] = useState<string | null>(null)
     const [deleting, setDeleting] = useState(false)
     const [loading, setLoading] = useState(true)
+    const [selected, setSelected] = useState<Set<string>>(new Set())
 
     const fetchRates = async () => {
         try {
@@ -286,6 +289,21 @@ export function OceanFreightGrid() {
                                     <Table>
                                         <TableHeader>
                                             <TableRow className="bg-slate-950 border-slate-800 hover:bg-slate-950">
+                                                <TableHead className="w-10">
+                                                    <Checkbox
+                                                        checked={countryRates.length > 0 && countryRates.every(r => selected.has(r.id))}
+                                                        onCheckedChange={() => {
+                                                            const all = countryRates.every(r => selected.has(r.id))
+                                                            setSelected(prev => {
+                                                                const next = new Set(prev)
+                                                                if (all) { for (const r of countryRates) next.delete(r.id) }
+                                                                else { for (const r of countryRates) next.add(r.id) }
+                                                                return next
+                                                            })
+                                                        }}
+                                                        aria-label={`Select all ${country} rates`}
+                                                    />
+                                                </TableHead>
                                                 <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] min-w-[140px]">Port of Load</TableHead>
                                                 <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] min-w-[140px]">Destination Port</TableHead>
                                                 <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Shipping Line</TableHead>
@@ -304,7 +322,20 @@ export function OceanFreightGrid() {
                                         </TableHeader>
                                         <TableBody>
                                             {countryRates.map((rate) => (
-                                                <TableRow key={rate.id} className="group border-slate-800 hover:bg-slate-950/60">
+                                                <TableRow key={rate.id} className={`group border-slate-800 hover:bg-slate-950/60 ${selected.has(rate.id) ? "bg-red-950/20" : ""}`}>
+                                                    <TableCell>
+                                                        <Checkbox
+                                                            checked={selected.has(rate.id)}
+                                                            onCheckedChange={() => {
+                                                                setSelected(prev => {
+                                                                    const next = new Set(prev)
+                                                                    if (next.has(rate.id)) next.delete(rate.id); else next.add(rate.id)
+                                                                    return next
+                                                                })
+                                                            }}
+                                                            aria-label="Select ocean freight rate"
+                                                        />
+                                                    </TableCell>
                                                     <TableCell className="font-medium text-slate-300">
                                                         {rate.origin}
                                                     </TableCell>
@@ -422,6 +453,16 @@ export function OceanFreightGrid() {
                     )
                 })}
             </div>
+
+            <BulkDeleteBar
+                count={selected.size}
+                resourceLabel="rate"
+                resourceLabelPlural="rates"
+                endpoint="/api/admin/ocean-freight/bulk-delete"
+                ids={Array.from(selected)}
+                onDeleted={() => { setSelected(new Set()); fetchRates() }}
+                onClearSelection={() => setSelected(new Set())}
+            />
         </div>
     )
 }
