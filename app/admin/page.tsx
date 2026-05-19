@@ -1,6 +1,7 @@
 import { Activity, AlertTriangle, Ship, Users, ArrowUpRight, CheckCircle2, FileText, TrendingUp, DollarSign } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { SystemClock } from "@/components/admin/system-clock"
 
 export default function AdminDashboardPage() {
     return (
@@ -10,9 +11,7 @@ export default function AdminDashboardPage() {
                     <h1 className="text-3xl font-black text-white tracking-tighter">MISSION CONTROL</h1>
                     <p className="text-slate-500 font-mono text-sm mt-1">SYSTEM STATUS: <span className="text-emerald-500">NOMINAL</span></p>
                 </div>
-                <div className="bg-slate-900 px-4 py-2 rounded border border-slate-800 font-mono text-xs text-slate-400">
-                    UTC: 14:12:45Z
-                </div>
+                <SystemClock />
             </div>
 
             {/* Quick Stats Grid */}
