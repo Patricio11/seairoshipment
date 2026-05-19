@@ -190,10 +190,12 @@ export function TwoFactorEnableWizard({ open, onOpenChange, onEnabled, forceEnro
         onEnabled?.()
         onOpenChange(false)
         if (forceEnroll) {
-            // Forced flow: bounce to the producer's chosen destination
+            // Forced flow: navigate to the producer's chosen destination
             // (admin layout uses /admin; could widen to other gates later).
-            router.push(forceEnrollRedirectTo)
-            router.refresh()
+            // `replace` so back-button doesn't return to /auth/setup-2fa,
+            // and no explicit refresh — the destination's server layout
+            // runs a fresh DB check on its own GET.
+            router.replace(forceEnrollRedirectTo)
         }
     }
 

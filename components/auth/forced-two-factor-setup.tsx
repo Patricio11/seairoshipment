@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { Shield } from "lucide-react"
 import { TwoFactorEnableWizard } from "@/components/settings/two-factor-enable-wizard"
 
@@ -23,7 +22,6 @@ interface ForcedTwoFactorSetupProps {
  * they somehow do, keeping the page safe to reuse if forcing widens later.
  */
 export function ForcedTwoFactorSetup({ role }: ForcedTwoFactorSetupProps) {
-    const router = useRouter()
     const [open, setOpen] = useState(true)
 
     return (
@@ -44,17 +42,14 @@ export function ForcedTwoFactorSetup({ role }: ForcedTwoFactorSetupProps) {
 
             <TwoFactorEnableWizard
                 open={open}
-                onOpenChange={(next) => {
-                    // forceEnroll mode handles the dismissal lock for us — but
-                    // belt-and-braces, refuse closing from this wrapper too.
-                    if (!next) return
-                    setOpen(next)
-                }}
+                onOpenChange={setOpen}
                 onEnabled={() => {
-                    // The wizard's handleFinish will route to forceEnrollRedirectTo.
-                    // This handler runs first and refreshes the session so the
-                    // admin layout's DB check sees the new twoFactorEnabled = true.
-                    router.refresh()
+                    // No router.refresh here — the wizard's handleFinish will
+                    // router.replace() onto /admin (or /dashboard), and that
+                    // navigation runs the destination's server check fresh.
+                    // Extra refreshes on /auth/setup-2fa would server-redirect
+                    // *us* to /admin too, racing the wizard's own navigation
+                    // and visibly hanging the dialog for ~1s in dev.
                 }}
                 forceEnroll
                 forceEnrollRedirectTo={role === "admin" ? "/admin" : "/dashboard"}

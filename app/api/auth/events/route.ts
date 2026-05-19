@@ -89,17 +89,22 @@ export async function POST(req: NextRequest) {
             userAgent: ua,
         });
 
-        // Side-effect emails for the events users care about. Best-effort —
-        // a flaky SMTP must not 500 the audit log.
+        // Side-effect emails for the events users care about. Detached from
+        // the response cycle — SMTP can take 5–10s and we don't want the
+        // wizard's `void logAuthEvent` call to look like a hung request in
+        // the network tab. The audit row is already durable; the email is
+        // best-effort regardless.
         if (event === "TWO_FACTOR_ENABLED" || event === "TWO_FACTOR_DISABLED") {
-            try {
-                const [u] = await db.select({
-                    email: userTable.email,
-                    name: userTable.name,
-                    role: userTable.role,
-                }).from(userTable).where(eq(userTable.id, userId)).limit(1);
+            void (async () => {
+                try {
+                    const [u] = await db.select({
+                        email: userTable.email,
+                        name: userTable.name,
+                        role: userTable.role,
+                    }).from(userTable).where(eq(userTable.id, userId)).limit(1);
 
-                if (u) {
+                    if (!u) return;
+
                     if (event === "TWO_FACTOR_ENABLED") {
                         await sendTwoFactorEnabledEmail(u.email, u.name);
                         if (u.role === "admin") {
@@ -111,10 +116,10 @@ export async function POST(req: NextRequest) {
                     } else {
                         await sendTwoFactorDisabledEmail(u.email, u.name, "self");
                     }
+                } catch (mailErr) {
+                    console.warn("[auth-events] confirmation email failed", mailErr);
                 }
-            } catch (mailErr) {
-                console.warn("[auth-events] confirmation email failed", mailErr);
-            }
+            })();
         }
 
         return NextResponse.json({ success: true });
