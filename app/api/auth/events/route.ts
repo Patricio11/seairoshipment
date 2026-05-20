@@ -75,7 +75,12 @@ export async function POST(req: NextRequest) {
         }
 
         if (!userId) {
-            return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+            // Common during the 2FA login challenge: the user has a pending-2FA
+            // cookie but no full session yet, so VERIFY_FAILED events from the
+            // challenge form can't resolve a userId. The audit is best-effort —
+            // return 200 with skipped:true so the client's fetch doesn't show
+            // a noisy 401 in the console for an event we're choosing to drop.
+            return NextResponse.json({ skipped: true });
         }
 
         const ua = (req.headers.get("user-agent") || "").slice(0, 500);
