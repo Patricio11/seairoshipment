@@ -47,7 +47,7 @@ export const bookingModalStore = {
         modalListeners.forEach((l) => l(isOpen))
     },
     /**
-     * Open the booking wizard with prefill data — used by the Smart-match
+     * Open the booking wizard with prefill data - used by the Smart-match
      * panel deep-link to drop the user straight into a Cube booking with
      * a calculation + container already chosen.
      */

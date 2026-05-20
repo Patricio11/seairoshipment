@@ -14,7 +14,7 @@ export interface DocumentType {
 }
 
 export const DOCUMENT_TYPES: DocumentType[] = [
-    { code: "COMMERCIAL_INVOICE", label: "Commercial Invoice", description: "Required by customs — declares value + parties" },
+    { code: "COMMERCIAL_INVOICE", label: "Commercial Invoice", description: "Required by customs - declares value + parties" },
     { code: "PACKING_LIST", label: "Packing List", description: "Itemised contents of each pallet" },
     { code: "IMPORT_PERMIT", label: "Copy of Import Permit", description: "Issued by destination country authority" },
     { code: "BILL_OF_LADING", label: "Bill of Lading", description: "Carrier-issued transport document" },

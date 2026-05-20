@@ -22,7 +22,7 @@ function CheckEmailScreenInner() {
 
     const handleResend = async () => {
         if (!email) {
-            toast.error("Missing email — go back and sign up again.")
+            toast.error("Missing email - go back and sign up again.")
             return
         }
         setResending(true)
@@ -34,13 +34,13 @@ function CheckEmailScreenInner() {
             })
             const data = await res.json().catch(() => ({}))
             if (!res.ok) {
-                toast.error(data.error || "Couldn't resend — try again in a minute")
+                toast.error(data.error || "Couldn't resend - try again in a minute")
                 return
             }
             setResentAt(Date.now())
             toast.success("Verification email sent")
         } catch {
-            toast.error("Couldn't resend — try again in a minute")
+            toast.error("Couldn't resend - try again in a minute")
         } finally {
             setResending(false)
         }
@@ -53,7 +53,7 @@ function CheckEmailScreenInner() {
                     <Link href="/" className="flex items-center gap-2">
                         <Image
                             src="/seairo-logo.png"
-                            alt="Seairo Cargo — Shared Reefer Services"
+                            alt="Seairo Cargo - Shared Reefer Services"
                             width={120}
                             height={40}
                             className="h-9 w-auto object-contain"
@@ -91,7 +91,7 @@ function CheckEmailScreenInner() {
                     )}
                 </motion.div>
 
-                {/* Spam / junk hint — the most important UX nudge here */}
+                {/* Spam / junk hint - the most important UX nudge here */}
                 <motion.div
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -102,7 +102,7 @@ function CheckEmailScreenInner() {
                     <div className="text-sm">
                         <p className="font-bold text-amber-900 dark:text-amber-200">Don&apos;t see it after a minute?</p>
                         <p className="text-amber-800/80 dark:text-amber-200/80 mt-1">
-                            Check your <strong>Spam</strong> or <strong>Junk</strong> folder — the first email from a new sender often lands there. Mark us as &quot;Not spam&quot; so future approvals and shipment updates land in your inbox.
+                            Check your <strong>Spam</strong> or <strong>Junk</strong> folder - the first email from a new sender often lands there. Mark us as &quot;Not spam&quot; so future approvals and shipment updates land in your inbox.
                         </p>
                     </div>
                 </motion.div>
@@ -118,7 +118,7 @@ function CheckEmailScreenInner() {
                     <ol className="space-y-3 text-sm text-slate-700 dark:text-slate-200">
                         <Step n={1} label="Click the verification link in the email we sent" />
                         <Step n={2} label="You'll be auto-signed-in and taken to a quick onboarding form" />
-                        <Step n={3} label="Our team reviews your application — typically within one business day" />
+                        <Step n={3} label="Our team reviews your application - typically within one business day" />
                         <Step n={4} label="Once approved, your dashboard unlocks and you can book your first shipment" />
                     </ol>
                 </motion.div>
@@ -141,7 +141,7 @@ function CheckEmailScreenInner() {
                     </Button>
                     {resentAt && (
                         <span className="text-xs text-emerald-500 font-medium flex items-center gap-1">
-                            <CheckCircle2 className="h-3.5 w-3.5" /> Sent — check your inbox again
+                            <CheckCircle2 className="h-3.5 w-3.5" /> Sent - check your inbox again
                         </span>
                     )}
                 </motion.div>

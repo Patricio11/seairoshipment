@@ -13,7 +13,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://seairo.com";
 export const metadata: Metadata = {
     metadataBase: new URL(SITE_URL),
     title: {
-        default: "Seairo Cargo — Shared Reefer Services® for Cold-Chain Exporters",
+        default: "Seairo Cargo - Shared Reefer Services® for Cold-Chain Exporters",
         template: "%s | Seairo Cargo",
     },
     description:
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
         locale: "en_ZA",
         url: SITE_URL,
         siteName: "Seairo Cargo",
-        title: "Seairo Cargo — Shared Reefer Services® for Cold-Chain Exporters",
+        title: "Seairo Cargo - Shared Reefer Services® for Cold-Chain Exporters",
         description:
             "IoT-monitored Shared Reefer Services® from South Africa to the world. Consolidated cold-chain logistics for perishable and FMCG exporters.",
         images: [
@@ -50,13 +50,13 @@ export const metadata: Metadata = {
                 url: "/og.png",
                 width: 1200,
                 height: 630,
-                alt: "Seairo Cargo — Shared Reefer Services®",
+                alt: "Seairo Cargo - Shared Reefer Services®",
             },
         ],
     },
     twitter: {
         card: "summary_large_image",
-        title: "Seairo Cargo — Shared Reefer Services® for Cold-Chain Exporters",
+        title: "Seairo Cargo - Shared Reefer Services® for Cold-Chain Exporters",
         description:
             "IoT-monitored cold-chain consolidation from Cape Town. Real-time tracking, automated compliance.",
         images: ["/og.png"],
@@ -84,7 +84,7 @@ export const metadata: Metadata = {
     },
     manifest: "/site.webmanifest",
     category: "logistics",
-    // Search Console verification — fill once you've verified the property
+    // Search Console verification - fill once you've verified the property
     verification: {
         google: process.env.GOOGLE_SITE_VERIFICATION,
         // Bing / Yandex / etc. → metadata.verification.other = { 'msvalidate.01': '...' }

@@ -56,16 +56,16 @@ export async function GET(
 }
 
 /**
- * Cargo type is locked after creation — same pattern as the existing
+ * Cargo type is locked after creation - same pattern as the existing
  * salesRateTypeId / containerId locks. Line items are revalidated
  * against the existing cargoType.
  */
 function validateChargeTypeForCargoType(chargeType: string, cargoType: "PALLET" | "CUBE"): string | null {
     if (cargoType === "CUBE" && chargeType === "PER_PALLET") {
-        return "PER_PALLET is not valid on a CUBE rate card — use PER_CBM, PER_CONTAINER, or FIXED.";
+        return "PER_PALLET is not valid on a CUBE rate card - use PER_CBM, PER_CONTAINER, or FIXED.";
     }
     if (cargoType === "PALLET" && chargeType === "PER_CBM") {
-        return "PER_CBM is not valid on a PALLET rate card — use PER_PALLET, PER_CONTAINER, or FIXED.";
+        return "PER_CBM is not valid on a PALLET rate card - use PER_PALLET, PER_CONTAINER, or FIXED.";
     }
     if (!["PER_PALLET", "PER_CONTAINER", "FIXED", "PER_CBM"].includes(chargeType)) {
         return `Unknown charge type "${chargeType}".`;
@@ -104,7 +104,7 @@ export async function PUT(
             }
         }
 
-        // Update header — cargoType is deliberately NOT updatable here.
+        // Update header - cargoType is deliberately NOT updatable here.
         const updateData: Record<string, unknown> = { updatedAt: new Date() };
         if (salesRateTypeId !== undefined) updateData.salesRateTypeId = salesRateTypeId;
         if (originId !== undefined) updateData.originId = originId;

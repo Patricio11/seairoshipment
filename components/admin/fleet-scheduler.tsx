@@ -394,9 +394,9 @@ export function FleetScheduler() {
                 toast.success(isEdit ? "Container Updated" : "Container Created", {
                     description: (() => {
                         const sailing = sailingOptions.find(s => s.id === formData.sailingId)
-                        const ctName = containerTypeOptions.find(c => c.id === formData.containerTypeId)?.displayName || "—"
-                        const catName = categoryOptions.find(c => c.id === formData.categoryId)?.name || "—"
-                        return `${route} — ${sailing?.vesselName || "—"} · ${ctName} · ${catName}`
+                        const ctName = containerTypeOptions.find(c => c.id === formData.containerTypeId)?.displayName || "-"
+                        const catName = categoryOptions.find(c => c.id === formData.categoryId)?.name || "-"
+                        return `${route} - ${sailing?.vesselName || "-"} · ${ctName} · ${catName}`
                     })(),
                 })
                 setDialogOpen(false)
@@ -467,7 +467,7 @@ export function FleetScheduler() {
                 ? ` | ${data.documents.uploaded}/${data.documents.total} docs uploaded${data.documents.failed > 0 ? ` (${data.documents.failed} failed)` : ""}`
                 : ""
             toast.success("MetaShip Order Created!", {
-                description: `Order #${data.orderNo}${docSummary} — Log in to MetaShip to review.`,
+                description: `Order #${data.orderNo}${docSummary} - Log in to MetaShip to review.`,
                 duration: 10000,
             })
             setBookingDialog(null)
@@ -482,7 +482,7 @@ export function FleetScheduler() {
     const handleContainerTypeChange = (ctId: string) => {
         const ct = containerTypeOptions.find(c => c.id === ctId)
         setFormData(prev => {
-            // DRY containers carry no temperature regime — clear the field.
+            // DRY containers carry no temperature regime - clear the field.
             // REEFER containers keep whatever was picked (frozen/chilled/ambient
             // are now all valid for reefer).
             const nextTemp: "frozen" | "chilled" | "ambient" | "" = ct?.type === "DRY"
@@ -496,7 +496,7 @@ export function FleetScheduler() {
                 maxCapacity: ct?.maxPallets || 20,
                 temperature: nextTemp,
                 cargoType: nextCargoType,
-                // Category scope changes with service type — clear to force re-pick
+                // Category scope changes with service type - clear to force re-pick
                 categoryId: "",
             }
         })
@@ -685,7 +685,7 @@ export function FleetScheduler() {
                                     </div>
 
                                     <div className="flex items-center gap-3">
-                                        {/* Capacity counter — CUBE shows CBM, PALLET shows pallet count */}
+                                        {/* Capacity counter - CUBE shows CBM, PALLET shows pallet count */}
                                         {container.cargoType === "CUBE" ? (() => {
                                             const usedCBM = Number(container.totalCBM ?? 0)
                                             const maxCBM = Number(container.maxCapacityCBM ?? 0)
@@ -696,7 +696,7 @@ export function FleetScheduler() {
                                                     <span className={`text-2xl font-black ${nearFull ? "text-amber-400" : "text-white"}`}>
                                                         {usedCBM.toFixed(2)}
                                                     </span>
-                                                    <span className="text-slate-500 text-sm">/ {maxCBM > 0 ? `${maxCBM.toFixed(1)} m³` : "— m³"}</span>
+                                                    <span className="text-slate-500 text-sm">/ {maxCBM > 0 ? `${maxCBM.toFixed(1)} m³` : "- m³"}</span>
                                                 </div>
                                             )
                                         })() : (
@@ -789,7 +789,7 @@ export function FleetScheduler() {
                                     {container.totalPallets >= 15 && !container.metashipOrderNo && (
                                         <div className="flex items-center gap-1 mt-2 text-amber-400 text-xs font-bold">
                                             <AlertTriangle className="h-3 w-3" />
-                                            Threshold reached — ready for MetaShip order
+                                            Threshold reached - ready for MetaShip order
                                         </div>
                                     )}
                                 </div>
@@ -815,11 +815,11 @@ export function FleetScheduler() {
                                             <TableBody>
                                                 {container.allocations.map((alloc) => (
                                                     <TableRow key={alloc.allocation.id} className="border-slate-800 hover:bg-slate-900/40">
-                                                        <TableCell className="text-slate-300 font-medium">{alloc.userName || "—"}</TableCell>
-                                                        <TableCell className="font-mono text-xs text-slate-400">{alloc.accountNumber || "—"}</TableCell>
+                                                        <TableCell className="text-slate-300 font-medium">{alloc.userName || "-"}</TableCell>
+                                                        <TableCell className="font-mono text-xs text-slate-400">{alloc.accountNumber || "-"}</TableCell>
                                                         <TableCell>
                                                             <div className="flex flex-col">
-                                                                <span className="text-xs text-white font-bold">{alloc.allocation.commodityName || "—"}</span>
+                                                                <span className="text-xs text-white font-bold">{alloc.allocation.commodityName || "-"}</span>
                                                                 {alloc.allocation.hsCode && (
                                                                     <span className="text-[10px] text-slate-500 font-mono">HS: {alloc.allocation.hsCode}</span>
                                                                 )}
@@ -827,7 +827,7 @@ export function FleetScheduler() {
                                                         </TableCell>
                                                         <TableCell className="text-center text-white font-black">{alloc.allocation.palletCount}</TableCell>
                                                         <TableCell className="text-center text-xs text-slate-400">
-                                                            {alloc.allocation.nettWeight ? `${alloc.allocation.nettWeight}N` : "—"} / {alloc.allocation.grossWeight ? `${alloc.allocation.grossWeight}G` : "—"}
+                                                            {alloc.allocation.nettWeight ? `${alloc.allocation.nettWeight}N` : "-"} / {alloc.allocation.grossWeight ? `${alloc.allocation.grossWeight}G` : "-"}
                                                         </TableCell>
                                                         <TableCell className="text-center text-xs">
                                                             {alloc.allocation.temperature === "frozen" ? (
@@ -835,7 +835,7 @@ export function FleetScheduler() {
                                                             ) : alloc.allocation.temperature === "chilled" ? (
                                                                 <span className="text-cyan-400">+5°C</span>
                                                             ) : (
-                                                                <span className="text-slate-500">—</span>
+                                                                <span className="text-slate-500">-</span>
                                                             )}
                                                         </TableCell>
                                                         <TableCell className="text-center">
@@ -855,7 +855,7 @@ export function FleetScheduler() {
                                                                     allocationId: alloc.allocation.id,
                                                                     clientName: alloc.userName || "Unknown client",
                                                                     palletCount: alloc.allocation.palletCount,
-                                                                    commodity: alloc.allocation.commodityName || "—",
+                                                                    commodity: alloc.allocation.commodityName || "-",
                                                                 })}
                                                                 className="h-7 w-7 text-slate-500 hover:text-red-400 hover:bg-red-950/30"
                                                                 title="Delete booking"
@@ -984,7 +984,7 @@ export function FleetScheduler() {
                                 </div>
                             </div>
 
-            {/* Step 3b: Cargo Type — SCS (DRY) only. SRS (reefer) is always PALLET, so the field is hidden. */}
+            {/* Step 3b: Cargo Type - SCS (DRY) only. SRS (reefer) is always PALLET, so the field is hidden. */}
                             {selectedContainerType?.type === "DRY" && (
                                 <div className="border-t border-slate-800/50 pt-4">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">3b. Cargo Type</p>
@@ -1018,13 +1018,13 @@ export function FleetScheduler() {
                                 </div>
                             )}
 
-            {/* Step 4: Temperature — hidden for Dry containers (no temperature regime) */}
+            {/* Step 4: Temperature - hidden for Dry containers (no temperature regime) */}
                             {selectedContainerType?.type === "DRY" ? (
                                 <div className="border-t border-slate-800/50 pt-4">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">4. Temperature</p>
                                     <div className="rounded-lg border border-slate-800 bg-slate-900/40 px-3 py-2.5 flex items-center gap-2">
                                         <Sun className="h-4 w-4 text-slate-500" />
-                                        <span className="text-sm font-medium text-slate-300">Dry container — no temperature regime</span>
+                                        <span className="text-sm font-medium text-slate-300">Dry container - no temperature regime</span>
                                     </div>
                                 </div>
                             ) : (
@@ -1178,7 +1178,7 @@ export function FleetScheduler() {
                                 This will also delete <span className="font-bold text-white">{deleteDialog.totalPallets} pallet{deleteDialog.totalPallets === 1 ? "" : "s"}</span> worth of bookings on this container, along with all their uploaded documents and unpaid invoices. The container&apos;s record in your system is removed entirely. This cannot be undone.
                             </p>
                             <p className="text-xs">
-                                If any booking has a <span className="font-bold">PAID</span> invoice the delete will be refused — void the invoice first.
+                                If any booking has a <span className="font-bold">PAID</span> invoice the delete will be refused - void the invoice first.
                             </p>
                         </div>
                     )}
@@ -1206,7 +1206,7 @@ export function FleetScheduler() {
                                 <>
                                     This will permanently delete <span className="font-bold text-white">{deleteAllocDialog.clientName}</span>&apos;s
                                     {" "}booking of <span className="font-bold text-white">{deleteAllocDialog.palletCount} pallet{deleteAllocDialog.palletCount === 1 ? "" : "s"}</span>
-                                    {deleteAllocDialog.commodity && deleteAllocDialog.commodity !== "—" ? <> ({deleteAllocDialog.commodity})</> : null},
+                                    {deleteAllocDialog.commodity && deleteAllocDialog.commodity !== "-" ? <> ({deleteAllocDialog.commodity})</> : null},
                                     {" "}along with its uploaded documents and any unpaid invoices. The container&apos;s pallet counter will be adjusted automatically. This cannot be undone.
                                 </>
                             )}
@@ -1390,32 +1390,32 @@ export function FleetScheduler() {
                                                     <TableRow key={alloc.allocation.id} className="border-slate-800 hover:bg-slate-900/40">
                                                         <TableCell>
                                                             <div className="flex flex-col">
-                                                                <span className="text-slate-300 font-medium text-xs">{alloc.userName || "—"}</span>
+                                                                <span className="text-slate-300 font-medium text-xs">{alloc.userName || "-"}</span>
                                                                 {alloc.userEmail && <span className="text-[10px] text-slate-500">{alloc.userEmail}</span>}
                                                             </div>
                                                         </TableCell>
-                                                        <TableCell className="font-mono text-xs text-slate-400">{alloc.accountNumber || "—"}</TableCell>
+                                                        <TableCell className="font-mono text-xs text-slate-400">{alloc.accountNumber || "-"}</TableCell>
                                                         <TableCell>
                                                             <div className="flex flex-col">
-                                                                <span className="text-xs text-white font-bold">{alloc.allocation.commodityName || "—"}</span>
+                                                                <span className="text-xs text-white font-bold">{alloc.allocation.commodityName || "-"}</span>
                                                                 {alloc.allocation.hsCode && (
                                                                     <span className="text-[10px] text-slate-500 font-mono">HS: {alloc.allocation.hsCode}</span>
                                                                 )}
                                                             </div>
                                                         </TableCell>
                                                         <TableCell className="text-center text-white font-black">{alloc.allocation.palletCount}</TableCell>
-                                                        <TableCell className="text-center text-xs text-slate-400">{alloc.allocation.nettWeight || "—"}</TableCell>
-                                                        <TableCell className="text-center text-xs text-slate-400">{alloc.allocation.grossWeight || "—"}</TableCell>
+                                                        <TableCell className="text-center text-xs text-slate-400">{alloc.allocation.nettWeight || "-"}</TableCell>
+                                                        <TableCell className="text-center text-xs text-slate-400">{alloc.allocation.grossWeight || "-"}</TableCell>
                                                         <TableCell className="text-center text-xs">
                                                             {alloc.allocation.temperature === "frozen" ? (
                                                                 <span className="text-blue-400 font-bold">-18°C</span>
                                                             ) : alloc.allocation.temperature === "chilled" ? (
                                                                 <span className="text-cyan-400 font-bold">+5°C</span>
                                                             ) : (
-                                                                <span className="text-slate-500">—</span>
+                                                                <span className="text-slate-500">-</span>
                                                             )}
                                                         </TableCell>
-                                                        <TableCell className="text-xs text-slate-400">{alloc.allocation.consigneeName || "—"}</TableCell>
+                                                        <TableCell className="text-xs text-slate-400">{alloc.allocation.consigneeName || "-"}</TableCell>
                                                         <TableCell className="text-center">
                                                             <Badge className={
                                                                 alloc.allocation.status === "CONFIRMED"

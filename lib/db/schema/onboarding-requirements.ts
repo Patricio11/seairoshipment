@@ -5,11 +5,11 @@ import { user } from "./users";
  * Admin-managed list of documents a client must provide during onboarding.
  *
  * Two flavours share the same row:
- *   - "Fillable template" — admin uploads a file, presence of `templateUrl`
+ *   - "Fillable template" - admin uploads a file, presence of `templateUrl`
  *     flips this row into a download-and-fill flow. The verification email
  *     links to the file; on the onboarding form the user gets a "Download
  *     original" link plus an upload slot for their filled version.
- *   - "User document" — `templateUrl` is null. The card is just a labelled
+ *   - "User document" - `templateUrl` is null. The card is just a labelled
  *     upload slot (e.g. "Tax Clearance Certificate"); the user uploads
  *     their own file.
  *

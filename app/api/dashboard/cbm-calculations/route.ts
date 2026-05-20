@@ -35,7 +35,7 @@ function normaliseItems(raw: unknown): CargoItem[] {
             const weightKg = Number(it.weightKg ?? 0);
             const quantity = Number(it.quantity ?? 0);
             if (![lengthMm, widthMm, heightMm, weightKg, quantity].every(n => Number.isFinite(n) && n >= 0)) return null;
-            // Drop rows that contribute zero volume — they're empty/placeholder
+            // Drop rows that contribute zero volume - they're empty/placeholder
             if (lengthMm * widthMm * heightMm * quantity === 0) return null;
             return {
                 id: typeof it.id === "string" && it.id ? it.id : `ci-${nanoid(8)}`,

@@ -1,4 +1,4 @@
-# SEO Playbook — Drop-in Optimisation for Next.js Sites
+# SEO Playbook - Drop-in Optimisation for Next.js Sites
 
 > **How to use this in another project:** copy this file into the new repo's root, then prompt Claude:
 > *"Read SEO_PLAYBOOK.md and execute it end-to-end for this project. Ask me only for the inputs in §1."*
@@ -29,19 +29,19 @@ Before Claude starts, give these. Everything else is mechanical.
 | `PRIVATE_ROUTE_PREFIXES` | `/admin`, `/dashboard`, `/api`, auth holding pages | Disallowed in robots.ts |
 | `TRADEMARK_NOTICE` (if any) | `Shared Reefer Services® is a registered trademark of …` | Footer line + first-on-page use |
 
-If any input is missing, Claude should flag it and keep building everything else — don't block on placeholders.
+If any input is missing, Claude should flag it and keep building everything else - don't block on placeholders.
 
 ---
 
-## 2. Mental model — what code can and can't do
+## 2. Mental model - what code can and can't do
 
 **Two layers, only one is code:**
 
-- **Technical + on-page (code, ≈1 day)** — metadata, structured data, sitemap, robots, OG image, keyword-tuned headings, FAQ schema, performance. Without this, Google can index but can't *understand* the page.
-- **Off-page authority (months)** — backlinks, Google Business Profile, fresh content, social presence. No code creates this.
+- **Technical + on-page (code, ≈1 day)** - metadata, structured data, sitemap, robots, OG image, keyword-tuned headings, FAQ schema, performance. Without this, Google can index but can't *understand* the page.
+- **Off-page authority (months)** - backlinks, Google Business Profile, fresh content, social presence. No code creates this.
 
 **Reality check** (paste this on the user's expectations):
-- Branded / trademarked terms rank within days of indexing — there's no competition.
+- Branded / trademarked terms rank within days of indexing - there's no competition.
 - Generic terms ("cold chain logistics", "SaaS analytics") will not rank in Q1 no matter how clean the code. Those need backlinks + content over time.
 - The OG image and favicon set are the single highest-impact items for *human* perception when someone shares the URL. Treat them as launch blockers.
 
@@ -61,7 +61,7 @@ That's it for runtime deps. Everything else is built into Next.
 
 ## 4. Phase-by-phase code work
 
-### Phase A — Technical foundations
+### Phase A - Technical foundations
 
 #### A1. Root metadata in `app/layout.tsx`
 
@@ -75,7 +75,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://PRODUCTION_DOMAIN";
 export const metadata: Metadata = {
     metadataBase: new URL(SITE_URL),
     title: {
-        default: "BUSINESS_NAME — TAGLINE_TITLE",
+        default: "BUSINESS_NAME - TAGLINE_TITLE",
         template: "%s | BUSINESS_NAME",
     },
     description: "META_DESCRIPTION",
@@ -95,18 +95,18 @@ export const metadata: Metadata = {
         locale: "en_ZA",        // ← change per market
         url: SITE_URL,
         siteName: "BUSINESS_NAME",
-        title: "BUSINESS_NAME — TAGLINE_TITLE",
+        title: "BUSINESS_NAME - TAGLINE_TITLE",
         description: "META_DESCRIPTION",
         images: [{
             url: "/og.png",
             width: 1200,
             height: 630,
-            alt: "BUSINESS_NAME — TAGLINE_TITLE",
+            alt: "BUSINESS_NAME - TAGLINE_TITLE",
         }],
     },
     twitter: {
         card: "summary_large_image",
-        title: "BUSINESS_NAME — TAGLINE_TITLE",
+        title: "BUSINESS_NAME - TAGLINE_TITLE",
         description: "META_DESCRIPTION",
         images: ["/og.png"],
     },
@@ -146,7 +146,7 @@ export const viewport: Viewport = {
 };
 ```
 
-**Why each piece matters** — keep these comments in the code so future contributors don't strip them:
+**Why each piece matters** - keep these comments in the code so future contributors don't strip them:
 - `metadataBase` lets relative URLs in OG/Twitter resolve correctly.
 - `title.template` auto-suffixes every child page (`%s | Business Name`).
 - `googleBot` directives unlock larger image/snippet sizes in search results.
@@ -165,9 +165,9 @@ export const metadata: Metadata = {
 };
 ```
 
-Repeat per public route (`/services`, `/blog/[slug]`, etc.) — each gets its own keyword-tuned title and description.
+Repeat per public route (`/services`, `/blog/[slug]`, etc.) - each gets its own keyword-tuned title and description.
 
-#### A3. `app/sitemap.ts` (Next.js convention — no manual XML)
+#### A3. `app/sitemap.ts` (Next.js convention - no manual XML)
 
 ```ts
 import type { MetadataRoute } from "next";
@@ -183,7 +183,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 }
 ```
 
-For dynamic routes (blog posts, etc.), fetch slugs from the DB/CMS in this function — it runs at build time *and* at request time on Vercel, so freshness is automatic.
+For dynamic routes (blog posts, etc.), fetch slugs from the DB/CMS in this function - it runs at build time *and* at request time on Vercel, so freshness is automatic.
 
 #### A4. `app/robots.ts`
 
@@ -211,17 +211,17 @@ export default function robots(): MetadataRoute.Robots {
 }
 ```
 
-**Critical** — disallow gated routes so Googlebot doesn't burn crawl budget on 401/403 responses. Replace the example list with whatever's behind login in your project.
+**Critical** - disallow gated routes so Googlebot doesn't burn crawl budget on 401/403 responses. Replace the example list with whatever's behind login in your project.
 
 #### A5. JSON-LD structured data
 
 Create `components/seo/structured-data.tsx`. Three schemas, server-rendered so Googlebot reads them without executing JS:
 
-- **Organization** — knowledge panel, contact points, sameAs links.
-- **LocalBusiness** — physical address, geo coordinates, opening hours. Skip if pure online business.
-- **Service** — describes the core offering, links to Organization via `@id`.
+- **Organization** - knowledge panel, contact points, sameAs links.
+- **LocalBusiness** - physical address, geo coordinates, opening hours. Skip if pure online business.
+- **Service** - describes the core offering, links to Organization via `@id`.
 
-Reference template: see [components/seo/structured-data.tsx](components/seo/structured-data.tsx) in this repo. Adapt the constants — names, addresses, areaServed, contact details — to the new project. Wire it into the landing page:
+Reference template: see [components/seo/structured-data.tsx](components/seo/structured-data.tsx) in this repo. Adapt the constants - names, addresses, areaServed, contact details - to the new project. Wire it into the landing page:
 
 ```tsx
 // app/page.tsx
@@ -241,7 +241,7 @@ Validate with [Schema.org Validator](https://validator.schema.org) and [Google's
 
 ---
 
-### Phase B — Content / on-page keyword optimisation
+### Phase B - Content / on-page keyword optimisation
 
 This is where you trade abbreviations and clever-sounding copy for **the words customers actually type into Google**.
 
@@ -259,7 +259,7 @@ Add a FAQ section targeting **long-tail conversational queries** (what is X, how
 - Rich results / "People Also Ask" carousel
 - Featured snippets
 
-Reference template: see [components/landing/faq-section.tsx](components/landing/faq-section.tsx) — accordion UI + JSON-LD inlined. Pattern:
+Reference template: see [components/landing/faq-section.tsx](components/landing/faq-section.tsx) - accordion UI + JSON-LD inlined. Pattern:
 
 ```tsx
 const FAQS = [
@@ -284,7 +284,7 @@ const faqSchema = {
 
 **FAQ writing rules:**
 - 5–10 entries. More than that dilutes ranking signal.
-- Phrase questions exactly how a customer would type them — "what is", "how does", "do you", "what's the minimum".
+- Phrase questions exactly how a customer would type them - "what is", "how does", "do you", "what's the minimum".
 - Answers are 2–4 sentences, complete on their own, naturally use the primary keyword once or twice.
 - No marketing speak ("seamless", "best-in-class"). Plain English wins both with humans and with Google.
 
@@ -293,16 +293,16 @@ const faqSchema = {
 - Brand description rewritten to lead with the trademarked phrase.
 - Trademark notice line: *"X® is a registered trademark of Y."*
 - Copyright year auto-updates: `© {BUSINESS_NAME} · {LOCATION} · {new Date().getFullYear()}`.
-- Logo `alt` text expanded from "X" → "X — TAGLINE" so it gets picked up in image search.
-- At least one internal anchor link to the FAQ (`href="#faq"`) — internal linking helps the FAQ section accumulate authority.
+- Logo `alt` text expanded from "X" → "X - TAGLINE" so it gets picked up in image search.
+- At least one internal anchor link to the FAQ (`href="#faq"`) - internal linking helps the FAQ section accumulate authority.
 
 #### B4. Alt text audit on all hero/feature/testimonial images
 
-Replace generic `alt="hero"` with descriptive alt text that includes a keyword where natural. Don't keyword-stuff — describe the image truthfully.
+Replace generic `alt="hero"` with descriptive alt text that includes a keyword where natural. Don't keyword-stuff - describe the image truthfully.
 
 ---
 
-### Phase C — Tracking + verification (so you can measure progress)
+### Phase C - Tracking + verification (so you can measure progress)
 
 #### C1. Env-driven verification meta tags
 
@@ -312,7 +312,7 @@ Already wired in §A1 via `metadata.verification`. The flow is:
 2. User sets `GOOGLE_SITE_VERIFICATION` / `BING_SITE_VERIFICATION` in Vercel env vars.
 3. Redeploy. Next renders the meta tag. User clicks "Verify" in the search console.
 
-No code change needed when the token rotates — just update the env var.
+No code change needed when the token rotates - just update the env var.
 
 #### C2. Vercel Analytics + Speed Insights
 
@@ -335,10 +335,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 }
 ```
 
-- **Analytics** — page views, referrers, top pages. No cookies → no banner needed (privacy-first by default).
-- **Speed Insights** — Core Web Vitals (LCP, CLS, INP) reported back per route. The signal that catches perf regressions before users complain.
+- **Analytics** - page views, referrers, top pages. No cookies → no banner needed (privacy-first by default).
+- **Speed Insights** - Core Web Vitals (LCP, CLS, INP) reported back per route. The signal that catches perf regressions before users complain.
 
-Enable both in the Vercel dashboard's Analytics tab — until that toggle is on, no data shows even with the components mounted.
+Enable both in the Vercel dashboard's Analytics tab - until that toggle is on, no data shows even with the components mounted.
 
 #### C3. (Optional) GA4 / Plausible / Fathom
 
@@ -352,26 +352,26 @@ Hand this list to the user when the code work is done.
 
 ### One-time, before launch
 
-1. **Google Search Console** — visit [search.google.com/search-console](https://search.google.com/search-console), add the bare domain (`PRODUCTION_DOMAIN`), choose **HTML tag** verification method, copy the `content` value, set as `GOOGLE_SITE_VERIFICATION` in Vercel env, redeploy, click **Verify** in GSC.
-2. **Submit sitemap in GSC** — Sitemaps → enter `sitemap.xml` → Submit. Google will start fetching `https://PRODUCTION_DOMAIN/sitemap.xml`.
-3. **Bing Webmaster Tools** — [bing.com/webmasters](https://www.bing.com/webmasters). Easiest path: **Import from GSC** (one click). Otherwise manual XML/meta-tag verification using the same env-driven pattern — set `BING_SITE_VERIFICATION` and redeploy.
-4. **Vercel Analytics** — Project → Analytics tab → enable. Same for Speed Insights.
-5. **OG image** at `public/og.png` — 1200×630 PNG. A placeholder works for v1, but ship a branded design before the public launch. Without it, LinkedIn/Slack/X share previews are blank.
-6. **Favicon set** — use [realfavicongenerator.net](https://realfavicongenerator.net), upload your logo, download the bundle, drop these in `public/`:
+1. **Google Search Console** - visit [search.google.com/search-console](https://search.google.com/search-console), add the bare domain (`PRODUCTION_DOMAIN`), choose **HTML tag** verification method, copy the `content` value, set as `GOOGLE_SITE_VERIFICATION` in Vercel env, redeploy, click **Verify** in GSC.
+2. **Submit sitemap in GSC** - Sitemaps → enter `sitemap.xml` → Submit. Google will start fetching `https://PRODUCTION_DOMAIN/sitemap.xml`.
+3. **Bing Webmaster Tools** - [bing.com/webmasters](https://www.bing.com/webmasters). Easiest path: **Import from GSC** (one click). Otherwise manual XML/meta-tag verification using the same env-driven pattern - set `BING_SITE_VERIFICATION` and redeploy.
+4. **Vercel Analytics** - Project → Analytics tab → enable. Same for Speed Insights.
+5. **OG image** at `public/og.png` - 1200×630 PNG. A placeholder works for v1, but ship a branded design before the public launch. Without it, LinkedIn/Slack/X share previews are blank.
+6. **Favicon set** - use [realfavicongenerator.net](https://realfavicongenerator.net), upload your logo, download the bundle, drop these in `public/`:
    - `favicon.ico` (Next auto-serves this)
    - `icon.svg` (vector, retina-friendly)
    - `apple-touch-icon.png` (180×180)
    - `site.webmanifest`
-   The `icons` map in `metadata` already references these — once the files exist, the 404s in DevTools disappear automatically.
-7. **Google Business Profile** (if local business) — [business.google.com](https://business.google.com). Verify the address. The address + geo in your LocalBusiness JSON-LD must match exactly.
-8. **Set Vercel domain to canonical** — in Vercel, mark the bare apex (`PRODUCTION_DOMAIN`) as primary so `www.` 301s to it (or vice-versa, just pick one). Mixed canonicals tank rankings.
+   The `icons` map in `metadata` already references these - once the files exist, the 404s in DevTools disappear automatically.
+7. **Google Business Profile** (if local business) - [business.google.com](https://business.google.com). Verify the address. The address + geo in your LocalBusiness JSON-LD must match exactly.
+8. **Set Vercel domain to canonical** - in Vercel, mark the bare apex (`PRODUCTION_DOMAIN`) as primary so `www.` 301s to it (or vice-versa, just pick one). Mixed canonicals tank rankings.
 
 ### Ongoing (no code involved)
 
-9. **LinkedIn company page** — fill it in, post once a week minimum. The page becomes a `sameAs` link in your Organization schema and a strong ranking signal.
-10. **Backlinks** — get yourself listed in industry directories, partner with one or two niche publications for a guest post. Generic terms only rank with backlinks.
-11. **Quarterly content** — one substantial blog/case study per quarter, targeting one secondary keyword each. Add the slug to the sitemap.
-12. **Quarterly audit** — run a [Lighthouse](https://pagespeed.web.dev) report on the landing page. SEO score should stay ≥95. Vercel Speed Insights surfaces regressions in between audits.
+9. **LinkedIn company page** - fill it in, post once a week minimum. The page becomes a `sameAs` link in your Organization schema and a strong ranking signal.
+10. **Backlinks** - get yourself listed in industry directories, partner with one or two niche publications for a guest post. Generic terms only rank with backlinks.
+11. **Quarterly content** - one substantial blog/case study per quarter, targeting one secondary keyword each. Add the slug to the sitemap.
+12. **Quarterly audit** - run a [Lighthouse](https://pagespeed.web.dev) report on the landing page. SEO score should stay ≥95. Vercel Speed Insights surfaces regressions in between audits.
 
 ---
 
@@ -400,17 +400,17 @@ After the user has done the manual steps and redeployed, Claude (or the user) sh
 - [ ] `https://PRODUCTION_DOMAIN/sitemap.xml` returns valid XML with all public routes
 - [ ] `https://PRODUCTION_DOMAIN/robots.txt` shows the disallow rules + sitemap pointer
 - [ ] `view-source:` on the landing page shows the three+ JSON-LD `<script>` blocks (Org, LocalBusiness, Service, FAQPage)
-- [ ] Paste the home URL into [Schema.org Validator](https://validator.schema.org) — zero errors
-- [ ] Paste the home URL into [Google Rich Results Test](https://search.google.com/test/rich-results) — at least FAQ rich result detected
+- [ ] Paste the home URL into [Schema.org Validator](https://validator.schema.org) - zero errors
+- [ ] Paste the home URL into [Google Rich Results Test](https://search.google.com/test/rich-results) - at least FAQ rich result detected
 - [ ] [Lighthouse SEO score](https://pagespeed.web.dev) ≥ 95
-- [ ] OG image preview works in [LinkedIn Post Inspector](https://www.linkedin.com/post-inspector/) and [X Card Validator](https://cards-dev.twitter.com/validator) (if it's still up — otherwise just paste the URL into a draft post and check the unfurl)
+- [ ] OG image preview works in [LinkedIn Post Inspector](https://www.linkedin.com/post-inspector/) and [X Card Validator](https://cards-dev.twitter.com/validator) (if it's still up - otherwise just paste the URL into a draft post and check the unfurl)
 - [ ] DevTools → Network: `/og.png`, `/favicon.ico`, `/icon.svg`, `/apple-touch-icon.png`, `/site.webmanifest` all 200 (no 404 noise)
 - [ ] GSC Coverage report: home URL marked as **Indexed** (takes 1–7 days after sitemap submit)
 - [ ] Search the trademarked term in Google → your site is #1 (takes a few days post-indexing)
 
 ---
 
-## 7b. Future SEO target — public CBM Calculator landing
+## 7b. Future SEO target - public CBM Calculator landing
 
 After the CBM rollout (see [CBM_CARGO_TYPE.md](CBM_CARGO_TYPE.md)) we
 ship a logged-in CBM calculator at `/dashboard/tools/cbm-calculator`.
@@ -431,8 +431,8 @@ intent SEO opportunity. Filed here so it doesn't get lost.
   up to save calculations".
 - Generic calculators on the web (pier2pier, cbm3.net) outrank us today
   for the volume-only queries because they have the topical authority.
-  Our differentiator — live carrier rates + actual containers on the
-  client's lane — only shows up *after* sign-in. A public version
+  Our differentiator - live carrier rates + actual containers on the
+  client's lane - only shows up *after* sign-in. A public version
   surfaces that differentiator earlier.
 
 **Scope when we get to it** (separate phase, not part of this playbook's
@@ -444,11 +444,11 @@ core execution):
   CTAs at strong scroll positions.
 - Page-level metadata + FAQPage JSON-LD targeting the queries above.
 - Sitemap entry; expected indexable within a week of launch.
-- No paywalled features below the fold — Google will deprioritise a
+- No paywalled features below the fold - Google will deprioritise a
   page that locks the substance behind auth.
 
 **Out of scope for this future phase**:
-- Bulk paste / CSV upload (auth-only — they leave PII traces).
+- Bulk paste / CSV upload (auth-only - they leave PII traces).
 - Saved-calculation library (auth-only by design).
 - Sharing-by-link from the public page (would require an unauth share
   token table; the logged-in flow already has one).
@@ -457,10 +457,10 @@ core execution):
 
 ## 8. What this playbook deliberately does NOT do
 
-- **No GA4 / Plausible / Fathom integration** — Vercel Analytics covers it without a cookie banner. Add only if the user explicitly asks.
-- **No automated meta-description generation per page** — handcraft these. ML-generated meta descriptions tank CTR.
-- **No prebuilding hundreds of programmatic SEO landing pages** — that's a separate, much larger initiative ("pSEO") with different rules around content quality and indexing limits.
-- **No backlink outreach automation** — this lives off-platform and is the user's job. Code can't fake authority.
-- **No A/B testing of titles/descriptions** — possible but high-effort; defer until a baseline is ranking.
+- **No GA4 / Plausible / Fathom integration** - Vercel Analytics covers it without a cookie banner. Add only if the user explicitly asks.
+- **No automated meta-description generation per page** - handcraft these. ML-generated meta descriptions tank CTR.
+- **No prebuilding hundreds of programmatic SEO landing pages** - that's a separate, much larger initiative ("pSEO") with different rules around content quality and indexing limits.
+- **No backlink outreach automation** - this lives off-platform and is the user's job. Code can't fake authority.
+- **No A/B testing of titles/descriptions** - possible but high-effort; defer until a baseline is ranking.
 
-If the user asks for any of these later, plan them as separate phases — don't fold into the playbook execution.
+If the user asks for any of these later, plan them as separate phases - don't fold into the playbook execution.

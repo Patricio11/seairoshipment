@@ -14,7 +14,7 @@ interface Props {
 
 /**
  * Schematic POL → POD route with a pulsing vessel position.
- * Not a real world map — an abstract progress visualisation.
+ * Not a real world map - an abstract progress visualisation.
  */
 export function TrackingRoute({ route, progressPct, lastPositionLat, lastPositionLng, lastPositionType, lastPositionAt, vesselName }: Props) {
     const [pol, pod] = route.split("-")

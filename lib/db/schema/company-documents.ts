@@ -13,7 +13,7 @@ export const companyDocumentTypeEnum = pgEnum("company_document_type", [
 ]);
 
 /**
- * Per-user onboarding documents — uploaded during /auth/onboarding,
+ * Per-user onboarding documents - uploaded during /auth/onboarding,
  * reviewed by an admin before the user is approved.
  *
  * Distinct from `documents` which is per-allocation shipment paperwork.

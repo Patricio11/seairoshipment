@@ -10,7 +10,7 @@ import { totalCbm, totalWeight, volumetricWeightSea } from "@/lib/cbm";
 import type { CargoItem } from "@/lib/db/schema/pallet-allocations";
 
 /**
- * Owner-only — revert the calculation's items to the snapshot stored on a
+ * Owner-only - revert the calculation's items to the snapshot stored on a
  * specific EDIT action. The snapshot was captured BEFORE that edit ran, so
  * reverting restores the calc to its state immediately before that guest
  * save. Totals are recomputed from the restored items.
@@ -43,7 +43,7 @@ export async function POST(
             .limit(1);
         if (!owned) return NextResponse.json({ error: "Calculation not found" }, { status: 404 });
 
-        // Find the action — must belong to this calc and be an EDIT.
+        // Find the action - must belong to this calc and be an EDIT.
         const [action] = await db
             .select()
             .from(cargoCalculationShareActions)

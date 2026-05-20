@@ -13,7 +13,7 @@ export interface UploadResult {
  * suffix so retries don't trip "resource already exists" with upsert: false.
  *
  * Callers can pass a `preferredBase` (e.g. an account-prefixed filename) to
- * keep the stored key human-readable for admin browsing — it gets the same
+ * keep the stored key human-readable for admin browsing - it gets the same
  * sanitiser + suffix treatment as a raw filename.
  */
 export function generateUniqueFileName(originalName: string, preferredBase?: string): string {

@@ -517,10 +517,10 @@ export function AdminBookingsGrid() {
             const trackingSummary = data.tracking?.subscribed
                 ? ` | Tracking: active${data.tracking.seededEvents ? ` (${data.tracking.seededEvents} events)` : ""}`
                 : data.tracking?.error
-                    ? ` | Tracking subscribe failed — use the Retry button`
+                    ? ` | Tracking subscribe failed - use the Retry button`
                     : ""
             toast.success("MetaShip Order Created!", {
-                description: `Order #${data.orderNo}${docSummary}${trackingSummary} — Log in to MetaShip to review.`,
+                description: `Order #${data.orderNo}${docSummary}${trackingSummary} - Log in to MetaShip to review.`,
                 duration: 10000,
             })
             setBookingDialog(null)
@@ -635,7 +635,7 @@ export function AdminBookingsGrid() {
                 toast.error(data.error || "Failed to refresh tracking")
                 return
             }
-            toast.success(`Tracking refreshed — ${data.total} events`, {
+            toast.success(`Tracking refreshed - ${data.total} events`, {
                 description: `${data.inserted} new · ${data.skipped} already seen${data.statusChanged ? ` · status → ${data.statusChanged}` : ""}${data.holds > 0 ? ` · ${data.holds} customs hold(s)` : ""}`,
                 duration: 6000,
             })
@@ -793,7 +793,7 @@ export function AdminBookingsGrid() {
                                         </div>
 
                                         <div className="flex items-center gap-3">
-                                            {/* Capacity counter — CBM for CUBE containers, pallets for PALLET */}
+                                            {/* Capacity counter - CBM for CUBE containers, pallets for PALLET */}
                                             {container.cargoType === "CUBE" ? (() => {
                                                 const usedCBM = Number(container.totalCBM ?? 0)
                                                 const maxCBM = Number(container.maxCapacityCBM ?? 0)
@@ -804,7 +804,7 @@ export function AdminBookingsGrid() {
                                                         <span className={`text-2xl font-black ${nearFull ? "text-amber-400" : "text-white"}`}>
                                                             {usedCBM.toFixed(2)}
                                                         </span>
-                                                        <span className="text-slate-500 text-sm">/ {maxCBM > 0 ? `${maxCBM.toFixed(1)} m³` : "— m³"}</span>
+                                                        <span className="text-slate-500 text-sm">/ {maxCBM > 0 ? `${maxCBM.toFixed(1)} m³` : "- m³"}</span>
                                                     </div>
                                                 )
                                             })() : (
@@ -876,7 +876,7 @@ export function AdminBookingsGrid() {
                                         {container.totalPallets >= 15 && !container.metashipOrderNo && (
                                             <div className="flex items-center gap-1 mt-2 text-amber-400 text-xs font-bold">
                                                 <AlertTriangle className="h-3 w-3" />
-                                                Threshold reached — ready for MetaShip order
+                                                Threshold reached - ready for MetaShip order
                                             </div>
                                         )}
                                     </div>
@@ -909,14 +909,14 @@ export function AdminBookingsGrid() {
                                                         >
                                                             <TableCell className="text-slate-300 font-medium">
                                                                 <div className="flex items-center gap-1.5">
-                                                                    {alloc.userName || "—"}
+                                                                    {alloc.userName || "-"}
                                                                     <Eye className="h-3 w-3 text-slate-600 group-hover:text-slate-400" />
                                                                 </div>
                                                             </TableCell>
-                                                            <TableCell className="font-mono text-xs text-slate-400">{alloc.accountNumber || "—"}</TableCell>
+                                                            <TableCell className="font-mono text-xs text-slate-400">{alloc.accountNumber || "-"}</TableCell>
                                                             <TableCell>
                                                                 <div className="flex flex-col">
-                                                                    <span className="text-xs text-white font-bold">{alloc.allocation.commodityName || "—"}</span>
+                                                                    <span className="text-xs text-white font-bold">{alloc.allocation.commodityName || "-"}</span>
                                                                     {alloc.allocation.hsCode && (
                                                                         <span className="text-[10px] text-slate-500 font-mono">HS: {alloc.allocation.hsCode}</span>
                                                                     )}
@@ -924,7 +924,7 @@ export function AdminBookingsGrid() {
                                                             </TableCell>
                                                             <TableCell className="text-center text-white font-black">{formatAllocationVolume(alloc.allocation)}</TableCell>
                                                             <TableCell className="text-center text-xs text-slate-400">
-                                                                {alloc.allocation.nettWeight ? `${alloc.allocation.nettWeight}N` : "—"} / {alloc.allocation.grossWeight ? `${alloc.allocation.grossWeight}G` : "—"}
+                                                                {alloc.allocation.nettWeight ? `${alloc.allocation.nettWeight}N` : "-"} / {alloc.allocation.grossWeight ? `${alloc.allocation.grossWeight}G` : "-"}
                                                             </TableCell>
                                                             <TableCell className="text-center text-xs">
                                                                 {alloc.allocation.temperature === "frozen" ? (
@@ -965,7 +965,7 @@ export function AdminBookingsGrid() {
                                                                             allocationId: alloc.allocation.id,
                                                                             clientName: alloc.userName || "Unknown client",
                                                                             volumeLabel: `${formatAllocationVolume(alloc.allocation)}${alloc.allocation.cargoType === "CUBE" ? "" : ` pallet${alloc.allocation.palletCount === 1 ? "" : "s"}`}`,
-                                                                            commodity: alloc.allocation.commodityName || "—",
+                                                                            commodity: alloc.allocation.commodityName || "-",
                                                                         })
                                                                     }}
                                                                     className="h-7 w-7 text-slate-500 hover:text-red-400 hover:bg-red-950/30"
@@ -1054,15 +1054,15 @@ export function AdminBookingsGrid() {
                                             <TableCell className="font-mono text-white font-bold text-xs">{r.allocation.id}</TableCell>
                                             <TableCell className="text-slate-300">
                                                 <div className="flex flex-col gap-0.5">
-                                                    <span className="text-sm font-medium text-white">{r.user?.name || "—"}</span>
+                                                    <span className="text-sm font-medium text-white">{r.user?.name || "-"}</span>
                                                     <span className="text-[10px] text-slate-500 font-mono">{r.user?.accountNumber || r.user?.email || ""}</span>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-slate-300 text-sm">{r.allocation.commodityName || "—"}</TableCell>
+                                            <TableCell className="text-slate-300 text-sm">{r.allocation.commodityName || "-"}</TableCell>
                                             <TableCell className="text-center text-white font-mono font-bold">{formatAllocationVolume(r.allocation)}</TableCell>
                                             <TableCell>
                                                 <div className="flex flex-col gap-0.5">
-                                                    <span className="text-xs text-white font-bold">{r.container?.vessel || "—"}</span>
+                                                    <span className="text-xs text-white font-bold">{r.container?.vessel || "-"}</span>
                                                     <span className="text-[10px] text-slate-500">{r.container?.route}</span>
                                                 </div>
                                             </TableCell>
@@ -1153,19 +1153,19 @@ export function AdminBookingsGrid() {
                                             <TableCell className="font-mono text-white font-bold text-xs">{r.allocation.id}</TableCell>
                                             <TableCell className="text-slate-300">
                                                 <div className="flex flex-col gap-0.5">
-                                                    <span className="text-sm font-medium text-white">{r.user?.name || "—"}</span>
+                                                    <span className="text-sm font-medium text-white">{r.user?.name || "-"}</span>
                                                     <span className="text-[10px] text-slate-500 font-mono">{r.user?.accountNumber || r.user?.email || ""}</span>
                                                 </div>
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex flex-col gap-0.5">
-                                                    <span className="text-sm text-white">{r.allocation.commodityName || "—"}</span>
+                                                    <span className="text-sm text-white">{r.allocation.commodityName || "-"}</span>
                                                     <span className="text-[10px] text-slate-500 font-mono">{formatAllocationVolume(r.allocation)} {allocationVolumeUnit(r.allocation) === "m³" ? "" : (r.allocation.palletCount === 1 ? "pallet" : "pallets")}</span>
                                                 </div>
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex flex-col gap-0.5">
-                                                    <span className="text-xs text-white font-bold">{r.container?.vessel || "—"}</span>
+                                                    <span className="text-xs text-white font-bold">{r.container?.vessel || "-"}</span>
                                                     <span className="text-[10px] text-slate-500">{r.container?.route}</span>
                                                 </div>
                                             </TableCell>
@@ -1179,7 +1179,7 @@ export function AdminBookingsGrid() {
                                                 )}
                                             </TableCell>
                                             <TableCell className="text-right text-[10px] text-slate-500 font-mono">
-                                                {r.allocation.updatedAt ? new Date(r.allocation.updatedAt).toLocaleDateString() : "—"}
+                                                {r.allocation.updatedAt ? new Date(r.allocation.updatedAt).toLocaleDateString() : "-"}
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -1239,7 +1239,7 @@ export function AdminBookingsGrid() {
                                                 <TableCell className="font-mono text-white font-bold text-xs">{r.request.id}</TableCell>
                                                 <TableCell className="text-slate-300">
                                                     <div className="flex flex-col gap-0.5">
-                                                        <span className="text-sm font-medium text-white">{r.user?.name || "—"}</span>
+                                                        <span className="text-sm font-medium text-white">{r.user?.name || "-"}</span>
                                                         <span className="text-[10px] text-slate-500 font-mono">{r.user?.accountNumber || r.user?.email || ""}</span>
                                                     </div>
                                                 </TableCell>
@@ -1253,7 +1253,7 @@ export function AdminBookingsGrid() {
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex flex-col gap-0.5">
-                                                        <span className="text-xs text-white">{r.product?.name || r.request.commodityNotes || "—"}</span>
+                                                        <span className="text-xs text-white">{r.product?.name || r.request.commodityNotes || "-"}</span>
                                                         {r.request.temperature && (
                                                             <span className="text-[10px] text-slate-500">{r.request.temperature}</span>
                                                         )}
@@ -1264,7 +1264,7 @@ export function AdminBookingsGrid() {
                                                     {r.request.notes ? (
                                                         <p className="text-[10px] text-slate-400 leading-tight" title={r.request.notes}>{r.request.notes}</p>
                                                     ) : (
-                                                        <span className="text-[10px] text-slate-600 italic">—</span>
+                                                        <span className="text-[10px] text-slate-600 italic">-</span>
                                                     )}
                                                 </TableCell>
                                                 <TableCell className="text-center">
@@ -1304,7 +1304,7 @@ export function AdminBookingsGrid() {
                                                                 {r.request.adminResponse}
                                                             </span>
                                                         ) : (
-                                                            <span className="text-[10px] text-slate-600">—</span>
+                                                            <span className="text-[10px] text-slate-600">-</span>
                                                         )
                                                     )}
                                                 </TableCell>
@@ -1449,7 +1449,7 @@ export function AdminBookingsGrid() {
                                         </Button>
                                     </div>
 
-                                    {/* Tracking — subscribe retry if not active, otherwise refresh */}
+                                    {/* Tracking - subscribe retry if not active, otherwise refresh */}
                                     <div className="flex items-center justify-between pt-3 border-t border-emerald-500/20">
                                         <div>
                                             <p className="text-xs text-emerald-200 font-bold flex items-center gap-2">
@@ -1458,7 +1458,7 @@ export function AdminBookingsGrid() {
                                                     <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[9px] uppercase">Active</Badge>
                                                 )}
                                                 {detailDialog.trackingStatus === "FAILED" && (
-                                                    <Badge className="bg-red-500/20 text-red-300 border-red-500/30 text-[9px] uppercase">Failed — retry</Badge>
+                                                    <Badge className="bg-red-500/20 text-red-300 border-red-500/30 text-[9px] uppercase">Failed - retry</Badge>
                                                 )}
                                                 {(!detailDialog.trackingStatus || detailDialog.trackingStatus === "NONE") && (
                                                     <Badge className="bg-slate-600/40 text-slate-300 border-slate-600/40 text-[9px] uppercase">Not subscribed</Badge>
@@ -1601,22 +1601,22 @@ export function AdminBookingsGrid() {
                                                     <TableRow key={alloc.allocation.id} className="border-slate-800 hover:bg-slate-900/40">
                                                         <TableCell>
                                                             <div className="flex flex-col">
-                                                                <span className="text-slate-300 font-medium text-xs">{alloc.userName || "—"}</span>
+                                                                <span className="text-slate-300 font-medium text-xs">{alloc.userName || "-"}</span>
                                                                 {alloc.userEmail && <span className="text-[10px] text-slate-500">{alloc.userEmail}</span>}
                                                             </div>
                                                         </TableCell>
-                                                        <TableCell className="font-mono text-xs text-slate-400">{alloc.accountNumber || "—"}</TableCell>
+                                                        <TableCell className="font-mono text-xs text-slate-400">{alloc.accountNumber || "-"}</TableCell>
                                                         <TableCell>
                                                             <div className="flex flex-col">
-                                                                <span className="text-xs text-white font-bold">{alloc.allocation.commodityName || "—"}</span>
+                                                                <span className="text-xs text-white font-bold">{alloc.allocation.commodityName || "-"}</span>
                                                                 {alloc.allocation.hsCode && (
                                                                     <span className="text-[10px] text-slate-500 font-mono">HS: {alloc.allocation.hsCode}</span>
                                                                 )}
                                                             </div>
                                                         </TableCell>
                                                         <TableCell className="text-center text-white font-black">{formatAllocationVolume(alloc.allocation)}</TableCell>
-                                                        <TableCell className="text-center text-xs text-slate-400">{alloc.allocation.nettWeight || "—"}</TableCell>
-                                                        <TableCell className="text-center text-xs text-slate-400">{alloc.allocation.grossWeight || "—"}</TableCell>
+                                                        <TableCell className="text-center text-xs text-slate-400">{alloc.allocation.nettWeight || "-"}</TableCell>
+                                                        <TableCell className="text-center text-xs text-slate-400">{alloc.allocation.grossWeight || "-"}</TableCell>
                                                         <TableCell className="text-center text-xs">
                                                             {alloc.allocation.temperature === "frozen" ? (
                                                                 <span className="text-blue-400 font-bold">-18°C</span>
@@ -1628,7 +1628,7 @@ export function AdminBookingsGrid() {
                                                                 <span className="text-slate-400 font-bold">Dry</span>
                                                             )}
                                                         </TableCell>
-                                                        <TableCell className="text-xs text-slate-400">{alloc.allocation.consigneeName || "—"}</TableCell>
+                                                        <TableCell className="text-xs text-slate-400">{alloc.allocation.consigneeName || "-"}</TableCell>
                                                         <TableCell className="text-center">
                                                             <div className="flex items-center justify-center gap-1.5 flex-wrap">
                                                                 <Badge className={
@@ -1652,7 +1652,7 @@ export function AdminBookingsGrid() {
                                             </TableBody>
                                         </Table>
                                     </div>
-                                    {/* Totals row — render m³ for CUBE containers, pallet count for PALLET */}
+                                    {/* Totals row - render m³ for CUBE containers, pallet count for PALLET */}
                                     <div className="flex items-center justify-between mt-2 px-3 py-2 bg-slate-900/50 rounded-lg border border-slate-800 text-xs">
                                         <span className="text-slate-500 font-bold uppercase">Totals</span>
                                         <div className="flex items-center gap-6">
@@ -1821,7 +1821,7 @@ export function AdminBookingsGrid() {
                                     <div className="px-4 py-2.5 flex items-center justify-between">
                                         <span className="text-xs text-slate-500 font-semibold">Product</span>
                                         <div className="text-right">
-                                            <p className="text-sm text-white font-bold">{clientDialog.alloc.allocation.commodityName || "—"}</p>
+                                            <p className="text-sm text-white font-bold">{clientDialog.alloc.allocation.commodityName || "-"}</p>
                                             {clientDialog.alloc.allocation.hsCode && (
                                                 <p className="text-[10px] text-slate-500 font-mono">HS: {clientDialog.alloc.allocation.hsCode}</p>
                                             )}
@@ -1847,15 +1847,15 @@ export function AdminBookingsGrid() {
                                     </div>
                                     <div className="px-4 py-2.5 flex items-center justify-between">
                                         <span className="text-xs text-slate-500 font-semibold">Nett Weight</span>
-                                        <span className="text-sm text-slate-300 font-mono">{clientDialog.alloc.allocation.nettWeight ? `${clientDialog.alloc.allocation.nettWeight} kg` : "—"}</span>
+                                        <span className="text-sm text-slate-300 font-mono">{clientDialog.alloc.allocation.nettWeight ? `${clientDialog.alloc.allocation.nettWeight} kg` : "-"}</span>
                                     </div>
                                     <div className="px-4 py-2.5 flex items-center justify-between">
                                         <span className="text-xs text-slate-500 font-semibold">Gross Weight</span>
-                                        <span className="text-sm text-slate-300 font-mono">{clientDialog.alloc.allocation.grossWeight ? `${clientDialog.alloc.allocation.grossWeight} kg` : "—"}</span>
+                                        <span className="text-sm text-slate-300 font-mono">{clientDialog.alloc.allocation.grossWeight ? `${clientDialog.alloc.allocation.grossWeight} kg` : "-"}</span>
                                     </div>
                                     <div className="px-4 py-2.5 flex items-center justify-between">
                                         <span className="text-xs text-slate-500 font-semibold">Consignee</span>
-                                        <span className="text-sm text-slate-300 text-right max-w-[200px]">{clientDialog.alloc.allocation.consigneeName || "—"}</span>
+                                        <span className="text-sm text-slate-300 text-right max-w-[200px]">{clientDialog.alloc.allocation.consigneeName || "-"}</span>
                                     </div>
                                 </div>
 
@@ -1922,7 +1922,7 @@ export function AdminBookingsGrid() {
                                 <>
                                     This will permanently delete <span className="font-bold text-white">{deleteAllocDialog.clientName}</span>&apos;s
                                     {" "}booking of <span className="font-bold text-white">{deleteAllocDialog.volumeLabel}</span>
-                                    {deleteAllocDialog.commodity && deleteAllocDialog.commodity !== "—" ? <> ({deleteAllocDialog.commodity})</> : null},
+                                    {deleteAllocDialog.commodity && deleteAllocDialog.commodity !== "-" ? <> ({deleteAllocDialog.commodity})</> : null},
                                     {" "}along with its uploaded documents and any unpaid invoices. The container&apos;s counter will be adjusted automatically. This cannot be undone.
                                 </>
                             )}
@@ -1984,7 +1984,7 @@ export function AdminBookingsGrid() {
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/50">
                                         <p className="text-[10px] font-bold uppercase text-slate-500">Product</p>
-                                        <p className="text-sm font-bold text-white mt-1">{reviewRequest.allocation.commodityName || "—"}</p>
+                                        <p className="text-sm font-bold text-white mt-1">{reviewRequest.allocation.commodityName || "-"}</p>
                                         {reviewRequest.allocation.hsCode && (
                                             <p className="text-[10px] font-mono text-slate-500 mt-0.5">HS: {reviewRequest.allocation.hsCode}</p>
                                         )}
@@ -1995,17 +1995,17 @@ export function AdminBookingsGrid() {
                                     </div>
                                     <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/50">
                                         <p className="text-[10px] font-bold uppercase text-slate-500">Temperature</p>
-                                        <p className="text-sm font-bold text-brand-blue mt-1">{reviewRequest.allocation.temperature || "—"}</p>
+                                        <p className="text-sm font-bold text-brand-blue mt-1">{reviewRequest.allocation.temperature || "-"}</p>
                                     </div>
                                     <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/50">
                                         <p className="text-[10px] font-bold uppercase text-slate-500">Nett / Gross Weight</p>
                                         <p className="text-sm font-bold text-white mt-1">
-                                            {reviewRequest.allocation.nettWeight || "—"} / {reviewRequest.allocation.grossWeight || "—"} kg
+                                            {reviewRequest.allocation.nettWeight || "-"} / {reviewRequest.allocation.grossWeight || "-"} kg
                                         </p>
                                     </div>
                                     <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/50 col-span-2">
                                         <p className="text-[10px] font-bold uppercase text-slate-500">Consignee</p>
-                                        <p className="text-sm font-bold text-white mt-1">{reviewRequest.allocation.consigneeName || "—"}</p>
+                                        <p className="text-sm font-bold text-white mt-1">{reviewRequest.allocation.consigneeName || "-"}</p>
                                         {reviewRequest.allocation.consigneeAddress && (
                                             <p className="text-xs text-slate-400 mt-0.5">{reviewRequest.allocation.consigneeAddress}</p>
                                         )}
@@ -2175,7 +2175,7 @@ export function AdminBookingsGrid() {
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-slate-500">Client</span>
-                                    <span className="font-bold">{respondingRequest.user?.name || "—"}</span>
+                                    <span className="font-bold">{respondingRequest.user?.name || "-"}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-slate-500">Route</span>

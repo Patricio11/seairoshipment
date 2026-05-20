@@ -183,7 +183,7 @@ export function ActivityPanel({ calculationId, refreshKey, onReverted }: Activit
                                 <>
                                     This will restore the cargo items to how they were
                                     <strong> before {revertTarget.guestName} saved on {formatWhen(revertTarget.createdAt)}</strong>.
-                                    Any later edits (yours or another guest&apos;s) stay in place — this only undoes this one entry.
+                                    Any later edits (yours or another guest&apos;s) stay in place - this only undoes this one entry.
                                 </>
                             )}
                         </AlertDialogDescription>

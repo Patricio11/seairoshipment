@@ -59,7 +59,7 @@ export async function PUT(
         // Check container is still OPEN for resubmission
         if (!["OPEN", "THRESHOLD_REACHED"].includes(container.status)) {
             return NextResponse.json(
-                { error: `Container is ${container.status} — cannot resubmit. Please create a new booking.` },
+                { error: `Container is ${container.status} - cannot resubmit. Please create a new booking.` },
                 { status: 400 }
             );
         }
@@ -82,7 +82,7 @@ export async function PUT(
             );
         }
 
-        // Build update object — only update fields that are provided
+        // Build update object - only update fields that are provided
         const updates: Record<string, unknown> = {
             status: "PENDING",
             rejectionReason: null,

@@ -87,7 +87,7 @@ export async function sendEmail({
 }
 
 /* -------------------------------------------------------------------------- */
-/* Auth — verification + password reset                                        */
+/* Auth - verification + password reset                                        */
 /* -------------------------------------------------------------------------- */
 
 export interface VerificationTemplate {
@@ -118,10 +118,10 @@ export async function sendVerificationEmail(
 
     await sendEmail({
         to,
-        subject: "Verify your email — Seairo Cargo",
+        subject: "Verify your email - Seairo Cargo",
         html: emailLayout({
             heading: "Verify your email",
-            intro: "Thanks for signing up. Click the button below to confirm your email address — then we'll guide you through a quick onboarding so we can unlock the dashboard for your company.",
+            intro: "Thanks for signing up. Click the button below to confirm your email address - then we'll guide you through a quick onboarding so we can unlock the dashboard for your company.",
             contentHtml: `
                 ${ctaButton(verificationUrl, "Verify Email Address")}
                 <p style="color: #94a3b8; font-size: 11px; line-height: 1.6; margin: 4px 0 18px; text-align: center;">
@@ -150,14 +150,14 @@ export async function sendVerificationEmail(
 export async function sendPasswordResetEmail(to: string, resetUrl: string) {
     await sendEmail({
         to,
-        subject: "Reset your password — Seairo Cargo",
+        subject: "Reset your password - Seairo Cargo",
         html: emailLayout({
             heading: "Reset your password",
             intro: "We received a request to reset the password for your account. Click below to set a new one.",
             contentHtml: `
                 ${ctaButton(resetUrl, "Reset Password")}
                 <p style="color: #94a3b8; font-size: 12px; line-height: 1.6; margin: 0;">
-                    This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email — your account is still secure.
+                    This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email - your account is still secure.
                 </p>
             `,
         }),
@@ -171,15 +171,15 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string) {
 export async function sendOnboardingSubmittedEmail(to: string, companyName: string) {
     await sendEmail({
         to,
-        subject: "We received your application — Seairo Cargo",
+        subject: "We received your application - Seairo Cargo",
         html: emailLayout({
             heading: "Application received",
-            intro: `Thanks ${companyName ? `<strong>${escapeHtml(companyName)}</strong>` : "for getting in touch"} — your onboarding application is in our queue.`,
+            intro: `Thanks ${companyName ? `<strong>${escapeHtml(companyName)}</strong>` : "for getting in touch"} - your onboarding application is in our queue.`,
             contentHtml: `
                 <div style="background: #fefce8; border: 1px solid #fde68a; border-radius: 10px; padding: 16px 18px; margin-bottom: 20px;">
                     <p style="color: #92400e; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 6px;">Under review</p>
                     <p style="color: #78350f; font-size: 13px; line-height: 1.55; margin: 0;">
-                        Our team is verifying your details. You'll get an email the moment your account is approved — usually within one business day.
+                        Our team is verifying your details. You'll get an email the moment your account is approved - usually within one business day.
                     </p>
                 </div>
                 <p style="color: #475569; font-size: 14px; line-height: 1.65; margin: 0 0 12px;">
@@ -194,7 +194,7 @@ export async function sendOnboardingSubmittedEmail(to: string, companyName: stri
 export async function sendApprovalEmail(to: string, accountNumber: string, companyName: string) {
     await sendEmail({
         to,
-        subject: "🎉 You're approved — welcome to Seairo Cargo",
+        subject: "🎉 You're approved - welcome to Seairo Cargo",
         html: emailLayout({
             accentColor: "#10b981",
             heading: "You're approved!",
@@ -230,7 +230,7 @@ export async function sendRejectionEmail(to: string, reason: string, companyName
                     <p style="color: #7f1d1d; font-size: 14px; line-height: 1.55; margin: 0;">${escapeHtml(reason)}</p>
                 </div>
                 <p style="color: #475569; font-size: 14px; line-height: 1.65; margin: 0 0 12px;">
-                    If you believe this is a mistake, or you'd like to provide additional information, please reach out — we're always happy to take another look.
+                    If you believe this is a mistake, or you'd like to provide additional information, please reach out - we're always happy to take another look.
                 </p>
                 <p style="color: #475569; font-size: 14px; line-height: 1.65; margin: 0;">
                     Email us at <a href="mailto:${supportEmail}" style="color: #2563eb; text-decoration: none; font-weight: 600;">${supportEmail}</a> and we'll respond personally.
@@ -247,14 +247,14 @@ export async function sendRequestChangesEmail(to: string, adminNote: string, com
         html: emailLayout({
             accentColor: "#f59e0b",
             heading: "We need a few changes",
-            intro: `Thanks ${companyName ? `<strong>${escapeHtml(companyName)}</strong>` : ""} — our team reviewed your application and needs a small update before we can approve.`,
+            intro: `Thanks ${companyName ? `<strong>${escapeHtml(companyName)}</strong>` : ""} - our team reviewed your application and needs a small update before we can approve.`,
             contentHtml: `
                 <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 16px 18px; margin-bottom: 20px;">
                     <p style="color: #92400e; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 6px;">What we need</p>
                     <p style="color: #78350f; font-size: 14px; line-height: 1.55; margin: 0;">${escapeHtml(adminNote)}</p>
                 </div>
                 <p style="color: #475569; font-size: 14px; line-height: 1.65; margin: 0 0 16px;">
-                    Click below to open your application and make the changes — your existing details are saved, you only need to update what's flagged above.
+                    Click below to open your application and make the changes - your existing details are saved, you only need to update what's flagged above.
                 </p>
                 ${ctaButton(`${appUrl}/auth/onboarding`, "Update your application", "#f59e0b")}
             `,
@@ -283,10 +283,10 @@ export async function sendAdminVettingNotificationEmail(params: {
     const reviewUrl = `${appUrl}/admin/users`;
     await sendEmail({
         to: adminInbox,
-        subject: `New onboarding submission — ${companyName}`,
+        subject: `New onboarding submission - ${companyName}`,
         html: emailLayout({
             heading: "New onboarding submission",
-            intro: `<strong>${escapeHtml(companyName)}</strong> just submitted their onboarding application — they're waiting for review.`,
+            intro: `<strong>${escapeHtml(companyName)}</strong> just submitted their onboarding application - they're waiting for review.`,
             contentHtml: `
                 <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                     <tbody>
@@ -344,7 +344,7 @@ export async function sendContactInquiryEmail(inquiry: ContactInquiry) {
     await sendEmail({
         to: contactInbox,
         replyTo: inquiry.email,
-        subject: `New inquiry from ${fullName} — Seairo Cargo`,
+        subject: `New inquiry from ${fullName} - Seairo Cargo`,
         html: emailLayout({
             heading: "New contact form inquiry",
             intro: `<strong>${escapeHtml(fullName)}</strong> just sent you a message via seairo.com.`,
@@ -368,7 +368,7 @@ export async function sendContactInquiryEmail(inquiry: ContactInquiry) {
                     </tbody>
                 </table>
                 <p style="color: #94a3b8; font-size: 12px; line-height: 1.6; margin: 18px 0 0;">
-                    Reply directly to this email to respond — it will go straight to ${escapeHtml(inquiry.email)}.
+                    Reply directly to this email to respond - it will go straight to ${escapeHtml(inquiry.email)}.
                 </p>
             `,
         }),
@@ -381,7 +381,7 @@ export async function sendContactInquiryEmail(inquiry: ContactInquiry) {
 export async function sendContactConfirmationEmail(inquiry: ContactInquiry) {
     await sendEmail({
         to: inquiry.email,
-        subject: "We got your message — Seairo Cargo",
+        subject: "We got your message - Seairo Cargo",
         html: emailLayout({
             heading: "Thanks for reaching out",
             intro: `Hi ${escapeHtml(inquiry.firstName)}, your message just landed in our inbox.`,
@@ -424,7 +424,7 @@ export async function sendCbmShareApprovedEmail(params: CbmShareNotificationPara
     await sendEmail({
         to,
         replyTo: guestEmail,
-        subject: `${guestName} approved your calculation — ${calculationName}`,
+        subject: `${guestName} approved your calculation - ${calculationName}`,
         html: emailLayout({
             accentColor: "#10b981",
             heading: "Your calculation was approved",
@@ -455,7 +455,7 @@ export async function sendCbmShareApprovedEmail(params: CbmShareNotificationPara
                 </div>` : ""}
                 ${ctaButton(calcUrl, "View calculation", "#10b981")}
                 <p style="color: #94a3b8; font-size: 12px; line-height: 1.6; margin: 18px 0 0;">
-                    Reply to this email to talk to ${escapeHtml(guestName)} directly — we've set the reply-to to their address.
+                    Reply to this email to talk to ${escapeHtml(guestName)} directly - we've set the reply-to to their address.
                 </p>
             `,
         }),
@@ -472,7 +472,7 @@ export async function sendCbmShareEditedEmail(params: CbmShareNotificationParams
     await sendEmail({
         to,
         replyTo: guestEmail,
-        subject: `${guestName} edited your calculation — ${calculationName}`,
+        subject: `${guestName} edited your calculation - ${calculationName}`,
         html: emailLayout({
             accentColor: "#f59e0b",
             heading: "Your calculation was edited",
@@ -525,7 +525,7 @@ export async function sendTwoFactorEnabledEmail(to: string, name: string | null)
     const greeting = name ? `Hi ${escapeHtml(name)},` : "Hi,";
     await sendEmail({
         to,
-        subject: "Two-factor authentication is now active — Seairo Cargo",
+        subject: "Two-factor authentication is now active - Seairo Cargo",
         html: emailLayout({
             accentColor: "#10b981",
             heading: "Two-factor authentication is on",
@@ -534,7 +534,7 @@ export async function sendTwoFactorEnabledEmail(to: string, name: string | null)
                 <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 10px; padding: 16px 18px; margin-bottom: 20px;">
                     <p style="color: #065f46; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 6px;">What changes</p>
                     <p style="color: #064e3b; font-size: 13px; line-height: 1.55; margin: 0;">
-                        From now on, signing in asks for a 6-digit code from your authenticator app after your password. If you ever lose the app, use one of the backup codes you saved during setup — each one works once.
+                        From now on, signing in asks for a 6-digit code from your authenticator app after your password. If you ever lose the app, use one of the backup codes you saved during setup - each one works once.
                     </p>
                 </div>
                 <p style="color: #475569; font-size: 14px; line-height: 1.65; margin: 0 0 12px;">
@@ -544,7 +544,7 @@ export async function sendTwoFactorEnabledEmail(to: string, name: string | null)
                 <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 14px 16px; margin-top: 16px;">
                     <p style="color: #991b1b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 6px;">Wasn't you?</p>
                     <p style="color: #7f1d1d; font-size: 13px; line-height: 1.55; margin: 0;">
-                        If you didn't enable this, change your password immediately and contact <a href="mailto:${supportEmail}" style="color: #991b1b;">${supportEmail}</a> — someone may have access to your account.
+                        If you didn't enable this, change your password immediately and contact <a href="mailto:${supportEmail}" style="color: #991b1b;">${supportEmail}</a> - someone may have access to your account.
                     </p>
                 </div>
             `,
@@ -568,12 +568,12 @@ export async function sendTwoFactorDisabledEmail(
         : `${greeting} two-factor authentication has just been turned off on your Seairo account.`;
     const explainerCopy = reason === "admin-reset"
         ? "Sign in with your password as usual, then head straight to Settings → Security to re-enable 2FA with a fresh authenticator setup."
-        : "Sign-ins will now only require your password. We strongly recommend re-enabling 2FA — it's the single biggest defence against a compromised password.";
+        : "Sign-ins will now only require your password. We strongly recommend re-enabling 2FA - it's the single biggest defence against a compromised password.";
     return await sendEmail({
         to,
         subject: reason === "admin-reset"
-            ? "Two-factor authentication reset — Seairo Cargo"
-            : "Two-factor authentication turned off — Seairo Cargo",
+            ? "Two-factor authentication reset - Seairo Cargo"
+            : "Two-factor authentication turned off - Seairo Cargo",
         html: emailLayout({
             accentColor: "#f59e0b",
             heading: reason === "admin-reset" ? "2FA reset by support" : "Two-factor authentication is off",
@@ -598,25 +598,25 @@ export async function sendTwoFactorDisabledEmail(
 /**
  * Heads-up to the security inbox that an admin user has finished 2FA
  * enrollment. Fires once per admin per enrollment. If ADMIN_ALERT_EMAIL is
- * unset, the function logs and returns — no error — so missing config never
+ * unset, the function logs and returns - no error - so missing config never
  * breaks the user flow.
  */
 export async function sendAdminTwoFactorEnabledEmail(adminName: string, adminEmail: string) {
     const securityInbox = process.env.ADMIN_ALERT_EMAIL;
     if (!securityInbox) {
-        console.log("[email] ADMIN_ALERT_EMAIL unset — skipping admin 2FA notification");
+        console.log("[email] ADMIN_ALERT_EMAIL unset - skipping admin 2FA notification");
         return;
     }
     await sendEmail({
         to: securityInbox,
-        subject: `Admin enrolled in 2FA — ${adminName}`,
+        subject: `Admin enrolled in 2FA - ${adminName}`,
         html: emailLayout({
             accentColor: "#10b981",
             heading: "Admin enrolled in 2FA",
             intro: `<strong>${escapeHtml(adminName)}</strong> (${escapeHtml(adminEmail)}) just completed two-factor enrollment on their admin account.`,
             contentHtml: `
                 <p style="color: #475569; font-size: 14px; line-height: 1.65; margin: 0 0 12px;">
-                    This is an informational alert — no action required. We send one of these every time an admin completes the forced 2FA setup so the security team can see new admin sessions hardening.
+                    This is an informational alert - no action required. We send one of these every time an admin completes the forced 2FA setup so the security team can see new admin sessions hardening.
                 </p>
                 <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0;">
                     <tbody>

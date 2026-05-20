@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
         const normalisedCode = String(code).toUpperCase();
 
-        // Duplicate guard — Cape Town can be both ORIGIN and DESTINATION
+        // Duplicate guard - Cape Town can be both ORIGIN and DESTINATION
         // (export today, import tomorrow), so the uniqueness is (code, type),
         // not code alone. Reject before INSERT so the UI gets a friendly 400
         // instead of a generic 500 from the DB constraint.

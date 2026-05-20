@@ -32,9 +32,9 @@ interface AllocationDocsProps {
 /**
  * Renders an allocation's documents in grouped sections:
  *   1. Finalised by MetaShip (METASHIP_CLIENT docs matched to this allocation)
- *   2. Container Documents (METASHIP_SHARED — visible to every client on the container)
- *   3. Uploaded by Seairo (ADMIN_UPLOAD — uploaded on behalf of the client)
- *   4. Your Uploads / Drafts (CLIENT_UPLOAD — hidden by default if finalised docs exist)
+ *   2. Container Documents (METASHIP_SHARED - visible to every client on the container)
+ *   3. Uploaded by Seairo (ADMIN_UPLOAD - uploaded on behalf of the client)
+ *   4. Your Uploads / Drafts (CLIENT_UPLOAD - hidden by default if finalised docs exist)
  */
 export function AllocationDocs({ docs, loading, onView, alwaysShowDrafts }: AllocationDocsProps) {
     const [showDrafts, setShowDrafts] = useState(false)

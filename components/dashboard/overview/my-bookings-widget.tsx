@@ -54,7 +54,7 @@ export function MyBookingsWidget({ bookings, loading }: MyBookingsWidgetProps) {
                         <div>
                             <p className="text-sm font-bold text-slate-900 dark:text-white">No active bookings yet</p>
                             <p className="text-xs text-slate-500 mt-1 max-w-xs">
-                                Book your first shared reefer container — pick a route, pallets, and we&apos;ll handle the rest.
+                                Book your first shared reefer container - pick a route, pallets, and we&apos;ll handle the rest.
                             </p>
                         </div>
                         <Button onClick={onOpen} size="sm" className="bg-brand-blue hover:bg-brand-blue/90 text-white">

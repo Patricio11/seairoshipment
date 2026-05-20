@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 /**
- * Admin — update the status of a container request.
+ * Admin - update the status of a container request.
  * Body: { status: "ACKNOWLEDGED" | "FULFILLED" | "DECLINED", adminResponse?, fulfilledContainerId? }
  */
 export async function PATCH(
@@ -52,8 +52,8 @@ export async function PATCH(
             };
             const messageMap = {
                 FULFILLED: adminResponse
-                    ? `Your request (${id}) was fulfilled — a container is now available. ${adminResponse}`
-                    : `Your request (${id}) was fulfilled — a matching container is now available for booking.`,
+                    ? `Your request (${id}) was fulfilled - a container is now available. ${adminResponse}`
+                    : `Your request (${id}) was fulfilled - a matching container is now available for booking.`,
                 DECLINED: adminResponse
                     ? `Your request (${id}) was declined. Reason: ${adminResponse}`
                     : `Your request (${id}) was declined. Please contact support for details.`,

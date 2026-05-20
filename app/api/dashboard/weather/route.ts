@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
  *
  * Pulls active rows from `dashboard_weather_ports` and asks Open-Meteo for
  * the latest temperature + WMO weather code per coordinate. Open-Meteo is
- * free, no API key, commercial-friendly — picked specifically because the
+ * free, no API key, commercial-friendly - picked specifically because the
  * dashboard widget shouldn't require key rotation or budget.
  *
  * In-memory cache (1 hour TTL) keeps us well under any reasonable rate
@@ -28,7 +28,7 @@ interface WeatherCacheEntry {
 const weatherCache = new Map<string, WeatherCacheEntry>();
 
 function cacheKey(lat: number, lng: number): string {
-    // Round to 2dp — that's <2km — so co-located ports share a cache slot.
+    // Round to 2dp - that's <2km - so co-located ports share a cache slot.
     return `${lat.toFixed(2)},${lng.toFixed(2)}`;
 }
 
@@ -77,7 +77,7 @@ async function fetchOpenMeteo(lat: number, lng: number): Promise<{ tempC: number
  * uses to pick an icon. Codes from https://open-meteo.com/en/docs (WMO 4677).
  */
 export function describeWeatherCode(code: number | null): { label: string; kind: "sun" | "cloud" | "rain" | "snow" | "storm" | "fog" | "unknown" } {
-    if (code === null) return { label: "—", kind: "unknown" };
+    if (code === null) return { label: "-", kind: "unknown" };
     if (code === 0) return { label: "Clear", kind: "sun" };
     if (code === 1 || code === 2) return { label: "Partly cloudy", kind: "cloud" };
     if (code === 3) return { label: "Overcast", kind: "cloud" };
@@ -88,7 +88,7 @@ export function describeWeatherCode(code: number | null): { label: string; kind:
     if (code >= 80 && code <= 82) return { label: "Showers", kind: "rain" };
     if (code === 85 || code === 86) return { label: "Snow showers", kind: "snow" };
     if (code >= 95 && code <= 99) return { label: "Thunderstorm", kind: "storm" };
-    return { label: "—", kind: "unknown" };
+    return { label: "-", kind: "unknown" };
 }
 
 export async function GET() {

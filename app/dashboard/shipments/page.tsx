@@ -268,7 +268,7 @@ function EtaCountdown({ eta }: { eta: string | null }) {
     const [now, setNow] = useState<number | null>(null)
 
     useEffect(() => {
-        // Timer callback runs outside the effect body — allowed by react-hooks rules
+        // Timer callback runs outside the effect body - allowed by react-hooks rules
         const t = setTimeout(() => setNow(Date.now()), 0)
         const i = setInterval(() => setNow(Date.now()), 60_000)
         return () => { clearTimeout(t); clearInterval(i) }
@@ -277,7 +277,7 @@ function EtaCountdown({ eta }: { eta: string | null }) {
     if (!eta) return <span className="text-xs text-slate-400 font-bold">ETA pending</span>
     if (now === null) {
         // SSR-safe placeholder until the client timer has run
-        return <span className="text-xs text-slate-400 font-bold">ETA —</span>
+        return <span className="text-xs text-slate-400 font-bold">ETA -</span>
     }
 
     const etaMs = new Date(eta).getTime()

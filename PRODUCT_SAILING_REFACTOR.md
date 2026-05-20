@@ -1,4 +1,4 @@
-# Product + Sailing Refactor — Progress Tracker
+# Product + Sailing Refactor - Progress Tracker
 
 ## Goal
 
@@ -40,7 +40,7 @@ Restructure the booking flow so that a container is **locked to a single product
 
 ## Scope & Phases
 
-### Phase 1 — Foundations (schema + sync) ✅ DONE
+### Phase 1 - Foundations (schema + sync) ✅ DONE
 
 - [x] New schema: `products` table
   - `id` (prefixed `prd-<metashipId>`), `metashipId`, `name`, `hsCode`, `description`, `category`, `active`, `lastSyncedAt`
@@ -48,13 +48,13 @@ Restructure the booking flow so that a container is **locked to a single product
   - `id` (prefixed `sail-<metashipId>`), `metashipId`, `vesselName`, `voyageNumber`, `shippingLine`, ports, countries, `etd`, `eta`, `transitTime`, `serviceType`, `active`, `lastSyncedAt`
 - [x] `containers` table: add `sailingId`, `productId`, `temperature` (enum: frozen / chilled / ambient)
 - [x] Push schema to DB
-- [x] `POST /api/admin/products/sync` — pulls from `/public/v2/product`, upserts by metashipId
-- [x] `GET /api/admin/products` — list with container usage count
-- [x] `PUT /api/admin/products` — update category/active
-- [x] `POST /api/admin/sailings/sync` — iterates all origin×destination pairs, fetches from `/public/v2/sailing-schedules`, MSC-only filter, upserts
-- [x] `GET /api/admin/sailings` — list with container usage count, future-only by default
+- [x] `POST /api/admin/products/sync` - pulls from `/public/v2/product`, upserts by metashipId
+- [x] `GET /api/admin/products` - list with container usage count
+- [x] `PUT /api/admin/products` - update category/active
+- [x] `POST /api/admin/sailings/sync` - iterates all origin×destination pairs, fetches from `/public/v2/sailing-schedules`, MSC-only filter, upserts
+- [x] `GET /api/admin/sailings` - list with container usage count, future-only by default
 
-### Phase 2 — Admin management pages ✅ DONE
+### Phase 2 - Admin management pages ✅ DONE
 
 - [x] `/admin/products` page
   - [x] Table: name, HS code, category, container count, active toggle
@@ -70,9 +70,9 @@ Restructure the booking flow so that a container is **locked to a single product
   - [x] Future-only toggle (default) / include past sailings toggle
   - [x] Loading + empty states
 - [x] Add both pages to admin sidebar navigation (icons: Apple for Products, Anchor for Sailings)
-- [ ] Verify stats update after sync (deferred — will confirm once user does a real sync)
+- [ ] Verify stats update after sync (deferred - will confirm once user does a real sync)
 
-### Phase 3 — Container creation cascade ✅ DONE
+### Phase 3 - Container creation cascade ✅ DONE
 
 - [x] Rewrite "Create Container" dialog in fleet-scheduler.tsx
 - [x] Cascading field order: 1. Route → 2. Sailing (filtered) → 3. Container Type → 4. Temperature (constrained by reefer/dry) → 5. Product
@@ -87,9 +87,9 @@ Restructure the booking flow so that a container is **locked to a single product
 - [x] Validates: product exists and is active
 - [x] Container cards now show product + temperature badges (emerald for product, sky/amber for cold/ambient)
 - [x] GET /api/admin/containers now joins products + sailings so list shows productName, sailingVessel, sailingVoyage
-- [x] Empty-state message when a route has no synced sailings yet — tells admin to sync first
+- [x] Empty-state message when a route has no synced sailings yet - tells admin to sync first
 
-### Phase 4 — Client booking rewrite ✅ DONE
+### Phase 4 - Client booking rewrite ✅ DONE
 
 - [x] New client API: `GET /api/bookings/options?route=X&salesRateTypeId=Y[&productId=Z&temperature=W]`
   - Returns: `{ products, temperatures, sailings, totalContainers }`
@@ -104,17 +104,17 @@ Restructure the booking flow so that a container is **locked to a single product
   - Secondary "can't find what you need?" link always visible once route is picked
   - Also shown in the no-match empty state on the container-pick stage
 - [x] `container_requests` schema + enum (PENDING / ACKNOWLEDGED / FULFILLED / DECLINED)
-- [x] `POST /api/container-requests` — client-facing endpoint. Creates admin notification + client confirmation notification. Returns { id }
-- [x] `GET /api/container-requests` — client lists own requests
-- [x] `GET /api/admin/container-requests` — admin list with user/product/sailing joins
-- [x] `PATCH /api/admin/container-requests/[id]` — admin updates status (ACKNOWLEDGED / FULFILLED / DECLINED) with optional message. Client gets BOOKING_APPROVED / BOOKING_REJECTED / GENERAL notification.
+- [x] `POST /api/container-requests` - client-facing endpoint. Creates admin notification + client confirmation notification. Returns { id }
+- [x] `GET /api/container-requests` - client lists own requests
+- [x] `GET /api/admin/container-requests` - admin list with user/product/sailing joins
+- [x] `PATCH /api/admin/container-requests/[id]` - admin updates status (ACKNOWLEDGED / FULFILLED / DECLINED) with optional message. Client gets BOOKING_APPROVED / BOOKING_REJECTED / GENERAL notification.
 - [x] Admin tab "Container Requests" in bookings grid with Respond dropdown (Mark as reviewing / Mark as fulfilled / Decline) → confirmation dialog with optional response text
 
-### Phase 5 — Product Categories + Document checklist ⏳ IN PROGRESS
+### Phase 5 - Product Categories + Document checklist ⏳ IN PROGRESS
 
 **Why:** A container carrying "Hake" alone is too specific. Real consolidation
 works at the category level: "Frozen Seafood" accepts hake / squid / yellow tail
-all on the same reefer. Categories also drive the required-documents list —
+all on the same reefer. Categories also drive the required-documents list -
 different cargo types need different export certs (PPECB for perishables,
 CITES for hunting trophies, SAWIS for wine, etc.).
 
@@ -130,18 +130,18 @@ checklist and uploads each one tagged with its code.
 - [x] `products.categoryId` (nullable FK)
 - [x] Replace `containers.productId` with `containers.categoryId`
   (kept legacy `product_id` column in DB; code no longer reads from it)
-- [x] `documents.documentCode` (new text column — stores specific doc code
+- [x] `documents.documentCode` (new text column - stores specific doc code
   like COMMERCIAL_INVOICE, PPECB_HEALTH_CERTIFICATE)
 - [x] DB push
 
 #### Constants
 
-- [x] `lib/constants/document-types.ts` — 17 predefined doc types with codes + labels + descriptions
+- [x] `lib/constants/document-types.ts` - 17 predefined doc types with codes + labels + descriptions
 - [x] `documentLabel(code)` helper for rendering
 
 #### Seed data
 
-- [x] `POST /api/admin/product-categories/seed` — idempotent endpoint
+- [x] `POST /api/admin/product-categories/seed` - idempotent endpoint
 - [x] Seeds 8 starter categories:
   - SRS: Frozen Seafood (frozen), Poultry (frozen), Meat (chilled+frozen),
     Dairy (chilled+frozen), Fruit (chilled)
@@ -151,29 +151,29 @@ checklist and uploads each one tagged with its code.
 
 #### APIs
 
-- [ ] `GET /api/admin/product-categories` — list with assigned-product count + container-usage count
-- [ ] `POST /api/admin/product-categories` — create
-- [ ] `PATCH /api/admin/product-categories/[id]` — update name/description/temps/docs/active
-- [ ] `DELETE /api/admin/product-categories/[id]` — delete (reject if used by any container)
-- [ ] `GET /api/admin/product-categories/[id]` — detail with assigned products list
-- [ ] `POST /api/admin/product-categories/[id]/products` — bulk assign products
-- [ ] `DELETE /api/admin/product-categories/[id]/products` — bulk un-assign
-- [ ] Update `GET /api/admin/products` — container count now comes from category (containers with same categoryId)
-- [ ] Update `GET /api/admin/containers` — join product_categories instead of products; return categoryName
-- [ ] Update `POST /api/admin/containers` — require categoryId (replaces productId). Validate temperature is in category.allowedTemperatures.
-- [ ] Update `PATCH /api/admin/containers/[id]` — accept categoryId
+- [ ] `GET /api/admin/product-categories` - list with assigned-product count + container-usage count
+- [ ] `POST /api/admin/product-categories` - create
+- [ ] `PATCH /api/admin/product-categories/[id]` - update name/description/temps/docs/active
+- [ ] `DELETE /api/admin/product-categories/[id]` - delete (reject if used by any container)
+- [ ] `GET /api/admin/product-categories/[id]` - detail with assigned products list
+- [ ] `POST /api/admin/product-categories/[id]/products` - bulk assign products
+- [ ] `DELETE /api/admin/product-categories/[id]/products` - bulk un-assign
+- [ ] Update `GET /api/admin/products` - container count now comes from category (containers with same categoryId)
+- [ ] Update `GET /api/admin/containers` - join product_categories instead of products; return categoryName
+- [ ] Update `POST /api/admin/containers` - require categoryId (replaces productId). Validate temperature is in category.allowedTemperatures.
+- [ ] Update `PATCH /api/admin/containers/[id]` - accept categoryId
 
-- [ ] Update `GET /api/bookings/options` — products list is now narrowed to "products in categories with matching open containers". Internally: containers → categoryIds → products with those categoryIds.
-- [ ] Update `GET /api/containers?productId=X...` — still filters by productId, but resolves to category server-side: looks up product.categoryId and filters containers.categoryId = that.
+- [ ] Update `GET /api/bookings/options` - products list is now narrowed to "products in categories with matching open containers". Internally: containers → categoryIds → products with those categoryIds.
+- [ ] Update `GET /api/containers?productId=X...` - still filters by productId, but resolves to category server-side: looks up product.categoryId and filters containers.categoryId = that.
 
-- [ ] Update `POST /api/bookings` — validate the chosen product belongs to a category that matches the chosen container's category.
-- [ ] Update `POST /api/bookings/[id]/upload` & `POST /api/bookings/[id]/documents` — accept `documentCode` and save it.
+- [ ] Update `POST /api/bookings` - validate the chosen product belongs to a category that matches the chosen container's category.
+- [ ] Update `POST /api/bookings/[id]/upload` & `POST /api/bookings/[id]/documents` - accept `documentCode` and save it.
 
 #### Admin UI
 
 - [ ] `/admin/categories` page (table view)
   - Columns: Name, Service Type badge, Allowed temps (chips), Products count, Open containers count, Required docs count, Active toggle
-  - Create dialog: name, description, service type (auto-restricts temperature options — SCS locked to ambient), multi-select temps, multi-select required docs, active
+  - Create dialog: name, description, service type (auto-restricts temperature options - SCS locked to ambient), multi-select temps, multi-select required docs, active
   - Row click → detail view with assigned products + "Add products" searchable multi-select
 - [ ] Add "Categories" entry to admin sidebar (between Products and Commodities)
 - [ ] Update fleet-scheduler Create Container dialog:
@@ -208,7 +208,7 @@ checklist and uploads each one tagged with its code.
 #### Admin review (display)
 
 - [x] ClientDoc interface updated with documentCode field
-- [x] Booking detail popup shows documentLabel(doc.documentCode) — falls back to legacy type if null
+- [x] Booking detail popup shows documentLabel(doc.documentCode) - falls back to legacy type if null
 - [x] Document viewer modal header shows the doc label
 
 #### Tracker maintenance + cleanup ✅ DONE
@@ -230,7 +230,7 @@ checklist and uploads each one tagged with its code.
 | Product granularity | Specific product per container (not category). Can relax later if needed. |
 | Temperature storage | On container (not allocation). Admin locks it at creation. |
 | Sync frequency | Manual button for now. Cron later if it becomes a hassle. |
-| Backwards compat | Not needed — not in production yet. |
+| Backwards compat | Not needed - not in production yet. |
 | No-match UX | "Request a container" form → admin notification + Container Requests tab. |
 | Client visibility | Only products/sailings/temperatures that have at least one OPEN container matching. |
 | Sailing carrier filter | MSC only (same as current logic). |
@@ -243,9 +243,9 @@ checklist and uploads each one tagged with its code.
 
 - `lib/db/schema/products.ts` (new)
 - `lib/db/schema/sailings.ts` (new)
-- `lib/db/schema/containers.ts` (modified — added sailingId, productId, temperature)
+- `lib/db/schema/containers.ts` (modified - added sailingId, productId, temperature)
 - `lib/db/schema/index.ts` (re-export products + sailings)
-- `app/api/admin/products/route.ts` (new — list + update)
+- `app/api/admin/products/route.ts` (new - list + update)
 - `app/api/admin/products/sync/route.ts` (new)
 - `app/api/admin/sailings/route.ts` (new)
 - `app/api/admin/sailings/sync/route.ts` (new)
@@ -256,7 +256,7 @@ checklist and uploads each one tagged with its code.
 - `components/admin/products-manager.tsx` (new)
 - `app/admin/sailings/page.tsx` (new)
 - `components/admin/sailings-manager.tsx` (new)
-- `components/admin/admin-sidebar.tsx` (modify — add nav entries)
+- `components/admin/admin-sidebar.tsx` (modify - add nav entries)
 
 ### Phase 3 (pending)
 
@@ -278,5 +278,5 @@ checklist and uploads each one tagged with its code.
 
 ## Open questions / to confirm
 
-- Should products have a manually-set "priority" or "display order" field for the client dropdown? (Not doing for now — alphabetical.)
+- Should products have a manually-set "priority" or "display order" field for the client dropdown? (Not doing for now - alphabetical.)
 - If a container is marked as BOOKED/SAILING, should its product/sailing/temp still be editable by admin? (Currently yes at schema level; may want to lock in UI.)

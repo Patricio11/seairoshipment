@@ -17,25 +17,25 @@ import { and, eq, isNull } from "drizzle-orm";
  * F); the seed gives v1 immediate value without anyone clicking around.
  */
 const SEED = [
-    // Wine & Spirits — cat-wine-spirits
+    // Wine & Spirits - cat-wine-spirits
     { name: "Wine 12-bottle case (750ml)", categoryId: "cat-wine-spirits", lengthMm: 350, widthMm: 300, heightMm: 230, weightKg: 16 },
     { name: "Wine 6-bottle case", categoryId: "cat-wine-spirits", lengthMm: 350, widthMm: 160, heightMm: 230, weightKg: 8 },
     { name: "Spirits case (12 x 750ml)", categoryId: "cat-wine-spirits", lengthMm: 350, widthMm: 300, heightMm: 280, weightKg: 18 },
 
-    // Fruit — cat-fruit
+    // Fruit - cat-fruit
     { name: "Citrus 15kg carton", categoryId: "cat-fruit", lengthMm: 400, widthMm: 300, heightMm: 270, weightKg: 15 },
     { name: "Grape 4.5kg punnet pack", categoryId: "cat-fruit", lengthMm: 400, widthMm: 300, heightMm: 100, weightKg: 4.5 },
     { name: "Apple / Pear 18kg bin liner", categoryId: "cat-fruit", lengthMm: 600, widthMm: 400, heightMm: 300, weightKg: 18 },
 
-    // Hunting Trophies — cat-hunting-trophies
+    // Hunting Trophies - cat-hunting-trophies
     { name: "Standard trophy crate", categoryId: "cat-hunting-trophies", lengthMm: 1200, widthMm: 800, heightMm: 800, weightKg: 45 },
     { name: "Skull / horn export box", categoryId: "cat-hunting-trophies", lengthMm: 800, widthMm: 600, heightMm: 600, weightKg: 25 },
 
-    // Confectionery (SRS-ambient, but the cargo dimensions still apply to dry packing) — cat-confectionery
+    // Confectionery (SRS-ambient, but the cargo dimensions still apply to dry packing) - cat-confectionery
     { name: "Chocolate 24-bar carton", categoryId: "cat-confectionery", lengthMm: 400, widthMm: 300, heightMm: 200, weightKg: 6 },
     { name: "Confectionery bulk box", categoryId: "cat-confectionery", lengthMm: 500, widthMm: 400, heightMm: 300, weightKg: 12 },
 
-    // Other dry mixed — cat-dry-mixed
+    // Other dry mixed - cat-dry-mixed
     { name: "Standard double-wall carton", categoryId: "cat-dry-mixed", lengthMm: 400, widthMm: 400, heightMm: 400, weightKg: 10 },
     { name: "Industrial drum (200L)", categoryId: "cat-dry-mixed", lengthMm: 580, widthMm: 580, heightMm: 880, weightKg: 25 },
 
@@ -55,7 +55,7 @@ export async function POST() {
         for (const preset of SEED) {
             // Match on name within the admin scope (isAdmin=true + userId=null).
             // Two presets with the same name across different categories would
-            // collide — by design, since the calculator displays the name.
+            // collide - by design, since the calculator displays the name.
             const [existing] = await db
                 .select({ id: cargoItemPresets.id })
                 .from(cargoItemPresets)

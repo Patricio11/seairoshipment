@@ -202,7 +202,7 @@ export function LocationsGrid() {
                                     </div>
                                     <div className="bg-slate-950/50 p-2 rounded border border-slate-800/50">
                                         <p className="text-slate-500 mb-0.5">Coords</p>
-                                        <p className="font-mono text-[10px] text-slate-300 truncate" title={loc.coordinates || ""}>{loc.coordinates || "—"}</p>
+                                        <p className="font-mono text-[10px] text-slate-300 truncate" title={loc.coordinates || ""}>{loc.coordinates || "-"}</p>
                                     </div>
                                 </div>
 

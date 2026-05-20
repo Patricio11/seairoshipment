@@ -17,7 +17,7 @@ import { getMetaShipShipmentDocuments } from "@/lib/metaship";
  *     or reference. Matched → METASHIP_CLIENT, attached to that allocation.
  *     Unmatched → METASHIP_SHARED, attached to the container.
  *  4. Upsert by (container_id, metaship_document_id) so repeated syncs just
- *     refresh URLs + pull in any new docs — no duplicates.
+ *     refresh URLs + pull in any new docs - no duplicates.
  */
 export async function POST(
     _request: NextRequest,

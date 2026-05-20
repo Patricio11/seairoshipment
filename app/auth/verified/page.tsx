@@ -10,12 +10,12 @@ export const dynamic = "force-dynamic"
  * Landing page after Better Auth verifies the email and auto-signs the user in.
  *
  * Three branches in order:
- *  1. Verification token came back with `?error=...` — surface it with a
+ *  1. Verification token came back with `?error=...` - surface it with a
  *     resend CTA so the user can request a fresh link. Without this, a stale
  *     or already-used token silently lands here and the user sees a "looks
  *     fine" message that isn't.
- *  2. Session exists — verification succeeded, route to the user's home.
- *  3. No session, no error — extremely rare given autoSignInAfterVerification,
+ *  2. Session exists - verification succeeded, route to the user's home.
+ *  3. No session, no error - extremely rare given autoSignInAfterVerification,
  *     show a manual sign-in CTA.
  */
 export default async function VerifiedPage({
@@ -33,7 +33,7 @@ export default async function VerifiedPage({
             error === "EXPIRED_TOKEN" || error === "TOKEN_EXPIRED"
                 ? "This verification link has expired."
                 : error === "INVALID_TOKEN" || error === "USED_TOKEN"
-                    ? "This verification link is no longer valid — it may have been used already."
+                    ? "This verification link is no longer valid - it may have been used already."
                     : `Verification failed (${error}).`
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-blue-950 px-4">
@@ -67,12 +67,12 @@ export default async function VerifiedPage({
         if (role === "admin") {
             redirect("/admin")
         }
-        // Clients land on onboarding — it figures out the right sub-view
+        // Clients land on onboarding - it figures out the right sub-view
         // (form / pending review / approved auto-redirect / rejected).
         redirect("/auth/onboarding")
     }
 
-    // No session — extremely rare given autoSignInAfterVerification=true,
+    // No session - extremely rare given autoSignInAfterVerification=true,
     // but show a friendly fallback so the user has a clear next step.
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-blue-950 px-4">

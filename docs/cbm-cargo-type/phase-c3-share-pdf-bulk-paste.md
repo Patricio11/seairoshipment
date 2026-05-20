@@ -1,6 +1,6 @@
-# Phase C.3 — Share-by-link · PDF download · Bulk paste · Cleanup
+# Phase C.3 - Share-by-link · PDF download · Bulk paste · Cleanup
 
-**Status:** ✅ Done — `tsc --noEmit` clean. Phase C is complete.
+**Status:** ✅ Done - `tsc --noEmit` clean. Phase C is complete.
 
 The final C sub-phase closes the Tools section by adding three high-leverage UX features and clearing out the Phase B smoke page.
 
@@ -11,13 +11,13 @@ The final C sub-phase closes the Tools section by adding three high-leverage UX 
 ### APIs (new)
 
 **Authenticated, owner-only** ([app/api/dashboard/cbm-calculations/[id]/share/route.ts](../../app/api/dashboard/cbm-calculations/[id]/share/route.ts))
-- `GET` — list active (non-revoked) share tokens for this calc
-- `POST` — generate a new token with optional `expiresInDays` (capped at 365). Token = 32 chars URL-safe random (`randomBytes(24).toString("base64url")` via Node crypto).
-- `DELETE ?token=…` — revoke a specific token (sets `revokedAt = now`)
+- `GET` - list active (non-revoked) share tokens for this calc
+- `POST` - generate a new token with optional `expiresInDays` (capped at 365). Token = 32 chars URL-safe random (`randomBytes(24).toString("base64url")` via Node crypto).
+- `DELETE ?token=…` - revoke a specific token (sets `revokedAt = now`)
 
 **Public, unauthenticated** ([app/api/share/cbm/[token]/route.ts](../../app/api/share/cbm/[token]/route.ts))
-- `GET /api/share/cbm/[token]` — returns the calc payload (name, items, totals) for a valid token. Refuses revoked / expired tokens with HTTP 410.
-- Deliberately **omits** owner email, userId, notes — viewers see dimensions only.
+- `GET /api/share/cbm/[token]` - returns the calc payload (name, items, totals) for a valid token. Refuses revoked / expired tokens with HTTP 410.
+- Deliberately **omits** owner email, userId, notes - viewers see dimensions only.
 - Bumps `accessCount` + `lastAccessedAt` on every successful read so the owner can see basic engagement stats from the share modal.
 
 ### Public page ([app/share/cbm/[token]/page.tsx](../../app/share/cbm/[token]/page.tsx))
@@ -31,7 +31,7 @@ Mounted in the calc editor as a "Share" button. Dialog lets the owner:
 - See "Expired" / "Revoked" pills inline
 
 ### Robots
-[app/robots.ts](../../app/robots.ts) gains `/share/` to the disallow list. Share links are intentionally public to anyone with the URL, but they're private business documents — we don't want them indexed.
+[app/robots.ts](../../app/robots.ts) gains `/share/` to the disallow list. Share links are intentionally public to anyone with the URL, but they're private business documents - we don't want them indexed.
 
 ---
 
@@ -41,7 +41,7 @@ Mounted in the calc editor as a "Share" button. Dialog lets the owner:
 
 - Header: calc name + timestamp + Seairo branding
 - Totals strip: Total volume, Total weight, Volumetric (sea), Pallet equivalent
-- Sustainability italic line below: `~XX kg CO₂eq via ocean SCS — ~95% less than air for this volume`
+- Sustainability italic line below: `~XX kg CO₂eq via ocean SCS - ~95% less than air for this volume`
 - Items table: Label · L / W / H mm · Weight · Qty · Volume
 - Container fit table: 20ft / 40ft / 40ft HC capacity / % full / remaining
 - Footer disclaimer about quotes being estimates
@@ -76,13 +76,13 @@ Invalid rows are kept in the preview with their reason ("Negative or non-numeric
 
 Import button reads as "Import N rows" with the live count, disabled when no valid rows exist. Skipped rows don't block the import; the user can re-paste the rejects later.
 
-**Download example CSV**: a button inside the modal generates a client-side CSV with realistic SCS cargo rows (wine cases, citrus, chocolate, trophy crates, mixed dry boxes) plus inline `#` comments explaining the columns. Filename: `seairo-cbm-bulk-import-example.csv`. The parser ignores `#` lines so the file can be pasted back as-is to verify the format works. Picks up the user's current unit selection — switching to inches before downloading gives them an inch-headered example.
+**Download example CSV**: a button inside the modal generates a client-side CSV with realistic SCS cargo rows (wine cases, citrus, chocolate, trophy crates, mixed dry boxes) plus inline `#` comments explaining the columns. Filename: `seairo-cbm-bulk-import-example.csv`. The parser ignores `#` lines so the file can be pasted back as-is to verify the format works. Picks up the user's current unit selection - switching to inches before downloading gives them an inch-headered example.
 
 ---
 
 ## 4. Cleanup
 
-- **Deleted**: [app/dev/cbm/page.tsx](app/dev/cbm/page.tsx) — the Phase B smoke-test page. The same component is now exercised through the real `/dashboard/tools/cbm-calculator/new` page, so the throwaway is no longer needed.
+- **Deleted**: [app/dev/cbm/page.tsx](app/dev/cbm/page.tsx) - the Phase B smoke-test page. The same component is now exercised through the real `/dashboard/tools/cbm-calculator/new` page, so the throwaway is no longer needed.
 
 ---
 
@@ -90,11 +90,11 @@ Import button reads as "Import N rows" with the live count, disabled when no val
 
 Tier 2 features explicitly carried in the master tracker as v1 scope still pending:
 
-- **Cut-off urgency banner on the calculator** — already shown inside the Smart-match panel per match. The standalone in-calculator banner (when no specific container is picked) is deferred to a smaller Phase D follow-up alongside the booking-wizard cargo-type gate.
-- **3D loading playback animation** — the 3D viz is static for now. The animation is a small visual upgrade that can land any time; not a blocker for booking flow integration.
-- **Keyboard shortcuts** (Ctrl+N row, Enter to add) — quality-of-life, can ship in any future polish pass.
+- **Cut-off urgency banner on the calculator** - already shown inside the Smart-match panel per match. The standalone in-calculator banner (when no specific container is picked) is deferred to a smaller Phase D follow-up alongside the booking-wizard cargo-type gate.
+- **3D loading playback animation** - the 3D viz is static for now. The animation is a small visual upgrade that can land any time; not a blocker for booking flow integration.
+- **Keyboard shortcuts** (Ctrl+N row, Enter to add) - quality-of-life, can ship in any future polish pass.
 
-These deliberately don't block the rest of the rollout — Phase D (booking wizard integration) is the next critical-path piece.
+These deliberately don't block the rest of the rollout - Phase D (booking wizard integration) is the next critical-path piece.
 
 ---
 
@@ -104,12 +104,12 @@ These deliberately don't block the rest of the rollout — Phase D (booking wiza
 app/api/dashboard/cbm-calculations/[id]/share/route.ts          new
 app/api/share/cbm/[token]/route.ts                              new
 app/share/cbm/[token]/page.tsx                                  new
-app/robots.ts                                                   modified — disallow /share/
+app/robots.ts                                                   modified - disallow /share/
 components/cbm/share-link-button.tsx                            new
 components/cbm/download-pdf-button.tsx                          new
 components/cbm/bulk-paste-button.tsx                            new
-components/cbm/cbm-calculator.tsx                               modified — bulk-paste mount
-components/cbm/calculation-editor.tsx                           modified — Share + Download mount
+components/cbm/cbm-calculator.tsx                               modified - bulk-paste mount
+components/cbm/calculation-editor.tsx                           modified - Share + Download mount
 app/dev/cbm/page.tsx                                            deleted (smoke page)
 ```
 
@@ -129,13 +129,13 @@ After commit + `npm run db:push`:
    Should show 3 valid rows in the preview. Click "Import 3 rows". The calculator loads with 3 rows, total ~7.0 m³.
 3. Save the calc as "Mixed export Q3 test".
 4. On the saved-calc page: top-right action row now shows **Share** · **Download PDF** · Duplicate · Archive · Save changes.
-5. Click **Download PDF** — a `mixed-export-q3-test.pdf` downloads with the totals, sustainability line, items table, and fit grid.
-6. Click **Share** → pick "30 days" → "Generate new link". A URL appears, copied to clipboard automatically. Paste it into an incognito window — you see the read-only public view at `/share/cbm/[token]`.
+5. Click **Download PDF** - a `mixed-export-q3-test.pdf` downloads with the totals, sustainability line, items table, and fit grid.
+6. Click **Share** → pick "30 days" → "Generate new link". A URL appears, copied to clipboard automatically. Paste it into an incognito window - you see the read-only public view at `/share/cbm/[token]`.
 7. Back in the dashboard, in the same Share modal, click the trash icon on the active link → confirm. Reload the incognito tab → "Share link revoked" message.
 
 ---
 
-## Phase C — complete
+## Phase C - complete
 
 ```
 A · Schema foundations            ✅

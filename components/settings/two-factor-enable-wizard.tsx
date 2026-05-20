@@ -25,14 +25,14 @@ interface TwoFactorEnableWizardProps {
     onOpenChange: (open: boolean) => void
     onEnabled?: () => void
     /**
-     * When true, the wizard cannot be dismissed without finishing — used by the
+     * When true, the wizard cannot be dismissed without finishing - used by the
      * admin forced-enrollment flow in Phase D. The close (X) button is hidden
      * and clicking outside / pressing Esc is suppressed.
      */
     forceEnroll?: boolean
     /**
      * Where to send the user after they click Done on the backup-codes step.
-     * Only used when `forceEnroll` is true — in the regular Settings flow the
+     * Only used when `forceEnroll` is true - in the regular Settings flow the
      * wizard just closes and the underlying page stays put. Defaults to
      * "/admin" because the only producer of forced enrollment today is the
      * admin layout gate.
@@ -103,7 +103,7 @@ export function TwoFactorEnableWizard({ open, onOpenChange, onEnabled, forceEnro
         onOpenChange(next)
     }
 
-    // Step 1 — password gate → calls /two-factor/enable which returns totpURI + backupCodes
+    // Step 1 - password gate → calls /two-factor/enable which returns totpURI + backupCodes
     const handlePassword = async () => {
         setError(null)
         if (!password) { setError("Enter your password"); return }
@@ -116,7 +116,7 @@ export function TwoFactorEnableWizard({ open, onOpenChange, onEnabled, forceEnro
             }
             const data = res.data as { totpURI?: string; backupCodes?: string[] } | null
             if (!data?.totpURI) {
-                setError("No setup details returned — try again")
+                setError("No setup details returned - try again")
                 return
             }
             setTotpUri(data.totpURI)
@@ -129,7 +129,7 @@ export function TwoFactorEnableWizard({ open, onOpenChange, onEnabled, forceEnro
         }
     }
 
-    // Step 3 — verify the 6-digit code → flips twoFactorEnabled = true server-side
+    // Step 3 - verify the 6-digit code → flips twoFactorEnabled = true server-side
     const handleVerify = async () => {
         setError(null)
         if (!/^\d{6}$/.test(code)) { setError("Enter the 6-digit code from your app"); return }
@@ -137,10 +137,10 @@ export function TwoFactorEnableWizard({ open, onOpenChange, onEnabled, forceEnro
         try {
             const res = await authClient.twoFactor.verifyTotp({ code })
             if (res.error) {
-                setError(res.error.message || "Code did not match — try the latest code")
+                setError(res.error.message || "Code did not match - try the latest code")
                 return
             }
-            // Fire the audit + confirmation-email side-effect. Don't await —
+            // Fire the audit + confirmation-email side-effect. Don't await -
             // the user's flow is done, this is housekeeping.
             void logAuthEvent("TWO_FACTOR_ENABLED")
             toast.success("Two-factor authentication enabled")
@@ -168,7 +168,7 @@ export function TwoFactorEnableWizard({ open, onOpenChange, onEnabled, forceEnro
     const downloadCodes = () => {
         const blob = new Blob(
             [
-                `Seairo Cargo — Two-Factor Backup Codes\n`,
+                `Seairo Cargo - Two-Factor Backup Codes\n`,
                 `Generated: ${new Date().toISOString()}\n\n`,
                 `Each code can be used once. Treat them like passwords.\n\n`,
                 ...backupCodes.map((c, i) => `${String(i + 1).padStart(2, "0")}.  ${c}\n`),
@@ -193,7 +193,7 @@ export function TwoFactorEnableWizard({ open, onOpenChange, onEnabled, forceEnro
             // Forced flow: navigate to the producer's chosen destination
             // (admin layout uses /admin; could widen to other gates later).
             // `replace` so back-button doesn't return to /auth/setup-2fa,
-            // and no explicit refresh — the destination's server layout
+            // and no explicit refresh - the destination's server layout
             // runs a fresh DB check on its own GET.
             router.replace(forceEnrollRedirectTo)
         }
@@ -227,7 +227,7 @@ export function TwoFactorEnableWizard({ open, onOpenChange, onEnabled, forceEnro
                     </DialogTitle>
                     <DialogDescription>
                         Step {{ password: 1, scan: 2, verify: 3, codes: 4 }[step]} of 4
-                        {forceEnroll && step !== "codes" && " — required for admin accounts"}
+                        {forceEnroll && step !== "codes" && " - required for admin accounts"}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -284,7 +284,7 @@ export function TwoFactorEnableWizard({ open, onOpenChange, onEnabled, forceEnro
                             <ScanLine className="h-5 w-5 text-slate-500 flex-shrink-0 mt-0.5" />
                             <div className="space-y-1">
                                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                                    Scan this QR with an authenticator app — 1Password, Google Authenticator, Authy, or Microsoft Authenticator all work.
+                                    Scan this QR with an authenticator app - 1Password, Google Authenticator, Authy, or Microsoft Authenticator all work.
                                 </p>
                                 <p className="text-xs text-slate-500">Can&apos;t scan? Use the setup key below instead.</p>
                             </div>

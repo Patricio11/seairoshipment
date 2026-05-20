@@ -31,7 +31,7 @@ export default async function OnboardingPage() {
     }
 
     // Active admin-managed requirements drive the form. Fetched server-side so
-    // the form has them on first render — no loading flash.
+    // the form has them on first render - no loading flash.
     const requirements = status === "ONBOARDING_PENDING"
         ? await db
             .select()
@@ -47,7 +47,7 @@ export default async function OnboardingPage() {
                     <Link href="/" className="flex items-center gap-2">
                         <Image
                             src="/seairo-logo.png"
-                            alt="Seairo Cargo — Shared Reefer Services"
+                            alt="Seairo Cargo - Shared Reefer Services"
                             width={120}
                             height={40}
                             className="h-9 w-auto object-contain"

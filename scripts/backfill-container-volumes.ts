@@ -3,7 +3,7 @@
  *
  * Why: the original seed (lib/db/seed.ts) didn't include volumeCBM, so every
  * container_types row has it as NULL. The admin POST /api/admin/containers
- * route then hydrates `maxCapacityCBM: ct.volumeCBM ?? null` — also NULL —
+ * route then hydrates `maxCapacityCBM: ct.volumeCBM ?? null` - also NULL -
  * which makes the booking-options query reject SCS/Cube containers (the
  * capacity check `COALESCE(maxCapacityCBM, 0) - 0 > 0` evaluates false).
  *
@@ -121,7 +121,7 @@ async function main() {
             containerSkips++;
             continue;
         }
-        // Skip if it's already correct — saves churn on updatedAt.
+        // Skip if it's already correct - saves churn on updatedAt.
         if (c.maxCapacityCBM === volume) {
             continue;
         }

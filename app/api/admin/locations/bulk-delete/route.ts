@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 import { parseBulkIds, runBulkDelete } from "@/lib/bulk-delete";
 
 /**
- * Locations are referenced by string code (UN/LOCODE), not FK — so the
+ * Locations are referenced by string code (UN/LOCODE), not FK - so the
  * database won't block delete even if a container or rate row still cites
  * the code. Matches the existing single-row delete behaviour. For a clean
  * demo wipe: delete bookings → containers → rates first, then locations.

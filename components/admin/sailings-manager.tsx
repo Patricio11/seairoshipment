@@ -46,7 +46,7 @@ interface Sailing {
 }
 
 function formatDate(dateStr: string | null): string {
-    if (!dateStr) return "—"
+    if (!dateStr) return "-"
     return new Date(dateStr).toLocaleDateString("en-ZA", {
         day: "numeric",
         month: "short",
@@ -233,7 +233,7 @@ export function SailingsManager() {
                                     </TableCell>
                                     <TableCell className="text-slate-300 text-xs">{formatDate(s.eta)}</TableCell>
                                     <TableCell className="text-center text-slate-400 text-xs font-mono">
-                                        {s.transitTime ? `${s.transitTime}d` : "—"}
+                                        {s.transitTime ? `${s.transitTime}d` : "-"}
                                     </TableCell>
                                     <TableCell className="text-center">
                                         {s.serviceType ? (
@@ -247,7 +247,7 @@ export function SailingsManager() {
                                                 {s.serviceType}
                                             </Badge>
                                         ) : (
-                                            <span className="text-slate-600 text-xs">—</span>
+                                            <span className="text-slate-600 text-xs">-</span>
                                         )}
                                     </TableCell>
                                     <TableCell className="text-center">
@@ -256,7 +256,7 @@ export function SailingsManager() {
                                                 <Container className="h-3 w-3 mr-1" /> {s.containerCount}
                                             </Badge>
                                         ) : (
-                                            <span className="text-slate-600 text-xs">—</span>
+                                            <span className="text-slate-600 text-xs">-</span>
                                         )}
                                     </TableCell>
                                 </TableRow>

@@ -34,7 +34,7 @@ async function getMetaShipToken(): Promise<string> {
 
     const data = await res.json();
     cachedToken = data.accessToken;
-    // expiry is an absolute timestamp in ms — subtract 5 minutes buffer
+    // expiry is an absolute timestamp in ms - subtract 5 minutes buffer
     tokenExpiresAt = data.expiry - 5 * 60 * 1000;
 
     return cachedToken!;
@@ -123,7 +123,7 @@ export interface MetaShipBookingPayload {
         sealNo?: string;
         products: Array<{
             productId: number;
-            // Weights + unit counts are nullable per the spec — send null when the
+            // Weights + unit counts are nullable per the spec - send null when the
             // allocation doesn't carry the value rather than 0 (which MetaShip stores
             // as a literal zero and surfaces as a "Fix Discrepancies" item).
             nettWeight: number | null;
@@ -142,7 +142,7 @@ export interface MetaShipBookingPayload {
 export interface MetaShipOrderResponse {
     message: string;
     data: {
-        id: number;              // numeric order id — needed for document upload
+        id: number;              // numeric order id - needed for document upload
         orderNo: string;         // e.g. "LL000001"
         systemReference: string; // UUID
     };
@@ -163,7 +163,7 @@ export async function createMetaShipBooking(payload: MetaShipBookingPayload) {
  */
 export async function createMetaShipOrder(payload: MetaShipBookingPayload) {
     const body = buildBookingBody(payload);
-    console.log("[metaship] order create — outgoing payload:", JSON.stringify({
+    console.log("[metaship] order create - outgoing payload:", JSON.stringify({
         endpoint: "/public/v2/order",
         containers: body.containers,
         route: `${body.portOfLoadValue} → ${body.portOfDischargeValue}`,

@@ -30,7 +30,7 @@ function urgencyClass(hours: number): { label: string; pillClass: string; barCla
 export function CutoffWidget({ data, loading }: CutoffWidgetProps) {
     const empty = !loading && !data
 
-    // Progress bar fills as the window closes — 168h (7 days) maps to 0% remaining,
+    // Progress bar fills as the window closes - 168h (7 days) maps to 0% remaining,
     // 0h to 100% (full bar = closed). Anything beyond a week stays at the empty end.
     const remainingHours = data?.hoursRemaining ?? 0
     const progress = data ? Math.min(100, Math.max(0, ((168 - remainingHours) / 168) * 100)) : 0
@@ -91,7 +91,7 @@ export function CutoffWidget({ data, loading }: CutoffWidgetProps) {
 
                         {!data!.isClientRoute && (
                             <p className="text-[10px] text-slate-400 -mt-2">
-                                Showing next global sailing — book a route to see your cut-off here.
+                                Showing next global sailing - book a route to see your cut-off here.
                             </p>
                         )}
                     </div>

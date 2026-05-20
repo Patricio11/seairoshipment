@@ -8,7 +8,7 @@ import { parseBulkIds, runBulkDelete } from "@/lib/bulk-delete";
 /**
  * Bulk variant of /api/admin/product-categories/[id] DELETE.
  *  - Refuse if any container still references this category.
- *  - Unassign products (set categoryId to null) — products survive, the
+ *  - Unassign products (set categoryId to null) - products survive, the
  *    category goes.
  */
 export async function POST(req: NextRequest) {

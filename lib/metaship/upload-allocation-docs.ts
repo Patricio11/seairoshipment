@@ -23,7 +23,7 @@ export interface UploadSummary {
  * creates a fresh MetaShip-side document); use only when the admin explicitly
  * asks for a retry.
  *
- * METASHIP_CLIENT / METASHIP_SHARED docs are skipped — those originated from
+ * METASHIP_CLIENT / METASHIP_SHARED docs are skipped - those originated from
  * MetaShip via the docs-sync pipeline, re-uploading them would duplicate.
  */
 export async function uploadAllocationDocsToMetaShip(params: {
@@ -43,7 +43,7 @@ export async function uploadAllocationDocsToMetaShip(params: {
 
     const allocIds = allocations.map(a => a.id);
     if (allocIds.length === 0) {
-        console.log(`[metaship upload] container ${containerId} has 0 confirmed allocations — nothing to upload`);
+        console.log(`[metaship upload] container ${containerId} has 0 confirmed allocations - nothing to upload`);
         return { total: 0, uploaded: 0, failed: 0, results: [] };
     }
 
@@ -57,7 +57,7 @@ export async function uploadAllocationDocsToMetaShip(params: {
 
     console.log(`[metaship upload] container ${containerId} order ${metashipOrderId}: ${allDocs.length} CLIENT_UPLOAD doc(s) across ${allocIds.length} confirmed allocation(s)`);
     if (allDocs.length === 0) {
-        console.log("[metaship upload] nothing to push — confirm allocations have client-uploaded documents before retrying");
+        console.log("[metaship upload] nothing to push - confirm allocations have client-uploaded documents before retrying");
     }
 
     const results: DocUploadResult[] = [];
@@ -66,7 +66,7 @@ export async function uploadAllocationDocsToMetaShip(params: {
         try {
             if (!doc.url) {
                 results.push({ name: doc.originalName, success: false, error: "No storage URL" });
-                console.warn(`[metaship upload] doc ${doc.id} "${doc.originalName}" has no storage URL — skipping`);
+                console.warn(`[metaship upload] doc ${doc.id} "${doc.originalName}" has no storage URL - skipping`);
                 continue;
             }
             const fileRes = await fetch(doc.url);

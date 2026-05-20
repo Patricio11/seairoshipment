@@ -21,13 +21,13 @@ export function EmailPendingScreen({ email }: { email: string }) {
             const res = await fetch("/api/auth/resend-verification", { method: "POST" })
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}))
-                toast.error(data.error || "Couldn't resend — try again in a minute")
+                toast.error(data.error || "Couldn't resend - try again in a minute")
                 return
             }
             setResentAt(Date.now())
             toast.success("Verification email sent")
         } catch {
-            toast.error("Couldn't resend — try again in a minute")
+            toast.error("Couldn't resend - try again in a minute")
         } finally {
             setResending(false)
         }
@@ -46,7 +46,7 @@ export function EmailPendingScreen({ email }: { email: string }) {
             <div className="mt-5 max-w-md mx-auto rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50/70 dark:bg-amber-900/10 p-3.5 text-left flex items-start gap-2.5">
                 <span className="shrink-0 mt-0.5">⚠️</span>
                 <p className="text-xs text-amber-900 dark:text-amber-200 leading-relaxed">
-                    Don&apos;t see it? Check your <strong>Spam</strong> or <strong>Junk</strong> folder — the first email from a new sender often lands there. Mark us as &quot;Not spam&quot; so future updates land in your inbox.
+                    Don&apos;t see it? Check your <strong>Spam</strong> or <strong>Junk</strong> folder - the first email from a new sender often lands there. Mark us as &quot;Not spam&quot; so future updates land in your inbox.
                 </p>
             </div>
             <div className="flex items-center justify-center gap-3 mt-5">
@@ -79,7 +79,7 @@ export function PendingReviewScreen({ companyName, submittedAt }: { companyName:
             tone="amber"
             icon={Clock}
             title="Application under review"
-            sub={`Thanks ${companyName ? `${companyName}` : ""} — our team is verifying your details.`}
+            sub={`Thanks ${companyName ? `${companyName}` : ""} - our team is verifying your details.`}
         >
             <div className="space-y-3 text-left max-w-md mx-auto mt-2">
                 <ChecklistItem checked label="Company information submitted" />
@@ -89,7 +89,7 @@ export function PendingReviewScreen({ companyName, submittedAt }: { companyName:
             </div>
             <div className="mt-6 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 text-left">
                 <p className="text-xs text-slate-500">
-                    We&apos;ll email you the moment your account is approved. You can close this tab — we&apos;ll let you know.
+                    We&apos;ll email you the moment your account is approved. You can close this tab - we&apos;ll let you know.
                 </p>
                 {submittedAt && (
                     <p className="text-[10px] text-slate-400 mt-2 font-mono">

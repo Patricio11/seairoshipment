@@ -20,7 +20,7 @@ export default function TermsPage() {
                     <Link href="/" className="flex items-center gap-2">
                         <Image
                             src="/seairo-logo.png"
-                            alt="Seairo Cargo — Shared Reefer Services"
+                            alt="Seairo Cargo - Shared Reefer Services"
                             width={120}
                             height={40}
                             className="h-9 w-auto object-contain"

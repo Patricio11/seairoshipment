@@ -207,7 +207,7 @@ export function ProductsManager() {
                                         </div>
                                     </TableCell>
                                     <TableCell className="font-mono text-slate-300 text-sm">
-                                        {p.hsCode || <span className="text-slate-600">—</span>}
+                                        {p.hsCode || <span className="text-slate-600">-</span>}
                                     </TableCell>
                                     <TableCell>
                                         {p.categoryName ? (
@@ -220,7 +220,7 @@ export function ProductsManager() {
                                             <Link href="/admin/categories" title="Go to Categories to assign">
                                                 <span className="inline-flex items-center gap-1 text-[10px] text-amber-400 hover:text-amber-300 font-medium cursor-pointer">
                                                     <Layers className="h-3 w-3" />
-                                                    Unassigned — click to manage
+                                                    Unassigned - click to manage
                                                 </span>
                                             </Link>
                                         )}
@@ -231,7 +231,7 @@ export function ProductsManager() {
                                                 <Container className="h-3 w-3 mr-1" /> {p.containerCount}
                                             </Badge>
                                         ) : (
-                                            <span className="text-slate-600 text-xs">—</span>
+                                            <span className="text-slate-600 text-xs">-</span>
                                         )}
                                     </TableCell>
                                     <TableCell className="text-center">

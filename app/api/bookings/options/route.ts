@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
                 conds.push(sql`${containers.maxCapacity} - ${containers.totalPallets} >= 1`);
             }
         } else {
-            // No cargoType filter — fall back to either condition holding.
+            // No cargoType filter - fall back to either condition holding.
             conds.push(sql`
                 (${containers.cargoType} = 'PALLET' AND ${containers.maxCapacity} - ${containers.totalPallets} >= 1)
                 OR

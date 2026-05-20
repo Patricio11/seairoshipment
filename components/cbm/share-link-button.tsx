@@ -90,7 +90,7 @@ export function ShareLinkButton({ calculationId }: ShareLinkButtonProps) {
                 toast.error(data.error || "Couldn't create share link")
                 return
             }
-            toast.success("Share link created — copy from below")
+            toast.success("Share link created - copy from below")
             await refresh()
             // Auto-copy the new link to clipboard
             if (data.share?.token) {
@@ -147,7 +147,7 @@ export function ShareLinkButton({ calculationId }: ShareLinkButtonProps) {
                     <DialogHeader>
                         <DialogTitle>Share this calculation</DialogTitle>
                         <DialogDescription>
-                            Read-only links. Recipients see your cargo dimensions and the 3D view — no name, email, or notes. Audit-trailed so you can see how often each link is opened.
+                            Read-only links. Recipients see your cargo dimensions and the 3D view - no name, email, or notes. Audit-trailed so you can see how often each link is opened.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -169,7 +169,7 @@ export function ShareLinkButton({ calculationId }: ShareLinkButtonProps) {
                                 </Select>
                             </div>
 
-                            {/* Permission toggles — default off so the link stays
+                            {/* Permission toggles - default off so the link stays
                                 read-only unless the owner explicitly opens it up. */}
                             <div className="space-y-2 rounded-lg border border-slate-200 dark:border-slate-800 p-3 bg-slate-50 dark:bg-slate-900/40">
                                 <label className="flex items-start gap-3 cursor-pointer">
@@ -271,7 +271,7 @@ export function ShareLinkButton({ calculationId }: ShareLinkButtonProps) {
                                                 {expired && (
                                                     <p className="mt-1 text-[10px] text-amber-600 flex items-center gap-1">
                                                         <AlertCircle className="h-3 w-3" />
-                                                        Expired — viewers get a "link expired" message.
+                                                        Expired - viewers get a "link expired" message.
                                                     </p>
                                                 )}
                                             </li>

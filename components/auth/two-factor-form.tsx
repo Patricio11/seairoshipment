@@ -56,17 +56,17 @@ export function TwoFactorForm() {
 
             if (res.error) {
                 // Audit the failed attempt. The session isn't fully issued
-                // yet at this point — the helper falls back to the userId
+                // yet at this point - the helper falls back to the userId
                 // carried in the verify response if present, otherwise the
                 // event is skipped server-side (no auth → 401).
                 void logAuthEvent("TWO_FACTOR_VERIFY_FAILED")
-                setError(res.error.message || "That code didn't match — try the latest one")
+                setError(res.error.message || "That code didn't match - try the latest one")
                 setCode("")
                 return
             }
 
             // Success: the session is now real. Audit the success, and for
-            // backup codes specifically — flag it loudly because using a
+            // backup codes specifically - flag it loudly because using a
             // backup code is a meaningful "user lost their authenticator"
             // signal worth tracking separately.
             void logAuthEvent("TWO_FACTOR_VERIFY_SUCCESS")

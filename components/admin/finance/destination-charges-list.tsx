@@ -276,7 +276,7 @@ export function DestinationChargesList() {
                                         <TableCell>
                                             <div className="flex items-center gap-1">
                                                 <Badge className="bg-brand-blue text-white">
-                                                    {charge.salesRateTypeName || charge.salesRateTypeId || "—"}
+                                                    {charge.salesRateTypeName || charge.salesRateTypeId || "-"}
                                                 </Badge>
                                                 {charge.cargoType === "CUBE" && (
                                                     <Badge variant="outline" className="text-[10px] border-purple-700 text-purple-400">

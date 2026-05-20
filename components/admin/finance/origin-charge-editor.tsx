@@ -97,7 +97,7 @@ interface UIOriginChargeItem extends OriginChargeItem {
 
 export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
     const router = useRouter()
-    // Cargo type drives per-unit pricing — PER_PALLET on pallet cards,
+    // Cargo type drives per-unit pricing - PER_PALLET on pallet cards,
     // PER_CBM on cube cards. The "container factor" turns a per-unit cost
     // into a container-equivalent total for the summary column. Prefer the
     // actual container type's volume / pallet count (passed by the page);

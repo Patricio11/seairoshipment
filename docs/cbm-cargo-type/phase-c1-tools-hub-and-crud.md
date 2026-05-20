@@ -1,12 +1,12 @@
-# Phase C.1 — Tools Hub + Calculator CRUD Foundation
+# Phase C.1 - Tools Hub + Calculator CRUD Foundation
 
-**Status:** ✅ Done — `tsc --noEmit` clean.
+**Status:** ✅ Done - `tsc --noEmit` clean.
 
 Phase C is being split into three sub-phases for reviewability:
 
-- **C.1 (this doc)** — Tools hub page, CBM calculator pages (list / new / view+edit), calculations CRUD API, sidebar nav entry. Functionally complete: a client can create, name, save, edit, duplicate, and archive a CBM calculation.
-- **C.2** — Killer-feature panels: cargo-item presets (admin-curated seed + API + picker integration), Live Quote panel (rate cards), Smart-match Containers panel (open SCS Cube containers).
-- **C.3** — Share-by-link flow (public read view, audit), PDF download via `@react-pdf/renderer`, bulk paste / CSV upload, 3D loading playback, cut-off urgency banner, keyboard shortcuts. The `/dev/cbm` smoke page gets deleted at the end of C.3.
+- **C.1 (this doc)** - Tools hub page, CBM calculator pages (list / new / view+edit), calculations CRUD API, sidebar nav entry. Functionally complete: a client can create, name, save, edit, duplicate, and archive a CBM calculation.
+- **C.2** - Killer-feature panels: cargo-item presets (admin-curated seed + API + picker integration), Live Quote panel (rate cards), Smart-match Containers panel (open SCS Cube containers).
+- **C.3** - Share-by-link flow (public read view, audit), PDF download via `@react-pdf/renderer`, bulk paste / CSV upload, 3D loading playback, cut-off urgency banner, keyboard shortcuts. The `/dev/cbm` smoke page gets deleted at the end of C.3.
 
 This sub-phase is the foundation everything else builds on. Save / load / list works end-to-end.
 
@@ -23,17 +23,17 @@ This sub-phase is the foundation everything else builds on. Save / load / list w
 | `/dashboard/tools/cbm-calculator/[id]` | View + edit. Server component pre-loads the calc with ownership check; renders the shared editor. |
 
 ### Components (new)
-- [`components/cbm/calculation-editor.tsx`](../../components/cbm/calculation-editor.tsx) — shared form. Name input + `<CBMCalculator>` (Phase B) + `<CBM3DViz>` (Phase B) + Notes + actions. Edit-mode actions: **Save changes, Duplicate, Archive**. Create-mode action: **Save calculation** (redirects to the new `[id]` page on success).
+- [`components/cbm/calculation-editor.tsx`](../../components/cbm/calculation-editor.tsx) - shared form. Name input + `<CBMCalculator>` (Phase B) + `<CBM3DViz>` (Phase B) + Notes + actions. Edit-mode actions: **Save changes, Duplicate, Archive**. Create-mode action: **Save calculation** (redirects to the new `[id]` page on success).
 
 ### APIs (new)
-- `GET /api/dashboard/cbm-calculations` — lists active calcs for the current user, sorted by `updatedAt desc`.
-- `POST /api/dashboard/cbm-calculations` — creates a calc. Server **always recomputes totals** from the items array; client-supplied totals are ignored. Drops items with `lengthMm × widthMm × heightMm × quantity === 0` (the auto-seeded blank rows). Returns the inserted row.
-- `GET /api/dashboard/cbm-calculations/[id]` — single calc, ownership-checked. 404 on cross-user.
-- `PATCH /api/dashboard/cbm-calculations/[id]` — partial update of name / notes / cargoItems / active. Recomputes totals when items change.
-- `DELETE /api/dashboard/cbm-calculations/[id]` — **soft delete** (`active = false`). The row stays so booking allocations that reference it via `calculation_id` can still navigate to the source.
+- `GET /api/dashboard/cbm-calculations` - lists active calcs for the current user, sorted by `updatedAt desc`.
+- `POST /api/dashboard/cbm-calculations` - creates a calc. Server **always recomputes totals** from the items array; client-supplied totals are ignored. Drops items with `lengthMm × widthMm × heightMm × quantity === 0` (the auto-seeded blank rows). Returns the inserted row.
+- `GET /api/dashboard/cbm-calculations/[id]` - single calc, ownership-checked. 404 on cross-user.
+- `PATCH /api/dashboard/cbm-calculations/[id]` - partial update of name / notes / cargoItems / active. Recomputes totals when items change.
+- `DELETE /api/dashboard/cbm-calculations/[id]` - **soft delete** (`active = false`). The row stays so booking allocations that reference it via `calculation_id` can still navigate to the source.
 
 ### Nav (modified)
-- [`components/dashboard/nav-main.tsx`](../../components/dashboard/nav-main.tsx) — new "Tools" entry between Finance and Settings, `Wrench` icon, `/dashboard/tools`.
+- [`components/dashboard/nav-main.tsx`](../../components/dashboard/nav-main.tsx) - new "Tools" entry between Finance and Settings, `Wrench` icon, `/dashboard/tools`.
 
 ---
 
@@ -57,15 +57,15 @@ Items are normalised on every write:
 
 These are referenced in the [main tracker](../../CBM_CARGO_TYPE.md) but not implemented in C.1:
 
-- **Cargo item presets dropdown** — needs the admin-curated seed table populated first (C.2)
-- **Live Quote panel** — depends on rate-card filtering by cargo type (Phase E for the data, C.2 for the UI)
-- **Smart-match Containers panel** — needs the open-containers query joined to user routes (C.2)
-- **Bulk paste / CSV upload** — UI affordance on the calculator (C.3)
-- **Share-by-link** — token table + public route + revoke + access counter (C.3)
-- **PDF download** — `@react-pdf/renderer` dynamic import (C.3)
-- **3D loading playback** — animation on `<CBM3DViz>` (C.3)
-- **Cut-off urgency banner** — reuses dashboard cut-off data (C.3)
-- **Keyboard shortcuts** — Ctrl+N row, Enter to add (C.3)
+- **Cargo item presets dropdown** - needs the admin-curated seed table populated first (C.2)
+- **Live Quote panel** - depends on rate-card filtering by cargo type (Phase E for the data, C.2 for the UI)
+- **Smart-match Containers panel** - needs the open-containers query joined to user routes (C.2)
+- **Bulk paste / CSV upload** - UI affordance on the calculator (C.3)
+- **Share-by-link** - token table + public route + revoke + access counter (C.3)
+- **PDF download** - `@react-pdf/renderer` dynamic import (C.3)
+- **3D loading playback** - animation on `<CBM3DViz>` (C.3)
+- **Cut-off urgency banner** - reuses dashboard cut-off data (C.3)
+- **Keyboard shortcuts** - Ctrl+N row, Enter to add (C.3)
 
 ---
 
@@ -79,7 +79,7 @@ app/dashboard/tools/cbm-calculator/page.tsx           new (list)
 app/dashboard/tools/cbm-calculator/new/page.tsx       new
 app/dashboard/tools/cbm-calculator/[id]/page.tsx      new
 components/cbm/calculation-editor.tsx                 new
-components/dashboard/nav-main.tsx                     modified — Tools entry
+components/dashboard/nav-main.tsx                     modified - Tools entry
 ```
 
 ---
@@ -102,8 +102,8 @@ After committing this phase:
 
 ## Next sub-phase
 
-**C.2 — Killer-feature panels.** Three significant additions:
+**C.2 - Killer-feature panels.** Three significant additions:
 
-- **Cargo item presets** — schema seed (14 industry items linked to product categories), admin CRUD UI, public picker integration into `<CBMCalculator>`.
-- **Live Quote panel** — endpoint `GET /api/dashboard/cbm-calculations/[id]/quote?route=…` returns a CostBreakdown using `lib/rates.ts` with the new `PER_CBM` charge type.
-- **Smart-match Containers panel** — endpoint `GET /api/dashboard/cbm-calculations/[id]/matches?route=…` returns open SCS Cube containers that fit, sorted by next-cut-off.
+- **Cargo item presets** - schema seed (14 industry items linked to product categories), admin CRUD UI, public picker integration into `<CBMCalculator>`.
+- **Live Quote panel** - endpoint `GET /api/dashboard/cbm-calculations/[id]/quote?route=…` returns a CostBreakdown using `lib/rates.ts` with the new `PER_CBM` charge type.
+- **Smart-match Containers panel** - endpoint `GET /api/dashboard/cbm-calculations/[id]/matches?route=…` returns open SCS Cube containers that fit, sorted by next-cut-off.

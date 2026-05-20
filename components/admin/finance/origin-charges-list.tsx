@@ -117,7 +117,7 @@ export function OriginChargesList() {
         try {
             const res = await fetch(`/api/admin/origin-charges/${deleteDialog.id}`, { method: "DELETE" })
             if (res.ok) {
-                toast.success("Rate card deleted", { description: `${deleteDialog.originName} — ${deleteDialog.containerDisplayName || deleteDialog.containerId}` })
+                toast.success("Rate card deleted", { description: `${deleteDialog.originName} - ${deleteDialog.containerDisplayName || deleteDialog.containerId}` })
                 setDeleteDialog(null)
                 fetchCharges()
             } else {
@@ -192,7 +192,7 @@ export function OriginChargesList() {
 
         return {
             totalPerContainer,
-            // Per-unit summary — m³ for CUBE cards, pallets for PALLET cards.
+            // Per-unit summary - m³ for CUBE cards, pallets for PALLET cards.
             // Column header in the table still reads "Equiv. Pallet Cost"
             // generically; future polish: rename to "Per Unit Cost".
             totalPerPallet: totalPerContainer / containerFactor,

@@ -31,7 +31,7 @@ const DEPOSIT_PERCENTAGE = 60;
 const BALANCE_PERCENTAGE = 40;
 
 /**
- * Derive short IDs from UN/LOCODE codes — matches what the admin forms save.
+ * Derive short IDs from UN/LOCODE codes - matches what the admin forms save.
  * e.g. "ZACPT" → "cpt", "GBLND" → "lnd", "IEDUB" → "dub"
  */
 function deriveShortId(code: string): string {
@@ -58,7 +58,7 @@ export async function calculateQuote(
     let originName = originCode;
     let destinationName = destinationCode;
     try {
-        // (code, type) is now the unique key on locations — same code can
+        // (code, type) is now the unique key on locations - same code can
         // exist as both ORIGIN and DESTINATION (Cape Town being both). Pin
         // each lookup to its expected type so we resolve to the right row.
         const [originLoc] = await db
@@ -78,7 +78,7 @@ export async function calculateQuote(
         // Use fallback codes as names
     }
 
-    // 1. Origin charges — find active rate by originId (derived short code).
+    // 1. Origin charges - find active rate by originId (derived short code).
     // calculateQuote is the PALLET path; CUBE bookings go through
     // calculateCubeQuote instead. Pin cargoType=PALLET so an SCS-Cube card
     // for the same origin/container can't leak into a PALLET quote.
@@ -123,7 +123,7 @@ export async function calculateQuote(
         }
     }
 
-    // 2. Ocean freight — look up by destinationPortCode (the location code saved by the form)
+    // 2. Ocean freight - look up by destinationPortCode (the location code saved by the form)
     let oceanPerPallet = 0;
     let hasOceanRates = false;
     {
@@ -148,7 +148,7 @@ export async function calculateQuote(
         }
     }
 
-    // 3. Destination charges — look up by destinationPortCode (the location code saved by the form)
+    // 3. Destination charges - look up by destinationPortCode (the location code saved by the form)
     let destinationPerPallet = 0;
     let hasDestinationRates = false;
     {
@@ -258,7 +258,7 @@ export async function calculateCubeQuote(
         .limit(1);
     const containerVolumeCBM = ct?.volumeCBM ? Number(ct.volumeCBM) : 67.7;
 
-    // Resolve friendly names — pin each lookup to its expected type so we
+    // Resolve friendly names - pin each lookup to its expected type so we
     // get the right row when a code (e.g. ZACPT) exists as both ORIGIN and
     // DESTINATION (Cape Town as export AND import port).
     let originName = originCode;
@@ -313,7 +313,7 @@ export async function calculateCubeQuote(
                     ) {
                         originPerCBM += Number(item.containerCost) / containerVolumeCBM;
                     }
-                    // PER_PALLET items on a CUBE rate card are ignored — admin
+                    // PER_PALLET items on a CUBE rate card are ignored - admin
                     // should not have created those; if they did it's a config
                     // bug we don't try to silently translate.
                 }
@@ -374,7 +374,7 @@ export async function calculateCubeQuote(
                     if (item.chargeType === "PER_CBM") {
                         destinationPerCBM += amount;
                     } else {
-                        // PER_CONTAINER / FIXED — proportional split by CBM
+                        // PER_CONTAINER / FIXED - proportional split by CBM
                         destinationPerCBM += amount / containerVolumeCBM;
                     }
                 }

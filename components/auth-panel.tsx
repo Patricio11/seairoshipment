@@ -91,7 +91,7 @@ export function AuthPanel({ isOpen, onClose, initialMode = 'login' }: AuthPanelP
                     onSuccess: async (ctx) => {
                         // 2FA-enabled accounts get a `twoFactorRedirect: true` flag
                         // instead of a full user object. The session isn't issued yet
-                        // — the user has to clear /auth/2fa before any role-routing
+                        // - the user has to clear /auth/2fa before any role-routing
                         // can happen.
                         const data = ctx.data as { twoFactorRedirect?: boolean; user?: { role?: string } } | undefined;
                         if (data?.twoFactorRedirect) {
@@ -130,7 +130,7 @@ export function AuthPanel({ isOpen, onClose, initialMode = 'login' }: AuthPanelP
                 }, {
                     onSuccess: async () => {
                         toast.success("Account created!", {
-                            description: "Check your inbox — we sent you a verification link."
+                            description: "Check your inbox - we sent you a verification link."
                         });
                         onClose();
                         // Send them to a dedicated waiting page that explains
@@ -279,7 +279,7 @@ export function AuthPanel({ isOpen, onClose, initialMode = 'login' }: AuthPanelP
                                             </button>
                                         </div>
 
-                                        {/* Strength meter — signup only, hidden until typing starts */}
+                                        {/* Strength meter - signup only, hidden until typing starts */}
                                         {!isLogin && formData.password.length > 0 && (
                                             <div className="space-y-1.5 pt-1">
                                                 <div className="flex gap-1.5">
@@ -296,14 +296,14 @@ export function AuthPanel({ isOpen, onClose, initialMode = 'login' }: AuthPanelP
                                                     <ShieldCheck className="h-3 w-3" />
                                                     {STRENGTH_META[passwordScore].label}
                                                     <span className="text-slate-500 font-normal">
-                                                        — 8+ chars, mixed case, number or symbol
+                                                        - 8+ chars, mixed case, number or symbol
                                                     </span>
                                                 </div>
                                             </div>
                                         )}
                                     </div>
 
-                                    {/* Confirm Password — signup only */}
+                                    {/* Confirm Password - signup only */}
                                     {!isLogin && (
                                         <div className="space-y-2">
                                             <label htmlFor="confirmPassword" className="text-sm font-semibold text-slate-300">

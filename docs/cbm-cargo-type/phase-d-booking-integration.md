@@ -1,8 +1,8 @@
-# Phase D — Booking Wizard Integration
+# Phase D - Booking Wizard Integration
 
-**Status:** ✅ Done — `tsc --noEmit` clean.
+**Status:** ✅ Done - `tsc --noEmit` clean.
 
-The booking wizard now understands Cargo Type. SCS bookings can be either Pallet (existing flow, unchanged) or Cube (new — uses a saved CBM calculation). The Smart-match panel from Phase C.2 deep-links into the wizard with a calculation + container already chosen.
+The booking wizard now understands Cargo Type. SCS bookings can be either Pallet (existing flow, unchanged) or Cube (new - uses a saved CBM calculation). The Smart-match panel from Phase C.2 deep-links into the wizard with a calculation + container already chosen.
 
 After Phase D the full Cube booking lifecycle is closed: a client creates a calculation in Tools → sees matching containers in Smart-match → clicks "Book this container" → wizard opens prefilled → confirms → invoice + allocation are created with the calc snapshotted in.
 
@@ -14,7 +14,7 @@ After Phase D the full Cube booking lifecycle is closed: a client creates a calc
 
 - `BookingFormData` gains: `cargoType`, `calculationId`, `cbmVolume`, `volumetricWeightKg`, `cargoItems`.
 - `ContainerSlot` gains: `cargoType`, `totalCBM`, `maxCapacityCBM` so the wizard can render CBM-aware containers and the cube fit-check has the data it needs.
-- `CostBreakdown` is now polymorphic — discriminated by `cargoType`. Pallet-mode rows carry `originPerPallet` etc. and `palletCount`; cube-mode rows carry `originPerCBM` etc. and `cbmVolume`. The step-cost-breakdown UI picks the right accessor without inferring.
+- `CostBreakdown` is now polymorphic - discriminated by `cargoType`. Pallet-mode rows carry `originPerPallet` etc. and `palletCount`; cube-mode rows carry `originPerCBM` etc. and `cbmVolume`. The step-cost-breakdown UI picks the right accessor without inferring.
 
 ### 2. Modal hook ([hooks/use-booking-modal.ts](../../hooks/use-booking-modal.ts))
 
@@ -25,10 +25,10 @@ New `BookingPrefill` interface (`cargoType`, `calculationId`, `containerId`) + `
 **POST /api/bookings** ([app/api/bookings/route.ts](../../app/api/bookings/route.ts))
 - Branches by `cargoType`:
   - **Pallet** path is unchanged.
-  - **Cube** path: fetches the referenced calculation, verifies ownership, **recomputes** `totalCBM` + `volumetricWeightKg` server-side from the items (client values ignored — same trust pattern as the Tools save endpoint), snapshots the items + totals onto the allocation row.
-- Container.cargoType match is now enforced — a Cube allocation can't sit on a Pallet container or vice-versa. Mismatched submissions are rejected with a clear message.
+  - **Cube** path: fetches the referenced calculation, verifies ownership, **recomputes** `totalCBM` + `volumetricWeightKg` server-side from the items (client values ignored - same trust pattern as the Tools save endpoint), snapshots the items + totals onto the allocation row.
+- Container.cargoType match is now enforced - a Cube allocation can't sit on a Pallet container or vice-versa. Mismatched submissions are rejected with a clear message.
 - Cube capacity check uses CBM: `containers.maxCapacityCBM - (totalCBM + pending CBM) ≥ cbmRequired`.
-- Cube bookings can't auto-find a container — explicit `containerId` is required (the user picked one from Smart-match or the container list).
+- Cube bookings can't auto-find a container - explicit `containerId` is required (the user picked one from Smart-match or the container list).
 - Invoice generation branches: Pallet uses `calculateQuote()` (per-pallet); Cube uses `calculateCubeQuote()` (per-CBM). Both write `cargoType` + `cbmVolume` / `palletCount` on the invoice row so the finance side can render the right unit.
 - Success payload now returns `cargoType`, `totalPallets`, `totalCBM` so the wizard toast can use the right unit copy.
 
@@ -46,8 +46,8 @@ New `BookingPrefill` interface (`cargoType`, `calculationId`, `containerId`) + `
 ### 4. UI changes
 
 **Step 2 ([components/booking/step-2-cargo.tsx](../../components/booking/step-2-cargo.tsx))**
-- New **Cargo Type chooser** — appears only for SCS (SRS is always pallet). Two tiles (Pallet / Cube), with a small helper line under the Cube tile linking to Tools when picked.
-- Cargo Type changes invalidate the container pick — different cargo types live on different containers.
+- New **Cargo Type chooser** - appears only for SCS (SRS is always pallet). Two tiles (Pallet / Cube), with a small helper line under the Cube tile linking to Tools when picked.
+- Cargo Type changes invalidate the container pick - different cargo types live on different containers.
 - `fetchOptions()` and `/api/containers` calls now pass the cargo type, so the container list filters correctly.
 - **Adjustment stage** branches:
   - Pallet: existing slider + weight inputs + share bar (unchanged).
@@ -58,18 +58,18 @@ New `BookingPrefill` interface (`cargoType`, `calculationId`, `containerId`) + `
 - Polymorphic render driven by the response's `cargoType` discriminator. Cube quotes display per-m³ rates and the volume × cost multiplication; Pallet quotes are unchanged. Container badge label flips to "40ft HC Cube" when relevant.
 
 **Booking wizard ([components/booking/booking-wizard.tsx](../../components/booking/booking-wizard.tsx))**
-- Takes a new `prefill` prop. On mount it fetches the referenced calc and seeds `cargoType`, `calculationId`, `cbmVolume`, `cargoItems`, `volumetricWeightKg`, `grossWeight` — so a Smart-match deep-link drops the user into step 1 with everything filled in except contact + docs.
+- Takes a new `prefill` prop. On mount it fetches the referenced calc and seeds `cargoType`, `calculationId`, `cbmVolume`, `cargoItems`, `volumetricWeightKg`, `grossWeight` - so a Smart-match deep-link drops the user into step 1 with everything filled in except contact + docs.
 - Step 1 → Step 2 validation branches: Cube requires `calculationId + cbmVolume`; Pallet requires `palletCount ≥ 1`.
 - Submit payload carries `cargoType + calculationId` for Cube; `palletCount` for Pallet. Both go to the same endpoint.
 - Success toast uses mode-aware copy: `12.50 m³` vs `5 pallet(s)`.
 
-**Booking modal** + **dashboard layout** — thread the `prefill` from the hook through `<BookingModal>` to `<BookingWizard>`. One-line plumbing each.
+**Booking modal** + **dashboard layout** - thread the `prefill` from the hook through `<BookingModal>` to `<BookingWizard>`. One-line plumbing each.
 
 ### 5. Smart-match deep-link ([components/cbm/smart-match-panel.tsx](../../components/cbm/smart-match-panel.tsx))
 
 The per-row "Book this container" button no longer navigates to a fake `/dashboard/bookings/new` URL. It now calls `bookingModalStore.onOpenWithPrefill({ cargoType: "CUBE", calculationId, containerId })` directly. The modal opens with the right state, no page navigation, no flash.
 
-### 6. CubeCalcPicker ([components/booking/cube-calc-picker.tsx](../../components/booking/cube-calc-picker.tsx)) — new
+### 6. CubeCalcPicker ([components/booking/cube-calc-picker.tsx](../../components/booking/cube-calc-picker.tsx)) - new
 
 Standalone component owned by the booking wizard. Fetches `/api/dashboard/cbm-calculations`, renders a Popover + Command searchable dropdown with each calc's name + total CBM + fit indicator. Calculations whose CBM exceeds the container's remaining capacity are disabled with an inline reason. Has a friendly empty state with a "Create your first calculation" CTA that opens the Tools page in a new tab. When a calc is selected the parent receives `{ id, cbmVolume, weightKg, cargoItems }` and the form data + 3D viz update live.
 
@@ -103,7 +103,7 @@ app/dashboard/layout.client.tsx                           modified (thread prefi
 3. Saves it. LiveQuote and Smart-match panels appear under the 3D viz
 4. Smart-match shows "MSC Maersk Voy 42 · 8.5 m³ available · cut-off in 2d 14h"
 5. Client clicks "Book this container"
-6. Booking modal opens — prefill flows through the store. Wizard fetches
+6. Booking modal opens - prefill flows through the store. Wizard fetches
    the calc, seeds cargoType=CUBE + calculationId + container + items +
    totals + weight
 7. Step 1 already shows: route, sailing, cargo type=CUBE, container picked,
@@ -135,13 +135,13 @@ After `npm run db:push`:
 ## Out of scope for this phase
 
 - **Per-row "Save as preset"** in the calculator (small follow-up). The POST endpoint is already there.
-- **3D loading playback animation** — Tier 2 visual polish, can land any time.
-- **Cut-off urgency banner inside the calculator** (when no specific container is picked) — partially redundant with Smart-match panel; revisit if asked.
-- **Keyboard shortcuts** on the calculator — quality-of-life follow-up.
+- **3D loading playback animation** - Tier 2 visual polish, can land any time.
+- **Cut-off urgency banner inside the calculator** (when no specific container is picked) - partially redundant with Smart-match panel; revisit if asked.
+- **Keyboard shortcuts** on the calculator - quality-of-life follow-up.
 
 ---
 
-## Phase D — complete
+## Phase D - complete
 
 ```
 A · Schema foundations            ✅

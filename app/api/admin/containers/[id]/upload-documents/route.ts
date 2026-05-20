@@ -36,7 +36,7 @@ export async function POST(
         }
         if (!container.metashipOrderId) {
             return NextResponse.json(
-                { error: "Container has no MetaShip order — create the order first before uploading documents." },
+                { error: "Container has no MetaShip order - create the order first before uploading documents." },
                 { status: 400 },
             );
         }

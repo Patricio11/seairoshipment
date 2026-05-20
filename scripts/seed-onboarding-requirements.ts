@@ -3,7 +3,7 @@
  * Run once after `npm run db:push`:
  *   npx tsx scripts/seed-onboarding-requirements.ts
  *
- * Idempotent — uses stable ids so re-running is a no-op.
+ * Idempotent - uses stable ids so re-running is a no-op.
  *
  * NOTE: dotenv must run before lib/db is loaded (the Neon client reads
  * DATABASE_URL at import time). Static imports get hoisted in ESM, so
@@ -64,7 +64,7 @@ const SEED: Array<{
     {
         id: "req-vat-cert",
         name: "VAT Certificate",
-        description: "Optional — speeds up tax setup",
+        description: "Optional - speeds up tax setup",
         required: false,
         sortOrder: 70,
     },
@@ -72,7 +72,7 @@ const SEED: Array<{
 
 async function main() {
     if (!process.env.DATABASE_URL) {
-        console.error("[seed] DATABASE_URL not loaded — check .env.local exists at the project root");
+        console.error("[seed] DATABASE_URL not loaded - check .env.local exists at the project root");
         process.exit(1);
     }
 

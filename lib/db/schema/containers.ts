@@ -27,7 +27,7 @@ export const temperatureEnum = pgEnum("temperature", [
 ]);
 
 /**
- * Cargo type — distinguishes pallet-based bookings (the existing model) from
+ * Cargo type - distinguishes pallet-based bookings (the existing model) from
  * CBM-based bookings (new). Lives on the container at creation time and is
  * inherited by every allocation that books into it. Locked after creation.
  *
@@ -64,7 +64,7 @@ export const containers = pgTable("containers", {
     metashipReference: text("metaship_reference"),
     metashipOrderId: integer("metaship_order_id"),  // numeric id used for document upload
     metashipTrackingSubscriptionId: text("metaship_tracking_subscription_id"),
-    metashipContainerNo: text("metaship_container_no"), // ISO 6346 — populated from first tracking event
+    metashipContainerNo: text("metaship_container_no"), // ISO 6346 - populated from first tracking event
     trackingStatus: trackingSubscriptionStatusEnum("tracking_status").default("NONE").notNull(),
     lastPositionLat: doublePrecision("last_position_lat"),
     lastPositionLng: doublePrecision("last_position_lng"),

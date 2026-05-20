@@ -44,11 +44,11 @@ const SEED_TYPE_MAP: Record<string, CompanyDocumentType> = {
 /**
  * Fetch the current user's onboarding state. Page renders a different sub-view
  * depending on `status`:
- *   EMAIL_PENDING       — verify-email holding screen
- *   ONBOARDING_PENDING  — show the form (pre-fill from user row + companyName from signup)
- *   PENDING_REVIEW      — application-under-review screen
- *   APPROVED            — auto-redirect to /dashboard
- *   REJECTED            — read-only rejection screen with reason
+ *   EMAIL_PENDING       - verify-email holding screen
+ *   ONBOARDING_PENDING  - show the form (pre-fill from user row + companyName from signup)
+ *   PENDING_REVIEW      - application-under-review screen
+ *   APPROVED            - auto-redirect to /dashboard
+ *   REJECTED            - read-only rejection screen with reason
  *
  * Lazy-bumps EMAIL_PENDING → ONBOARDING_PENDING the first time a verified user
  * hits this endpoint, so we don't depend on the verify-page flow being updated.
@@ -80,7 +80,7 @@ export async function GET() {
             .from(companyDocuments)
             .where(eq(companyDocuments.userId, row.id));
 
-        // Active requirements drive the form. Inactive ones are never returned —
+        // Active requirements drive the form. Inactive ones are never returned -
         // existing in-flight users still see their previously-uploaded docs via
         // the documents array (which carries the original requirementId).
         const requirements = await db
@@ -132,7 +132,7 @@ export async function GET() {
 /**
  * Submit (or re-submit) the onboarding form. Allowed when the user is in
  * ONBOARDING_PENDING (fresh or admin-reopened). Rejected when already in
- * PENDING_REVIEW / APPROVED / REJECTED — those have their own paths.
+ * PENDING_REVIEW / APPROVED / REJECTED - those have their own paths.
  */
 export async function POST(req: NextRequest) {
     try {
@@ -250,14 +250,14 @@ export async function POST(req: NextRequest) {
             isRead: false,
         });
 
-        // Confirm submission to the client (best-effort — email failures shouldn't fail the request)
+        // Confirm submission to the client (best-effort - email failures shouldn't fail the request)
         try {
             await sendOnboardingSubmittedEmail(row.email, companyName!.trim());
         } catch (mailErr) {
             console.warn("[onboarding] confirmation email failed", mailErr);
         }
 
-        // Notify admin by email too — in-app notification fires above, this is the
+        // Notify admin by email too - in-app notification fires above, this is the
         // out-of-band nudge so admins don't miss submissions when not logged in.
         try {
             await sendAdminVettingNotificationEmail({

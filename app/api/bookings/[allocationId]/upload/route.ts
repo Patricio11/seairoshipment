@@ -60,7 +60,7 @@ export async function POST(
         }
 
         // Prefer the service-role key if it's set (bypasses storage RLS). Fall
-        // back to the anon key when only that's configured — the storage
+        // back to the anon key when only that's configured - the storage
         // bucket needs an "INSERT for anon" policy in the Supabase dashboard
         // for the anon path to succeed; otherwise the upload will be rejected
         // with "new row violates row-level security policy". See README /
@@ -84,7 +84,7 @@ export async function POST(
         const docType = (validTypes.includes(type as typeof validTypes[number]) ? type : "OTHER") as "INVOICE" | "BOL" | "COA" | "PACKING_LIST" | "OTHER";
 
         // Display name (kept human-readable for admin browsing) vs the storage
-        // key (always sanitised + uniquified — see generateUniqueFileName).
+        // key (always sanitised + uniquified - see generateUniqueFileName).
         const prefixedName = `${accountPrefix}_${file.name}`;
         const safeKey = generateUniqueFileName(file.name, prefixedName);
         const filePath = `${STORAGE_PATH}/${safeKey}`;

@@ -15,7 +15,7 @@ import { totalCbm, fitInContainer } from "@/lib/cbm"
  *
  * Item placement is a deliberately simple shelf-pack: items are sorted
  * largest-first and dropped along the floor row-by-row. This is not a real
- * 3D bin-packing simulation — that's the Phase 3 "Container Loading Planner"
+ * 3D bin-packing simulation - that's the Phase 3 "Container Loading Planner"
  * future tool. For v1 the goal is a clear visual sense of occupancy, not
  * load-engineering accuracy.
  */
@@ -27,7 +27,7 @@ const DEFAULT_CONTAINER_DIMENSIONS_M = {
     height: 2.39,
 }
 
-// Distinct colours per cargo-item type — the row's label seeds a hash so the
+// Distinct colours per cargo-item type - the row's label seeds a hash so the
 // same label gets the same colour across re-renders.
 const PALETTE = [
     "#3b82f6", // blue
@@ -192,13 +192,13 @@ function ContainerOutline({ length, width, height }: { length: number; width: nu
 
 /**
  * Pack cargo blocks into the container. Each box's Y is computed from a
- * per-slice **heightmap** — i.e. the actual tops of whatever sits directly
+ * per-slice **heightmap** - i.e. the actual tops of whatever sits directly
  * beneath it. That kills the "floating" you'd get from a naive shelf-pack
  * that advances Y by the tallest box in the row.
  *
  * Priority matches how a forwarder loads a container:
  *
- *   1. Place across the **width** (X) — boxes go side-by-side first.
+ *   1. Place across the **width** (X) - boxes go side-by-side first.
  *   2. When cursorX overflows the width, wrap to the left wall. The next
  *      box's bottom Y comes from what's actually below it, so it rests
  *      cleanly on its neighbours instead of floating at row-max height.
@@ -210,7 +210,7 @@ function ContainerOutline({ length, width, height }: { length: number; width: nu
  * middle → height, largest → depth). Forwarders physically orient cargo
  * the same way; volume is preserved.
  *
- * Not a real 3D bin-packer — a proper one is the Phase-3 "Container
+ * Not a real 3D bin-packer - a proper one is the Phase-3 "Container
  * Loading Planner" tool. Goal here is "looks plausible at a glance".
  */
 function buildBlocks(items: CargoItem[], dim: { length: number; width: number; height: number }): PlacedBox[] {
@@ -230,7 +230,7 @@ function buildBlocks(items: CargoItem[], dim: { length: number; width: number; h
     )
 
     const placed: PlacedBox[] = []
-    // 1 cm gap — visible but doesn't eat enough container width to push a
+    // 1 cm gap - visible but doesn't eat enough container width to push a
     // legitimately-fitting box into a stack.
     const gap = 0.01
     const eps = 0.001
@@ -241,7 +241,7 @@ function buildBlocks(items: CargoItem[], dim: { length: number; width: number; h
 
     /**
      * Highest Y already occupied within the rectangle (xLeft..xRight, zLeft..zRight).
-     * Returns 0 if nothing is below — the new box sits on the floor.
+     * Returns 0 if nothing is below - the new box sits on the floor.
      */
     function topOfStackUnder(xLeft: number, xRight: number, zLeft: number, zRight: number): number {
         let maxTop = 0
@@ -265,7 +265,7 @@ function buildBlocks(items: CargoItem[], dim: { length: number; width: number; h
         const h = Math.min(dimsMm[1] / 1000, dim.height)
         const d = Math.min(dimsMm[2] / 1000, dim.length)
 
-        // 1. Doesn't fit across width — wrap to the left wall. No Y bump
+        // 1. Doesn't fit across width - wrap to the left wall. No Y bump
         //    here; the heightmap below picks the right floor.
         if (cursorX + w > dim.width / 2 + eps) {
             cursorX = -dim.width / 2
@@ -282,7 +282,7 @@ function buildBlocks(items: CargoItem[], dim: { length: number; width: number; h
             columnMaxDepth = 0
             if (cursorZ + d > dim.length / 2 + eps) break  // out of length
             bottomY = topOfStackUnder(cursorX, cursorX + w, cursorZ, cursorZ + d)
-            if (bottomY + h > dim.height + eps) break  // single item too tall — give up
+            if (bottomY + h > dim.height + eps) break  // single item too tall - give up
         }
 
         placed.push({

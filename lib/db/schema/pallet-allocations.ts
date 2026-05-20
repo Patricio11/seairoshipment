@@ -8,7 +8,7 @@ export interface CollectionAddress {
 }
 
 /**
- * One line of measured cargo on a Cube allocation — snapshotted from a
+ * One line of measured cargo on a Cube allocation - snapshotted from a
  * saved `cargo_calculations` row at booking time. Stored as JSONB on the
  * allocation so future edits to the source calculation never mutate
  * historical bookings.
@@ -44,14 +44,14 @@ export const palletAllocations = pgTable("pallet_allocations", {
     consigneeAddress: text("consignee_address"),
     collectionAddresses: jsonb("collection_addresses").$type<CollectionAddress[]>(),
     salesRateTypeId: text("sales_rate_type_id").default("srs"),
-    // Cargo type — PALLET keeps `palletCount` meaningful; CUBE uses the three
+    // Cargo type - PALLET keeps `palletCount` meaningful; CUBE uses the three
     // cube fields below and `palletCount` is left at 0 (the column is NOT NULL
     // so we can't make it null; 0 acts as the sentinel for "doesn't apply").
     cargoType: cargoTypeEnum("cargo_type").default("PALLET").notNull(),
     cbmVolume: numeric("cbm_volume"),
     volumetricWeightKg: numeric("volumetric_weight_kg"),
     cargoItems: jsonb("cargo_items").$type<CargoItem[]>(),
-    // Soft reference to the source calculation — for navigation only. The
+    // Soft reference to the source calculation - for navigation only. The
     // items above are an immutable snapshot taken at booking time. We use
     // a plain text column instead of a strict FK here because the cargo
     // calculations table is defined in another file (circular import risk)

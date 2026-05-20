@@ -236,7 +236,7 @@ export function CreateOceanFreightDialog({
         e.preventDefault()
 
         if (totalUSD <= 0) {
-            toast.error("Ocean freight rate must have a total greater than zero — add at least a base freight amount")
+            toast.error("Ocean freight rate must have a total greater than zero - add at least a base freight amount")
             return
         }
         if (formData.exchangeRate <= 0) {
@@ -417,7 +417,7 @@ export function CreateOceanFreightDialog({
                                 </Select>
                             </div>
 
-                            {/* Cargo Type — SCS only; SRS is always pallets. Locked after creation. */}
+                            {/* Cargo Type - SCS only; SRS is always pallets. Locked after creation. */}
                             {formData.salesRateTypeId === "scs" && (
                                 <div className="space-y-1.5">
                                     <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Cargo Type</Label>
@@ -581,7 +581,7 @@ export function CreateOceanFreightDialog({
                                             ${marginUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </div>
                                         <div className="text-[10px] text-slate-500">
-                                            {totalUSD > 0 ? `${((marginUSD / totalUSD) * 100).toFixed(1)}%` : "—"}
+                                            {totalUSD > 0 ? `${((marginUSD / totalUSD) * 100).toFixed(1)}%` : "-"}
                                         </div>
                                     </div>
                                 </div>

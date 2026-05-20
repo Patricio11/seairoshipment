@@ -157,7 +157,7 @@ export function CreateDestinationChargeDialog({ onSuccess }: { onSuccess?: () =>
                                 onValueChange={(val) => setFormData({
                                     ...formData,
                                     salesRateTypeId: val,
-                                    // Switching to SRS clears any Cube selection — SRS is always pallets.
+                                    // Switching to SRS clears any Cube selection - SRS is always pallets.
                                     cargoType: val === "srs" ? "PALLET" : formData.cargoType,
                                 })}
                             >
@@ -174,7 +174,7 @@ export function CreateDestinationChargeDialog({ onSuccess }: { onSuccess?: () =>
                             </Select>
                         </div>
 
-                        {/* Cargo Type — only relevant for SCS. SRS is always pallets. */}
+                        {/* Cargo Type - only relevant for SCS. SRS is always pallets. */}
                         {formData.salesRateTypeId === "scs" && (
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label className="text-right whitespace-nowrap">Cargo Type</Label>

@@ -14,7 +14,7 @@ import type { CargoItem } from "@/lib/db/schema/pallet-allocations";
 import { sendCbmShareEditedEmail } from "@/lib/email";
 
 /**
- * Public endpoint — a share-link guest saves edits to the calculation.
+ * Public endpoint - a share-link guest saves edits to the calculation.
  *
  * Body: { name: string, email: string, items: CargoItem[], note?: string }
  *
@@ -54,7 +54,7 @@ export async function POST(
             return NextResponse.json({ error: "At least one cargo item is required." }, { status: 400 });
         }
 
-        // Sanitise items — accept only the fields we trust, coerce types, drop the rest.
+        // Sanitise items - accept only the fields we trust, coerce types, drop the rest.
         const items: CargoItem[] = [];
         for (const raw of itemsRaw) {
             if (!raw || typeof raw !== "object") continue;
@@ -115,7 +115,7 @@ export async function POST(
             guestName: name,
             guestEmail: email,
             note,
-            itemsSnapshot: calc.cargoItems, // previous state — what owner-side Revert restores
+            itemsSnapshot: calc.cargoItems, // previous state - what owner-side Revert restores
         });
 
         // Recompute totals server-side from the sanitised items. Never trust

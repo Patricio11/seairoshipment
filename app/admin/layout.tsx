@@ -9,7 +9,7 @@ export default async function AdminLayout({
     // Require admin role - redirects to dashboard if not admin
     await requireRole(["admin"]);
 
-    // 2FA enforcement for admins is currently OFF — opt-in only.
+    // 2FA enforcement for admins is currently OFF - opt-in only.
     // Admins can enable 2FA themselves from /dashboard/settings → Security.
     // To turn enforcement back on, reinstate the DB-backed twoFactorEnabled
     // check and redirect to /auth/setup-2fa (see Phase D doc).

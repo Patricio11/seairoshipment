@@ -5,7 +5,7 @@ import { products } from "@/lib/db/schema";
 import { metaShipGet } from "@/lib/metaship";
 import { sql } from "drizzle-orm";
 
-// Route config — syncing 1000s of products with many DB writes can exceed the
+// Route config - syncing 1000s of products with many DB writes can exceed the
 // default 10s serverless limit on Vercel.
 export const maxDuration = 300; // 5 min
 
@@ -82,7 +82,7 @@ export async function POST() {
         let inserted = 0;
         let updated = 0;
 
-        // Batch upsert — Postgres has a ~65k parameter limit, so chunk at 500 rows
+        // Batch upsert - Postgres has a ~65k parameter limit, so chunk at 500 rows
         // (each row uses ~6 parameters → 3000 params per batch, safely within limits).
         const BATCH_SIZE = 500;
         for (let i = 0; i < rows.length; i += BATCH_SIZE) {

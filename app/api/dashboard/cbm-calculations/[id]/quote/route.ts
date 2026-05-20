@@ -10,13 +10,13 @@ import { calculateCubeQuote } from "@/lib/rates";
  *
  * Inputs:
  *   - calc id (path)
- *   - route — required as ?route=ZACPT-NLRTM. If omitted we try to derive
+ *   - route - required as ?route=ZACPT-NLRTM. If omitted we try to derive
  *     one from the user's most recently booked container so the quote is
  *     useful even on first calc load.
- *   - containerTypeId (optional) — defaults to a 40ft HC reefer; admin can
+ *   - containerTypeId (optional) - defaults to a 40ft HC reefer; admin can
  *     widen this once container_types has a default for cube workloads.
  *
- * Always uses cargoType=CUBE and the SCS salesRateTypeId — the rates lib
+ * Always uses cargoType=CUBE and the SCS salesRateTypeId - the rates lib
  * filters rate cards accordingly.
  */
 export async function GET(
@@ -47,7 +47,7 @@ export async function GET(
 
         const cbmVolume = Number(calc.totalCBM);
         if (!Number.isFinite(cbmVolume) || cbmVolume <= 0) {
-            return NextResponse.json({ error: "Calculation has zero volume — add cargo items first" }, { status: 400 });
+            return NextResponse.json({ error: "Calculation has zero volume - add cargo items first" }, { status: 400 });
         }
 
         // Route can come from the query or fall back to the user's most-recent
@@ -68,7 +68,7 @@ export async function GET(
             return NextResponse.json({
                 quote: null,
                 reason: "no_route",
-                message: "Pick a route to see a live quote — or book your first shipment so we know your typical lane.",
+                message: "Pick a route to see a live quote - or book your first shipment so we know your typical lane.",
             });
         }
 

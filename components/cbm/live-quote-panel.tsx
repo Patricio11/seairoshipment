@@ -6,7 +6,7 @@ import type { CubeCostBreakdown } from "@/lib/rates"
 
 interface LiveQuotePanelProps {
     calculationId: string | null
-    /** Re-fetch trigger — bump this when the calc is saved or the route changes. */
+    /** Re-fetch trigger - bump this when the calc is saved or the route changes. */
     refreshKey?: number | string
 }
 
@@ -118,7 +118,7 @@ export function LiveQuotePanel({ calculationId, refreshKey }: LiveQuotePanelProp
                 {(!quote.hasOriginRates || !quote.hasOceanRates || !quote.hasDestinationRates) && (
                     <p className="text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
-                        Partial rates — final quote will be confirmed by sales.
+                        Partial rates - final quote will be confirmed by sales.
                     </p>
                 )}
             </div>

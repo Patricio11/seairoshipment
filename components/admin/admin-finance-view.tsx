@@ -348,7 +348,7 @@ export function AdminFinanceView() {
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="font-bold text-red-400 flex items-center gap-2 text-sm">
                             <AlertTriangle className="h-4 w-4" />
-                            Overdue Invoices — Requires Attention
+                            Overdue Invoices - Requires Attention
                         </h3>
                         <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-xs">
                             {sortedOverdue.length} overdue
@@ -359,7 +359,7 @@ export function AdminFinanceView() {
                             <div key={inv.id} className="bg-slate-950/80 border border-red-500/10 rounded-xl p-4 flex flex-col gap-2">
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <p className="text-white font-bold text-sm">{inv.companyName || inv.clientName || "—"}</p>
+                                        <p className="text-white font-bold text-sm">{inv.companyName || inv.clientName || "-"}</p>
                                         <p className="text-slate-500 font-mono text-xs">{inv.id}</p>
                                     </div>
                                     <Badge className="bg-red-500/10 text-red-500 border-red-500/20 text-[10px]">
@@ -512,7 +512,7 @@ export function AdminFinanceView() {
                                     <TableRow key={inv.id} className="border-slate-800 hover:bg-slate-900/50">
                                         <TableCell className="font-mono text-xs text-white font-medium">{inv.id}</TableCell>
                                         <TableCell className="text-sm text-slate-400 max-w-[150px] truncate">
-                                            {inv.companyName || inv.clientName || "—"}
+                                            {inv.companyName || inv.clientName || "-"}
                                         </TableCell>
                                         <TableCell className="text-xs text-slate-500 font-mono">{inv.route}</TableCell>
                                         <TableCell>
@@ -525,7 +525,7 @@ export function AdminFinanceView() {
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-xs text-slate-500 font-mono">
-                                            {inv.poNumber || "—"}
+                                            {inv.poNumber || "-"}
                                         </TableCell>
                                         <TableCell>
                                             <span className={`text-xs font-mono ${isOverdue && inv.status !== "PAID" ? "text-red-400" : "text-slate-500"}`}>

@@ -123,7 +123,7 @@ export function AdminUploadDialog({
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Shield className="h-4 w-4 text-brand-blue" />
-                        Admin upload {bookingRef ? `— ${bookingRef}` : ""}
+                        Admin upload {bookingRef ? `- ${bookingRef}` : ""}
                     </DialogTitle>
                     <DialogDescription>
                         Uploads on behalf of {clientName || "the client"}. The document will appear in their bookings vault tagged as admin-uploaded.

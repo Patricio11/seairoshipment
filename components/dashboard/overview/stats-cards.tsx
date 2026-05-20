@@ -52,7 +52,7 @@ export function StatsCards({ data, loading }: StatsCardsProps) {
     const transitDays = data?.avgTransitTime.currentDays
     const transitDelta = data?.avgTransitTime.deltaDays
     const transitValue = transitDays === null || transitDays === undefined
-        ? "—"
+        ? "-"
         : `${Math.round(transitDays)} Days`
     const transitChange = transitDays === null || transitDays === undefined
         ? `Need delivered shipments to compute`

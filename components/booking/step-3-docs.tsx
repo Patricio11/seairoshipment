@@ -107,7 +107,7 @@ export function Step3Docs({ formData, updateFormData }: Step3Props) {
     const uploadedRequired = requiredDocuments.filter(code => fileForCode(code)).length
     const otherFiles = files.filter(f => !requiredDocuments.includes(f.documentCode))
 
-    // Collection/Loading addresses — at least 1, max 5
+    // Collection/Loading addresses - at least 1, max 5
     const MAX_COLLECTION_ADDRESSES = 5
     const collectionAddresses = formData.collectionAddresses && formData.collectionAddresses.length > 0
         ? formData.collectionAddresses
@@ -193,7 +193,7 @@ export function Step3Docs({ formData, updateFormData }: Step3Props) {
                                     className="h-10 text-sm border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50"
                                 />
                                 <Input
-                                    placeholder={i === 0 ? "Full address — e.g. 12 Main Rd, Cape Town" : "Another pickup address"}
+                                    placeholder={i === 0 ? "Full address - e.g. 12 Main Rd, Cape Town" : "Another pickup address"}
                                     value={row.address}
                                     onChange={(e) => updateCollectionAddress(i, { address: e.target.value })}
                                     className="h-10 text-sm"

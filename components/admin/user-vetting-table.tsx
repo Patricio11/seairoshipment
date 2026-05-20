@@ -176,7 +176,7 @@ export function UserVettingTable() {
                                     >
                                         <TableCell>
                                             <div className="flex flex-col">
-                                                <span className="font-bold text-white truncate max-w-[220px]">{u.companyName || <span className="italic text-slate-500">— not provided —</span>}</span>
+                                                <span className="font-bold text-white truncate max-w-[220px]">{u.companyName || <span className="italic text-slate-500">- not provided -</span>}</span>
                                                 <span className="text-[10px] text-slate-600 mt-0.5 font-mono">{u.id}</span>
                                             </div>
                                         </TableCell>
@@ -191,8 +191,8 @@ export function UserVettingTable() {
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex flex-col">
-                                                <span className="text-xs font-mono text-slate-300">{u.companyReg || "—"}</span>
-                                                <span className="text-[10px] text-slate-500 font-mono">VAT {u.vatNumber || "—"}</span>
+                                                <span className="text-xs font-mono text-slate-300">{u.companyReg || "-"}</span>
+                                                <span className="text-[10px] text-slate-500 font-mono">VAT {u.vatNumber || "-"}</span>
                                             </div>
                                         </TableCell>
                                         <TableCell>
@@ -251,7 +251,7 @@ function StatusBadge({ status, accountNumber }: { status: VettingUser["vettingSt
 
 /**
  * Tiny inline pill next to the email so an admin can scan the vetting queue
- * and see at a glance who has 2FA on. No "Off — required" red variant: this
+ * and see at a glance who has 2FA on. No "Off - required" red variant: this
  * list is client-only, and clients aren't forced into 2FA.
  */
 function TwoFactorChip({ enabled }: { enabled: boolean }) {

@@ -161,7 +161,7 @@ export function OnboardingRequirementsTable() {
                     </div>
                     <h3 className="text-lg font-bold text-white">No onboarding requirements yet</h3>
                     <p className="text-sm text-slate-400 mt-1.5 max-w-md mx-auto">
-                        Add the first document slot — Company Registration, Tax Clearance, or a fillable Credit Application — and new clients will see it on the onboarding form straight away.
+                        Add the first document slot - Company Registration, Tax Clearance, or a fillable Credit Application - and new clients will see it on the onboarding form straight away.
                     </p>
                     <Button
                         onClick={() => setCreating(true)}

@@ -43,7 +43,7 @@ const MILESTONES: Milestone[] = [
 
 export function TrackingTimeline({ events, etd, eta }: Props) {
     const reached = new Map<MilestoneKey, TrackingEventLite>()
-    // Booked is implicit — reached if any event exists
+    // Booked is implicit - reached if any event exists
     if (events.length > 0) reached.set("BOOKED", events[0])
     for (const ev of events) {
         for (const m of MILESTONES) {
@@ -111,7 +111,7 @@ export function TrackingTimeline({ events, etd, eta }: Props) {
 }
 
 /**
- * Raw event log — shown below the milestone timeline. Reverse-chronological.
+ * Raw event log - shown below the milestone timeline. Reverse-chronological.
  */
 export function TrackingEventLog({ events }: { events: TrackingEventLite[] }) {
     if (events.length === 0) {

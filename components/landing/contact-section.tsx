@@ -13,7 +13,7 @@ export function ContactSection() {
     const [lastName, setLastName] = useState('')
     const [email, setEmail] = useState('')
     const [message, setMessage] = useState('')
-    // Honeypot — invisible to real users, bots auto-fill name-y inputs
+    // Honeypot - invisible to real users, bots auto-fill name-y inputs
     const [website, setWebsite] = useState('')
 
     const reset = () => {
@@ -37,7 +37,7 @@ export function ContactSection() {
             })
             const data = await res.json().catch(() => ({}))
             if (!res.ok) {
-                toast.error(data.error || 'Could not send your message — please try again.')
+                toast.error(data.error || 'Could not send your message - please try again.')
                 setFormState('idle')
                 return
             }
@@ -47,7 +47,7 @@ export function ContactSection() {
             // Allow the success state to be visible briefly, then return to idle so users can send another
             setTimeout(() => setFormState('idle'), 4000)
         } catch {
-            toast.error('Could not send your message — please try again.')
+            toast.error('Could not send your message - please try again.')
             setFormState('idle')
         }
     }
@@ -145,7 +145,7 @@ export function ContactSection() {
                     >
                         <div className="relative overflow-hidden rounded-3xl border border-white/50 bg-white/60 p-8 shadow-2xl backdrop-blur-xl lg:p-12">
                             <form onSubmit={handleSubmit} className="relative z-10 space-y-6" noValidate>
-                                {/* Honeypot — invisible to real users, hidden via CSS + aria/tabindex so screen readers skip it */}
+                                {/* Honeypot - invisible to real users, hidden via CSS + aria/tabindex so screen readers skip it */}
                                 <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', top: 'auto', width: '1px', height: '1px', overflow: 'hidden' }}>
                                     <label htmlFor="website">Website (leave blank)</label>
                                     <input

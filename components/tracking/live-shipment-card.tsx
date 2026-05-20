@@ -171,7 +171,7 @@ export function LiveShipmentCard({ containerId, route, vessel, voyageNumber, sta
             {/* Empty state when subscribed but no events yet */}
             {data && data.events.length === 0 && !loading && (
                 <div className="py-6 text-center text-slate-600 text-xs border border-slate-800 rounded-lg">
-                    Tracking active — waiting for MetaShip to push the first event.
+                    Tracking active - waiting for MetaShip to push the first event.
                 </div>
             )}
         </motion.div>

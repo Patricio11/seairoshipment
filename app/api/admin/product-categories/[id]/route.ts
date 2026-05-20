@@ -85,7 +85,7 @@ export async function PATCH(
                 updates.allowedTemperatures = temps;
             }
         }
-        // salesRateTypeId is deliberately NOT editable — create a new category instead
+        // salesRateTypeId is deliberately NOT editable - create a new category instead
 
         const [updated] = await db
             .update(productCategories)
@@ -118,7 +118,7 @@ export async function DELETE(
 
         if (usingContainers.length > 0) {
             return NextResponse.json(
-                { error: `Cannot delete — ${usingContainers.length} container(s) still reference this category` },
+                { error: `Cannot delete - ${usingContainers.length} container(s) still reference this category` },
                 { status: 400 }
             );
         }

@@ -42,7 +42,7 @@ export function StepCostBreakdown({ formData, updateFormData, onQuoteLoaded }: S
             return
         }
         if (!formData.containerId) {
-            setError("Pick a container before we can quote — rates depend on container type.")
+            setError("Pick a container before we can quote - rates depend on container type.")
             setLoading(false)
             return
         }
@@ -197,7 +197,7 @@ export function StepCostBreakdown({ formData, updateFormData, onQuoteLoaded }: S
                                 <span className="text-xs text-slate-500">Collection, handling, port charges</span>
                             </div>
                             <span className={`font-mono font-bold ${quote.hasOriginRates ? "text-slate-900 dark:text-white" : "text-slate-400"}`}>
-                                {quote.hasOriginRates ? formatZAR(originPerUnit) : "—"}
+                                {quote.hasOriginRates ? formatZAR(originPerUnit) : "-"}
                             </span>
                         </div>
 
@@ -207,7 +207,7 @@ export function StepCostBreakdown({ formData, updateFormData, onQuoteLoaded }: S
                                 <span className="text-xs text-slate-500">Shipping line, BAF, surcharges</span>
                             </div>
                             <span className={`font-mono font-bold ${quote.hasOceanRates ? "text-slate-900 dark:text-white" : "text-slate-400"}`}>
-                                {quote.hasOceanRates ? formatZAR(oceanPerUnit) : "—"}
+                                {quote.hasOceanRates ? formatZAR(oceanPerUnit) : "-"}
                             </span>
                         </div>
 
@@ -217,7 +217,7 @@ export function StepCostBreakdown({ formData, updateFormData, onQuoteLoaded }: S
                                 <span className="text-xs text-slate-500">Delivery, customs, terminal handling</span>
                             </div>
                             <span className={`font-mono font-bold ${quote.hasDestinationRates ? "text-slate-900 dark:text-white" : "text-slate-400"}`}>
-                                {quote.hasDestinationRates ? formatZAR(destPerUnit) : "—"}
+                                {quote.hasDestinationRates ? formatZAR(destPerUnit) : "-"}
                             </span>
                         </div>
                     </div>

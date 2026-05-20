@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
     const rawBody = await req.text();
 
-    // Signature verification — accept either header name MetaShip happens to use.
+    // Signature verification - accept either header name MetaShip happens to use.
     const signature = req.headers.get("x-metaship-signature") || req.headers.get("x-signature");
     if (!signature) {
         return NextResponse.json({ error: "Missing signature" }, { status: 401 });
@@ -84,7 +84,7 @@ interface WebhookBody {
 }
 
 function verifySignature(rawBody: string, signature: string, secret: string): boolean {
-    // MetaShip's exact scheme is TBD — accept either a plain hex HMAC or a prefixed form like "sha256=..."
+    // MetaShip's exact scheme is TBD - accept either a plain hex HMAC or a prefixed form like "sha256=..."
     const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
     const provided = signature.startsWith("sha256=") ? signature.slice(7) : signature;
     if (provided.length !== expected.length) return false;

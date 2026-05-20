@@ -7,11 +7,11 @@ import { eq } from "drizzle-orm";
 /**
  * Hard-delete an allocation (admin only). Cascades:
  *
- *   1. Refuses if any linked invoice is PAID — admin should never accidentally
+ *   1. Refuses if any linked invoice is PAID - admin should never accidentally
  *      drop a paid booking. They can void the invoice manually first if that
  *      really is the intent.
  *   2. Deletes linked documents rows (storage objects in Supabase are left
- *      orphaned for now — acceptable for v1; a cleanup job can sweep later).
+ *      orphaned for now - acceptable for v1; a cleanup job can sweep later).
  *   3. Deletes linked invoices rows.
  *   4. Decrements the container's totalPallets or totalCBM depending on the
  *      allocation's cargoType. If totalPallets drops back below 15 and the
@@ -59,7 +59,7 @@ export async function DELETE(
         await db.delete(documents).where(eq(documents.allocationId, id));
         await db.delete(invoices).where(eq(invoices.allocationId, id));
 
-        // Decrement container counter for this allocation's cargo type — but
+        // Decrement container counter for this allocation's cargo type - but
         // ONLY if the allocation was CONFIRMED. The container.totalPallets and
         // totalCBM counters are only ever incremented on approve, so a PENDING
         // allocation never contributed to them; subtracting on delete in that

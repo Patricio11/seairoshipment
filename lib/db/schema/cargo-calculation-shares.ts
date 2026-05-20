@@ -39,7 +39,7 @@ export type NewCargoCalculationShare = typeof cargoCalculationShares.$inferInser
 /**
  * Audit log of every guest action against a share link. One row per
  * Approve or Edit event. `itemsSnapshot` is the calculation's items
- * **before** the action — for APPROVED rows it's a point-in-time record,
+ * **before** the action - for APPROVED rows it's a point-in-time record,
  * for EDITED rows it's the previous state that owner-side Revert restores.
  */
 export const shareActionTypeEnum = pgEnum("share_action_type", ["APPROVED", "EDITED"]);

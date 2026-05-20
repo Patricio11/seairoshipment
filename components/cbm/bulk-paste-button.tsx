@@ -92,8 +92,8 @@ function parsePastedRows(text: string, lengthUnit: LengthUnit, weightUnit: Weigh
             [l, w, h, qty] = nums
         } else if (nums.length >= 5) {
             // Two heuristics:
-            //   (a) Qty, L, W, H, Weight  — the leading number is small (typically <500)
-            //   (b) L, W, H, Weight, Qty  — the trailing number is small
+            //   (a) Qty, L, W, H, Weight  - the leading number is small (typically <500)
+            //   (b) L, W, H, Weight, Qty  - the trailing number is small
             // Pick whichever has the smaller "qty" candidate.
             const leadingIsQty = nums[0] <= 999 && nums[0] < nums[nums.length - 1]
             if (leadingIsQty) {
@@ -141,7 +141,7 @@ export function BulkPasteButton({ onAdd, disabled }: BulkPasteButtonProps) {
      */
     const handleDownloadExample = () => {
         const rows = [
-            "# Seairo CBM calculator — bulk import example",
+            "# Seairo CBM calculator - bulk import example",
             `# Columns: Label, Qty, L (${lengthUnit}), W (${lengthUnit}), H (${lengthUnit}), Weight (${weightUnit} per unit)`,
             "# Drop any leading 'Label' column if your items don't have names.",
             "# Lines starting with # are ignored.",
@@ -209,7 +209,7 @@ export function BulkPasteButton({ onAdd, disabled }: BulkPasteButtonProps) {
                         <DialogDescription>
                             Paste tab-separated rows from Excel / email. Columns can be
                             <span className="font-mono"> Label, Qty, L, W, H, Weight</span> or
-                            <span className="font-mono"> L, W, H, Qty</span> — we auto-detect.
+                            <span className="font-mono"> L, W, H, Qty</span> - we auto-detect.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -280,7 +280,7 @@ export function BulkPasteButton({ onAdd, disabled }: BulkPasteButtonProps) {
                                                 </span>
                                             ) : (
                                                 <span className="flex-1 truncate">
-                                                    <span className="font-medium">{r.label || "—"}</span>
+                                                    <span className="font-medium">{r.label || "-"}</span>
                                                     <span className="text-slate-500 ml-2">
                                                         {r.lengthMm}×{r.widthMm}×{r.heightMm}mm · {r.quantity} × {r.weightKg.toFixed(1)}kg
                                                     </span>

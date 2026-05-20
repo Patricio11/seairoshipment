@@ -76,7 +76,7 @@ export function totalWeight(items: CargoItem[]): number {
  * (chargeable weight) don't have to re-derive them.
  *
  *   Sea     1000 kg / m³ (1 CBM = 1000 kg)
- *   Air      167 kg / m³ (IATA factor 6000 — 1,000,000 cm³ / 6000)
+ *   Air      167 kg / m³ (IATA factor 6000 - 1,000,000 cm³ / 6000)
  *   Courier  200 kg / m³ (factor 5000)
  *   Road     333 kg / m³ (factor 3000)
  */
@@ -128,7 +128,7 @@ export interface ContainerFit {
     fits: boolean;
     percentFull: number;       // 0–100
     remainingCbm: number;      // negative when over capacity
-    qtyContainersNeeded: number; // ceil(totalCbm / containerVolume) — for "how many of these to ship X"
+    qtyContainersNeeded: number; // ceil(totalCbm / containerVolume) - for "how many of these to ship X"
 }
 
 export function fitInContainer(totalCbm: number, containerVolumeCbm: number): ContainerFit {
@@ -172,7 +172,7 @@ export function smallestFitContainer(totalCbm: number): StandardContainer | null
 /**
  * Equivalent in standard EUR1 pallets (1.2 × 1.0 × 1.4 m = 1.68 m³).
  * Bridges the mental model for clients used to thinking in pallets,
- * but it's a volumetric approximation only — real pallet capacity is
+ * but it's a volumetric approximation only - real pallet capacity is
  * lower due to floor-space + stacking constraints.
  */
 export const EUR_PALLET_CBM = 1.2 * 1.0 * 1.4; // 1.68
@@ -184,7 +184,7 @@ export function palletEquivalent(totalCbm: number): number {
 /**
  * CO2-equivalent emissions estimate by mode. Industry-standard tonne-km
  * factors (g CO2eq / tonne-km) over a typical 12,000 km ocean route used
- * as the v1 baseline so we can render an "X kg CO2eq — ~95% less than air"
+ * as the v1 baseline so we can render an "X kg CO2eq - ~95% less than air"
  * line in the calculator without a per-route lookup.
  *
  *   Sea ≈ 15 g/tkm

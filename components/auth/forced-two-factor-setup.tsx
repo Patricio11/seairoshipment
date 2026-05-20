@@ -11,14 +11,14 @@ interface ForcedTwoFactorSetupProps {
 /**
  * Full-page chrome for the forced-enrollment flow. The wizard itself lives
  * inside <TwoFactorEnableWizard forceEnroll />; this wrapper provides the
- * landing-page-style background and a brief explainer for context — without
+ * landing-page-style background and a brief explainer for context - without
  * it, the user would land on a blank page with just a dialog and no sense of
  * what's going on.
  *
  * The wizard's `forceEnroll` mode handles dismissal suppression, the sign-out
  * escape hatch in the banner, and the post-enrollment redirect to /admin
  * (set inside the wizard's handleFinish). Clients shouldn't ever land here
- * today — 2FA is only forced on admins — but we route them to /dashboard if
+ * today - 2FA is only forced on admins - but we route them to /dashboard if
  * they somehow do, keeping the page safe to reuse if forcing widens later.
  */
 export function ForcedTwoFactorSetup({ role }: ForcedTwoFactorSetupProps) {
@@ -44,7 +44,7 @@ export function ForcedTwoFactorSetup({ role }: ForcedTwoFactorSetupProps) {
                 open={open}
                 onOpenChange={setOpen}
                 onEnabled={() => {
-                    // No router.refresh here — the wizard's handleFinish will
+                    // No router.refresh here - the wizard's handleFinish will
                     // router.replace() onto /admin (or /dashboard), and that
                     // navigation runs the destination's server check fresh.
                     // Extra refreshes on /auth/setup-2fa would server-redirect

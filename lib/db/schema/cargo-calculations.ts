@@ -8,7 +8,7 @@ import type { CargoItem } from "./pallet-allocations";
  * here; the booking wizard *consumes* calculations by snapshotting their items
  * into a `pallet_allocations.cargoItems` array at booking time.
  *
- * `cargoType` stays as an enum field even though v1 only writes CUBE — keeps
+ * `cargoType` stays as an enum field even though v1 only writes CUBE - keeps
  * the door open for future calculator types (chargeable weight, palletisation
  * etc.) that may want a different model but share this list endpoint.
  *

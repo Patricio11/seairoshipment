@@ -42,7 +42,7 @@ export const user = pgTable("user", {
 });
 
 // Better Auth twoFactor plugin storage: one row per user with an enrolled TOTP.
-// Created/deleted by the plugin itself — we just declare the table shape so Drizzle/Postgres
+// Created/deleted by the plugin itself - we just declare the table shape so Drizzle/Postgres
 // has the right columns. `secret` and `backupCodes` are stored as plaintext-from-the-plugin
 // (Better Auth signs them internally); `returned: false` in the plugin schema means they're
 // never echoed in API responses.

@@ -5,7 +5,7 @@ import { Loader2, RefreshCw, CheckCircle2 } from "lucide-react"
 import { toast } from "sonner"
 
 /**
- * Tiny inline button used by /auth/verified when an error param comes back —
+ * Tiny inline button used by /auth/verified when an error param comes back -
  * lets the user request a fresh verification email without typing their email
  * again. Mirrors the resend logic on /auth/check-email.
  */
@@ -23,13 +23,13 @@ export function ResendVerificationButton({ email }: { email: string }) {
             })
             const data = await res.json().catch(() => ({}))
             if (!res.ok) {
-                toast.error(data.error || "Couldn't resend — try again in a minute")
+                toast.error(data.error || "Couldn't resend - try again in a minute")
                 return
             }
             setSent(true)
             toast.success("New verification email sent")
         } catch {
-            toast.error("Couldn't resend — try again in a minute")
+            toast.error("Couldn't resend - try again in a minute")
         } finally {
             setSending(false)
         }

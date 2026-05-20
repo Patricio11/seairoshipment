@@ -318,7 +318,7 @@ async function main() {
             }
         }
     } else {
-        console.log("\n⚠️  No client user found — skipping pallet allocation seeds.");
+        console.log("\n⚠️  No client user found - skipping pallet allocation seeds.");
     }
 
     console.log("\n✅ Done.");

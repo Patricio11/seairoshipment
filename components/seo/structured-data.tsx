@@ -3,7 +3,7 @@
  * Renders Organization + LocalBusiness + Service schemas so Google can
  * surface a knowledge panel, business address, and rich-result service entry.
  *
- * Lives as a server component so the JSON is in the initial HTML — Googlebot
+ * Lives as a server component so the JSON is in the initial HTML - Googlebot
  * doesn't need to execute JS to read it.
  */
 

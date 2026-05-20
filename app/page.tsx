@@ -14,7 +14,7 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Shared Reefer Services® | Cold-Chain Consolidation from Cape Town',
   description:
-    'Seairo Cargo runs Shared Reefer Services® — IoT-monitored cold-chain consolidation for South African perishable and FMCG exporters. Real-time temperature tracking, automated compliance, transparent pricing.',
+    'Seairo Cargo runs Shared Reefer Services® - IoT-monitored cold-chain consolidation for South African perishable and FMCG exporters. Real-time temperature tracking, automated compliance, transparent pricing.',
   alternates: { canonical: '/' },
 }
 

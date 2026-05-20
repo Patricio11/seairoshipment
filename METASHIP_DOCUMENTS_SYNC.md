@@ -1,4 +1,4 @@
-# MetaShip Documents Sync — Progress Tracker
+# MetaShip Documents Sync - Progress Tracker
 
 ## Goal
 
@@ -37,7 +37,7 @@ Clients see the authoritative MetaShip version.
 │  sees 3 groups on the bookings page:                         │
 │    1. Finalised by MetaShip (matched by account number)      │
 │    2. Container Documents (shared, no account match)         │
-│    3. Your Uploads (hidden by default — toggle to show)      │
+│    3. Your Uploads (hidden by default - toggle to show)      │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -79,33 +79,33 @@ Clients see the authoritative MetaShip version.
 | Question | Answer |
 |---|---|
 | Match strategy | substring of user.accountNumber in MetaShip doc's `name` OR `reference` |
-| Unmatched docs | container-level (METASHIP_SHARED) — visible to every client on that container |
+| Unmatched docs | container-level (METASHIP_SHARED) - visible to every client on that container |
 | Draft UX when finalised exists | hide drafts from main list, keep in DB, expose behind a "Show drafts" toggle |
 | Sync trigger | manual only for now (admin button) |
 | Sync idempotency | upsert by MetaShip `documentId` unique per container |
-| Signed URL refresh | lazy — on View click, if within 2 min of expiry, hit single-doc endpoint to refresh |
+| Signed URL refresh | lazy - on View click, if within 2 min of expiry, hit single-doc endpoint to refresh |
 
 ---
 
 ## Phases
 
-### Phase A — Schema + MetaShip API client ✅ DONE
+### Phase A - Schema + MetaShip API client ✅ DONE
 
 - [x] Add enum: `document_source` with values `CLIENT_UPLOAD`, `METASHIP_SHARED`, `METASHIP_CLIENT`
 - [x] Add columns to `documents`:
   - [x] `source` (enum, default CLIENT_UPLOAD)
   - [x] `metashipDocumentId` (integer, nullable)
-  - [x] `metashipReference` (text, nullable — e.g. "COO-2026-0142")
-  - [x] `metashipDownloadUrl` (text, nullable — cached signed URL)
+  - [x] `metashipReference` (text, nullable - e.g. "COO-2026-0142")
+  - [x] `metashipDownloadUrl` (text, nullable - cached signed URL)
   - [x] `metashipUrlExpiresAt` (timestamp, nullable)
 - [x] Make `allocationId` explicitly nullable (shared docs have no allocation)
 - [x] Schema pushed via direct SQL (additive-only)
 - [x] `lib/metaship.ts` additions:
-  - [x] `getMetaShipShipmentDocuments(systemReference)` — list
-  - [x] `getMetaShipShipmentDocument(systemReference, documentId)` — single, for URL refresh
+  - [x] `getMetaShipShipmentDocuments(systemReference)` - list
+  - [x] `getMetaShipShipmentDocument(systemReference, documentId)` - single, for URL refresh
   - [x] `MetaShipShipmentDocument` interface
 
-### Phase B — Admin sync endpoint ✅ DONE
+### Phase B - Admin sync endpoint ✅ DONE
 
 - [x] `POST /api/admin/containers/[id]/sync-documents`
   - [x] Loads container, verifies `metashipReference` exists (else 400)
@@ -120,15 +120,15 @@ Clients see the authoritative MetaShip version.
   - [x] Returns summary: `{ total, matched, shared, inserted, updated }`
 - [x] `documents.containerId` (text, nullable, FK → containers.id) added
 
-### Phase C — Admin UI ✅ DONE
+### Phase C - Admin UI ✅ DONE
 
 - [x] "Sync Documents from MetaShip" button in container detail dialog (below MetaShip Order panel, only when `metashipOrderNo` present)
 - [x] Loading state with spinner (`syncingDocs` state)
 - [x] Success/failure toasts with summary counts
 
-### Phase D — Display per-allocation (admin + client) ✅ DONE
+### Phase D - Display per-allocation (admin + client) ✅ DONE
 
-**Shared component:** `components/admin/allocation-docs.tsx` — reused by both admin + client.
+**Shared component:** `components/admin/allocation-docs.tsx` - reused by both admin + client.
 Three sections: Finalised by MetaShip (emerald) / Container Documents (sky) /
 Client Uploads-drafts (slate, collapsed behind toggle when finalised versions exist).
 
@@ -141,14 +141,14 @@ Client Uploads-drafts (slate, collapsed behind toggle when finalised versions ex
 - [x] `resubmit-booking-dialog.tsx` updated to unwrap `{ clientUploads }` response
 - [x] GET `/api/bookings/[allocationId]/documents` returns same grouped shape
 
-### Phase E — Signed URL refresh ✅ DONE
+### Phase E - Signed URL refresh ✅ DONE
 
 - [x] `POST /api/admin/documents/[id]/refresh-url`
   - [x] Reads doc → calls MetaShip single-doc endpoint → updates cached URL + expiry
   - [x] Returns fresh `{ downloadUrl, expiresAt }`
 - [x] Client-side: `openViewDoc` checks expiry in admin grid; if within 2 min, refreshes first
 
-### Phase F — Polish + QA ⏳ IN PROGRESS
+### Phase F - Polish + QA ⏳ IN PROGRESS
 
 **Code polish (done in this pass):**
 - [x] Client GET route surfaces `metashipDownloadUrl` (selects full row)
@@ -170,20 +170,20 @@ Client Uploads-drafts (slate, collapsed behind toggle when finalised versions ex
 ## Files to touch
 
 ### Schema
-- `lib/db/schema/documents.ts` — add source enum, metashipDocumentId, etc.
+- `lib/db/schema/documents.ts` - add source enum, metashipDocumentId, etc.
 
 ### API client
-- `lib/metaship.ts` — 2 new functions + types
+- `lib/metaship.ts` - 2 new functions + types
 
 ### Server routes
-- `app/api/admin/containers/[id]/sync-documents/route.ts` — new
-- `app/api/admin/documents/[id]/refresh-url/route.ts` — new
-- (Optional) `app/api/bookings/[allocationId]/documents/route.ts` — update GET to include source + filter drafts
-- (Optional) `app/api/admin/allocations/[id]/documents/route.ts` — same
+- `app/api/admin/containers/[id]/sync-documents/route.ts` - new
+- `app/api/admin/documents/[id]/refresh-url/route.ts` - new
+- (Optional) `app/api/bookings/[allocationId]/documents/route.ts` - update GET to include source + filter drafts
+- (Optional) `app/api/admin/allocations/[id]/documents/route.ts` - same
 
 ### UI
-- `components/admin/admin-bookings-grid.tsx` — button in container detail, document list rewrites
-- `app/dashboard/bookings/page.tsx` or related — client view of finalised docs
+- `components/admin/admin-bookings-grid.tsx` - button in container detail, document list rewrites
+- `app/dashboard/bookings/page.tsx` or related - client view of finalised docs
 - Maybe a new reusable `AllocationDocumentsPanel` component used in both admin and client
 
 ---

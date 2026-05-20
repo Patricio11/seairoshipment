@@ -46,7 +46,7 @@ export async function GET() {
             : [];
 
         // Resolve requirement names for the docs that have a requirementId.
-        // Inactive rows are included on purpose — old uploads may reference
+        // Inactive rows are included on purpose - old uploads may reference
         // requirements that an admin has since hidden, and we still want a
         // meaningful label rather than the legacy enum.
         const reqIds = Array.from(new Set(docs.map(d => d.requirementId).filter((id): id is string => !!id)));

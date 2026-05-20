@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
 }
 
 function relevance(row: { isAdmin: boolean; userId: string | null; categoryId: string | null }, categoryId: string | null): number {
-    if (!row.isAdmin) return 3;                                  // user's own — top
+    if (!row.isAdmin) return 3;                                  // user's own - top
     if (categoryId && row.categoryId === categoryId) return 2;   // matches active category
     if (row.categoryId === null) return 1;                       // generic admin items (pallet bases)
     return 0;                                                    // other category admin items

@@ -238,7 +238,7 @@ export function CreateOriginChargeDialog() {
                             </Select>
                         </div>
 
-                        {/* Cargo Type — only when SCS. SRS is always pallets. */}
+                        {/* Cargo Type - only when SCS. SRS is always pallets. */}
                         {formData.salesRateTypeId === "scs" && (
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label className="text-right whitespace-nowrap">Cargo Type</Label>

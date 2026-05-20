@@ -5,11 +5,11 @@ import { TwoFactorForm } from "@/components/auth/two-factor-form"
 
 /**
  * Two-factor challenge page. Reached automatically by the sign-in flow when
- * the user has 2FA enabled — Better Auth returns `twoFactorRedirect: true`
+ * the user has 2FA enabled - Better Auth returns `twoFactorRedirect: true`
  * and the auth panel pushes the browser here. The session is held in the
  * `better-auth.two_factor` cookie until verifyTotp / verifyBackupCode succeeds.
  *
- * The page is intentionally minimal — no useSession, no auth-gating. If a
+ * The page is intentionally minimal - no useSession, no auth-gating. If a
  * user lands here without a pending 2FA cookie, the verify call simply errors
  * and the form prompts them to start sign-in again.
  */

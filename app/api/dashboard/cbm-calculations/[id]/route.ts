@@ -129,7 +129,7 @@ export async function PATCH(
 }
 
 /**
- * Soft-delete by default — flips active=false so allocations that snapshot
+ * Soft-delete by default - flips active=false so allocations that snapshot
  * this calc can still navigate to the source if they need to. Hard delete
  * via `?hard=true` is reserved for admin tooling later.
  */

@@ -13,7 +13,7 @@ import { nanoid } from "nanoid";
  * then upload every client-submitted document to that order.
  *
  * Flow:
- *  1. POST /public/v2/order — returns { id, orderNo, systemReference }
+ *  1. POST /public/v2/order - returns { id, orderNo, systemReference }
  *  2. For each document on each allocation: fetch from Supabase public URL,
  *     convert to base64, POST /public/v2/order/document with orderId
  */
@@ -64,7 +64,7 @@ export async function POST(
         const [originCode, destinationCode] = container.route.split("-");
 
         // Resolve location names from DB. (code, type) is now the unique
-        // key — same code can exist for both ORIGIN and DESTINATION — so we
+        // key - same code can exist for both ORIGIN and DESTINATION - so we
         // pin each lookup to the type implied by its position in the route.
         const [originLoc] = await db
             .select({ name: locations.name, country: locations.country })
@@ -100,7 +100,7 @@ export async function POST(
         if (missingProductAllocs.length > 0) {
             return NextResponse.json(
                 {
-                    error: `Cannot create MetaShip order — ${missingProductAllocs.length} allocation(s) have no matching MetaShip product. Ensure every confirmed allocation has a synced product assigned.`,
+                    error: `Cannot create MetaShip order - ${missingProductAllocs.length} allocation(s) have no matching MetaShip product. Ensure every confirmed allocation has a synced product assigned.`,
                     allocationIds: missingProductAllocs.map(a => a.id),
                 },
                 { status: 400 },
@@ -108,7 +108,7 @@ export async function POST(
         }
 
         // Map each confirmed allocation to a product entry (productId is the MetaShip numeric id).
-        // Send null (not 0) for values the allocation doesn't carry — MetaShip treats 0 as
+        // Send null (not 0) for values the allocation doesn't carry - MetaShip treats 0 as
         // a real value and flags it as a discrepancy. `quantity` is unit count (cartons etc),
         // not pallet count, so leave it null unless we actually have it.
         const productEntries = confirmedAllocations.map((alloc) => ({
@@ -157,7 +157,7 @@ export async function POST(
             })
             .where(eq(containers.id, containerId));
 
-        // 1b. AUTO-SUBSCRIBE TO TRACKING — non-fatal: if this fails we still
+        // 1b. AUTO-SUBSCRIBE TO TRACKING - non-fatal: if this fails we still
         // return order success; admin can retry via the manual subscribe endpoint.
         let trackingResult: {
             subscribed: boolean;

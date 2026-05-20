@@ -9,7 +9,7 @@ import { syncTrackingEvents } from "@/lib/tracking/sync";
 /**
  * Admin-triggered refresh. Pulls the current tracking snapshot from MetaShip
  * via GET /public/v2/tracking/{containerNo} and merges events into our DB.
- * Idempotent — repeats only insert new events.
+ * Idempotent - repeats only insert new events.
  */
 export async function POST(
     _req: NextRequest,
@@ -33,7 +33,7 @@ export async function POST(
 
         if (!container.metashipContainerNo) {
             return NextResponse.json(
-                { error: "No MetaShip container number yet — tracking hasn't started. Wait for the first webhook event, or confirm the subscription was created." },
+                { error: "No MetaShip container number yet - tracking hasn't started. Wait for the first webhook event, or confirm the subscription was created." },
                 { status: 400 },
             );
         }

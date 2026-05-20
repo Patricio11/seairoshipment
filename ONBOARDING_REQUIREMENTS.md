@@ -1,4 +1,4 @@
-# Admin-Managed Onboarding Requirements — Progress Tracker
+# Admin-Managed Onboarding Requirements - Progress Tracker
 
 ## Goal
 
@@ -6,15 +6,15 @@ Replace the hardcoded list of onboarding document requirements with an
 admin-managed, dynamic configuration. Two kinds of entries share the same
 admin UI:
 
-- **Fillable templates** — admin uploads the file once (e.g. Credit
+- **Fillable templates** - admin uploads the file once (e.g. Credit
   Application, Terms & Conditions). The verification email links to the
   original; the user downloads, fills it in, and uploads their completed
   version into the same slot on the onboarding form.
-- **User documents** — admin just defines the slot (e.g. "Tax Clearance
+- **User documents** - admin just defines the slot (e.g. "Tax Clearance
   Certificate, not older than 3 months"). No template; the user uploads
   their own.
 
-Admin can add, remove, reorder, replace, and toggle required/optional —
+Admin can add, remove, reorder, replace, and toggle required/optional -
 all without a code change. New requirements take effect for new
 submissions; existing in-flight applications are unaffected.
 
@@ -22,21 +22,21 @@ submissions; existing in-flight applications are unaffected.
 
 ## Architecture
 
-### Single table — `onboarding_requirements`
+### Single table - `onboarding_requirements`
 
 | Column | Notes |
 |---|---|
 | `id` | text PK |
-| `name` | shown to user — e.g. "Credit Application" |
-| `description` | shown under the card — e.g. "Sign all pages and date" |
-| `templateUrl` | nullable — presence flips the row from "user-document slot" to "fillable template" |
+| `name` | shown to user - e.g. "Credit Application" |
+| `description` | shown under the card - e.g. "Sign all pages and date" |
+| `templateUrl` | nullable - presence flips the row from "user-document slot" to "fillable template" |
 | `templateMimeType` | nullable |
-| `templateOriginalName` | nullable — the filename the user downloads |
+| `templateOriginalName` | nullable - the filename the user downloads |
 | `templateSizeBytes` | nullable |
-| `required` | bool — admin can mark a slot optional |
-| `sortOrder` | int — drag-to-reorder index |
-| `active` | bool — soft-delete; inactive rows preserve history but don't show on the form |
-| `uploadedBy` | text, nullable — admin user id who created/edited |
+| `required` | bool - admin can mark a slot optional |
+| `sortOrder` | int - drag-to-reorder index |
+| `active` | bool - soft-delete; inactive rows preserve history but don't show on the form |
+| `uploadedBy` | text, nullable - admin user id who created/edited |
 | `createdAt`, `updatedAt` | timestamps |
 
 ### Linking the user's filled docs back
@@ -51,7 +51,7 @@ Existing hardcoded `type` enum on `company_documents` stays for
 backwards-compat (rows already in the DB pre-migration). New rows can
 either use the typed enum AND/OR the requirementId link.
 
-### Email — links not attachments
+### Email - links not attachments
 
 Verification email gets a new "Documents to download and fill in"
 section listing every active template with a public Supabase URL.
@@ -64,9 +64,9 @@ file updates the link without resending emails.
 
 | Question | Answer |
 |---|---|
-| Initial seed | All 6 currently-hardcoded docs become rows: Company Reg / Proof of Address / RLA Export Cert / Bank Confirmation / Director's ID / Tax Clearance — all required, plus **VAT Cert as optional**. |
+| Initial seed | All 6 currently-hardcoded docs become rows: Company Reg / Proof of Address / RLA Export Cert / Bank Confirmation / Director's ID / Tax Clearance - all required, plus **VAT Cert as optional**. |
 | Admin notification email recipient | `ADMIN_NOTIFICATIONS_EMAIL` env, falls back to `SUPPORT_EMAIL` (`cat@seairocargo.co.za`) for v1. |
-| Email format for templates | List of links in verification email body — no attachments. |
+| Email format for templates | List of links in verification email body - no attachments. |
 | Replacing a template file | Updates the same row, same URL. No versioning. Old emails point at the latest. |
 | In-flight users | Anyone already in `PENDING_REVIEW` keeps their existing docs unchanged. Only new submissions are validated against the active requirement set. |
 | Scope of admin page | New route `/admin/settings/onboarding-requirements` (under settings). Drag-to-reorder, upload/replace template, toggle required, toggle active, delete. |
@@ -75,32 +75,32 @@ file updates the link without resending emails.
 
 ## Phases
 
-### Phase A — Schema + seed ✅ DONE (awaiting db:push + seed run)
+### Phase A - Schema + seed ✅ DONE (awaiting db:push + seed run)
 
 - [x] New table `onboarding_requirements` ([lib/db/schema/onboarding-requirements.ts](lib/db/schema/onboarding-requirements.ts)) with all columns from the design + indexes on `sortOrder` and `active`
 - [x] `company_documents.requirementId` column added (nullable text, indexed) so user uploads link back to the requirement they answer
 - [x] `TAX_CLEARANCE` added to the `company_document_type` enum
-- [x] Seed script at [scripts/seed-onboarding-requirements.ts](scripts/seed-onboarding-requirements.ts) — idempotent, uses stable ids (`req-company-reg`, `req-proof-of-address`, `req-rla-export`, `req-tax-clearance`, `req-bank-confirmation`, `req-director-id`, `req-vat-cert`). 6 required + VAT optional.
+- [x] Seed script at [scripts/seed-onboarding-requirements.ts](scripts/seed-onboarding-requirements.ts) - idempotent, uses stable ids (`req-company-reg`, `req-proof-of-address`, `req-rla-export`, `req-tax-clearance`, `req-bank-confirmation`, `req-director-id`, `req-vat-cert`). 6 required + VAT optional.
 - [x] Schema exported from `lib/db/schema/index.ts`
 
 **Quick wins folded into Phase A:**
-- [x] `sendAdminVettingNotificationEmail()` in [lib/email.ts](lib/email.ts) — branded layout, table of company/contact/email/userId/submittedAt, "Open vetting queue" CTA button. Routes to `ADMIN_NOTIFICATIONS_EMAIL` env, falls back to `SUPPORT_EMAIL`.
-- [x] Wired into `POST /api/auth/onboarding` — fires alongside the in-app `adminNotifications` row, best-effort wrapped (email failures log a warning but don't fail the submission).
+- [x] `sendAdminVettingNotificationEmail()` in [lib/email.ts](lib/email.ts) - branded layout, table of company/contact/email/userId/submittedAt, "Open vetting queue" CTA button. Routes to `ADMIN_NOTIFICATIONS_EMAIL` env, falls back to `SUPPORT_EMAIL`.
+- [x] Wired into `POST /api/auth/onboarding` - fires alongside the in-app `adminNotifications` row, best-effort wrapped (email failures log a warning but don't fail the submission).
 
 **Action on your side:**
 - [ ] Run `npm run db:push` to apply the schema changes
 - [ ] Run `npx tsx scripts/seed-onboarding-requirements.ts` once to populate the 7 initial rows
 
-### Phase B — Admin CRUD page ✅ DONE
+### Phase B - Admin CRUD page ✅ DONE
 
 **API** (all admin-only)
-- [x] `GET /api/admin/onboarding-requirements` — list all rows ordered by `sortOrder`
-- [x] `POST /api/admin/onboarding-requirements` — create new row, auto-assigns next sortOrder
-- [x] `PATCH /api/admin/onboarding-requirements/[id]` — edit name / description / required / active
-- [x] `DELETE /api/admin/onboarding-requirements/[id]` — soft-delete (sets `active=false`, keeps row for history)
-- [x] `PATCH /api/admin/onboarding-requirements/reorder` — bulk-update sortOrder
-- [x] `POST /api/admin/onboarding-requirements/[id]/template` — set/replace fillable template (URL + metadata)
-- [x] `DELETE /api/admin/onboarding-requirements/[id]/template` — remove template (row reverts to user-document slot)
+- [x] `GET /api/admin/onboarding-requirements` - list all rows ordered by `sortOrder`
+- [x] `POST /api/admin/onboarding-requirements` - create new row, auto-assigns next sortOrder
+- [x] `PATCH /api/admin/onboarding-requirements/[id]` - edit name / description / required / active
+- [x] `DELETE /api/admin/onboarding-requirements/[id]` - soft-delete (sets `active=false`, keeps row for history)
+- [x] `PATCH /api/admin/onboarding-requirements/reorder` - bulk-update sortOrder
+- [x] `POST /api/admin/onboarding-requirements/[id]/template` - set/replace fillable template (URL + metadata)
+- [x] `DELETE /api/admin/onboarding-requirements/[id]/template` - remove template (row reverts to user-document slot)
 
 **UI** at `/admin/users/requirements`
 - [x] Drag-to-reorder via `@dnd-kit/sortable` with optimistic local update + persist
@@ -108,68 +108,68 @@ file updates the link without resending emails.
 - [x] Toggle Required ↔ Optional, Hide ↔ Show (soft delete)
 - [x] Status pills: Required / Optional / Has template / Inactive
 - [x] Per-row template controls: open original (target=_blank), replace, remove. Drop area changes to "Attach a fillable template" when none.
-- [x] "Add new requirement" inline form at the bottom — name + description + required toggle
+- [x] "Add new requirement" inline form at the bottom - name + description + required toggle
 - [x] Inactive rows visually dimmed but still editable (so admin can re-activate)
 - [x] "How this works" callout explaining user-document vs fillable-template
 
 **Discoverability**
-- [x] "Manage Onboarding Requirements" button added to the User Vetting page header — no sidebar growth
+- [x] "Manage Onboarding Requirements" button added to the User Vetting page header - no sidebar growth
 - [x] `STORAGE_PATHS.ONBOARDING_TEMPLATES` (`onboarding/templates`) added to Supabase config so template uploads have a clean path
 
-### Phase C — Dynamic onboarding form ✅ DONE
+### Phase C - Dynamic onboarding form ✅ DONE
 
-- [x] `GET /api/auth/onboarding` returns the active requirement set alongside the user's status — single round-trip
+- [x] `GET /api/auth/onboarding` returns the active requirement set alongside the user's status - single round-trip
 - [x] `app/auth/onboarding/page.tsx` (server component) fetches active requirements and passes them to the form, so first render has them with no loading flash
 - [x] `components/auth/onboarding-form.tsx` renders cards from the dynamic list instead of the hardcoded `DOC_META`
 - [x] Each fillable-template card shows a "Download template" link (with the original filename) and the upload-completed-file button
 - [x] Submit gating: every required active requirement must have an upload before submit enables
 - [x] `POST /api/auth/onboarding` validates against the active required-requirements set; inserts persist `requirementId` plus a `SEED_TYPE_MAP[requirementId] ?? "OTHER"` mapping for backwards-compat with the legacy `type` enum
 
-### Phase D — Verification email integration ✅ DONE
+### Phase D - Verification email integration ✅ DONE
 
 - [x] `sendVerificationEmail` in `lib/email.ts` accepts an optional `templates: VerificationTemplate[]`
-- [x] Better Auth's `emailVerification.sendVerificationEmail` callback in `lib/auth/server.ts` queries active+templated requirements (active=true AND templateUrl IS NOT NULL, ordered by sortOrder) and passes them in. Wrapped in try/catch — template-loading failure logs a warning but never blocks the verification email itself.
+- [x] Better Auth's `emailVerification.sendVerificationEmail` callback in `lib/auth/server.ts` queries active+templated requirements (active=true AND templateUrl IS NOT NULL, ordered by sortOrder) and passes them in. Wrapped in try/catch - template-loading failure logs a warning but never blocks the verification email itself.
 - [x] Email body gains a "Documents to download and fill in" section between the verify CTA and the "What's next" callout. Each template is a tappable card showing name + optional description; clicking opens the file at its Supabase URL.
 - [x] `auth.api.sendVerificationEmail` resends (used by `/api/auth/resend-verification` and `/api/admin/users/[id]/resend-verification`) automatically pick up the same templates because they route through the same callback.
 
-### Phase E — Polish ✅ DONE (substantive items)
+### Phase E - Polish ✅ DONE (substantive items)
 
-- [x] Admin review modal labels: dynamic doc names from `requirementId` join — `GET /api/admin/users/vetting` now joins `onboarding_requirements` and exposes `requirementId` + `requirementName` on each doc; modal renders `requirementName ?? DOC_LABELS[type] ?? "Document"` so legacy enum-only rows still get a sensible label. Inactive requirements are included in the join so historical uploads referencing hidden requirements keep their original name. `TAX_CLEARANCE` added to `DOC_LABELS`.
-- [x] Empty state on admin page if no requirements exist — `components/admin/onboarding-requirements-table.tsx` now shows a centred FileSpreadsheet illustration + headline + helper copy + "Add your first requirement" CTA when `rows.length === 0`. The dashed "Add new requirement" footer button hides in that state to avoid two competing CTAs.
-- ⏳ Drag-to-reorder polish — deferred. The current `@dnd-kit` setup with optimistic-update + persist is already snappy; revisit if a specific complaint surfaces.
-- ⏳ "Match to requirement" affordance in admin review modal for legacy `company_documents` rows that don't have a `requirementId` — deferred to v2. No legacy rows exist in production yet, so the fallback label path is enough for now.
+- [x] Admin review modal labels: dynamic doc names from `requirementId` join - `GET /api/admin/users/vetting` now joins `onboarding_requirements` and exposes `requirementId` + `requirementName` on each doc; modal renders `requirementName ?? DOC_LABELS[type] ?? "Document"` so legacy enum-only rows still get a sensible label. Inactive requirements are included in the join so historical uploads referencing hidden requirements keep their original name. `TAX_CLEARANCE` added to `DOC_LABELS`.
+- [x] Empty state on admin page if no requirements exist - `components/admin/onboarding-requirements-table.tsx` now shows a centred FileSpreadsheet illustration + headline + helper copy + "Add your first requirement" CTA when `rows.length === 0`. The dashed "Add new requirement" footer button hides in that state to avoid two competing CTAs.
+- ⏳ Drag-to-reorder polish - deferred. The current `@dnd-kit` setup with optimistic-update + persist is already snappy; revisit if a specific complaint surfaces.
+- ⏳ "Match to requirement" affordance in admin review modal for legacy `company_documents` rows that don't have a `requirementId` - deferred to v2. No legacy rows exist in production yet, so the fallback label path is enough for now.
 
 ---
 
 ## Files to touch
 
 ### Phase A
-- `lib/db/schema/company-documents.ts` — add `TAX_CLEARANCE` to enum + `requirementId` column
-- `lib/db/schema/onboarding-requirements.ts` — new
-- `lib/db/schema/index.ts` — export
-- `lib/email.ts` — `sendAdminVettingNotificationEmail`
-- `app/api/auth/onboarding/route.ts` — fire admin email post-submit
+- `lib/db/schema/company-documents.ts` - add `TAX_CLEARANCE` to enum + `requirementId` column
+- `lib/db/schema/onboarding-requirements.ts` - new
+- `lib/db/schema/index.ts` - export
+- `lib/email.ts` - `sendAdminVettingNotificationEmail`
+- `app/api/auth/onboarding/route.ts` - fire admin email post-submit
 - Seed: probably a one-shot script under `scripts/seed-onboarding-requirements.ts` OR a server-side run-once on first admin-page visit
 
 ### Phase B
-- `app/api/admin/onboarding-requirements/route.ts` — list + create
-- `app/api/admin/onboarding-requirements/[id]/route.ts` — patch + soft-delete
-- `app/api/admin/onboarding-requirements/[id]/template/route.ts` — upload + remove template
-- `app/api/admin/onboarding-requirements/reorder/route.ts` — bulk sort
-- `app/admin/settings/onboarding-requirements/page.tsx` — admin UI page
-- `components/admin/onboarding-requirements-table.tsx` — main editable table
-- `components/admin/onboarding-requirement-template-uploader.tsx` — file picker + upload
+- `app/api/admin/onboarding-requirements/route.ts` - list + create
+- `app/api/admin/onboarding-requirements/[id]/route.ts` - patch + soft-delete
+- `app/api/admin/onboarding-requirements/[id]/template/route.ts` - upload + remove template
+- `app/api/admin/onboarding-requirements/reorder/route.ts` - bulk sort
+- `app/admin/settings/onboarding-requirements/page.tsx` - admin UI page
+- `components/admin/onboarding-requirements-table.tsx` - main editable table
+- `components/admin/onboarding-requirement-template-uploader.tsx` - file picker + upload
 
 ### Phase C
-- `app/api/auth/onboarding/route.ts` — extend GET response, change POST validation
-- `components/auth/onboarding-form.tsx` — render dynamic cards
+- `app/api/auth/onboarding/route.ts` - extend GET response, change POST validation
+- `components/auth/onboarding-form.tsx` - render dynamic cards
 
 ### Phase D
-- `lib/email.ts` — `sendVerificationEmail` template-list section
-- `lib/auth/server.ts` — query templates before sending
+- `lib/email.ts` - `sendVerificationEmail` template-list section
+- `lib/auth/server.ts` - query templates before sending
 
 ### Phase E
-- `components/admin/user-review-modal.tsx` — dynamic labels via `requirementId`
+- `components/admin/user-review-modal.tsx` - dynamic labels via `requirementId`
 
 ---
 
@@ -177,4 +177,4 @@ file updates the link without resending emails.
 
 - [ ] Do we need versioning of templates (audit history of who uploaded which version when)? Out of scope for v1; the `updatedAt` column on the requirement is enough for now.
 - [ ] Should there be a "preview" of the template (PDF inline) on the admin page, or is open-in-new-tab enough? V1: open in new tab.
-- [ ] Do we surface inactive requirements to existing in-flight users so they can still see what they originally uploaded? V1: yes — read-side queries don't filter by `active`, only the form-rendering side does.
+- [ ] Do we surface inactive requirements to existing in-flight users so they can still see what they originally uploaded? V1: yes - read-side queries don't filter by `active`, only the form-rendering side does.

@@ -157,7 +157,7 @@ export function ResubmitBookingDialog({ booking, open, onClose, onSuccess }: Res
                 return
             }
 
-            // 2. Upload any new documents — sequential, server-side route
+            // 2. Upload any new documents - sequential, server-side route
             //    bypasses the storage RLS that was blocking client-side anon uploads.
             if (newFiles.length > 0) {
                 let failed = 0

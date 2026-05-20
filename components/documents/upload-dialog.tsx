@@ -112,7 +112,7 @@ export function UploadDialog({ allocationId, bookingRef, onUploaded }: UploadDia
                 onEscapeKeyDown={(e) => uploading && e.preventDefault()}
             >
                 <DialogHeader>
-                    <DialogTitle>Upload to Vault — {bookingRef}</DialogTitle>
+                    <DialogTitle>Upload to Vault - {bookingRef}</DialogTitle>
                     <DialogDescription>
                         Securely upload trade documents for this shipment. Supported: PDF, Excel, JPG, PNG.
                     </DialogDescription>

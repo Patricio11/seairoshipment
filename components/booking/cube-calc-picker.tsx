@@ -21,7 +21,7 @@ interface CubeCalcPickerProps {
     /** Currently selected calculation id (from formData.calculationId) */
     value: string | undefined
     onChange: (calc: { id: string; cbmVolume: number; weightKg: number; cargoItems: CargoItem[] } | null) => void
-    /** Container's remaining CBM — used to disable calcs that won't fit */
+    /** Container's remaining CBM - used to disable calcs that won't fit */
     remainingCBM: number
 }
 
@@ -35,7 +35,7 @@ export function CubeCalcPicker({ value, onChange, remainingCBM }: CubeCalcPicker
         fetch("/api/dashboard/cbm-calculations", { cache: "no-store" })
             .then(r => r.ok ? r.json() : { calculations: [] })
             .then(d => { if (!cancelled && Array.isArray(d.calculations)) setCalcs(d.calculations) })
-            .catch(() => { /* silent — empty state handles it */ })
+            .catch(() => { /* silent - empty state handles it */ })
             .finally(() => { if (!cancelled) setLoading(false) })
         return () => { cancelled = true }
     }, [])

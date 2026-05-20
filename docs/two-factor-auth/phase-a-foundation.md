@@ -1,10 +1,10 @@
-# Phase A — Foundation
+# Phase A - Foundation
 
 **Status**: DONE
 **Date completed**: 2026-05-15
 **Tracker**: [TWO_FACTOR_AUTH.md](../../TWO_FACTOR_AUTH.md)
 
-Plumbing only. The Better Auth `twoFactor` plugin is wired into the server, the matching `twoFactorClient` is wired into the React client, and the database has the columns/tables the plugin needs. Nothing user-facing yet — Phase B owns the UI.
+Plumbing only. The Better Auth `twoFactor` plugin is wired into the server, the matching `twoFactorClient` is wired into the React client, and the database has the columns/tables the plugin needs. Nothing user-facing yet - Phase B owns the UI.
 
 ## What shipped
 
@@ -42,7 +42,7 @@ database: drizzleAdapter(db, {
 }),
 ```
 
-The plugin ships everything we need — no separate `@better-auth/two-factor` install. The dependency is already satisfied by `better-auth@^1.4.17`.
+The plugin ships everything we need - no separate `@better-auth/two-factor` install. The dependency is already satisfied by `better-auth@^1.4.17`.
 
 ### 2. Client mirror
 
@@ -57,14 +57,14 @@ export const authClient = createAuthClient({
 });
 ```
 
-This unlocks `authClient.twoFactor.enable/disable/verifyTotp/verifyBackupCode/getTotpUri/...` for the upcoming settings UI, and makes the sign-in response include `twoFactorRedirect: true` when 2FA is gated — that's the signal Phase C will key off.
+This unlocks `authClient.twoFactor.enable/disable/verifyTotp/verifyBackupCode/getTotpUri/...` for the upcoming settings UI, and makes the sign-in response include `twoFactorRedirect: true` when 2FA is gated - that's the signal Phase C will key off.
 
 ### 3. Schema additions
 
 [lib/db/schema/users.ts](../../lib/db/schema/users.ts)
 
-- `user.twoFactorEnabled boolean default false` — flag on the existing user row. The plugin flips this on successful enable / off on disable; `input: false` upstream means it's never settable from a client API call.
-- New `twoFactor` table — `{ id, userId (FK → user.id, cascade), secret, backupCodes }`. One row per enrolled user; storing the TOTP secret + the encoded backup-code set. The plugin owns reads and writes; the secret/codes are never returned over the wire.
+- `user.twoFactorEnabled boolean default false` - flag on the existing user row. The plugin flips this on successful enable / off on disable; `input: false` upstream means it's never settable from a client API call.
+- New `twoFactor` table - `{ id, userId (FK → user.id, cascade), secret, backupCodes }`. One row per enrolled user; storing the TOTP secret + the encoded backup-code set. The plugin owns reads and writes; the secret/codes are never returned over the wire.
 
 The schema is exported from [lib/db/schema/users.ts](../../lib/db/schema/users.ts) and picked up automatically through [lib/db/schema/index.ts](../../lib/db/schema/index.ts).
 
@@ -74,7 +74,7 @@ The schema is exported from [lib/db/schema/users.ts](../../lib/db/schema/users.t
 - `ALTER TABLE "user" ADD COLUMN "twoFactorEnabled" boolean DEFAULT false`
 - `CREATE TABLE "twoFactor" (...)`
 
-Per the project rule, no hand-written SQL — drizzle-kit handles it.
+Per the project rule, no hand-written SQL - drizzle-kit handles it.
 
 ## What the plugin gives us for free
 
@@ -88,12 +88,12 @@ Per the project rule, no hand-written SQL — drizzle-kit handles it.
 
 | Endpoint | Purpose |
 |---|---|
-| `POST /api/auth/two-factor/enable` | Body `{ password }` — generates secret + 10 backup codes, returns `{ totpURI, backupCodes }`. **Doesn't flip `twoFactorEnabled` until the user verifies in step 2.** |
-| `POST /api/auth/two-factor/verify-totp` | Body `{ code, trustDevice? }` — verifies a 6-digit code. First successful verify flips `twoFactorEnabled = true`. |
-| `POST /api/auth/two-factor/verify-backup-code` | Body `{ code, trustDevice? }` — same flow, but consumes a single backup code. |
-| `POST /api/auth/two-factor/disable` | Body `{ password }` — destroys the secret + backup codes, flips `twoFactorEnabled = false`. |
+| `POST /api/auth/two-factor/enable` | Body `{ password }` - generates secret + 10 backup codes, returns `{ totpURI, backupCodes }`. **Doesn't flip `twoFactorEnabled` until the user verifies in step 2.** |
+| `POST /api/auth/two-factor/verify-totp` | Body `{ code, trustDevice? }` - verifies a 6-digit code. First successful verify flips `twoFactorEnabled = true`. |
+| `POST /api/auth/two-factor/verify-backup-code` | Body `{ code, trustDevice? }` - same flow, but consumes a single backup code. |
+| `POST /api/auth/two-factor/disable` | Body `{ password }` - destroys the secret + backup codes, flips `twoFactorEnabled = false`. |
 | `POST /api/auth/two-factor/get-totp-uri` | Re-fetches the `otpauth://` URI for an enrolled user (so Settings can re-show the QR if they want). |
-| `POST /api/auth/two-factor/generate-backup-codes` | Regenerates the 10 backup codes — invalidates the old set. |
+| `POST /api/auth/two-factor/generate-backup-codes` | Regenerates the 10 backup codes - invalidates the old set. |
 
 ## Sanity test
 
@@ -102,17 +102,17 @@ Phase A is "wiring only", so the manual check is:
 1. `npm run dev`.
 2. Open DevTools → Network.
 3. From the browser console: `await fetch("/api/auth/two-factor/enable", { method: "POST", credentials: "include", headers: { "content-type": "application/json" }, body: JSON.stringify({ password: "wrong" }) }).then(r => r.status)`.
-4. Expected: `401` (invalid password) — proves the endpoint is mounted, password-gated, and reachable.
+4. Expected: `401` (invalid password) - proves the endpoint is mounted, password-gated, and reachable.
 
-No further smoke test in Phase A — anything more meaningful belongs in Phase B once we have a real flow to enroll a test account through.
+No further smoke test in Phase A - anything more meaningful belongs in Phase B once we have a real flow to enroll a test account through.
 
 ## Decisions made along the way
 
 - **No backup-code customisation.** The plugin's defaults (10 codes, 8 chars, alphanumeric, hashed at rest) match what we asked for in the tracker.
-- **`skipVerificationOnEnable: false` (the default).** A user must successfully verify a TOTP code before `twoFactorEnabled` flips on — otherwise a scanned-then-deleted QR could brick the account.
-- **No `twoFactorCookieMaxAge` override.** The default 10 minutes is right — generous enough that an enrolled user fumbling for their phone won't get bounced, short enough that an abandoned 2FA challenge expires.
+- **`skipVerificationOnEnable: false` (the default).** A user must successfully verify a TOTP code before `twoFactorEnabled` flips on - otherwise a scanned-then-deleted QR could brick the account.
+- **No `twoFactorCookieMaxAge` override.** The default 10 minutes is right - generous enough that an enrolled user fumbling for their phone won't get bounced, short enough that an abandoned 2FA challenge expires.
 - **Drizzle table named `twoFactor` (camelCase).** Matches the rest of our schema (`onboardingRequirements`, `containerTypes`, etc.). The Better Auth adapter resolves the model name `twoFactor` to whatever the drizzle table is called via the explicit mapping above.
 
 ## What's next
 
-Phase B — Settings → Security UI. The endpoints exist; we need to wrap them in a multi-step dialog that walks a user through password gate → QR scan → verify → save backup codes.
+Phase B - Settings → Security UI. The endpoints exist; we need to wrap them in a multi-step dialog that walks a user through password gate → QR scan → verify → save backup codes.

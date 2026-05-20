@@ -10,10 +10,10 @@ export const TERMS_EFFECTIVE_LABEL = "Effective as of the date of booking confir
  *   - /terms page (public, indexable)
  *   - <TermsModal> rendered from the booking wizard step 3
  *   - signup acknowledgement link
- *   - verification email link (link only — body lives here)
+ *   - verification email link (link only - body lives here)
  *
  * To update wording: bump TERMS_VERSION, edit the SECTIONS array, redeploy.
- * Past bookings remain bound to the version that was active at booking time —
+ * Past bookings remain bound to the version that was active at booking time -
  * we don't render historical versions; that's a future concern.
  */
 
@@ -57,11 +57,11 @@ const SECTIONS: Section[] = [
                     { term: "Seairo / We", def: "Seairo Cargo (Pty) Ltd, the operator of the Seairo Shared Reefer Services (SRS) platform and the contracting carrier." },
                     { term: "Shipper / Customer", def: "The party who books space on the SRS platform and is responsible for the cargo being exported." },
                     { term: "Consignee", def: "The named receiving party at the destination port or nominated cold store/warehouse." },
-                    { term: "SRS", def: "Seairo Shared Reefer Services — the shared refrigerated container consolidation service offered by Seairo." },
+                    { term: "SRS", def: "Seairo Shared Reefer Services - the shared refrigerated container consolidation service offered by Seairo." },
                     { term: "Platform", def: "The Seairo digital booking and tracking platform through which Shippers book space, upload documentation, and track shipments." },
                     { term: "Reefer Container", def: "A refrigerated intermodal shipping container used to transport temperature-sensitive cargo." },
                     { term: "Sailing Date", def: "The confirmed vessel departure date associated with a booking as displayed on the Platform." },
-                    { term: "DAP", def: "Delivered at Place (Incoterms® 2020) — the agreed incoterm for all SRS shipments. Seairo bears risk and cost of delivery to the nominated destination cold store or warehouse." },
+                    { term: "DAP", def: "Delivered at Place (Incoterms® 2020) - the agreed incoterm for all SRS shipments. Seairo bears risk and cost of delivery to the nominated destination cold store or warehouse." },
                     { term: "Cold Store / Warehouse", def: "The nominated refrigerated facility at destination to which Seairo delivers under DAP terms." },
                     { term: "Regulatory Bodies", def: "Any government authority, customs body, phytosanitary inspectorate, food safety authority, port authority, or other official body with jurisdiction over the shipment." },
                     { term: "Force Majeure", def: "Any event beyond the reasonable control of Seairo, including but not limited to acts of God, war, civil unrest, strikes, pandemics, government sanctions, port closures, or natural disasters." },
@@ -132,7 +132,7 @@ const SECTIONS: Section[] = [
         blocks: [
             { type: "p", text: "The Shipper and/or Exporter is solely responsible for initiating and arranging all required inspections, phytosanitary certificates, export permits, food safety certifications, and any other regulatory documentation required for the export of the cargo." },
             { type: "p", text: "All inspections must be initiated and completed timeously so as to meet the confirmed Sailing Date. The Shipper acknowledges that delays in obtaining inspections or documentation may have a cascading effect on all other Shippers participating in the same shared service." },
-            { type: "p", text: "The Shipper undertakes to submit all required documentation and inspection results to Seairo through the Platform within the timeframes stipulated by Seairo or the relevant Regulatory Bodies — whichever is the earlier deadline." },
+            { type: "p", text: "The Shipper undertakes to submit all required documentation and inspection results to Seairo through the Platform within the timeframes stipulated by Seairo or the relevant Regulatory Bodies - whichever is the earlier deadline." },
             { type: "p", text: "Should any additional documentation be required or requested by the Consignee, destination customs authorities, any Regulatory Body at origin or destination, or the shipping line, carrier, or port authority, the Shipper undertakes to provide such documentation promptly and within the stipulated timeframes. Seairo accepts no liability for delays or additional costs arising from the Shipper's failure to submit required documentation timeously." },
             { type: "p", text: "Seairo will provide reasonable assistance to the Shipper in identifying documentation requirements but accepts no responsibility for ensuring that documentation is complete or acceptable to Regulatory Bodies." },
         ],
@@ -141,7 +141,7 @@ const SECTIONS: Section[] = [
         number: "6",
         title: "Cargo Rejection by Regulatory Bodies",
         blocks: [
-            { type: "p", text: "Should the Shipper's cargo be rejected, refused, or held by any Regulatory Body for any reason whatsoever — including but not limited to phytosanitary failure, food safety non-compliance, incorrect documentation, or prohibited goods — the following shall apply:" },
+            { type: "p", text: "Should the Shipper's cargo be rejected, refused, or held by any Regulatory Body for any reason whatsoever - including but not limited to phytosanitary failure, food safety non-compliance, incorrect documentation, or prohibited goods - the following shall apply:" },
             {
                 type: "ol",
                 items: [
@@ -157,7 +157,7 @@ const SECTIONS: Section[] = [
                 data: {
                     tone: "danger",
                     title: "Important",
-                    body: "Cargo rejection costs — including storage, re-inspection, fines, and penalties — are entirely for the Shipper's account. The shared nature of the SRS service means that individual cargo failures cannot delay the sailing for all other participating Shippers.",
+                    body: "Cargo rejection costs - including storage, re-inspection, fines, and penalties - are entirely for the Shipper's account. The shared nature of the SRS service means that individual cargo failures cannot delay the sailing for all other participating Shippers.",
                 },
             },
         ],
@@ -247,7 +247,7 @@ const SECTIONS: Section[] = [
                 data: {
                     tone: "rate",
                     title: "Rate Notice",
-                    body: "Given the current volatile global shipping environment — including geopolitical uncertainty, fluctuating fuel prices, and carrier surcharge changes — quoted rates are estimates only. Seairo commits to transparent, timely communication of any rate changes and will always keep Shippers updated as adjustments arise.",
+                    body: "Given the current volatile global shipping environment - including geopolitical uncertainty, fluctuating fuel prices, and carrier surcharge changes - quoted rates are estimates only. Seairo commits to transparent, timely communication of any rate changes and will always keep Shippers updated as adjustments arise.",
                 },
             },
         ],

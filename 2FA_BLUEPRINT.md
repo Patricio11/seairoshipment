@@ -1,8 +1,8 @@
-# Two-Factor Authentication — Implementation Blueprint
+# Two-Factor Authentication - Implementation Blueprint
 
 A portable, stack-aware design + implementation guide for adding TOTP-based 2FA to a web app. Distilled from the Seairo Cargo rollout (6 phases, ~1.5k lines, end-to-end audit log + emails + admin enforcement).
 
-**Designed for**: Next.js App Router · Better Auth · Drizzle ORM · Postgres · Tailwind. Adaptable to other stacks — the decisions and traps generalise; the file paths don't.
+**Designed for**: Next.js App Router · Better Auth · Drizzle ORM · Postgres · Tailwind. Adaptable to other stacks - the decisions and traps generalise; the file paths don't.
 
 ---
 
@@ -16,14 +16,14 @@ A portable, stack-aware design + implementation guide for adding TOTP-based 2FA 
 - Append-only `auth_events` audit log.
 - Confirmation emails on enable / disable / admin-reset (+ optional security-inbox alert on admin enrolment).
 
-What you don't get (intentional non-goals — call these out to stakeholders early):
+What you don't get (intentional non-goals - call these out to stakeholders early):
 - WebAuthn / passkeys.
 - SMS OTP (NIST-deprecated, SIM-swap risk).
 - Email OTP as a primary factor.
 - "Trust this device for 30 days."
 - Re-prompt 2FA per sensitive action.
 
-These can be follow-ups. Shipping without them is the right v1 call — backup codes cover recovery, and password+TOTP is the meaningful security upgrade.
+These can be follow-ups. Shipping without them is the right v1 call - backup codes cover recovery, and password+TOTP is the meaningful security upgrade.
 
 ---
 
@@ -92,7 +92,7 @@ Admin break-glass  ──→  POST /api/admin/users/[id]/disable-2fa
 
 | Phase | Goal | Time |
 |---|---|---|
-| **A** | Foundation — wire plugin, schema, client SDK | ~1h |
+| **A** | Foundation - wire plugin, schema, client SDK | ~1h |
 | **B** | Settings → Security UI (4 components + 4-step wizard) | ~4h |
 | **C** | Login challenge page + sign-in interception | ~2h |
 | **D** | Admin forced enrolment | ~2h |
@@ -103,7 +103,7 @@ A → B → C is the critical path for a working v1. D blocks rollout for admins
 
 ---
 
-## Phase A — Foundation
+## Phase A - Foundation
 
 ### Server (`lib/auth/server.ts`)
 
@@ -147,7 +147,7 @@ export const authClient = createAuthClient({
 ### Schema additions
 
 ```ts
-// lib/db/schema/users.ts — extend the existing user table
+// lib/db/schema/users.ts - extend the existing user table
 export const user = pgTable("user", {
     // ... existing columns
     twoFactorEnabled: boolean("twoFactorEnabled").default(false),
@@ -180,9 +180,9 @@ Run your migration tool (`drizzle-kit push`, `prisma migrate`, etc.).
 
 ---
 
-## Phase B — Settings UI
+## Phase B - Settings UI
 
-Four components — keep them separate, they cover distinct user moments.
+Four components - keep them separate, they cover distinct user moments.
 
 ### 1. Status card
 
@@ -207,7 +207,7 @@ On state:
 
 Reads `twoFactorEnabled` from `useSession()`. After enable/disable, `refetch()` updates the card.
 
-### 2. Enable wizard — 4 steps in one Dialog
+### 2. Enable wizard - 4 steps in one Dialog
 
 | Step | What | Server call |
 |---|---|---|
@@ -224,9 +224,9 @@ Reads `twoFactorEnabled` from `useSession()`. After enable/disable, `refetch()` 
 
 ### 3. Disable dialog
 
-Password gate. Calls `authClient.twoFactor.disable({ password })`. Red warning panel — turning off 2FA is a security downgrade.
+Password gate. Calls `authClient.twoFactor.disable({ password })`. Red warning panel - turning off 2FA is a security downgrade.
 
-The plugin's `disable` endpoint only takes a password. That's enough — the password gate defeats walk-up attackers; a stolen authenticator alone can't disable.
+The plugin's `disable` endpoint only takes a password. That's enough - the password gate defeats walk-up attackers; a stolen authenticator alone can't disable.
 
 ### 4. Regenerate-codes dialog
 
@@ -235,7 +235,7 @@ Two phases: password gate → new codes. `authClient.twoFactor.generateBackupCod
 ### Backup codes file format
 
 ```
-Your App Name — Two-Factor Backup Codes
+Your App Name - Two-Factor Backup Codes
 Generated: 2026-05-15T10:32:11.000Z
 
 Each code can be used once. Treat them like passwords.
@@ -247,7 +247,7 @@ Each code can be used once. Treat them like passwords.
 
 ---
 
-## Phase C — Login challenge
+## Phase C - Login challenge
 
 ### Sign-in interception
 
@@ -258,11 +258,11 @@ await authClient.signIn.email({ email, password }, {
         const data = ctx.data as { twoFactorRedirect?: boolean; user?: { role?: string } };
         if (data?.twoFactorRedirect) {
             // Password OK, but session is held in a pending-2FA cookie.
-            // No toast, no role-redirect — user hasn't fully signed in yet.
+            // No toast, no role-redirect - user hasn't fully signed in yet.
             router.push("/auth/2fa");
             return;
         }
-        // Normal path — full session was issued
+        // Normal path - full session was issued
         toast.success("Welcome back!");
         router.push(data?.user?.role === "admin" ? "/admin" : "/dashboard");
     },
@@ -272,9 +272,9 @@ await authClient.signIn.email({ email, password }, {
 
 ### `/auth/2fa` page
 
-Server-rendered shell. **No auth gating on the page itself** — Better Auth holds the pending session in a cookie, the verify endpoint returns a clear error if it's missing. Adding a second gate creates two sources of truth.
+Server-rendered shell. **No auth gating on the page itself** - Better Auth holds the pending session in a cookie, the verify endpoint returns a clear error if it's missing. Adding a second gate creates two sources of truth.
 
-### `<TwoFactorForm>` — two modes
+### `<TwoFactorForm>` - two modes
 
 - **TOTP** (default): `inputMode="numeric"`, 6-digit max, `autoComplete="one-time-code"` so password managers offer the latest code. Calls `verifyTotp`.
 - **Backup code**: free-text 20-char max. Calls `verifyBackupCode`. Toggle link below the form ("Use a backup code instead").
@@ -300,7 +300,7 @@ Better Auth's `twoFactor` plugin rate-limits `verify-totp` and `verify-backup-co
 
 ---
 
-## Phase D — Admin forced enrolment
+## Phase D - Admin forced enrolment
 
 ### The redirect-loop trap
 
@@ -331,7 +331,7 @@ if (!row?.twoFactorEnabled) {
 }
 ```
 
-**Read the DB, not `session.user.twoFactorEnabled`.** Session cookies cache (5 min in typical configs). An admin enrolling in one tab shouldn't be stuck on setup in another tab for the cache window. The cost is one indexed PK lookup per `/admin/*` request — negligible.
+**Read the DB, not `session.user.twoFactorEnabled`.** Session cookies cache (5 min in typical configs). An admin enrolling in one tab shouldn't be stuck on setup in another tab for the cache window. The cost is one indexed PK lookup per `/admin/*` request - negligible.
 
 ### `/auth/setup-2fa` page
 
@@ -343,7 +343,7 @@ const [row] = await db.select({ twoFactorEnabled: userTable.twoFactorEnabled })
     .from(userTable).where(eq(userTable.id, session.user.id)).limit(1);
 
 if (row?.twoFactorEnabled) {
-    // Already enrolled — nothing to do here
+    // Already enrolled - nothing to do here
     redirect(session.user.role === "admin" ? "/admin" : "/dashboard");
 }
 
@@ -372,9 +372,9 @@ The wizard's `forceEnroll` mode:
 
 ---
 
-## Phase E — Admin user-management
+## Phase E - Admin user-management
 
-### Visibility — chip on the user list
+### Visibility - chip on the user list
 
 Add `twoFactorEnabled` to your admin user-listing API. Render an inline pill next to each user's email:
 
@@ -383,9 +383,9 @@ Off:  [ ◐ 2FA OFF ]   (slate)
 On:   [ ✓ 2FA ]       (emerald)
 ```
 
-Keep it tiny (`text-[9px]`) — it lives in dense table density.
+Keep it tiny (`text-[9px]`) - it lives in dense table density.
 
-### Break-glass — `POST /api/admin/users/[id]/disable-2fa`
+### Break-glass - `POST /api/admin/users/[id]/disable-2fa`
 
 Three guards before the mutation:
 
@@ -415,13 +415,13 @@ Side effects in order:
 
 Only visible when the target user has 2FA enabled. Confirmation card with explicit copy:
 
-> Verify their identity out-of-band first. After this, they'll sign in with password only — recommend they re-enable 2FA from Settings → Security immediately. They'll get an in-app notification confirming the reset.
+> Verify their identity out-of-band first. After this, they'll sign in with password only - recommend they re-enable 2FA from Settings → Security immediately. They'll get an in-app notification confirming the reset.
 
-Place the button **separate** from the workflow actions (Approve/Reject/etc.) — break-glass is a destructive operation, not part of the normal vetting flow.
+Place the button **separate** from the workflow actions (Approve/Reject/etc.) - break-glass is a destructive operation, not part of the normal vetting flow.
 
 ---
 
-## Phase F — Audit log, emails, copy review
+## Phase F - Audit log, emails, copy review
 
 ### `auth_events` table
 
@@ -450,19 +450,19 @@ export const authEvents = pgTable("auth_events", {
 }));
 ```
 
-**Closed enum**: adding a new event type needs a migration. This is the right amount of friction — it stops the table drifting into "log anything" mush.
+**Closed enum**: adding a new event type needs a migration. This is the right amount of friction - it stops the table drifting into "log anything" mush.
 
 **`actorId`**: non-null only for `TWO_FACTOR_ADMIN_RESET`, where it captures the acting admin. Everywhere else, the userId is *both* the subject and the actor.
 
-**Append-only**: no update/delete paths anywhere in the code. If a row is wrong, that's a story worth preserving — write a new row, don't rewrite history.
+**Append-only**: no update/delete paths anywhere in the code. If a row is wrong, that's a story worth preserving - write a new row, don't rewrite history.
 
-### Ingest endpoint — `POST /api/auth/events`
+### Ingest endpoint - `POST /api/auth/events`
 
 Client-attested. Session-gated. Records the row + fans out the email.
 
 ```ts
 // Trust model:
-// - userId always comes from the session, not the body — no cross-user forgery.
+// - userId always comes from the session, not the body - no cross-user forgery.
 // - VERIFY_FAILED is the one exception: the user has a pending-2FA cookie
 //   but no full session yet. Accept a body-supplied userId for that case,
 //   validate it exists in the user table before recording.
@@ -473,7 +473,7 @@ Client-attested. Session-gated. Records the row + fans out the email.
 ### Client helper
 
 ```ts
-// lib/auth/events.ts — fire-and-forget
+// lib/auth/events.ts - fire-and-forget
 export async function logAuthEvent(event: AuthEventType): Promise<void> {
     try {
         await fetch("/api/auth/events", {
@@ -499,17 +499,17 @@ void logAuthEvent("TWO_FACTOR_VERIFY_SUCCESS");
 if (mode === "backup") void logAuthEvent("TWO_FACTOR_BACKUP_CODE_USED");
 ```
 
-`void` is deliberate — the audit POST runs alongside the user's flow, doesn't block it.
+`void` is deliberate - the audit POST runs alongside the user's flow, doesn't block it.
 
-### Email templates — three of them
+### Email templates - three of them
 
-1. **`sendTwoFactorEnabledEmail(to, name)`** — emerald accent. Recovery hint ("Misplaced your codes? Go to Settings → Regenerate"). Red "Wasn't you?" callout linking to support.
+1. **`sendTwoFactorEnabledEmail(to, name)`** - emerald accent. Recovery hint ("Misplaced your codes? Go to Settings → Regenerate"). Red "Wasn't you?" callout linking to support.
 
-2. **`sendTwoFactorDisabledEmail(to, name, reason: "self" | "admin-reset")`** — amber accent. Copy switches:
+2. **`sendTwoFactorDisabledEmail(to, name, reason: "self" | "admin-reset")`** - amber accent. Copy switches:
    - `self`: "2FA is off ... we recommend re-enabling" + "Wasn't you?" callout
    - `admin-reset`: "Support reset your 2FA ... re-enable immediately"
 
-3. **`sendAdminTwoFactorEnabledEmail(adminName, adminEmail)`** — heads-up to `ADMIN_ALERT_EMAIL` (env var, optional). Skipped silently if unset. **Don't send to the admin themselves** — they already got their own enrolment email; this is for the security team's inbox.
+3. **`sendAdminTwoFactorEnabledEmail(adminName, adminEmail)`** - heads-up to `ADMIN_ALERT_EMAIL` (env var, optional). Skipped silently if unset. **Don't send to the admin themselves** - they already got their own enrolment email; this is for the security team's inbox.
 
 ### Email fan-out rules
 
@@ -521,7 +521,7 @@ if (mode === "backup") void logAuthEvent("TWO_FACTOR_BACKUP_CODE_USED");
 | `TWO_FACTOR_ADMIN_RESET` | user | disabled (admin-reset) |
 | `*_REGENERATED` / `*_VERIFY_*` / `BACKUP_CODE_USED` | none | audit-only |
 
-**No email on regen.** If you email on every Settings click, users learn to ignore 2FA emails — the opposite of what you want.
+**No email on regen.** If you email on every Settings click, users learn to ignore 2FA emails - the opposite of what you want.
 
 ### Copy review checklist
 
@@ -529,7 +529,7 @@ One pass for consistency across every surface. Mistakes I made and corrected:
 
 - **Recommended-apps list** mismatched: status card said "1Password, Google, Authy"; wizard said the same + Microsoft Authenticator. Unify both.
 - **"Two-factor" vs "2FA"**: pick one for body copy ("two-factor authentication"), use "2FA" only in tight UI (chips, banner tags, settings tab).
-- **Disable confirm copy** should mention the email — "We'll email you confirming the change" — so the user expects it.
+- **Disable confirm copy** should mention the email - "We'll email you confirming the change" - so the user expects it.
 - **Forced banner** should offer the escape hatch ("Sign out instead") explicitly. Don't trap users.
 
 ---
@@ -541,10 +541,10 @@ lib/
   auth/
     server.ts              ← + twoFactor plugin, + schema mapping
     client.ts              ← + twoFactorClient plugin
-    events.ts              ← NEW — logAuthEvent helper
+    events.ts              ← NEW - logAuthEvent helper
   db/schema/
     users.ts               ← + twoFactorEnabled, + twoFactor table
-    auth-events.ts         ← NEW — audit table + enum
+    auth-events.ts         ← NEW - audit table + enum
     index.ts               ← export ./auth-events
   email.ts                 ← + 3 templates
 
@@ -552,16 +552,16 @@ app/
   admin/
     layout.tsx             ← + DB-backed twoFactorEnabled gate
   auth/
-    2fa/page.tsx           ← NEW — challenge page
-    setup-2fa/page.tsx     ← NEW — role-agnostic forced enrolment
+    2fa/page.tsx           ← NEW - challenge page
+    setup-2fa/page.tsx     ← NEW - role-agnostic forced enrolment
   api/
-    auth/events/route.ts   ← NEW — ingest + email fan-out
-    admin/users/[id]/disable-2fa/route.ts  ← NEW — break-glass
+    auth/events/route.ts   ← NEW - ingest + email fan-out
+    admin/users/[id]/disable-2fa/route.ts  ← NEW - break-glass
 
 components/
   auth/
-    two-factor-form.tsx           ← NEW — challenge form
-    forced-two-factor-setup.tsx   ← NEW — full-page wrapper for setup-2fa
+    two-factor-form.tsx           ← NEW - challenge form
+    forced-two-factor-setup.tsx   ← NEW - full-page wrapper for setup-2fa
   settings/
     two-factor-status-card.tsx           ← NEW
     two-factor-enable-wizard.tsx         ← NEW (the big one)
@@ -586,7 +586,7 @@ components/
 
 ---
 
-## Risk areas — read these before shipping
+## Risk areas - read these before shipping
 
 ### 1. Locked-out admins
 
@@ -598,23 +598,23 @@ If you forget the sign-out escape hatch on the forced-enrol page, an admin who l
 
 ### 2. Schema naming collisions
 
-Better Auth's twoFactor table is named `twoFactor` (camelCase) in your Drizzle schema. If your shop's convention is `two_factor`, the adapter's model-name mapping won't auto-resolve — you'd see "table not found" at first verify. Explicit mapping in the drizzle adapter `schema: { twoFactor: ... }` fixes it.
+Better Auth's twoFactor table is named `twoFactor` (camelCase) in your Drizzle schema. If your shop's convention is `two_factor`, the adapter's model-name mapping won't auto-resolve - you'd see "table not found" at first verify. Explicit mapping in the drizzle adapter `schema: { twoFactor: ... }` fixes it.
 
 ### 3. Backup-code UX
 
-The "I've saved these codes" checkbox before Done. Don't skip it — without the friction, a non-trivial percentage of users dismiss the dialog and lose the codes. The toast + email are not enough; the gate is what makes them pause.
+The "I've saved these codes" checkbox before Done. Don't skip it - without the friction, a non-trivial percentage of users dismiss the dialog and lose the codes. The toast + email are not enough; the gate is what makes them pause.
 
 ### 4. TOTP clock drift
 
 If your server clock is more than ±30 seconds off, valid codes will fail. Better Auth's TOTP impl tolerates ±1 step by default (±30s). NTP-synced production servers are fine; long-running Dockerfile snapshots without a date-sync entrypoint can drift.
 
-### 5. Phishing resistance — TOTP doesn't have it
+### 5. Phishing resistance - TOTP doesn't have it
 
-A real-time phishing site can ask for the password AND the current TOTP, then replay both upstream within the 30s window. This is a known limitation of TOTP — passkeys/WebAuthn solve it via origin-binding but you've explicitly deferred those. Make sure stakeholders understand TOTP raises the bar (against credential-stuffing and replay) but isn't phishing-proof.
+A real-time phishing site can ask for the password AND the current TOTP, then replay both upstream within the 30s window. This is a known limitation of TOTP - passkeys/WebAuthn solve it via origin-binding but you've explicitly deferred those. Make sure stakeholders understand TOTP raises the bar (against credential-stuffing and replay) but isn't phishing-proof.
 
 ### 6. Rate limiting on verify
 
-Better Auth's plugin handles this. If you're rolling your own auth, you must add it — without rate limiting, an attacker with a stolen password just brute-forces the 6-digit code (max 10^6 attempts).
+Better Auth's plugin handles this. If you're rolling your own auth, you must add it - without rate limiting, an attacker with a stolen password just brute-forces the 6-digit code (max 10^6 attempts).
 
 ### 7. Empty `?next=` producer
 

@@ -45,7 +45,7 @@ export async function PATCH(
 }
 
 /**
- * Soft delete — flips active=false. The row is kept so existing user uploads
+ * Soft delete - flips active=false. The row is kept so existing user uploads
  * that referenced it via requirementId still resolve to a name.
  */
 export async function DELETE(

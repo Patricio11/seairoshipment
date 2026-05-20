@@ -46,7 +46,7 @@ export async function POST(
         }
 
         // Look up the client's account number for filename prefix so the
-        // stored key looks identical to a client-side upload — useful for
+        // stored key looks identical to a client-side upload - useful for
         // MetaShip account-prefix matching downstream.
         const [clientUser] = await db
             .select({ accountNumber: userTable.accountNumber })
@@ -114,7 +114,7 @@ export async function POST(
         await db.insert(documents).values({
             id: docId,
             allocationId,
-            // userId on the doc row stays the *client's* userId — the doc
+            // userId on the doc row stays the *client's* userId - the doc
             // belongs to their booking. The source enum is what flags it as
             // admin-uploaded.
             userId: allocation.userId,

@@ -1,15 +1,15 @@
-# Share-Link Collaboration — Approve, Edit, Activity Timeline
+# Share-Link Collaboration - Approve, Edit, Activity Timeline
 
 **Status**: ✅ DONE
 **Date completed**: 2026-05-15
-**Builds on**: [Phase C.3 — Share-by-link + PDF + bulk paste](phase-c3-share-pdf-bulk-paste.md)
+**Builds on**: [Phase C.3 - Share-by-link + PDF + bulk paste](phase-c3-share-pdf-bulk-paste.md)
 
-Phase C.3 shipped read-only share links for CBM calculations — a forwarder generates a link, sends it to a consignee, the consignee opens it and sees the items + 3D viz with no auth. Good for confirming dimensions, but the consignee's only path back was email.
+Phase C.3 shipped read-only share links for CBM calculations - a forwarder generates a link, sends it to a consignee, the consignee opens it and sees the items + 3D viz with no auth. Good for confirming dimensions, but the consignee's only path back was email.
 
 This follow-up upgrades the share link with two optional capabilities the owner can toggle when they create it:
 
-- **Allow approve** — recipient clicks a single button, enters their name + email, optional note. Owner gets a notification.
-- **Allow edit** — recipient edits cargo items inline on the share page, hits Save, enters their name + email. Owner gets a notification and can revert.
+- **Allow approve** - recipient clicks a single button, enters their name + email, optional note. Owner gets a notification.
+- **Allow edit** - recipient edits cargo items inline on the share page, hits Save, enters their name + email. Owner gets a notification and can revert.
 
 Both default off, so existing share-link callers keep getting strictly read-only tokens.
 
@@ -73,7 +73,7 @@ Same notification + email path as approve.
 GET /api/share/cbm/[token]
 ```
 
-Existing endpoint — now also returns `allowApprove` and `allowEdit` so the public viewer can render the right affordances.
+Existing endpoint - now also returns `allowApprove` and `allowEdit` so the public viewer can render the right affordances.
 
 ### Owner-only
 
@@ -102,13 +102,13 @@ Both flags default `false`. Existing callers that only pass `expiresInDays` keep
 
 ## UI surface area
 
-### Owner — share dialog ([components/cbm/share-link-button.tsx](../../components/cbm/share-link-button.tsx))
+### Owner - share dialog ([components/cbm/share-link-button.tsx](../../components/cbm/share-link-button.tsx))
 
-Two new `<Switch>` toggles in the create panel: **Allow approve** and **Allow edit**, each with a one-line explanation. State stays local until the owner clicks "Generate new link" — both flags POST through.
+Two new `<Switch>` toggles in the create panel: **Allow approve** and **Allow edit**, each with a one-line explanation. State stays local until the owner clicks "Generate new link" - both flags POST through.
 
 Active-link rows in the same dialog now show small chips on rows where each permission is enabled (`approve` in emerald, `edit` in amber) so the owner can scan permissions at a glance.
 
-### Public — share page ([app/share/cbm/[token]/page.tsx](../../app/share/cbm/[token]/page.tsx))
+### Public - share page ([app/share/cbm/[token]/page.tsx](../../app/share/cbm/[token]/page.tsx))
 
 - Header pill flips between `read-only` and `editable` so the recipient knows what's allowed.
 - When `allowEdit`: the `<CBMCalculator>` becomes editable (existing `readOnly` prop), local items state drives the 3D viz, a **Save changes** button appears (enabled only when items are dirty vs. server state).
@@ -116,7 +116,7 @@ Active-link rows in the same dialog now show small chips on rows where each perm
 - Both buttons open the same `<Dialog>` asking name + email (required) + optional note (500 chars max).
 - After successful approval the button collapses into a green "You approved this calculation." line for that session.
 
-### Owner — activity panel ([components/cbm/activity-panel.tsx](../../components/cbm/activity-panel.tsx))
+### Owner - activity panel ([components/cbm/activity-panel.tsx](../../components/cbm/activity-panel.tsx))
 
 New right-column panel below SmartMatch on the calc detail page. Behaviours:
 
@@ -129,18 +129,18 @@ New right-column panel below SmartMatch on the calc detail page. Behaviours:
 
 Two new templates:
 
-- `sendCbmShareApprovedEmail` — green accent, "Your calculation was approved", surfaces the guest's name + email + note. Subject: `{name} approved your calculation — {calcName}`. Reply-To set to the guest's email so the owner can reply straight to them.
-- `sendCbmShareEditedEmail` — amber accent, "Your calculation was edited", same fields plus a "Need to undo?" callout that points at the activity timeline's Revert button.
+- `sendCbmShareApprovedEmail` - green accent, "Your calculation was approved", surfaces the guest's name + email + note. Subject: `{name} approved your calculation - {calcName}`. Reply-To set to the guest's email so the owner can reply straight to them.
+- `sendCbmShareEditedEmail` - amber accent, "Your calculation was edited", same fields plus a "Need to undo?" callout that points at the activity timeline's Revert button.
 
-Both wrap the send in try/catch so a flaky SMTP doesn't fail the action — the in-app notification still lands.
+Both wrap the send in try/catch so a flaky SMTP doesn't fail the action - the in-app notification still lands.
 
 ## Notification fan-out
 
 For each guest action three channels fire:
 
-1. **In-app bell** — new row in `client_notifications` with type `CBM_SHARE_APPROVED` or `CBM_SHARE_EDITED`.
-2. **Email** — via the new email templates above.
-3. **Activity timeline** — already-existing channel; the action row is the source.
+1. **In-app bell** - new row in `client_notifications` with type `CBM_SHARE_APPROVED` or `CBM_SHARE_EDITED`.
+2. **Email** - via the new email templates above.
+3. **Activity timeline** - already-existing channel; the action row is the source.
 
 The order in code: insert action row → insert notification → send email. If email fails the rest is already durable.
 
@@ -148,17 +148,17 @@ The order in code: insert action row → insert notification → send email. If 
 
 - Public endpoints are token-gated. Tokens are 32-byte base64url random strings (not sequential), generated by `randomBytes(24)`.
 - Each request rechecks `revoked_at IS NULL` and `expires_at >= now()`. A revoked link can never approve or edit.
-- The action toggles are checked **per request**, not just at link creation — flipping a link's `allow_edit` off would immediately block edits on subsequent attempts (currently no UI to flip flags after creation; ticket parked).
-- Edits sanitise items server-side and recompute totals — a malicious payload can't inject negative dimensions, fake CBM, or bypass capacity math.
+- The action toggles are checked **per request**, not just at link creation - flipping a link's `allow_edit` off would immediately block edits on subsequent attempts (currently no UI to flip flags after creation; ticket parked).
+- Edits sanitise items server-side and recompute totals - a malicious payload can't inject negative dimensions, fake CBM, or bypass capacity math.
 - Owner-only endpoints (`activity`, `revert`) verify the calc belongs to the session user before doing anything.
 
 ## Out of scope for v1
 
 - **Public-link revocation by recipient.** Only the owner can revoke a link.
-- **Diff view between revert snapshots.** Right now Revert restores the prior state but doesn't show "you're about to undo: box A changed from 350×300 to 400×300" — just the row + timestamp. Future polish.
+- **Diff view between revert snapshots.** Right now Revert restores the prior state but doesn't show "you're about to undo: box A changed from 350×300 to 400×300" - just the row + timestamp. Future polish.
 - **Flipping `allow_approve` / `allow_edit` on an existing share.** Currently both are set at create time only. Workaround: revoke and create a new link.
-- **Concurrent-edit conflict resolution.** Last writer wins. Two guests editing simultaneously will both succeed and the later save will overwrite the earlier — both writes are still in the action log so the owner can see both and Revert the wrong one.
-- **Approver-email verification.** The email field is captured but not verified (no magic-link round-trip). This matches DocuSign Lite's UX — the audit trail (timestamp, IP from the request, the typed name + email) is what matters in B2B.
+- **Concurrent-edit conflict resolution.** Last writer wins. Two guests editing simultaneously will both succeed and the later save will overwrite the earlier - both writes are still in the action log so the owner can see both and Revert the wrong one.
+- **Approver-email verification.** The email field is captured but not verified (no magic-link round-trip). This matches DocuSign Lite's UX - the audit trail (timestamp, IP from the request, the typed name + email) is what matters in B2B.
 
 ## Required setup
 

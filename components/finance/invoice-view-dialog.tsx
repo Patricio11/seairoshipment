@@ -176,7 +176,7 @@ export function InvoiceViewDialog({ invoice, open, onOpenChange }: InvoiceViewDi
                     <div className="p-6 space-y-6">
                         {/* Invoice Details + Bill To */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Left — Invoice Details */}
+                            {/* Left - Invoice Details */}
                             <div className="space-y-3">
                                 <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">Invoice Details</h3>
                                 <div className="space-y-2">
@@ -248,7 +248,7 @@ export function InvoiceViewDialog({ invoice, open, onOpenChange }: InvoiceViewDi
                                 </div>
                             </div>
 
-                            {/* Right — From + Bill To */}
+                            {/* Right - From + Bill To */}
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">From</h3>

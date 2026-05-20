@@ -9,7 +9,7 @@ import { sendTwoFactorDisabledEmail } from "@/lib/email";
 /**
  * Admin break-glass: disables 2FA on a target user account.
  *
- * Use case — the user lost their authenticator AND their backup codes and
+ * Use case - the user lost their authenticator AND their backup codes and
  * can't sign in. Support verifies their identity out-of-band (phone, video
  * call, government ID, whatever the runbook says), then an admin clicks
  * "Disable 2FA" on the user's vetting row.
@@ -17,7 +17,7 @@ import { sendTwoFactorDisabledEmail } from "@/lib/email";
  * Constraints:
  *  - Caller must be an admin (requireAdmin).
  *  - Target must be a client. An admin can't disable another admin's 2FA
- *    from this UI — admins manage their own 2FA from /dashboard/settings.
+ *    from this UI - admins manage their own 2FA from /dashboard/settings.
  *    This stops a compromised admin account from being used to weaken every
  *    other admin in one move.
  *  - Self-disable through this endpoint is rejected for the same reason.
@@ -83,7 +83,7 @@ export async function POST(
             isRead: false,
         });
 
-        // Audit log — the actorId captures *which* admin did the reset.
+        // Audit log - the actorId captures *which* admin did the reset.
         const fwd = req.headers.get("x-forwarded-for");
         const ip = fwd ? fwd.split(",")[0].trim() : req.headers.get("x-real-ip");
         const ua = (req.headers.get("user-agent") || "").slice(0, 500);
@@ -97,7 +97,7 @@ export async function POST(
         });
 
         // Email the affected user so they know their security setting was
-        // touched. Best-effort — SMTP failures don't undo the reset.
+        // touched. Best-effort - SMTP failures don't undo the reset.
         try {
             await sendTwoFactorDisabledEmail(target.email, target.name, "admin-reset");
         } catch (mailErr) {

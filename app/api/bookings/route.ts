@@ -150,14 +150,14 @@ export async function POST(request: NextRequest) {
             containerId: requestedContainerId,
             poNumber,
             salesRateTypeId,
-            // Cube booking fields — present only when cargoType === "CUBE"
+            // Cube booking fields - present only when cargoType === "CUBE"
             cargoType: cargoTypeRaw,
             calculationId,
         } = body;
 
         const cargoType: "PALLET" | "CUBE" = cargoTypeRaw === "CUBE" ? "CUBE" : "PALLET";
 
-        // Sanitise collection addresses — at least 1 required, max 5, drop empties
+        // Sanitise collection addresses - at least 1 required, max 5, drop empties
         const cleanCollectionAddresses: Array<{ label?: string; address: string }> = Array.isArray(collectionAddresses)
             ? collectionAddresses
                 .map((a: unknown) => {
@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
 
         const route = `${origin}-${destination}`;
 
-        // Find an existing OPEN container — only admins can create containers
+        // Find an existing OPEN container - only admins can create containers
         let containerId = requestedContainerId;
         let container;
 
@@ -214,7 +214,7 @@ export async function POST(request: NextRequest) {
 
         if (!container) {
             // Find open container for same route, service type, cargo type, and sailing.
-            // Cube bookings MUST come in with an explicit containerId — auto-find
+            // Cube bookings MUST come in with an explicit containerId - auto-find
             // doesn't apply because the user picked their specific container in
             // the Smart-match panel or wizard.
             if (cargoType === "CUBE") {
@@ -273,7 +273,7 @@ export async function POST(request: NextRequest) {
             }
             if (!productRow.categoryId) {
                 return NextResponse.json(
-                    { error: "Selected product is not assigned to any category — please choose a different product or contact support." },
+                    { error: "Selected product is not assigned to any category - please choose a different product or contact support." },
                     { status: 400 }
                 );
             }
@@ -285,7 +285,7 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Capacity check — branches by cargo type. PALLET uses palletCount
+        // Capacity check - branches by cargo type. PALLET uses palletCount
         // against container.maxCapacity; CUBE uses cbmVolume against
         // container.maxCapacityCBM. Both factor in pending allocations so an
         // unconfirmed but live request can't be over-booked.
@@ -324,7 +324,7 @@ export async function POST(request: NextRequest) {
                 );
             }
         } else {
-            // CUBE — fetch the calc, verify ownership, recompute totals from
+            // CUBE - fetch the calc, verify ownership, recompute totals from
             // its items (server-side trust). Snapshot those into the allocation.
             const [calc] = await db
                 .select()
@@ -370,8 +370,8 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Create allocation — starts as PENDING. Container totals (totalPallets
-        // / totalCBM) are NOT updated here — only confirmed allocations count
+        // Create allocation - starts as PENDING. Container totals (totalPallets
+        // / totalCBM) are NOT updated here - only confirmed allocations count
         // against capacity. Admin approves in the Pending Requests tab.
         const allocationId = `ALC-${nanoid(10)}`;
         await db.insert(palletAllocations).values({
@@ -399,11 +399,11 @@ export async function POST(request: NextRequest) {
             status: "PENDING",
         });
 
-        // Silence unused-var warning for cubeTotalWeightKg — captured into the
+        // Silence unused-var warning for cubeTotalWeightKg - captured into the
         // sustainability/invoice future fields but not persisted on the allocation row.
         void cubeTotalWeightKg;
 
-        // Note: container.totalPallets is NOT updated here — it only reflects CONFIRMED allocations.
+        // Note: container.totalPallets is NOT updated here - it only reflects CONFIRMED allocations.
         // The admin must approve this request in the Pending Requests tab for it to count.
 
         // Notify admin of new pending request
@@ -427,7 +427,7 @@ export async function POST(request: NextRequest) {
         // so per-equipment pricing flows through end-to-end.
         if (!container.containerTypeId) {
             return NextResponse.json(
-                { error: "Container has no container-type assigned — admin must set one before bookings can be priced" },
+                { error: "Container has no container-type assigned - admin must set one before bookings can be priced" },
                 { status: 422 }
             );
         }
@@ -495,7 +495,7 @@ export async function POST(request: NextRequest) {
                 },
             ]);
         } else {
-            // CUBE — price per m³. Quote may fail gracefully (zero amounts)
+            // CUBE - price per m³. Quote may fail gracefully (zero amounts)
             // when admin hasn't loaded a CUBE rate card yet; we still create
             // the invoices so admin sees the booking request, just with zero
             // totals that they can adjust manually.

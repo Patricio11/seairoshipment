@@ -18,7 +18,7 @@ import * as dotenv from "dotenv";
 
 dotenv.config({ path: ".env.local" });
 
-// Inline schema definitions — keeps the script standalone, matching the
+// Inline schema definitions - keeps the script standalone, matching the
 // existing seed-standalone.ts pattern.
 const cargoItemPresets = pgTable("cargo_item_presets", {
     id: text("id").primaryKey(),
@@ -49,7 +49,7 @@ interface PresetSeed {
 }
 
 // Dimensions are industry-typical figures for South African exports.
-// Same list as in app/api/admin/cargo-item-presets/seed/route.ts — kept in
+// Same list as in app/api/admin/cargo-item-presets/seed/route.ts - kept in
 // sync by hand.
 const SEED: PresetSeed[] = [
     // Wine & Spirits
@@ -120,7 +120,7 @@ async function main() {
         }
 
         // Fall back to null category if the referenced one doesn't exist in
-        // product_categories — the preset is still usable, it just won't
+        // product_categories - the preset is still usable, it just won't
         // surface as a category-relevant suggestion until the category is
         // seeded.
         let effectiveCategoryId = preset.categoryId;

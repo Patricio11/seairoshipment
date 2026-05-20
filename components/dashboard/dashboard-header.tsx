@@ -65,7 +65,7 @@ export function DashboardHeader() {
             const res = await fetch("/api/notifications")
             if (res.ok) setNotifications(await res.json())
         } catch {
-            // silent — bell just won't update
+            // silent - bell just won't update
         }
     }, [])
 

@@ -6,7 +6,7 @@ import { user } from "./users";
  * of truth for who-did-what-when on 2FA. Used by the Settings → Security
  * activity panel and by a future security-team review surface.
  *
- * `event` enum is closed — adding a new event type requires schema + code
+ * `event` enum is closed - adding a new event type requires schema + code
  * changes, which keeps the audit table from drifting into "log anything"
  * mush.
  */

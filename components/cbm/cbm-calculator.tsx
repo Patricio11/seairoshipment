@@ -48,7 +48,7 @@ interface PresetRow {
 }
 
 export interface CBMCalculatorProps {
-    /** Current cargo items — mm/kg canonical units. Controlled from outside. */
+    /** Current cargo items - mm/kg canonical units. Controlled from outside. */
     value: CargoItem[]
     onChange: (next: CargoItem[]) => void
     /**
@@ -72,8 +72,8 @@ export interface CBMCalculatorProps {
 /* -------------------------------------------------------------------------- */
 /* Sane bounds                                                                 */
 /* -------------------------------------------------------------------------- */
-const MAX_DIMENSION_MM = 10_000  // 10 m — anything larger is almost certainly a typo
-const MAX_WEIGHT_KG = 50_000     // 50 t per unit — way past realistic
+const MAX_DIMENSION_MM = 10_000  // 10 m - anything larger is almost certainly a typo
+const MAX_WEIGHT_KG = 50_000     // 50 t per unit - way past realistic
 const MAX_QUANTITY = 100_000
 
 /* -------------------------------------------------------------------------- */
@@ -106,7 +106,7 @@ export function CBMCalculator({ value, onChange, containerVolumeCBM, containerLa
         fetch(url, { cache: "no-store" })
             .then(r => r.ok ? r.json() : { presets: [] })
             .then(d => { if (!cancelled && Array.isArray(d.presets)) setPresets(d.presets) })
-            .catch(() => { /* silent — calculator still works without presets */ })
+            .catch(() => { /* silent - calculator still works without presets */ })
             .finally(() => { if (!cancelled) setPresetsLoading(false) })
         return () => { cancelled = true }
     }, [categoryId, readOnly])

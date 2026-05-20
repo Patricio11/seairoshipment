@@ -10,10 +10,10 @@ import { randomBytes } from "crypto";
  *
  * - POST creates a new token (with optional expiry in days)
  * - GET lists this calc's active tokens so the owner can revoke
- * - DELETE revokes a specific token (?token=…) — also reachable via
+ * - DELETE revokes a specific token (?token=…) - also reachable via
  *   the [token] route for symmetry; either works.
  *
- * Tokens are 32-byte URL-safe random strings — not guessable. We don't
+ * Tokens are 32-byte URL-safe random strings - not guessable. We don't
  * embed the calculation id in them so different calcs share the same
  * token-namespace globally.
  */
@@ -70,7 +70,7 @@ export async function POST(
             expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
         }
 
-        // Optional toggles — default false so existing share-link callers
+        // Optional toggles - default false so existing share-link callers
         // keep getting strictly read-only tokens.
         const allowApprove = body?.allowApprove === true;
         const allowEdit = body?.allowEdit === true;

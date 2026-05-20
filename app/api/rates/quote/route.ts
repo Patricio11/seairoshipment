@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: "salesRateTypeId is required (srs or scs)" }, { status: 400 });
         }
         if (!containerId) {
-            return NextResponse.json({ error: "containerId is required — pick a container first" }, { status: 400 });
+            return NextResponse.json({ error: "containerId is required - pick a container first" }, { status: 400 });
         }
 
         // Resolve the container's containerTypeId + cargoType
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
         }
         if (!container.containerTypeId) {
             return NextResponse.json(
-                { error: "Container has no container-type assigned — admin must set one before rates can be resolved" },
+                { error: "Container has no container-type assigned - admin must set one before rates can be resolved" },
                 { status: 422 }
             );
         }

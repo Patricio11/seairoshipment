@@ -59,7 +59,7 @@ export function OverviewGrid() {
         fetch("/api/dashboard/overview", { cache: "no-store" })
             .then(r => r.ok ? r.json() : null)
             .then(d => { if (!cancelled && d) setData(d) })
-            .catch(() => { /* swallow — widgets render their own fallback */ })
+            .catch(() => { /* swallow - widgets render their own fallback */ })
             .finally(() => { if (!cancelled) setLoading(false) })
         return () => { cancelled = true }
     }, [])

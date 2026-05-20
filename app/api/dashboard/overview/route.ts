@@ -203,7 +203,7 @@ export async function GET() {
 
         const upcomingBookings = upcomingRaw.map(({ allocation, container, derivedStatus }) => ({
             id: allocation.id,
-            bookingRef: invoiceBookingRefByAllocation.get(allocation.id) ?? "—",
+            bookingRef: invoiceBookingRefByAllocation.get(allocation.id) ?? "-",
             status: derivedStatus,
             palletCount: allocation.palletCount,
             cargoType: allocation.cargoType,

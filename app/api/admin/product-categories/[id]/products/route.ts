@@ -7,7 +7,7 @@ import { eq, inArray } from "drizzle-orm";
 /**
  * Assign (or reassign) products to this category.
  * Body: { productIds: string[] }
- * A product can belong to only one category — assigning it here overrides any previous assignment.
+ * A product can belong to only one category - assigning it here overrides any previous assignment.
  */
 export async function POST(
     request: NextRequest,

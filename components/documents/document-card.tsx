@@ -39,7 +39,7 @@ const TypeColors: Record<DocType, string> = {
 }
 
 function formatSize(bytes?: number | null): string {
-    if (!bytes || bytes <= 0) return "—"
+    if (!bytes || bytes <= 0) return "-"
     if (bytes < 1024) return `${bytes} B`
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
     return `${(bytes / (1024 * 1024)).toFixed(bytes >= 10 * 1024 * 1024 ? 0 : 1)} MB`
@@ -161,10 +161,10 @@ export function DocumentCard({
                                 className="text-[10px] text-slate-400 inline-flex items-center gap-0.5"
                                 title={
                                     source === "ADMIN_UPLOAD"
-                                        ? "Uploaded by Seairo on your behalf — not editable"
+                                        ? "Uploaded by Seairo on your behalf - not editable"
                                         : source === "METASHIP_CLIENT"
-                                            ? "Issued by carrier — not editable"
-                                            : "Container-level document — not editable"
+                                            ? "Issued by carrier - not editable"
+                                            : "Container-level document - not editable"
                                 }
                             >
                                 <Lock className="h-2.5 w-2.5" />

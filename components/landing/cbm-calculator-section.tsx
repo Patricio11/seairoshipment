@@ -21,7 +21,7 @@ import Link from 'next/link'
 import { AuthPanel } from '../auth-panel'
 
 /* -------------------------------------------------------------------------- */
-/* Showcase data — fixed, non-interactive. Designed to look great at a glance. */
+/* Showcase data - fixed, non-interactive. Designed to look great at a glance. */
 /* -------------------------------------------------------------------------- */
 
 interface ShowcaseItem {
@@ -182,7 +182,7 @@ export function CBMCalculatorSection() {
                                 </AnimatePresence>
                             </div>
                         </div>
-                        {/* Preset dots — purely decorative progress indicator */}
+                        {/* Preset dots - purely decorative progress indicator */}
                         <div className="flex items-center gap-1.5">
                             {PRESETS.map((p, i) => {
                                 const Icon = p.icon
@@ -206,7 +206,7 @@ export function CBMCalculatorSection() {
                     </div>
 
                     <div className="grid lg:grid-cols-[1.1fr_1fr]">
-                        {/* LEFT — sample item list (read-only) */}
+                        {/* LEFT - sample item list (read-only) */}
                         <div className="border-b border-slate-100 p-6 lg:border-b-0 lg:border-r lg:p-10">
                             <div className="mb-4 flex items-center gap-2 text-brand-blue">
                                 <Boxes className="h-4 w-4" />
@@ -232,7 +232,7 @@ export function CBMCalculatorSection() {
                             <div className="mt-6 rounded-2xl border-2 border-dashed border-brand-blue/30 bg-brand-blue/[0.04] p-4">
                                 <p className="text-xs font-bold uppercase tracking-wider text-brand-blue">Measure your own cargo</p>
                                 <p className="mt-1.5 text-sm text-slate-600 leading-relaxed">
-                                    Add unlimited items, save calculations, share a read-only link with your consignee, and one-click into a real SRS booking — all inside the dashboard.
+                                    Add unlimited items, save calculations, share a read-only link with your consignee, and one-click into a real SRS booking - all inside the dashboard.
                                 </p>
                                 <button
                                     type="button"
@@ -245,7 +245,7 @@ export function CBMCalculatorSection() {
                             </div>
                         </div>
 
-                        {/* RIGHT — live results */}
+                        {/* RIGHT - live results */}
                         <div className="bg-slate-50/30 p-6 lg:p-10">
                             {/* Hero stat */}
                             <AnimatePresence mode="wait">
@@ -331,7 +331,7 @@ export function CBMCalculatorSection() {
                         {
                             icon: Calculator,
                             title: '3D loading preview',
-                            description: 'See how your cargo actually fits before the container is sealed — no more guessing.',
+                            description: 'See how your cargo actually fits before the container is sealed - no more guessing.',
                         },
                         {
                             icon: Layers,
@@ -468,7 +468,7 @@ function FitBar({
             <p className="mt-1.5 text-[11px] text-slate-500">
                 {fit.fits
                     ? `Fits with ${formatCbm(fit.remainingCbm)} spare`
-                    : `Over by ${formatCbm(-fit.remainingCbm)} — needs ${fit.qtyContainersNeeded} containers`}
+                    : `Over by ${formatCbm(-fit.remainingCbm)} - needs ${fit.qtyContainersNeeded} containers`}
             </p>
         </div>
     )

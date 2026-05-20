@@ -174,7 +174,7 @@ export function CalculationEditor({ initial }: CalculationEditorProps) {
                         <Input
                             value={name}
                             onChange={e => setName(e.target.value)}
-                            placeholder="e.g. Wine export — UK Q3"
+                            placeholder="e.g. Wine export - UK Q3"
                             className="mt-1 text-xl font-bold h-11 bg-white dark:bg-slate-950"
                             autoFocus={!isEdit}
                         />
@@ -228,7 +228,7 @@ export function CalculationEditor({ initial }: CalculationEditorProps) {
                         <Textarea
                             value={notes}
                             onChange={e => setNotes(e.target.value)}
-                            placeholder="Anything that helps you find this later — destination, season, special handling…"
+                            placeholder="Anything that helps you find this later - destination, season, special handling…"
                             className="min-h-[80px] bg-white dark:bg-slate-950"
                         />
                     </div>

@@ -30,7 +30,7 @@ const FAQS: FAQ[] = [
     },
     {
         q: "Which routes do you operate?",
-        a: "We run regular reefer consolidations from Cape Town (ZACPT) to Rotterdam, London Gateway, Hamburg, Antwerp, and other major European ports. Other routes are added on demand — if you have a destination in mind, contact us.",
+        a: "We run regular reefer consolidations from Cape Town (ZACPT) to Rotterdam, London Gateway, Hamburg, Antwerp, and other major European ports. Other routes are added on demand - if you have a destination in mind, contact us.",
     },
     {
         q: "How is temperature monitored?",
@@ -49,7 +49,7 @@ const FAQS: FAQ[] = [
 export function FAQSection() {
     const [openIndex, setOpenIndex] = useState<number | null>(0)
 
-    // FAQPage JSON-LD — Google may surface these in rich results
+    // FAQPage JSON-LD - Google may surface these in rich results
     const faqSchema = {
         "@context": "https://schema.org",
         "@type": "FAQPage",
@@ -89,7 +89,7 @@ export function FAQSection() {
                         <span className="text-brand-blue">Shared Reefer Services<sup className="text-[0.5em] ml-1">®</sup></span>
                     </h2>
                     <p className="mt-4 text-lg text-slate-600">
-                        Quick answers — if you don&apos;t see yours, the contact form below is open.
+                        Quick answers - if you don&apos;t see yours, the contact form below is open.
                     </p>
                 </motion.div>
 

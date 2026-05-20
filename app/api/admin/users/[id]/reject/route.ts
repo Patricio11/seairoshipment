@@ -7,7 +7,7 @@ import { nanoid } from "nanoid";
 import { sendRejectionEmail } from "@/lib/email";
 
 /**
- * Reject a pending client. Final state — user sees the rejection screen
+ * Reject a pending client. Final state - user sees the rejection screen
  * with the reason and a support email CTA.
  */
 export async function PATCH(

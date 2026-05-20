@@ -192,7 +192,7 @@ export function CategoriesManager() {
         setForm(prev => ({
             ...prev,
             salesRateTypeId: v,
-            // SCS is a dry container — no temperature regime. SRS keeps whatever
+            // SCS is a dry container - no temperature regime. SRS keeps whatever
             // temps were already picked (or defaults to frozen on a fresh form).
             allowedTemperatures: v === "scs" ? [] : (prev.allowedTemperatures.length > 0 ? prev.allowedTemperatures : ["frozen"]),
         }))
@@ -227,7 +227,7 @@ export function CategoriesManager() {
             toast.error("Name is required")
             return
         }
-        // SCS is dry — no temperatures. SRS must have at least one allowed temp.
+        // SCS is dry - no temperatures. SRS must have at least one allowed temp.
         if (form.salesRateTypeId === "srs" && form.allowedTemperatures.length === 0) {
             toast.error("Pick at least one allowed temperature")
             return
@@ -412,7 +412,7 @@ export function CategoriesManager() {
         })
     }
 
-    // Shared dialogs — rendered in both views so Edit/Delete buttons work everywhere
+    // Shared dialogs - rendered in both views so Edit/Delete buttons work everywhere
     const dialogs = (
         <>
             {/* Create / Edit dialog */}
@@ -482,7 +482,7 @@ export function CategoriesManager() {
                             <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-3 flex items-start gap-2.5">
                                 <Sun className="h-4 w-4 text-slate-500 shrink-0 mt-0.5" />
                                 <div>
-                                    <p className="text-xs font-bold text-slate-300">Dry container — no temperature regime</p>
+                                    <p className="text-xs font-bold text-slate-300">Dry container - no temperature regime</p>
                                     <p className="text-[11px] text-slate-500 mt-0.5">
                                         SCS categories ship at ambient conditions inside a dry container; no reefer setpoint applies.
                                     </p>
@@ -745,7 +745,7 @@ export function CategoriesManager() {
                         <div className="py-8 text-center text-slate-500 text-sm">
                             {allProducts.length === 0
                                 ? "No products synced yet. Go to Products → Sync from MetaShip first."
-                                : "No other products to add — all are already assigned or match no filter."}
+                                : "No other products to add - all are already assigned or match no filter."}
                         </div>
                     ) : (
                         <div className="max-h-[320px] overflow-y-auto">
@@ -930,7 +930,7 @@ export function CategoriesManager() {
                                                 <Container className="h-3 w-3 mr-1" /> {cat.containerCount}
                                             </Badge>
                                         ) : (
-                                            <span className="text-slate-600 text-xs">—</span>
+                                            <span className="text-slate-600 text-xs">-</span>
                                         )}
                                     </TableCell>
                                     <TableCell className="text-center">

@@ -107,21 +107,21 @@ export default function SharedCBMPage({ params }: { params: Promise<{ token: str
             })
             const data = await res.json().catch(() => ({}))
             if (!res.ok) {
-                toast.error(data.error || "Couldn't submit — please try again")
+                toast.error(data.error || "Couldn't submit - please try again")
                 return
             }
             if (actionMode === "approve") {
                 setApprovedAt(new Date().toISOString())
-                toast.success("Thanks — the owner has been notified")
+                toast.success("Thanks - the owner has been notified")
             } else {
-                toast.success("Saved — the owner has been notified")
+                toast.success("Saved - the owner has been notified")
                 // Refresh the calc so the "dirty" check resets and the
                 // new server-recomputed totals (if any) are reflected.
                 if (calc) setCalc({ ...calc, cargoItems: items })
             }
             setActionMode(null)
         } catch {
-            toast.error("Couldn't submit — please try again")
+            toast.error("Couldn't submit - please try again")
         } finally {
             setSubmitting(false)
         }
@@ -134,7 +134,7 @@ export default function SharedCBMPage({ params }: { params: Promise<{ token: str
                     <Link href="/" className="flex items-center gap-2">
                         <Image
                             src="/seairo-logo.png"
-                            alt="Seairo Cargo — Shared Reefer Services"
+                            alt="Seairo Cargo - Shared Reefer Services"
                             width={120}
                             height={40}
                             className="h-9 w-auto object-contain"
@@ -212,7 +212,7 @@ export default function SharedCBMPage({ params }: { params: Promise<{ token: str
                             </div>
                         </div>
 
-                        {/* Action footer — Approve and/or Save edits */}
+                        {/* Action footer - Approve and/or Save edits */}
                         {(allowApprove || allowEdit) && (
                             <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                 <div className="text-sm text-slate-600 dark:text-slate-400 max-w-md">
@@ -221,11 +221,11 @@ export default function SharedCBMPage({ params }: { params: Promise<{ token: str
                                             <Check className="h-4 w-4" /> You approved this calculation.
                                         </span>
                                     ) : allowApprove && allowEdit ? (
-                                        <>You can save edits or approve the calculation as it is — the owner is notified either way.</>
+                                        <>You can save edits or approve the calculation as it is - the owner is notified either way.</>
                                     ) : allowApprove ? (
                                         <>Confirm these dimensions look right. The owner will be notified.</>
                                     ) : (
-                                        <>Make changes inline and save — the owner is notified of every edit.</>
+                                        <>Make changes inline and save - the owner is notified of every edit.</>
                                     )}
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -254,14 +254,14 @@ export default function SharedCBMPage({ params }: { params: Promise<{ token: str
 
                         <div className="text-center pt-4 border-t border-slate-200 dark:border-slate-800">
                             <p className="text-xs text-slate-500">
-                                Shared via Seairo Cargo — <Link href="/" className="text-brand-blue hover:underline">seairo.com</Link>
+                                Shared via Seairo Cargo - <Link href="/" className="text-brand-blue hover:underline">seairo.com</Link>
                             </p>
                         </div>
                     </div>
                 )}
             </main>
 
-            {/* Guest action dialog — used for both Approve and Save changes */}
+            {/* Guest action dialog - used for both Approve and Save changes */}
             <Dialog open={actionMode !== null} onOpenChange={(open) => !open && closeAction()}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>

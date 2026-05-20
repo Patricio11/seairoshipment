@@ -31,7 +31,7 @@ function routeLabel(route: string) {
 }
 
 function urgencyClass(hours: number | null): { bg: string; text: string; label: string } {
-    if (hours === null) return { bg: "bg-slate-100 dark:bg-slate-800", text: "text-slate-500", label: "—" }
+    if (hours === null) return { bg: "bg-slate-100 dark:bg-slate-800", text: "text-slate-500", label: "-" }
     if (hours <= 0) return { bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-600 dark:text-red-400", label: "Closed" }
     if (hours <= 24) return { bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-600 dark:text-red-400", label: "Closing today" }
     if (hours <= 72) return { bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-600 dark:text-amber-400", label: "Closing soon" }
@@ -39,7 +39,7 @@ function urgencyClass(hours: number | null): { bg: string; text: string; label: 
 }
 
 function formatRemaining(hours: number | null): string {
-    if (hours === null) return "—"
+    if (hours === null) return "-"
     if (hours <= 0) return "past cut-off"
     const days = Math.floor(hours / 24)
     const rest = Math.floor(hours - days * 24)
@@ -103,7 +103,7 @@ export function SmartMatchPanel({ calculationId, refreshKey }: SmartMatchPanelPr
                             {route ? ` on ${route}` : ""}.
                         </p>
                         <p className="text-slate-500 leading-relaxed">
-                            New SCS-Cube sailings are added regularly — try again in a day or two, or contact sales to request capacity on this route.
+                            New SCS-Cube sailings are added regularly - try again in a day or two, or contact sales to request capacity on this route.
                         </p>
                     </div>
                 </div>
@@ -120,7 +120,7 @@ export function SmartMatchPanel({ calculationId, refreshKey }: SmartMatchPanelPr
                     </p>
                     {fallbackUsed && (
                         <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">
-                            Nothing on {route} — showing nearby routes.
+                            Nothing on {route} - showing nearby routes.
                         </p>
                     )}
                 </div>
@@ -171,7 +171,7 @@ export function SmartMatchPanel({ calculationId, refreshKey }: SmartMatchPanelPr
                 </ul>
                 {matches.length > 4 && (
                     <p className="text-[10px] text-slate-500 text-center">
-                        +{matches.length - 4} more — see the booking wizard for the full list
+                        +{matches.length - 4} more - see the booking wizard for the full list
                     </p>
                 )}
             </div>

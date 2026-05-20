@@ -9,7 +9,7 @@ import { syncTrackingEvents } from "@/lib/tracking/sync";
 /**
  * Manual retry for tracking subscription when auto-subscribe failed at order
  * creation, or when admin wants to re-subscribe. Idempotent on the MetaShip
- * side — re-subscribing an already-subscribed container returns the existing
+ * side - re-subscribing an already-subscribed container returns the existing
  * subscription per the API's "active subscription linked to your organisation"
  * contract.
  */
@@ -34,7 +34,7 @@ export async function POST(
 
         if (!container.metashipReference) {
             return NextResponse.json(
-                { error: "Container has no MetaShip order yet — create the order first." },
+                { error: "Container has no MetaShip order yet - create the order first." },
                 { status: 400 },
             );
         }

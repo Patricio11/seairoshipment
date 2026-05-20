@@ -12,7 +12,7 @@ import {
 
 /**
  * Client-reported security event ingest. The 2FA wizards / dialogs / sign-in
- * challenge call this after a successful Better Auth round-trip — Better
+ * challenge call this after a successful Better Auth round-trip - Better
  * Auth owns the cryptographic verification; we just record the outcome and
  * fan out emails.
  *
@@ -24,7 +24,7 @@ import {
  *    2FA; we wouldn't be called otherwise).
  *  - VERIFY_FAILED events come from the sign-in challenge page, where the
  *    user has a pending-2FA cookie but isn't fully signed in yet. We accept
- *    those too — the cookie is enough to know which user the event is about.
+ *    those too - the cookie is enough to know which user the event is about.
  *
  * Emails are best-effort: SMTP failure logs a warning but the audit row is
  * already durable so the event is never lost.
@@ -42,7 +42,7 @@ const ALLOWED_CLIENT_EVENTS: Array<(typeof authEventTypeEnum.enumValues)[number]
 function getRequestIp(req: NextRequest): string | null {
     // Same convention as the rest of the codebase: prefer Vercel/CF style
     // x-forwarded-for, then fall back to x-real-ip. We never trust the
-    // first IP unconditionally — it's whatever the immediate proxy claims.
+    // first IP unconditionally - it's whatever the immediate proxy claims.
     const fwd = req.headers.get("x-forwarded-for");
     if (fwd) return fwd.split(",")[0].trim();
     return req.headers.get("x-real-ip");
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
         }
 
         // For VERIFY_FAILED on the sign-in page, the user may not have a
-        // full session yet — only a pending-2FA cookie. We let the body
+        // full session yet - only a pending-2FA cookie. We let the body
         // carry a userId in that case, but never trust it: we resolve it
         // through the user table to confirm the row exists and is 2FA-
         // enabled before recording.
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
         if (!userId) {
             // Common during the 2FA login challenge: the user has a pending-2FA
             // cookie but no full session yet, so VERIFY_FAILED events from the
-            // challenge form can't resolve a userId. The audit is best-effort —
+            // challenge form can't resolve a userId. The audit is best-effort -
             // return 200 with skipped:true so the client's fetch doesn't show
             // a noisy 401 in the console for an event we're choosing to drop.
             return NextResponse.json({ skipped: true });
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
         });
 
         // Side-effect emails for the events users care about. Detached from
-        // the response cycle — SMTP can take 5–10s and we don't want the
+        // the response cycle - SMTP can take 5–10s and we don't want the
         // wizard's `void logAuthEvent` call to look like a hung request in
         // the network tab. The audit row is already durable; the email is
         // best-effort regardless.

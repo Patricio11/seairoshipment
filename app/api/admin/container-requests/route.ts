@@ -5,7 +5,7 @@ import { containerRequests, user as userTable, products, sailings } from "@/lib/
 import { eq, desc } from "drizzle-orm";
 
 /**
- * Admin — list all container requests with user, product, sailing details.
+ * Admin - list all container requests with user, product, sailing details.
  */
 export async function GET() {
     try {

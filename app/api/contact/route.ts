@@ -11,7 +11,7 @@ const FIELD_LIMITS = {
 } as const;
 
 /**
- * Public contact form endpoint. No auth — anyone can submit.
+ * Public contact form endpoint. No auth - anyone can submit.
  * Defences: honeypot, length caps, email-format check, trimming.
  * Sends two emails: support inbox + auto-reply to the sender.
  */
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json().catch(() => ({}));
 
-        // Honeypot — real users can't see this field; bots fill in everything.
+        // Honeypot - real users can't see this field; bots fill in everything.
         if (typeof body?.website === "string" && body.website.trim().length > 0) {
             // Pretend it worked so the bot doesn't retry
             return NextResponse.json({ success: true });
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
         const inquiry = { firstName, lastName, email, message };
 
-        // Notify support — this one matters most, surface its failure to the user.
+        // Notify support - this one matters most, surface its failure to the user.
         try {
             await sendContactInquiryEmail(inquiry);
         } catch (err) {
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Auto-reply is best-effort — don't fail the request if it bounces.
+        // Auto-reply is best-effort - don't fail the request if it bounces.
         try {
             await sendContactConfirmationEmail(inquiry);
         } catch (err) {

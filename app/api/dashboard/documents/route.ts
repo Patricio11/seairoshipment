@@ -97,7 +97,7 @@ export async function GET() {
             const sharedCount = sharedCountByContainer.get(container.id) ?? 0;
             return {
                 allocationId: allocation.id,
-                bookingRef: inv?.bookingRef ?? "—",
+                bookingRef: inv?.bookingRef ?? "-",
                 status,
                 route: container.route,
                 vessel: container.vessel,

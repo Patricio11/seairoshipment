@@ -77,7 +77,7 @@ function routeLabel(route: string): string {
 }
 
 function formatDate(d: string | null): string {
-    if (!d) return "—"
+    if (!d) return "-"
     return new Date(d).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" })
 }
 

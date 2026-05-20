@@ -6,14 +6,14 @@ import { productCategories } from "./product-categories";
  * Reusable cargo-item dimensions surfaced as a "preset picker" inside the
  * CBM calculator. Two flavours share the table:
  *
- *   - Admin-curated rows  (isAdmin=true, userId=null) — seeded with common
+ *   - Admin-curated rows  (isAdmin=true, userId=null) - seeded with common
  *     items per product category (Wine 12-bottle case under Wine & Spirits,
  *     Citrus carton under Fruit, Trophy crate under Hunting Trophies, etc.).
  *     The container creation flow already binds a container to a product
  *     category, so the calculator can surface category-relevant presets
  *     first.
  *
- *   - User-saved rows  (isAdmin=false, userId set) — items the client adds
+ *   - User-saved rows  (isAdmin=false, userId set) - items the client adds
  *     themselves while using the calculator and chooses to keep around.
  *
  * `active=false` soft-deletes without dropping the row so the admin can

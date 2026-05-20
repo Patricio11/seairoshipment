@@ -88,7 +88,7 @@ export interface BookingFormData {
     nettWeight?: number;
     grossWeight?: number;
     temperature: string | null;   // null = SCS / dry container; "" = SRS not yet picked
-    // Cargo type — Pallet keeps the existing palletCount flow; Cube uses
+    // Cargo type - Pallet keeps the existing palletCount flow; Cube uses
     // calculationId + cargoItems + cbmVolume below. SRS bookings are always
     // PALLET; SCS bookings can be either. Defaults to "PALLET".
     cargoType?: "PALLET" | "CUBE";
@@ -113,8 +113,8 @@ export interface BookingFormData {
     agreeToTerms: boolean;
     poNumber?: string;
     salesRateTypeId?: string;
-    files?: File[];                                 // legacy — raw file list
-    fileEntries?: Array<{ file: File; documentCode: string }>;  // preferred — file + which required-doc slot it fills
+    files?: File[];                                 // legacy - raw file list
+    fileEntries?: Array<{ file: File; documentCode: string }>;  // preferred - file + which required-doc slot it fills
 }
 
 export interface ContainerSlot {
@@ -151,7 +151,7 @@ export interface MetaShipProduct {
 }
 
 /**
- * Quote response from /api/rates/quote — polymorphic shape:
+ * Quote response from /api/rates/quote - polymorphic shape:
  *   - PALLET quotes carry per-pallet fields and `palletCount`
  *   - CUBE quotes carry per-CBM fields and `cbmVolume`
  * The `cargoType` discriminator field lets the renderer pick the right

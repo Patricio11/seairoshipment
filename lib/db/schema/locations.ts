@@ -7,7 +7,7 @@ export const locationTypeEnum = pgEnum("location_type", [
 ]);
 
 /**
- * Each location row is the (code, type) pair — e.g. ZACPT can exist twice,
+ * Each location row is the (code, type) pair - e.g. ZACPT can exist twice,
  * once as ORIGIN and once as DESTINATION, because Cape Town is both a place
  * we export from and a place we'll import into. The code alone is NOT
  * unique; the combination is.

@@ -12,7 +12,7 @@ import { nanoid } from "nanoid";
 import { sendCbmShareApprovedEmail } from "@/lib/email";
 
 /**
- * Public endpoint — a share-link guest clicks Approve.
+ * Public endpoint - a share-link guest clicks Approve.
  *
  * Body: { name: string, email: string, note?: string }
  *
@@ -40,7 +40,7 @@ export async function POST(
         if (!name || !email) {
             return NextResponse.json({ error: "Name and email are both required." }, { status: 400 });
         }
-        // Light email syntax sanity-check — match any non-space char @ non-space char . non-space.
+        // Light email syntax sanity-check - match any non-space char @ non-space char . non-space.
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             return NextResponse.json({ error: "Please enter a valid email address." }, { status: 400 });
         }
@@ -78,7 +78,7 @@ export async function POST(
             guestEmail: email,
             note,
             // For APPROVED rows itemsSnapshot is a point-in-time record of
-            // what the approver actually saw — not used for revert.
+            // what the approver actually saw - not used for revert.
             itemsSnapshot: calc.cargoItems,
         });
 
@@ -93,9 +93,9 @@ export async function POST(
             isRead: false,
         });
 
-        // Email — best-effort. We fetch the owner's email + name; failure to
+        // Email - best-effort. We fetch the owner's email + name; failure to
         // send (no SMTP config in dev, transient mail issue) doesn't fail
-        // the approval — the in-app notification still lands.
+        // the approval - the in-app notification still lands.
         const [owner] = await db
             .select({ email: userTable.email, name: userTable.name })
             .from(userTable)

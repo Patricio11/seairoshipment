@@ -27,7 +27,7 @@ export async function PUT(
             return NextResponse.json({ error: "Container not found" }, { status: 404 });
         }
 
-        // cargoType is locked at creation — refuse any change.
+        // cargoType is locked at creation - refuse any change.
         if (body.cargoType !== undefined && body.cargoType !== existing.cargoType) {
             return NextResponse.json(
                 { error: `Cargo type is locked after creation (current: ${existing.cargoType}). Create a new container instead.` },
@@ -96,7 +96,7 @@ export async function PUT(
             if (cat) targetCategoryAllowedTemps = (cat.allowedTemperatures as Temperature[]) || [];
         }
 
-        // Temperature change — DRY containers always end up with null
+        // Temperature change - DRY containers always end up with null
         // (no temperature regime). REEFER containers must pick from
         // frozen / chilled / ambient and the category's allowed list.
         if (body.temperature !== undefined) {
@@ -141,7 +141,7 @@ export async function PUT(
  * can always wipe a container (even after a MetaShip order has been placed):
  *
  *   1. Find all allocations on this container.
- *   2. Refuse if any of those allocations has a PAID invoice — admin should
+ *   2. Refuse if any of those allocations has a PAID invoice - admin should
  *      void the invoice manually first.
  *   3. Delete documents → invoices → allocations → the container itself.
  *
@@ -195,7 +195,7 @@ export async function DELETE(
             await db.delete(invoices).where(inArray(invoices.allocationId, allocationIds));
         }
 
-        // Container-level docs (METASHIP_SHARED) — clean those up too.
+        // Container-level docs (METASHIP_SHARED) - clean those up too.
         await db.delete(documents).where(eq(documents.containerId, id));
 
         await db.delete(palletAllocations).where(eq(palletAllocations.containerId, id));

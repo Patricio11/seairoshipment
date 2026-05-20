@@ -84,10 +84,10 @@ function validateChargeTypeForCargoType(
     cargoType: "PALLET" | "CUBE",
 ): string | null {
     if (cargoType === "CUBE" && chargeType === "PER_PALLET") {
-        return "PER_PALLET is not valid on a CUBE rate card — use PER_CBM, PER_CONTAINER, or FIXED.";
+        return "PER_PALLET is not valid on a CUBE rate card - use PER_CBM, PER_CONTAINER, or FIXED.";
     }
     if (cargoType === "PALLET" && chargeType === "PER_CBM") {
-        return "PER_CBM is not valid on a PALLET rate card — use PER_PALLET, PER_CONTAINER, or FIXED.";
+        return "PER_CBM is not valid on a PALLET rate card - use PER_PALLET, PER_CONTAINER, or FIXED.";
     }
     if (!["PER_PALLET", "PER_CONTAINER", "FIXED", "PER_CBM"].includes(chargeType)) {
         return `Unknown charge type "${chargeType}".`;

@@ -33,7 +33,7 @@ export function BookingWizard({ onSuccess, prefill }: { onSuccess?: () => void; 
     const [step, setStep] = useState(1)
     const [submitting, setSubmitting] = useState(false)
     // While files are uploading after a successful booking POST, show progress
-    // ("Uploading 2/6…"). Sequential upload — one file at a time — so a single
+    // ("Uploading 2/6…"). Sequential upload - one file at a time - so a single
     // bad file doesn't take the whole batch down with it.
     const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null)
     const [costBreakdown, setCostBreakdown] = useState<CostBreakdown | null>(null)
@@ -95,7 +95,7 @@ export function BookingWizard({ onSuccess, prefill }: { onSuccess?: () => void; 
                 }
                 if (!cancelled) setFormData(prev => ({ ...prev, ...updates }))
             } catch {
-                // best-effort prefill — silent failure leaves the user to fill manually
+                // best-effort prefill - silent failure leaves the user to fill manually
             }
         }
         hydrate()
@@ -190,7 +190,7 @@ export function BookingWizard({ onSuccess, prefill }: { onSuccess?: () => void; 
             // a single bad file can't abort the others through a connection
             // burst, and we don't hammer Supabase with parallel requests.
             //
-            // Prefer fileEntries (with documentCode per file) — fall back to raw files with OTHER.
+            // Prefer fileEntries (with documentCode per file) - fall back to raw files with OTHER.
             const fileEntries: Array<{ file: File; documentCode: string }> =
                 formData.fileEntries && formData.fileEntries.length > 0
                     ? formData.fileEntries
@@ -222,7 +222,7 @@ export function BookingWizard({ onSuccess, prefill }: { onSuccess?: () => void; 
                         const message = err instanceof Error ? err.message : "Unknown error"
                         if (!firstErrorMessage) firstErrorMessage = message
                         console.error(`[booking] Upload failed for "${file.name}":`, message)
-                        // Keep going — best-effort for remaining files; client can
+                        // Keep going - best-effort for remaining files; client can
                         // re-upload the failed ones from the bookings page.
                     }
                 }

@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
 
         // Aggregate pending allocations per container so the slider's "remaining"
         // figure matches what the booking POST endpoint will actually enforce.
-        // container.totalPallets / totalCBM only count CONFIRMED allocations —
+        // container.totalPallets / totalCBM only count CONFIRMED allocations -
         // pending requests reserve space too, and the server check rejects
         // bookings that would push over (confirmed + pending + new).
         const containerIds = baseRows.map(r => r.container.id);
@@ -119,15 +119,15 @@ export async function GET(request: NextRequest) {
                 }
             }
             if (cargoType && c.cargoType !== cargoType) {
-                reasons.push(`Cargo-type mismatch — container is ${c.cargoType.toLowerCase()}-only`);
+                reasons.push(`Cargo-type mismatch - container is ${c.cargoType.toLowerCase()}-only`);
             }
             if (productMissingCategory) {
-                reasons.push("Selected product has no category — ask admin to assign one");
+                reasons.push("Selected product has no category - ask admin to assign one");
             } else if (resolvedCategoryId && c.categoryId !== resolvedCategoryId) {
-                reasons.push(`Category mismatch — container accepts ${row.categoryName || "a different category"}`);
+                reasons.push(`Category mismatch - container accepts ${row.categoryName || "a different category"}`);
             }
             if (temperature && c.temperature !== temperature) {
-                reasons.push(`Temperature mismatch — container runs ${c.temperature || "unset"}, you picked ${temperature}`);
+                reasons.push(`Temperature mismatch - container runs ${c.temperature || "unset"}, you picked ${temperature}`);
             }
             if (sailingId && c.sailingId !== sailingId) {
                 reasons.push("Sailing mismatch");
@@ -149,7 +149,7 @@ export async function GET(request: NextRequest) {
                 categoryName: row.categoryName,
                 productName: row.categoryName,
                 cargoType: c.cargoType,
-                // Same convention for CUBE — reservedCBM, not raw totalCBM.
+                // Same convention for CUBE - reservedCBM, not raw totalCBM.
                 totalCBM: reservedCBM,
                 maxCapacityCBM: c.maxCapacityCBM ? Number(c.maxCapacityCBM) : null,
             };

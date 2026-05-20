@@ -96,12 +96,12 @@ export function FinanceStats({ invoices }: FinanceStatsProps) {
                             </div>
                             <p className="text-xs text-blue-200 mt-1">
                                 Due {new Date(nextPayment.dueDate).toLocaleDateString("en-ZA", { month: "short", day: "numeric" })}
-                                {" "}({nextPayment.type} — {nextPayment.bookingRef})
+                                {" "}({nextPayment.type} - {nextPayment.bookingRef})
                             </p>
                         </>
                     ) : (
                         <>
-                            <div className="text-2xl font-bold">—</div>
+                            <div className="text-2xl font-bold">-</div>
                             <p className="text-xs text-blue-200 mt-1">No pending payments</p>
                         </>
                     )}

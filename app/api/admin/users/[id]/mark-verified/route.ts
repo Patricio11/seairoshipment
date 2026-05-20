@@ -9,7 +9,7 @@ import { nanoid } from "nanoid";
  * Admin break-glass: marks a user's email as verified without them clicking
  * the verification link.
  *
- * Use case — the verification email isn't working for a known-good signup:
+ * Use case - the verification email isn't working for a known-good signup:
  * Outlook Safe Links consumed the token, the link expired, the user lost
  * the email, etc. Support verifies their identity out-of-band (the user
  * was the one who submitted the signup form, or you've spoken to them on
@@ -21,7 +21,7 @@ import { nanoid } from "nanoid";
  *  - Target must currently be in EMAIL_PENDING. Already-verified users get
  *    a no-op rejection (cleaner error than silent success).
  *  - Target must be a client. Admins go through the same flow as everyone
- *    else and shouldn't be promoted by another admin — they can re-verify
+ *    else and shouldn't be promoted by another admin - they can re-verify
  *    via the regular email link if they get stuck.
  *
  * Side effects:
@@ -31,7 +31,7 @@ import { nanoid } from "nanoid";
  *  - Fires an in-app notification so the user sees the state change
  *    without us needing to email them again.
  *
- * Auto-sign-in is deliberately NOT triggered — only the user clicking
+ * Auto-sign-in is deliberately NOT triggered - only the user clicking
  * their own verification link sets up an auto-session. An admin manually
  * verifying shouldn't be able to silently land in someone else's session.
  * The user signs in normally from here.

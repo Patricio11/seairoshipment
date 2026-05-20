@@ -63,7 +63,7 @@ export function TwoFactorBackupCodesDialog({ open, onOpenChange }: TwoFactorBack
             setCodes(data?.backupCodes || [])
             setPhase("codes")
             void logAuthEvent("TWO_FACTOR_BACKUP_CODES_REGENERATED")
-            toast.success("New backup codes generated — old codes are no longer valid")
+            toast.success("New backup codes generated - old codes are no longer valid")
         } catch (e) {
             setError(e instanceof Error ? e.message : "Something went wrong")
         } finally {
@@ -81,7 +81,7 @@ export function TwoFactorBackupCodesDialog({ open, onOpenChange }: TwoFactorBack
     const download = () => {
         const blob = new Blob(
             [
-                `Seairo Cargo — Two-Factor Backup Codes\n`,
+                `Seairo Cargo - Two-Factor Backup Codes\n`,
                 `Generated: ${new Date().toISOString()}\n\n`,
                 `Each code can be used once. Treat them like passwords.\n\n`,
                 ...codes.map((c, i) => `${String(i + 1).padStart(2, "0")}.  ${c}\n`),
@@ -109,7 +109,7 @@ export function TwoFactorBackupCodesDialog({ open, onOpenChange }: TwoFactorBack
                     <DialogDescription>
                         {phase === "password"
                             ? "Generates 10 fresh single-use codes. Your previous codes will stop working immediately."
-                            : "Your new backup codes — save them now. You won't see them again."}
+                            : "Your new backup codes - save them now. You won't see them again."}
                     </DialogDescription>
                 </DialogHeader>
 

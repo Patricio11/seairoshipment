@@ -78,7 +78,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "salesRateTypeId must be 'srs' or 'scs'" }, { status: 400 });
         }
 
-        // SCS (Shared Container — Dry) carries no temperature regime. SRS
+        // SCS (Shared Container - Dry) carries no temperature regime. SRS
         // (Shared Reefer) requires at least one temperature and may include
         // ambient (+18°C) for products like chocolate that need controlled
         // but non-chilled conditions.

@@ -36,7 +36,7 @@ interface BulkDeleteBarProps {
 
 /**
  * Floating bar that appears at the bottom of an admin list when one or more
- * rows are selected. Single primary action — delete — wired through an
+ * rows are selected. Single primary action - delete - wired through an
  * AlertDialog confirm. Failure modes the endpoint reports come back via a
  * structured response so the toast can say "Deleted 12 of 14, 2 blocked".
  */
@@ -77,12 +77,12 @@ export function BulkDeleteBar({
                 toast.success(`Deleted ${deleted} ${deleted === 1 ? resourceLabel : resourceLabelPlural}`)
             } else if (deleted > 0 && failedCount > 0) {
                 const firstReason = failed[0]?.reason || "blocked"
-                toast.warning(`Deleted ${deleted} of ${deleted + failedCount} — ${failedCount} blocked`, {
+                toast.warning(`Deleted ${deleted} of ${deleted + failedCount} - ${failedCount} blocked`, {
                     description: failedCount === 1 ? firstReason : `${firstReason} (+ ${failedCount - 1} more)`,
                 })
             } else if (deleted === 0 && failedCount > 0) {
                 const firstReason = failed[0]?.reason || "blocked"
-                toast.error(`Nothing deleted — ${failedCount} blocked`, {
+                toast.error(`Nothing deleted - ${failedCount} blocked`, {
                     description: failedCount === 1 ? firstReason : `${firstReason} (+ ${failedCount - 1} more)`,
                 })
             } else {

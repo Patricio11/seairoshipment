@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 
 /**
  * One-shot seed endpoint. Creates the 8 starter categories based on
- * Documents_needed_per_commodity.md. Idempotent — skips anything that
+ * Documents_needed_per_commodity.md. Idempotent - skips anything that
  * already exists by id.
  */
 export async function POST() {
@@ -41,7 +41,7 @@ export async function POST() {
             {
                 id: "cat-meat",
                 name: "Meat",
-                description: "Lamb 6-way cuts, beef cuts, deboned cuts — chilled or frozen",
+                description: "Lamb 6-way cuts, beef cuts, deboned cuts - chilled or frozen",
                 salesRateTypeId: "srs",
                 allowedTemperatures: ["frozen", "chilled"],
                 requiredDocuments: [
@@ -52,7 +52,7 @@ export async function POST() {
             {
                 id: "cat-dairy",
                 name: "Dairy",
-                description: "Cheese, cream cheese, butter — chilled or frozen",
+                description: "Cheese, cream cheese, butter - chilled or frozen",
                 salesRateTypeId: "srs",
                 allowedTemperatures: ["frozen", "chilled"],
                 requiredDocuments: [
@@ -63,7 +63,7 @@ export async function POST() {
             {
                 id: "cat-fruit",
                 name: "Fruit",
-                description: "Fresh fruit exports — chilled reefer",
+                description: "Fresh fruit exports - chilled reefer",
                 salesRateTypeId: "srs",
                 allowedTemperatures: ["chilled"],
                 requiredDocuments: [
@@ -75,7 +75,7 @@ export async function POST() {
             {
                 id: "cat-confectionery",
                 name: "Confectionery & Chocolate",
-                description: "Chocolate, sweets, and other heat-sensitive ambient-temp cargo — reefer at +18°C, not chilled.",
+                description: "Chocolate, sweets, and other heat-sensitive ambient-temp cargo - reefer at +18°C, not chilled.",
                 salesRateTypeId: "srs",
                 allowedTemperatures: ["ambient"],
                 requiredDocuments: [

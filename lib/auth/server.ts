@@ -44,7 +44,7 @@ export const auth = betterAuth({
         updateAge: 60 * 60 * 4, // refresh session every 4 hours
         cookieCache: {
             enabled: true,
-            maxAge: 5 * 60, // 5 minutes — reduces DB lookups
+            maxAge: 5 * 60, // 5 minutes - reduces DB lookups
         },
     },
     databaseHooks: {
@@ -76,8 +76,8 @@ export const auth = betterAuth({
         callbackURL: `${appUrl}/auth/verified`,
         sendVerificationEmail: async ({ user, url }) => {
             // Belt-and-braces: the URL Better Auth hands us already includes
-            // a callbackURL query — make absolutely sure it points at /auth/verified
-            // (absolute, not relative — Better Auth's redirect handler needs the
+            // a callbackURL query - make absolutely sure it points at /auth/verified
+            // (absolute, not relative - Better Auth's redirect handler needs the
             // origin to round-trip cleanly behind some proxies / Safe Links).
             // We also pass `email` through so the /auth/verified error branch
             // can offer a one-click resend without the user retyping it.
@@ -89,7 +89,7 @@ export const auth = betterAuth({
             } catch { /* malformed URL, send as-is */ }
 
             // Pull active fillable templates so the verification email can list
-            // them inline. Failure to load templates must not block sending —
+            // them inline. Failure to load templates must not block sending -
             // the email is critical, the template list is a nice-to-have.
             let templates: VerificationTemplate[] = [];
             try {
@@ -163,7 +163,7 @@ export async function requireAdmin(): Promise<
     if (!session) {
         return {
             error: NextResponse.json(
-                { error: "Not authenticated — please sign in again" },
+                { error: "Not authenticated - please sign in again" },
                 { status: 401 }
             ),
         };
@@ -209,7 +209,7 @@ export async function requireRole(allowedRoles: Array<"admin" | "client">) {
         }
     }
 
-    // Vetting gate — only applies when the page asks for client access
+    // Vetting gate - only applies when the page asks for client access
     if (userRole === "client" && allowedRoles.includes("client")) {
         const [row] = await db
             .select({

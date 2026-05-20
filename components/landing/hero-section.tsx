@@ -45,7 +45,7 @@ export function IndustryHero() {
                         {/* Industry Badge Spacer - Preserves layout */}
                         <div className="h-10 mb-6" />
 
-                        {/* Headline — leads with the trademarked keyword for SEO */}
+                        {/* Headline - leads with the trademarked keyword for SEO */}
                         <h1 className="font-display text-5xl font-bold leading-[1.1] tracking-tight text-white md:text-6xl lg:text-7xl">
                             <span className="relative inline-block">
                                 <span className="text-brand-orange">

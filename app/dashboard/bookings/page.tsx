@@ -162,7 +162,7 @@ export default function BookingsPage() {
                         </div>
                         <div>
                             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{stat.label}</p>
-                            <p className="text-2xl font-black text-slate-900 dark:text-white">{loading ? "—" : stat.value}</p>
+                            <p className="text-2xl font-black text-slate-900 dark:text-white">{loading ? "-" : stat.value}</p>
                         </div>
                     </motion.div>
                 ))}
@@ -267,7 +267,7 @@ export default function BookingsPage() {
                                                         <div className="flex items-center gap-1.5 mt-0.5">
                                                             <span className="text-xs font-bold text-slate-400">{booking.vessel}</span>
                                                             <span className="h-1 w-1 rounded-full bg-slate-300" />
-                                                            <span className="text-[10px] font-medium text-slate-500 uppercase">{booking.commodityName || "—"}</span>
+                                                            <span className="text-[10px] font-medium text-slate-500 uppercase">{booking.commodityName || "-"}</span>
                                                         </div>
                                                     </div>
                                                 </div>

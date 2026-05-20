@@ -3,7 +3,7 @@
  * calls the provided per-row delete function, and accumulates
  *   { deleted: string[], failed: Array<{ id, reason }> }
  *
- * Serial (not Promise.all) on purpose — most deletes touch shared parent
+ * Serial (not Promise.all) on purpose - most deletes touch shared parent
  * counters (container.totalPallets etc.) so racing them would corrupt
  * state. The volumes here are admin-driven cleanup, not high-throughput.
  */
@@ -29,7 +29,7 @@ export async function runBulkDelete(
     return result
 }
 
-/** Strict input parser — the body must contain `ids: string[]` with at least one entry. */
+/** Strict input parser - the body must contain `ids: string[]` with at least one entry. */
 export function parseBulkIds(body: unknown): { ids: string[] } | { error: string } {
     if (!body || typeof body !== "object") return { error: "Body must be JSON" }
     const ids = (body as { ids?: unknown }).ids

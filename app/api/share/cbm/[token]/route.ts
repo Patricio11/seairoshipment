@@ -8,7 +8,7 @@ import { eq, sql } from "drizzle-orm";
  *
  * Returns the calculation payload sufficient to render the read-only view:
  * name, items, totals. We deliberately do NOT expose the owner's user id,
- * email, notes, or any other identifying field — the viewer should see
+ * email, notes, or any other identifying field - the viewer should see
  * dimensions and that's it.
  *
  * Access checks:

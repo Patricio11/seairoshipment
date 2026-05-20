@@ -225,7 +225,7 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
                 toast.success("Destination charge rate card saved successfully!")
                 // Invalidate the router cache for the list page, then navigate.
                 // Without refresh() the list can serve a stale snapshot for a tick
-                // and the user may think the save failed and re-submit — creating duplicates.
+                // and the user may think the save failed and re-submit - creating duplicates.
                 router.refresh()
                 router.push("/admin/finance/destination-charges")
             } else {
@@ -539,7 +539,7 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
                                     R {totals.marginZAR.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                 </div>
                                 <div className="text-xs text-slate-500">
-                                    {totals.totalZAR > 0 ? `${((totals.marginZAR / totals.totalZAR) * 100).toFixed(1)}% margin` : "—"}
+                                    {totals.totalZAR > 0 ? `${((totals.marginZAR / totals.totalZAR) * 100).toFixed(1)}% margin` : "-"}
                                 </div>
                             </div>
                         </div>

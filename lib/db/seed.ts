@@ -1,5 +1,5 @@
 /**
- * Seed script — populates rate management tables from mock data.
+ * Seed script - populates rate management tables from mock data.
  * Run with: npx tsx lib/db/seed.ts
  */
 
@@ -39,7 +39,7 @@ async function seed() {
         ])
         .onConflictDoNothing();
 
-    // 2. Container Types — volumeCBM values are interior CBM per ISO/ITC
+    // 2. Container Types - volumeCBM values are interior CBM per ISO/ITC
     // reference sheets. Reefers lose ~5 m³ to insulation vs. equivalent dry.
     console.log("  → Container types...");
     await db
@@ -75,7 +75,7 @@ async function seed() {
         ])
         .onConflictDoNothing();
 
-    // 5. Origin Charge Items (CPT 40HC SRS — 25 items)
+    // 5. Origin Charge Items (CPT 40HC SRS - 25 items)
     console.log("  → Origin charge items...");
     await db
         .insert(originChargeItems)

@@ -37,9 +37,9 @@ export default function DashboardWeatherPage() {
             <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
                 <h3 className="text-sm font-bold text-white mb-2">How this works</h3>
                 <ul className="space-y-1.5 text-xs text-slate-400 leading-relaxed">
-                    <li>• <strong className="text-slate-300">Curated, not exhaustive</strong> — pick 3–5 ports relevant to current routes. The dashboard shows them in the order you set here.</li>
+                    <li>• <strong className="text-slate-300">Curated, not exhaustive</strong> - pick 3–5 ports relevant to current routes. The dashboard shows them in the order you set here.</li>
                     <li>• <strong className="text-slate-300">Live temperatures</strong> are pulled from Open-Meteo (free, no API key) and cached for 1 hour to keep the widget snappy.</li>
-                    <li>• <strong className="text-slate-300">Lat/lng tip</strong> — search the city in Google Maps, right-click the port → click the coordinates to copy. 4 decimal places is plenty.</li>
+                    <li>• <strong className="text-slate-300">Lat/lng tip</strong> - search the city in Google Maps, right-click the port → click the coordinates to copy. 4 decimal places is plenty.</li>
                     <li>• Hide a port without deleting via the active toggle when a route goes quiet; flip it back when you start booking that lane again.</li>
                 </ul>
             </div>

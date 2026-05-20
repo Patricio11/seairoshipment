@@ -1,6 +1,6 @@
 /**
  * Client-side helper for posting security events to /api/auth/events.
- * Fire-and-forget — the caller doesn't await this in any place where the
+ * Fire-and-forget - the caller doesn't await this in any place where the
  * audit failing should block the user-facing action.
  */
 export async function logAuthEvent(
@@ -23,6 +23,6 @@ export async function logAuthEvent(
         });
     } catch {
         // Audit logging is best-effort. The action it accompanies has
-        // already succeeded server-side — losing the audit row is acceptable.
+        // already succeeded server-side - losing the audit row is acceptable.
     }
 }

@@ -14,8 +14,8 @@ export const productCategories = pgTable("product_categories", {
     name: text("name").notNull(),
     description: text("description"),
     salesRateTypeId: text("sales_rate_type_id").notNull(),        // "srs" | "scs"
-    allowedTemperatures: jsonb("allowed_temperatures").notNull(),  // string[] — ["frozen","chilled","ambient"]
-    requiredDocuments: jsonb("required_documents").notNull(),      // string[] — doc codes e.g. ["COMMERCIAL_INVOICE","PACKING_LIST",...]
+    allowedTemperatures: jsonb("allowed_temperatures").notNull(),  // string[] - ["frozen","chilled","ambient"]
+    requiredDocuments: jsonb("required_documents").notNull(),      // string[] - doc codes e.g. ["COMMERCIAL_INVOICE","PACKING_LIST",...]
     active: boolean("active").default(true).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),

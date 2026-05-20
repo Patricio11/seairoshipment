@@ -90,12 +90,12 @@ export function WeatherWidget() {
                                             <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{p.cityName}</span>
                                             <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
                                                 {ROLE_LABEL[p.role]}
-                                                {p.condition && p.condition !== "—" ? ` · ${p.condition}` : ""}
+                                                {p.condition && p.condition !== "-" ? ` · ${p.condition}` : ""}
                                             </span>
                                         </div>
                                     </div>
                                     <div className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                                        {p.tempC !== null ? `${Math.round(p.tempC)}°C` : "—"}
+                                        {p.tempC !== null ? `${Math.round(p.tempC)}°C` : "-"}
                                     </div>
                                 </div>
                             )

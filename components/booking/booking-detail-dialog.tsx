@@ -57,7 +57,7 @@ function formatDate(dateStr: string | null) {
 }
 
 function formatCurrency(amount: string | null) {
-    if (!amount) return "—"
+    if (!amount) return "-"
     return `R ${Number(amount).toLocaleString("en-ZA", { minimumFractionDigits: 2 })}`
 }
 
@@ -131,7 +131,7 @@ export function BookingDetailDialog({ booking, open, onOpenChange }: BookingDeta
                             </div>
                             <div>
                                 <p className="text-[10px] font-bold uppercase text-slate-400">Voyage</p>
-                                <p className="text-sm font-bold text-slate-900 dark:text-white">{booking.voyageNumber || "—"}</p>
+                                <p className="text-sm font-bold text-slate-900 dark:text-white">{booking.voyageNumber || "-"}</p>
                             </div>
                             <div>
                                 <p className="text-[10px] font-bold uppercase text-slate-400">Container Type</p>
@@ -160,7 +160,7 @@ export function BookingDetailDialog({ booking, open, onOpenChange }: BookingDeta
                             </div>
                             <ArrowRight className="h-4 w-4 text-slate-300 shrink-0 mx-3" />
                             <div className="text-center">
-                                <p className="text-sm font-bold text-slate-900 dark:text-white">{routeParts[1] || "—"}</p>
+                                <p className="text-sm font-bold text-slate-900 dark:text-white">{routeParts[1] || "-"}</p>
                                 <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-500">
                                     <Calendar className="h-3 w-3" />
                                     ETA: {formatDate(booking.eta)}
@@ -178,7 +178,7 @@ export function BookingDetailDialog({ booking, open, onOpenChange }: BookingDeta
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <p className="text-[10px] font-bold uppercase text-slate-400">Commodity</p>
-                                <p className="text-sm font-bold text-slate-900 dark:text-white">{booking.commodityName || "—"}</p>
+                                <p className="text-sm font-bold text-slate-900 dark:text-white">{booking.commodityName || "-"}</p>
                             </div>
                             <div>
                                 <p className="text-[10px] font-bold uppercase text-slate-400">{booking.cargoType === "CUBE" ? "Volume" : "Pallets"}</p>
@@ -309,7 +309,7 @@ export function BookingDetailDialog({ booking, open, onOpenChange }: BookingDeta
                         <DialogHeader className="px-6 py-4 border-b shrink-0">
                             <DialogTitle className="text-sm font-black truncate">{viewDoc.originalName}</DialogTitle>
                             {viewDoc.metashipDownloadUrl && (
-                                <p className="text-[10px] text-slate-500 mt-1">MetaShip download links expire after 15 minutes — reopen this view to get a fresh link.</p>
+                                <p className="text-[10px] text-slate-500 mt-1">MetaShip download links expire after 15 minutes - reopen this view to get a fresh link.</p>
                             )}
                         </DialogHeader>
                         <div className="flex-1 overflow-auto bg-slate-100 dark:bg-slate-900 p-4 flex items-start justify-center">

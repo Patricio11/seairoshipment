@@ -166,7 +166,7 @@ export function OceanFreightGrid() {
                 />
             </div>
 
-            {/* Edit Dialog — controlled open via editingRate */}
+            {/* Edit Dialog - controlled open via editingRate */}
             <CreateOceanFreightDialog
                 editData={editingRate}
                 controlledOpen={!!editingRate}
@@ -362,7 +362,7 @@ export function OceanFreightGrid() {
                                                     <TableCell>
                                                         <div className="flex items-center gap-1">
                                                             <Badge className="bg-brand-blue text-white">
-                                                                {rate.salesRateTypeName || rate.salesRateTypeId || "—"}
+                                                                {rate.salesRateTypeName || rate.salesRateTypeId || "-"}
                                                             </Badge>
                                                             {rate.cargoType === "CUBE" && (
                                                                 <Badge variant="outline" className="text-[10px] border-purple-700 text-purple-400">

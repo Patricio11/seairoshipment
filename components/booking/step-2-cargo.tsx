@@ -51,7 +51,7 @@ interface ProductOption {
     id: string
     name: string
     hsCode: string
-    categoryId: string | null        // category reference — the consolidation unit
+    categoryId: string | null        // category reference - the consolidation unit
     categoryName: string | null      // for display ("Frozen Seafood" etc.)
 }
 
@@ -290,7 +290,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                 commodityDescription: product.categoryName || "",
                 categoryId: product.categoryId || undefined,
                 categoryName: product.categoryName || undefined,
-                // Clear downstream — selecting a new product may change what temps/sailings are available
+                // Clear downstream - selecting a new product may change what temps/sailings are available
                 temperature: clearedTemp(),
                 sailingScheduleId: undefined,
                 sailingDate: undefined,
@@ -303,7 +303,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
     const handleTemperatureSelect = (temp: string) => {
         updateFormData({
             temperature: temp,
-            // Clear sailing — changing temperature may change which sailings are available
+            // Clear sailing - changing temperature may change which sailings are available
             sailingScheduleId: undefined,
             sailingDate: undefined,
             voyageNumber: undefined,
@@ -317,7 +317,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
         const isDry = rateTypeId === "scs"
         updateFormData({
             salesRateTypeId: rateTypeId,
-            // SCS carries no temperature — null sentinel means "dry". SRS clears so user picks.
+            // SCS carries no temperature - null sentinel means "dry". SRS clears so user picks.
             temperature: isDry ? null : "",
             // SRS is always pallets. SCS defaults to PALLET; the cargo-type
             // chooser flips it to CUBE when relevant. Clear any stale Cube
@@ -327,7 +327,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
             cbmVolume: undefined,
             volumetricWeightKg: undefined,
             cargoItems: undefined,
-            // Cascading clears — rate-type change can flip which products/sailings are available
+            // Cascading clears - rate-type change can flip which products/sailings are available
             commodity: "",
             commodityName: "",
             hsCode: "",
@@ -341,7 +341,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
     }
 
     const handleCargoTypeSelect = (cargoType: "PALLET" | "CUBE") => {
-        // Cargo type changes invalidate the container pick — different containers
+        // Cargo type changes invalidate the container pick - different containers
         // serve different cargo types. Clear and let the user re-pick.
         updateFormData({
             cargoType,
@@ -363,7 +363,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
         return "text-brand-blue"
     }
 
-    // SCS is dry — no temperature required to advance. SRS needs a temperature pick.
+    // SCS is dry - no temperature required to advance. SRS needs a temperature pick.
     const isSCS = formData.salesRateTypeId === "scs"
     const isInitialComplete = Boolean(
         formData.salesRateTypeId &&
@@ -388,7 +388,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
     )
 
     // No-match flags for UX. SCS bookings don't carry a temperature (Dry by
-    // definition — see SCS_SRS_RULES.md), so anywhere we'd normally require
+    // definition - see SCS_SRS_RULES.md), so anywhere we'd normally require
     // `formData.temperature`, an SCS booking is "temperature-ready" too.
     const routeReady = Boolean(formData.origin && formData.destination && formData.salesRateTypeId)
     const temperatureReady = isSCS || !!formData.temperature
@@ -456,7 +456,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                 </div>
                             </div>
 
-                            {/* Cargo Type — only relevant on SCS; SRS is always pallets */}
+                            {/* Cargo Type - only relevant on SCS; SRS is always pallets */}
                             {formData.salesRateTypeId === "scs" && (
                                 <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-800">
                                     <div className="flex items-center gap-2 text-brand-blue">
@@ -644,7 +644,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                     <div className="space-y-2">
                                         <Label className="text-xs font-semibold">Temperature</Label>
                                         {formData.salesRateTypeId === "scs" ? (
-                                            // Dry containers don't have a temperature regime — lock the field so clients
+                                            // Dry containers don't have a temperature regime - lock the field so clients
                                             // can't pick a reefer setting on a non-reefer container.
                                             <div className="flex items-center gap-2 h-12 px-3 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-md text-sm text-slate-600 dark:text-slate-300 font-medium cursor-not-allowed">
                                                 <Sun className="h-3.5 w-3.5 text-slate-500" />
@@ -712,7 +712,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                 )}
                             </div>
 
-                            {/* Sailing — shown after product + temperature so we can filter sailings correctly */}
+                            {/* Sailing - shown after product + temperature so we can filter sailings correctly */}
                             <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
                                 <div className="flex items-center gap-2 text-brand-blue">
                                     <Anchor className="h-4 w-4" />
@@ -833,7 +833,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                                     No container matches this combination
                                                 </p>
                                                 <p className="text-xs text-amber-800/80 dark:text-amber-400/80 mt-1">
-                                                    You can request a container for this route — our team will reach out once one is available.
+                                                    You can request a container for this route - our team will reach out once one is available.
                                                 </p>
                                             </div>
                                             <Button
@@ -905,7 +905,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                     </p>
                                     <p className="text-sm text-slate-500 mt-1 mb-6">
                                         {excludedContainers.length > 0
-                                            ? "Adjust your product, temperature or sailing — or ask our team to open a new container."
+                                            ? "Adjust your product, temperature or sailing - or ask our team to open a new container."
                                             : "Submit a request and our team will open one for you."}
                                     </p>
                                     <Button
@@ -1068,7 +1068,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                         <div className="w-full lg:w-80 space-y-6">
                             <div className="bg-white dark:bg-slate-950 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm space-y-8">
                                 {formData.cargoType === "CUBE" ? (
-                                    /* Cube branch — saved-calc picker + share-of-container bar */
+                                    /* Cube branch - saved-calc picker + share-of-container bar */
                                     <div className="space-y-6">
                                         <div>
                                             <Label className="text-[10px] uppercase tracking-widest font-black text-slate-400 mb-2 block">Volume Allocation</Label>
@@ -1133,7 +1133,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                         )}
                                     </div>
                                 ) : (
-                                    /* Pallet branch — existing slider + weight inputs + share bar */
+                                    /* Pallet branch - existing slider + weight inputs + share bar */
                                     <div className="space-y-6">
                                         <div>
                                             <Label className="text-[10px] uppercase tracking-widest font-black text-slate-400 mb-2 block">Volume Allocation</Label>
@@ -1156,7 +1156,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
                                             />
                                             {remainingCapacity < 5 && (
                                                 <p className="text-[10px] text-amber-500 font-bold mt-1">
-                                                    Only {remainingCapacity} spot{remainingCapacity !== 1 ? "s" : ""} left — minimum reduced to 1 pallet.
+                                                    Only {remainingCapacity} spot{remainingCapacity !== 1 ? "s" : ""} left - minimum reduced to 1 pallet.
                                                 </p>
                                             )}
                                         </div>

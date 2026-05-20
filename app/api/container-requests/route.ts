@@ -6,7 +6,7 @@ import { eq, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 /**
- * Client endpoint — create a request for a container that doesn't exist yet.
+ * Client endpoint - create a request for a container that doesn't exist yet.
  */
 export async function POST(request: NextRequest) {
     try {
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
             id: `NTF-${nanoid(10)}`,
             type: "BOOKING_CREATED",
             title: "New Container Request",
-            message: `A client requested a container on route ${originCode}→${destinationCode} (${palletCount} pallet${palletCount === 1 ? "" : "s"}). No existing container matched — please review.`,
+            message: `A client requested a container on route ${originCode}→${destinationCode} (${palletCount} pallet${palletCount === 1 ? "" : "s"}). No existing container matched - please review.`,
             containerId: null,
             isRead: false,
         });
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Client GET — list your own requests.
+ * Client GET - list your own requests.
  */
 export async function GET() {
     try {

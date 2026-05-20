@@ -110,7 +110,7 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
             if (action === "reject") body = { reason: reasonInput.trim() }
             if (action === "request-changes") body = { note: reasonInput.trim() }
 
-            // disable-2fa is a destructive break-glass — POST verb. All other
+            // disable-2fa is a destructive break-glass - POST verb. All other
             // vetting actions are PATCH because they mutate fields on the
             // existing user row.
             const method = action === "disable-2fa" ? "POST" : "PATCH"
@@ -128,15 +128,15 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
             }
 
             const successCopy =
-                action === "approve" ? "User approved — welcome notification sent" :
+                action === "approve" ? "User approved - welcome notification sent" :
                 action === "reject" ? "User rejected" :
                 action === "resend-verification" ? "Verification email resent" :
-                action === "disable-2fa" ? "2FA disabled — user notified" :
-                action === "mark-verified" ? "Email marked as verified — user can sign in now" :
-                "Changes requested — user can edit & resubmit"
+                action === "disable-2fa" ? "2FA disabled - user notified" :
+                action === "mark-verified" ? "Email marked as verified - user can sign in now" :
+                "Changes requested - user can edit & resubmit"
             toast.success(successCopy)
             onActionComplete()
-            // resend-verification and disable-2fa don't change vetting state —
+            // resend-verification and disable-2fa don't change vetting state -
             // leave the modal open so the admin can confirm + close manually.
             // mark-verified DOES change state (advances to ONBOARDING_PENDING),
             // so we close.
@@ -195,7 +195,7 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
                             <InfoRow icon={Building2} label="Legal name" value={user.companyName} />
                             <InfoRow icon={Hash} label="Registration No." value={user.companyReg} />
                             <InfoRow icon={Globe2} label="Country" value={user.companyCountry} />
-                            <InfoRow icon={Receipt} label="VAT Number" value={user.vatNumber || "—"} />
+                            <InfoRow icon={Receipt} label="VAT Number" value={user.vatNumber || "-"} />
                             <InfoRow icon={MapPin} label="Physical address" value={user.companyAddress} className="sm:col-span-2" />
                         </div>
                     </div>
@@ -249,7 +249,7 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
                                 onChange={(e) => setReasonInput(e.target.value)}
                                 placeholder={pendingAction === "reject"
                                     ? "e.g. Tax number on file does not match the registration"
-                                    : "e.g. Proof of address is older than 3 months — please upload a recent utility bill"}
+                                    : "e.g. Proof of address is older than 3 months - please upload a recent utility bill"}
                                 className="bg-slate-900 border-slate-700 text-white min-h-[88px]"
                             />
                             <p className="text-[10px] text-slate-500">
@@ -288,7 +288,7 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
                             <div className="text-sm">
                                 <p className="font-bold text-red-200">Disable two-factor authentication?</p>
                                 <p className="text-red-200/70 mt-0.5">
-                                    This is a break-glass action for users who&apos;ve lost both their authenticator and their backup codes. Verify their identity out-of-band first. After this, they&apos;ll sign in with password only — recommend they re-enable 2FA from Settings → Security immediately. They&apos;ll get an in-app notification confirming the reset.
+                                    This is a break-glass action for users who&apos;ve lost both their authenticator and their backup codes. Verify their identity out-of-band first. After this, they&apos;ll sign in with password only - recommend they re-enable 2FA from Settings → Security immediately. They&apos;ll get an in-app notification confirming the reset.
                                 </p>
                             </div>
                         </motion.div>
@@ -302,7 +302,7 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
                         <div className="text-sm">
                             <p className="font-bold text-amber-200">Hasn&apos;t verified email yet</p>
                             <p className="text-amber-200/70 mt-0.5">
-                                The user signed up but hasn&apos;t clicked the link in their inbox. You can re-send the verification email below — it goes to <span className="font-mono text-amber-100">{user.email}</span>.
+                                The user signed up but hasn&apos;t clicked the link in their inbox. You can re-send the verification email below - it goes to <span className="font-mono text-amber-100">{user.email}</span>.
                             </p>
                         </div>
                     </div>
@@ -311,9 +311,9 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
                     <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4 flex items-start gap-3">
                         <Hourglass className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
                         <div className="text-sm">
-                            <p className="font-bold text-blue-200">Email verified — waiting on user</p>
+                            <p className="font-bold text-blue-200">Email verified - waiting on user</p>
                             <p className="text-blue-200/70 mt-0.5">
-                                They&apos;ve confirmed their email but haven&apos;t completed the onboarding form yet. No admin action needed — the next step is on them.
+                                They&apos;ve confirmed their email but haven&apos;t completed the onboarding form yet. No admin action needed - the next step is on them.
                             </p>
                         </div>
                     </div>
@@ -337,7 +337,7 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
 
                     {pendingAction === null ? (
                         <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
-                            {/* EMAIL_PENDING — resend or manual verify */}
+                            {/* EMAIL_PENDING - resend or manual verify */}
                             {user.vettingStatus === "EMAIL_PENDING" && (
                                 <>
                                     <Button
@@ -357,7 +357,7 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
                                 </>
                             )}
 
-                            {/* PENDING_REVIEW — full action set */}
+                            {/* PENDING_REVIEW - full action set */}
                             {user.vettingStatus === "PENDING_REVIEW" && (
                                 <>
                                     <Button
@@ -425,7 +425,7 @@ function InfoRow({ icon: Icon, label, value, className = "" }: { icon: typeof Bu
                 <Icon className="h-3 w-3 text-brand-blue" />
                 {label}
             </p>
-            <p className="text-sm text-white mt-0.5 break-words">{value || "—"}</p>
+            <p className="text-sm text-white mt-0.5 break-words">{value || "-"}</p>
         </div>
     )
 }

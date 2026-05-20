@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
                 code,
                 displayName,
                 maxPallets,
-                // Interior CBM is critical for Cube booking flows — every Cube
+                // Interior CBM is critical for Cube booking flows - every Cube
                 // container needs a positive volumeCBM or its capacity check
                 // evaluates to 0 and the client never sees the container.
                 volumeCBM: volumeCBM != null ? String(volumeCBM) : null,

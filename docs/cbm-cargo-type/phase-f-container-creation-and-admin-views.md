@@ -1,4 +1,4 @@
-# Phase F — Container Creation + Admin Views
+# Phase F - Container Creation + Admin Views
 
 **Status**: ✅ DONE
 **Date completed**: 2026-05-14
@@ -29,13 +29,13 @@ In the **Create Container** flow:
 5. Category            ← unchanged
 ```
 
-For REEFER (SRS) container types the Cargo Type field is silently absent — SRS is always pallet, always palletised reefer cargo.
+For REEFER (SRS) container types the Cargo Type field is silently absent - SRS is always pallet, always palletised reefer cargo.
 
 In the container row display:
 - New purple `m³ Cube` badge sits alongside the existing temperature/category badges when `cargoType === "CUBE"`.
 - The big capacity counter on the right swaps between two modes:
-  - **PALLET**: `{totalPallets} / {maxCapacity}` — unchanged behaviour
-  - **CUBE**: `{totalCBM} / {maxCapacityCBM} m³` — warns at 75% full
+  - **PALLET**: `{totalPallets} / {maxCapacity}` - unchanged behaviour
+  - **CUBE**: `{totalCBM} / {maxCapacityCBM} m³` - warns at 75% full
 
 ### Admin bookings grid
 
@@ -43,7 +43,7 @@ Per-allocation volume cell now reads:
 - **PALLET allocation**: `{palletCount}` (unchanged)
 - **CUBE allocation**: `{cbmVolume.toFixed(2)} m³`
 
-The container header gets the same purple `m³ Cube` badge. The capacity counter mirrors the fleet scheduler — pallet count vs CBM. The review-request modal's "Pallets" label flips to "Volume" for Cube allocations, and gets a `m³ Cube` chip in the header.
+The container header gets the same purple `m³ Cube` badge. The capacity counter mirrors the fleet scheduler - pallet count vs CBM. The review-request modal's "Pallets" label flips to "Volume" for Cube allocations, and gets a `m³ Cube` chip in the header.
 
 ## What changed (data flow)
 
@@ -67,8 +67,8 @@ Same locked-after-creation pattern as Phase E for rate cards: the API is the enf
 
 ### Server
 
-- `app/api/admin/containers/route.ts` — POST destructures `cargoType: cargoTypeRaw`, derives `cargoType = derivedSalesRateTypeId === "srs" ? "PALLET" : (cargoTypeRaw === "CUBE" ? "CUBE" : "PALLET")`, inserts cargoType + totalCBM=0 + maxCapacityCBM=ct.volumeCBM.
-- `app/api/admin/containers/[id]/route.ts` — PUT now compares `body.cargoType` against `existing.cargoType` and 400s on any change attempt. When `containerTypeId` changes, `maxCapacityCBM = ct.volumeCBM ?? null` is updated alongside the existing `maxCapacity = ct.maxPallets`.
+- `app/api/admin/containers/route.ts` - POST destructures `cargoType: cargoTypeRaw`, derives `cargoType = derivedSalesRateTypeId === "srs" ? "PALLET" : (cargoTypeRaw === "CUBE" ? "CUBE" : "PALLET")`, inserts cargoType + totalCBM=0 + maxCapacityCBM=ct.volumeCBM.
+- `app/api/admin/containers/[id]/route.ts` - PUT now compares `body.cargoType` against `existing.cargoType` and 400s on any change attempt. When `containerTypeId` changes, `maxCapacityCBM = ct.volumeCBM ?? null` is updated alongside the existing `maxCapacity = ct.maxPallets`.
 
 ### Fleet scheduler
 
@@ -103,7 +103,7 @@ The CBM_CARGO_TYPE.md tracker originally asked for a filter chip alongside the S
 `containerTypes.volumeCBM` is a property of the *equipment*: a 40ft HC reefer has ~67.7 m³, a 20ft has ~33 m³, etc. The container instance just inherits that value. Keeping the source of truth on the type means:
 - One place to fix if seed numbers are wrong.
 - New container types automatically get correct CBM when added.
-- The POST/PUT routes can re-hydrate `maxCapacityCBM` from the type as needed — no drift.
+- The POST/PUT routes can re-hydrate `maxCapacityCBM` from the type as needed - no drift.
 
 ## Verification
 
@@ -116,6 +116,6 @@ The CBM_CARGO_TYPE.md tracker originally asked for a filter chip alongside the S
 - A separate Cargo Type filter chip on admin-bookings-grid (see "Why no separate filter chip" above).
 - Cargo-items snapshot display on the review modal (the JSONB items list per allocation). The Cube booking flow already snapshots items into the allocation; the admin's review modal currently shows aggregate volume, which is the operational number that matters at approval time. Itemised display can ship later with a dedicated "view source calculation" link.
 
-## Next: Phase G — Display surfaces (client side)
+## Next: Phase G - Display surfaces (client side)
 
-Recent shipments widget, my-bookings widget, invoice line items — all the client-side "N pallets" strings need the same polymorphic treatment.
+Recent shipments widget, my-bookings widget, invoice line items - all the client-side "N pallets" strings need the same polymorphic treatment.

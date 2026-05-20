@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
         } = body;
 
         // Temperature is required for REEFER containers but must be null for
-        // DRY (SCS) — see SCS_SRS_RULES.md. Validate after we've looked up the
+        // DRY (SCS) - see SCS_SRS_RULES.md. Validate after we've looked up the
         // container type below, since the rule depends on it.
         if (!route || !containerTypeId || !sailingId || !categoryId) {
             return NextResponse.json(
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
 
         // Temperature regime is tied to container type:
         //   - REEFER: must pick one of frozen / chilled / ambient
-        //   - DRY:    must be null (the "Dry — no temperature regime" sentinel)
+        //   - DRY:    must be null (the "Dry - no temperature regime" sentinel)
         const effectiveTemperature: Temperature | null = ct.type === "DRY"
             ? null
             : (temperature as Temperature | null);
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // SCS categories carry allowedTemperatures: [] — nothing to check
+        // SCS categories carry allowedTemperatures: [] - nothing to check
         // (the container is DRY with null temperature). REEFER categories
         // must list the chosen temperature.
         const categoryAllowed = (category.allowedTemperatures as Temperature[]) || [];
