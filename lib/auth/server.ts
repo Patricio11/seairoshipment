@@ -77,11 +77,14 @@ export const auth = betterAuth({
         sendVerificationEmail: async ({ user, url }) => {
             // Belt-and-braces: the URL Better Auth hands us already includes
             // a callbackURL query — make absolutely sure it points at /auth/verified
-            // so the post-verify redirect can never silently fall back to "/".
+            // (absolute, not relative — Better Auth's redirect handler needs the
+            // origin to round-trip cleanly behind some proxies / Safe Links).
+            // We also pass `email` through so the /auth/verified error branch
+            // can offer a one-click resend without the user retyping it.
             let finalUrl = url;
             try {
                 const u = new URL(url);
-                u.searchParams.set("callbackURL", "/auth/verified");
+                u.searchParams.set("callbackURL", `${appUrl}/auth/verified?email=${encodeURIComponent(user.email)}`);
                 finalUrl = u.toString();
             } catch { /* malformed URL, send as-is */ }
 

@@ -124,6 +124,10 @@ export async function sendVerificationEmail(
             intro: "Thanks for signing up. Click the button below to confirm your email address — then we'll guide you through a quick onboarding so we can unlock the dashboard for your company.",
             contentHtml: `
                 ${ctaButton(verificationUrl, "Verify Email Address")}
+                <p style="color: #94a3b8; font-size: 11px; line-height: 1.6; margin: 4px 0 18px; text-align: center;">
+                    Button not working? Copy this link into your browser:<br>
+                    <a href="${verificationUrl}" style="color: #2563eb; word-break: break-all;">${verificationUrl}</a>
+                </p>
                 ${templatesHtml}
                 <div style="background: #eff6ff; border: 1px solid #dbeafe; border-radius: 10px; padding: 14px 16px; margin-top: 16px;">
                     <p style="color: #1e40af; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 6px;">What's next</p>
@@ -132,7 +136,7 @@ export async function sendVerificationEmail(
                     </p>
                 </div>
                 <p style="color: #94a3b8; font-size: 12px; line-height: 1.6; margin: 20px 0 0;">
-                    If you didn't create an account, you can safely ignore this email.
+                    This link expires in 1 hour. If you didn't create an account, you can safely ignore this email.
                 </p>
                 <p style="color: #94a3b8; font-size: 11px; line-height: 1.6; margin: 14px 0 0;">
                     By creating an account and using the platform you agree to our
