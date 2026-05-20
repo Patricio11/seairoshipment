@@ -130,7 +130,15 @@ A → B → C is the critical path for a working v1. D blocks rollout for admins
 
 ---
 
-## Phase D — Admin forced enrollment ✅
+## Phase D — Admin forced enrollment ✅ (currently DISABLED)
+
+> **Note (2026-05-20)**: enforcement is temporarily switched off in
+> [app/admin/layout.tsx](app/admin/layout.tsx) per first-client rollout
+> ergonomics — admins can enable 2FA themselves from Settings → Security
+> but aren't forced. To re-enable, restore the DB-backed `twoFactorEnabled`
+> check + `redirect("/auth/setup-2fa")` block that was in this file before
+> the toggle-off commit.
+
 
 **Goal**: Admin-role users can't access any `/admin/...` route until they've enrolled 2FA.
 
