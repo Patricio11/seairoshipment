@@ -58,7 +58,7 @@ export function Footer() {
                             />
                         </div>
                         <p className="mt-4 max-w-md text-slate-600">
-                            <strong className="text-slate-900">Shared Reefer Services<sup className="text-[0.6em] ml-0.5">®</sup></strong> &mdash; IoT-monitored cold-chain consolidation from Cape Town to the world. Smart, sustainable freight for perishable and FMCG exporters.
+                            <strong className="text-slate-900">Shared Reefer Services<sup className="text-[0.6em] ml-0.5">®</sup></strong> &mdash; IoT-monitored cold-chain consolidation from South Africa to the world. Smart, sustainable freight for perishable and FMCG exporters.
                         </p>
 
                         {/* Contact Info */}

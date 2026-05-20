@@ -65,7 +65,7 @@ export function IndustryHero() {
 
                         {/* Subheadline */}
                         <p className="mx-auto mt-8 max-w-3xl text-xl leading-relaxed text-slate-300 lg:text-2xl">
-                            <strong className="text-white">Shared Reefer Services consolidation</strong> from Cape Town to the world.{' '}
+                            <strong className="text-white">Shared Reefer Services consolidation</strong> from South Africa to the world.{' '}
                             <strong className="text-white">IoT temperature tracking</strong> on every pallet.{' '}
                             <strong className="text-white">Automated compliance</strong> for perishable and FMCG exports.
                         </p>

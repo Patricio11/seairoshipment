@@ -17,13 +17,14 @@ export const metadata: Metadata = {
         template: "%s | Seairo Cargo",
     },
     description:
-        "Shared Reefer Services® from Cape Town to the world. IoT-monitored cold-chain consolidation for perishable and FMCG exporters. Real-time temperature tracking, automated compliance, transparent pricing.",
+        "Shared Reefer Services® from South Africa to the world. IoT-monitored cold-chain consolidation for perishable and FMCG exporters. Real-time temperature tracking, automated compliance, transparent pricing.",
     applicationName: "Seairo Cargo",
     keywords: [
         "Shared Reefer Services",
         "shared reefer container",
         "cold chain logistics",
         "consolidated reefer shipping",
+        "south africa reefer consolidation",
         "cape town reefer consolidation",
         "perishable exports south africa",
         "IoT temperature tracking",
@@ -43,7 +44,7 @@ export const metadata: Metadata = {
         siteName: "Seairo Cargo",
         title: "Seairo Cargo — Shared Reefer Services® for Cold-Chain Exporters",
         description:
-            "IoT-monitored Shared Reefer Services® from Cape Town to the world. Consolidated cold-chain logistics for perishable and FMCG exporters.",
+            "IoT-monitored Shared Reefer Services® from South Africa to the world. Consolidated cold-chain logistics for perishable and FMCG exporters.",
         images: [
             {
                 url: "/og.png",
