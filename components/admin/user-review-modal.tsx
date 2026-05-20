@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import {
-    Building2, Hash, Globe2, MapPin, Receipt, FileText, ExternalLink, Mail, CheckCircle2, XCircle, MessageSquareWarning, Loader2, MailWarning, RefreshCw, Hourglass, ShieldOff,
+    Building2, Hash, Globe2, MapPin, Receipt, FileText, ExternalLink, Mail, CheckCircle2, XCircle, MessageSquareWarning, Loader2, MailWarning, RefreshCw, Hourglass, ShieldOff, MailCheck,
 } from "lucide-react"
 import {
     Dialog,
@@ -73,7 +73,7 @@ const DOC_LABELS: Record<VettingUser["documents"][number]["type"], string> = {
     OTHER: "Other",
 }
 
-type Action = "approve" | "reject" | "request-changes" | "resend-verification" | "disable-2fa" | null
+type Action = "approve" | "reject" | "request-changes" | "resend-verification" | "disable-2fa" | "mark-verified" | null
 
 export function UserReviewModal({ user, open, onClose, onActionComplete }: UserReviewModalProps) {
     const [pendingAction, setPendingAction] = useState<Action>(null)
@@ -110,7 +110,7 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
             if (action === "reject") body = { reason: reasonInput.trim() }
             if (action === "request-changes") body = { note: reasonInput.trim() }
 
-            // disable-2fa is a destructive break-glass — POST verb. Other
+            // disable-2fa is a destructive break-glass — POST verb. All other
             // vetting actions are PATCH because they mutate fields on the
             // existing user row.
             const method = action === "disable-2fa" ? "POST" : "PATCH"
@@ -132,11 +132,14 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
                 action === "reject" ? "User rejected" :
                 action === "resend-verification" ? "Verification email resent" :
                 action === "disable-2fa" ? "2FA disabled — user notified" :
+                action === "mark-verified" ? "Email marked as verified — user can sign in now" :
                 "Changes requested — user can edit & resubmit"
             toast.success(successCopy)
             onActionComplete()
             // resend-verification and disable-2fa don't change vetting state —
             // leave the modal open so the admin can confirm + close manually.
+            // mark-verified DOES change state (advances to ONBOARDING_PENDING),
+            // so we close.
             if (action !== "resend-verification" && action !== "disable-2fa") closeAll()
             else setSubmitting(false)
         } catch {
@@ -267,6 +270,18 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
                         </motion.div>
                     )}
 
+                    {pendingAction === "mark-verified" && (
+                        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 flex items-start gap-3">
+                            <MailCheck className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+                            <div className="text-sm">
+                                <p className="font-bold text-amber-200">Mark email as verified?</p>
+                                <p className="text-amber-200/70 mt-0.5">
+                                    This skips the email-verification step for <span className="font-mono text-amber-100">{user.email}</span>. After this, they can sign in immediately and continue with onboarding. Only do this when you&apos;ve already confirmed the user&apos;s identity (e.g. the resend isn&apos;t landing, the link expired, or you&apos;ve spoken to them). They&apos;ll get an in-app notification.
+                                </p>
+                            </div>
+                        </motion.div>
+                    )}
+
                     {pendingAction === "disable-2fa" && (
                         <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-red-500/30 bg-red-500/5 p-4 flex items-start gap-3">
                             <ShieldOff className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
@@ -322,14 +337,24 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
 
                     {pendingAction === null ? (
                         <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
-                            {/* EMAIL_PENDING — only the resend action is meaningful */}
+                            {/* EMAIL_PENDING — resend or manual verify */}
                             {user.vettingStatus === "EMAIL_PENDING" && (
-                                <Button
-                                    onClick={() => setPendingAction("resend-verification")}
-                                    className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold"
-                                >
-                                    <RefreshCw className="h-4 w-4 mr-1.5" /> Resend verification email
-                                </Button>
+                                <>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setPendingAction("mark-verified")}
+                                        className="border-amber-500/30 bg-amber-500/5 text-amber-300 hover:bg-amber-500/10 hover:text-amber-200"
+                                        title="Break-glass: bypass the email link and mark this user as verified"
+                                    >
+                                        <MailCheck className="h-4 w-4 mr-1.5" /> Mark as verified
+                                    </Button>
+                                    <Button
+                                        onClick={() => setPendingAction("resend-verification")}
+                                        className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold"
+                                    >
+                                        <RefreshCw className="h-4 w-4 mr-1.5" /> Resend verification email
+                                    </Button>
+                                </>
                             )}
 
                             {/* PENDING_REVIEW — full action set */}
@@ -371,6 +396,7 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
                                     pendingAction === "reject" ? "bg-red-600 hover:bg-red-700 text-white font-bold" :
                                     pendingAction === "resend-verification" ? "bg-brand-blue hover:bg-brand-blue/90 text-white font-bold" :
                                     pendingAction === "disable-2fa" ? "bg-red-600 hover:bg-red-700 text-white font-bold" :
+                                    pendingAction === "mark-verified" ? "bg-amber-600 hover:bg-amber-700 text-white font-bold" :
                                     "bg-amber-600 hover:bg-amber-700 text-white font-bold"
                                 }
                             >
@@ -380,6 +406,7 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
                                 {pendingAction === "request-changes" && "Send request"}
                                 {pendingAction === "resend-verification" && "Send it now"}
                                 {pendingAction === "disable-2fa" && "Yes, disable 2FA"}
+                                {pendingAction === "mark-verified" && "Yes, mark verified"}
                             </Button>
                         </div>
                     )}
