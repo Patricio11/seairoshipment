@@ -18,7 +18,7 @@ import { eq, and, inArray, sql } from "drizzle-orm";
  * Response:
  *   {
  *     products: [{ id, name, hsCode, category, categoryId, categoryName }],
- *     temperatures: ["frozen" | "chilled" | "ambient"],
+ *     temperatures: ["frozen" | "cool" | "chilled" | "ambient"],
  *     sailings: [{ id, vesselName, voyageNumber, etd, eta, transitTime, serviceType }],
  *     totalContainers
  *   }
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
             : matching;
 
         const tempSet = new Set(afterProduct.map(c => c.temperature).filter(Boolean));
-        const temperatureList = Array.from(tempSet) as Array<"frozen" | "chilled" | "ambient">;
+        const temperatureList = Array.from(tempSet) as Array<"frozen" | "cool" | "chilled" | "ambient">;
 
         const afterTemp = temperature
             ? afterProduct.filter(c => c.temperature === temperature)

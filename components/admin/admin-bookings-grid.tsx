@@ -929,6 +929,8 @@ export function AdminBookingsGrid() {
                                                             <TableCell className="text-center text-xs">
                                                                 {alloc.allocation.temperature === "frozen" ? (
                                                                     <span className="text-blue-400">-18°C</span>
+                                                                ) : alloc.allocation.temperature === "cool" ? (
+                                                                    <span className="text-sky-400">0°C</span>
                                                                 ) : alloc.allocation.temperature === "chilled" ? (
                                                                     <span className="text-cyan-400">+5°C</span>
                                                                 ) : alloc.allocation.temperature === "ambient" ? (
@@ -1620,6 +1622,8 @@ export function AdminBookingsGrid() {
                                                         <TableCell className="text-center text-xs">
                                                             {alloc.allocation.temperature === "frozen" ? (
                                                                 <span className="text-blue-400 font-bold">-18°C</span>
+                                                            ) : alloc.allocation.temperature === "cool" ? (
+                                                                <span className="text-sky-400 font-bold">0°C</span>
                                                             ) : alloc.allocation.temperature === "chilled" ? (
                                                                 <span className="text-cyan-400 font-bold">+5°C</span>
                                                             ) : alloc.allocation.temperature === "ambient" ? (
@@ -1835,14 +1839,16 @@ export function AdminBookingsGrid() {
                                         <span className="text-xs text-slate-500 font-semibold">Temperature</span>
                                         <span className={`text-sm font-bold ${
                                             clientDialog.alloc.allocation.temperature === "frozen" ? "text-blue-400" :
+                                            clientDialog.alloc.allocation.temperature === "cool" ? "text-sky-400" :
                                             clientDialog.alloc.allocation.temperature === "chilled" ? "text-cyan-400" :
                                             clientDialog.alloc.allocation.temperature === "ambient" ? "text-amber-400" :
                                             "text-slate-400"
                                         }`}>
                                             {clientDialog.alloc.allocation.temperature === "frozen" ? "-18°C (Frozen)" :
-                                                clientDialog.alloc.allocation.temperature === "chilled" ? "+5°C (Chilled)" :
-                                                    clientDialog.alloc.allocation.temperature === "ambient" ? "+18°C (Ambient)" :
-                                                        "Dry"}
+                                                clientDialog.alloc.allocation.temperature === "cool" ? "0°C (Cool)" :
+                                                    clientDialog.alloc.allocation.temperature === "chilled" ? "+5°C (Chilled)" :
+                                                        clientDialog.alloc.allocation.temperature === "ambient" ? "+18°C (Ambient)" :
+                                                            "Dry"}
                                         </span>
                                     </div>
                                     <div className="px-4 py-2.5 flex items-center justify-between">

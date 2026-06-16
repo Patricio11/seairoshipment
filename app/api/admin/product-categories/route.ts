@@ -5,7 +5,7 @@ import { productCategories, products, containers } from "@/lib/db/schema";
 import { asc, eq, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
-type Temperature = "frozen" | "chilled" | "ambient";
+type Temperature = "frozen" | "cool" | "chilled" | "ambient";
 
 /**
  * List all product categories with:
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
         // but non-chilled conditions.
         const rawTemps = (Array.isArray(allowedTemperatures) ? allowedTemperatures : []) as Temperature[];
         const temps = salesRateTypeId === "scs" ? [] : rawTemps;
-        const validTemps: Temperature[] = ["frozen", "chilled", "ambient"];
+        const validTemps: Temperature[] = ["frozen", "cool", "chilled", "ambient"];
         if (salesRateTypeId === "srs") {
             if (temps.length === 0) {
                 return NextResponse.json({ error: "At least one allowed temperature is required for SRS categories" }, { status: 400 });

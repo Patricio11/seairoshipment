@@ -172,7 +172,7 @@ interface CategoryOption {
     name: string
     description: string | null
     salesRateTypeId: "srs" | "scs"
-    allowedTemperatures: Array<"frozen" | "chilled" | "ambient">
+    allowedTemperatures: Array<"frozen" | "cool" | "chilled" | "ambient">
     requiredDocuments: string[]
     active: boolean
     productCount: number
@@ -184,7 +184,7 @@ interface ContainerForm {
     destination: string
     sailingId: string
     containerTypeId: string
-    temperature: "frozen" | "chilled" | "ambient" | ""
+    temperature: "frozen" | "cool" | "chilled" | "ambient" | ""
     categoryId: string
     maxCapacity: number
     cargoType: "PALLET" | "CUBE"
@@ -336,7 +336,7 @@ export function FleetScheduler() {
             destination: destination || "",
             sailingId: container.sailingId || "",
             containerTypeId: container.containerTypeId || "40ft-reefer-hc",
-            temperature: (container.temperature as "frozen" | "chilled" | "ambient" | null) || "",
+            temperature: (container.temperature as "frozen" | "cool" | "chilled" | "ambient" | null) || "",
             categoryId: container.categoryId || "",
             maxCapacity: container.maxCapacity,
             cargoType: container.cargoType || "PALLET",
@@ -485,7 +485,7 @@ export function FleetScheduler() {
             // DRY containers carry no temperature regime - clear the field.
             // REEFER containers keep whatever was picked (frozen/chilled/ambient
             // are now all valid for reefer).
-            const nextTemp: "frozen" | "chilled" | "ambient" | "" = ct?.type === "DRY"
+            const nextTemp: "frozen" | "cool" | "chilled" | "ambient" | "" = ct?.type === "DRY"
                 ? ""
                 : prev.temperature
             // Reefer (SRS) is always PALLET; reset cargoType if we just switched to it.
@@ -506,9 +506,9 @@ export function FleetScheduler() {
         const cat = categoryOptions.find(c => c.id === catId)
         setFormData(prev => {
             // If current temp isn't allowed by this category, clear it
-            const stillAllowed = !prev.temperature || (cat?.allowedTemperatures || []).includes(prev.temperature as "frozen" | "chilled" | "ambient")
+            const stillAllowed = !prev.temperature || (cat?.allowedTemperatures || []).includes(prev.temperature as "frozen" | "cool" | "chilled" | "ambient")
             // If category has only one allowed temp, auto-select it
-            const autoTemp: "frozen" | "chilled" | "ambient" | "" =
+            const autoTemp: "frozen" | "cool" | "chilled" | "ambient" | "" =
                 cat && cat.allowedTemperatures.length === 1 ? cat.allowedTemperatures[0] : ""
             return {
                 ...prev,
@@ -533,20 +533,23 @@ export function FleetScheduler() {
 
     // Container-type-level temperature constraints
     // DRY containers carry no temperature regime → empty array, the temp section
-    // is hidden entirely. REEFER containers can run any of the three regimes.
-    const containerTypeTemps: Array<"frozen" | "chilled" | "ambient"> =
-        selectedContainerType?.type === "DRY" ? [] : ["frozen", "chilled", "ambient"]
+    // is hidden entirely. REEFER containers can run any of the four regimes.
+    const containerTypeTemps: Array<"frozen" | "cool" | "chilled" | "ambient"> =
+        selectedContainerType?.type === "DRY" ? [] : ["frozen", "cool", "chilled", "ambient"]
 
     // Final allowed temperatures = intersection of container type + category.allowedTemperatures.
     // SCS categories carry [] for allowedTemperatures; nothing to intersect, so for
     // DRY containers we end up correctly with no temperature options.
     const categoryTemps = selectedCategory?.allowedTemperatures || containerTypeTemps
-    const temperatureOptions: Array<{ value: "frozen" | "chilled" | "ambient"; label: string }> =
+    const temperatureOptions: Array<{ value: "frozen" | "cool" | "chilled" | "ambient"; label: string }> =
         containerTypeTemps
             .filter(t => categoryTemps.includes(t))
             .map(t => ({
                 value: t,
-                label: t === "frozen" ? "-18°C (Frozen)" : t === "chilled" ? "+5°C (Chilled)" : "+18°C (Ambient)",
+                label: t === "frozen" ? "-18°C (Frozen)"
+                    : t === "cool" ? "0°C (Cool)"
+                    : t === "chilled" ? "+5°C (Chilled)"
+                    : "+18°C (Ambient)",
             }))
 
     // Sailings filtered to the currently selected route
@@ -652,7 +655,10 @@ export function FleetScheduler() {
                                                             : "bg-sky-500/15 text-sky-400 border-none text-[10px]"
                                                     }>
                                                         {container.temperature === "ambient" ? <Sun className="h-3 w-3 mr-1" /> : <Snowflake className="h-3 w-3 mr-1" />}
-                                                        {container.temperature === "frozen" ? "-18°C" : container.temperature === "chilled" ? "+5°C" : "+18°C"}
+                                                        {container.temperature === "frozen" ? "-18°C"
+                                                            : container.temperature === "cool" ? "0°C"
+                                                            : container.temperature === "chilled" ? "+5°C"
+                                                            : "+18°C"}
                                                     </Badge>
                                                 ) : (
                                                     <Badge className="bg-slate-700/40 text-slate-300 border-none text-[10px]">
@@ -832,8 +838,12 @@ export function FleetScheduler() {
                                                         <TableCell className="text-center text-xs">
                                                             {alloc.allocation.temperature === "frozen" ? (
                                                                 <span className="text-blue-400">-18°C</span>
+                                                            ) : alloc.allocation.temperature === "cool" ? (
+                                                                <span className="text-sky-400">0°C</span>
                                                             ) : alloc.allocation.temperature === "chilled" ? (
                                                                 <span className="text-cyan-400">+5°C</span>
+                                                            ) : alloc.allocation.temperature === "ambient" ? (
+                                                                <span className="text-amber-400">+18°C</span>
                                                             ) : (
                                                                 <span className="text-slate-500">-</span>
                                                             )}
@@ -1030,12 +1040,15 @@ export function FleetScheduler() {
                             ) : (
                                 <div className="border-t border-slate-800/50 pt-4">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">4. Temperature</p>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {(["frozen", "chilled", "ambient"] as const).map(t => {
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {(["frozen", "cool", "chilled", "ambient"] as const).map(t => {
                                             const allowed = temperatureOptions.some(o => o.value === t)
                                             const selected = formData.temperature === t
                                             const icon = t === "ambient" ? <Sun className="h-3.5 w-3.5" /> : <Snowflake className="h-3.5 w-3.5" />
-                                            const label = t === "frozen" ? "-18°C Frozen" : t === "chilled" ? "+5°C Chilled" : "+18°C Ambient"
+                                            const label = t === "frozen" ? "-18°C Frozen"
+                                                : t === "cool" ? "0°C Cool"
+                                                : t === "chilled" ? "+5°C Chilled"
+                                                : "+18°C Ambient"
                                             return (
                                                 <button
                                                     key={t}
@@ -1409,8 +1422,12 @@ export function FleetScheduler() {
                                                         <TableCell className="text-center text-xs">
                                                             {alloc.allocation.temperature === "frozen" ? (
                                                                 <span className="text-blue-400 font-bold">-18°C</span>
+                                                            ) : alloc.allocation.temperature === "cool" ? (
+                                                                <span className="text-sky-400 font-bold">0°C</span>
                                                             ) : alloc.allocation.temperature === "chilled" ? (
                                                                 <span className="text-cyan-400 font-bold">+5°C</span>
+                                                            ) : alloc.allocation.temperature === "ambient" ? (
+                                                                <span className="text-amber-400 font-bold">+18°C</span>
                                                             ) : (
                                                                 <span className="text-slate-500">-</span>
                                                             )}

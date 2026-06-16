@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { productCategories, products, containers } from "@/lib/db/schema";
 import { eq, asc } from "drizzle-orm";
 
-type Temperature = "frozen" | "chilled" | "ambient";
+type Temperature = "frozen" | "cool" | "chilled" | "ambient";
 
 export async function GET(
     _request: NextRequest,
@@ -78,7 +78,7 @@ export async function PATCH(
                 if (temps.length === 0) {
                     return NextResponse.json({ error: "At least one allowed temperature is required for SRS categories" }, { status: 400 });
                 }
-                const validTemps: Temperature[] = ["frozen", "chilled", "ambient"];
+                const validTemps: Temperature[] = ["frozen", "cool", "chilled", "ambient"];
                 if (!temps.every(t => validTemps.includes(t))) {
                     return NextResponse.json({ error: "Invalid temperature" }, { status: 400 });
                 }

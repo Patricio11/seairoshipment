@@ -44,7 +44,7 @@ import { cn } from "@/lib/utils"
 import { DOCUMENT_TYPES, documentLabel } from "@/lib/constants/document-types"
 import { BulkDeleteBar } from "./bulk-delete-bar"
 
-type Temperature = "frozen" | "chilled" | "ambient"
+type Temperature = "frozen" | "cool" | "chilled" | "ambient"
 
 interface Category {
     id: string
@@ -75,6 +75,7 @@ interface CategoryDetail extends Category {
 
 const ALL_TEMPS: Array<{ value: Temperature; label: string; icon: typeof Snowflake }> = [
     { value: "frozen", label: "-18°C Frozen", icon: Snowflake },
+    { value: "cool", label: "0°C Cool", icon: Snowflake },
     { value: "chilled", label: "+5°C Chilled", icon: Snowflake },
     { value: "ambient", label: "+18°C Ambient", icon: Sun },
 ]
@@ -468,7 +469,7 @@ export function CategoriesManager() {
                                     >
                                         <div className="font-bold text-white text-sm">{type.toUpperCase()}</div>
                                         <div className="text-[10px] text-slate-400 mt-0.5">
-                                            {type === "srs" ? "Shared Reefer (frozen / chilled / ambient)" : "Shared Container (Dry)"}
+                                            {type === "srs" ? "Shared Reefer (frozen / cool / chilled / ambient)" : "Shared Container (Dry)"}
                                         </div>
                                     </button>
                                 ))}

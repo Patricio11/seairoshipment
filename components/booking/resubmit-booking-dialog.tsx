@@ -250,6 +250,7 @@ export function ResubmitBookingDialog({ booking, open, onClose, onSuccess }: Res
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="frozen">-18°C (Frozen)</SelectItem>
+                                    <SelectItem value="cool">0°C (Cool)</SelectItem>
                                     <SelectItem value="chilled">+5°C (Chilled)</SelectItem>
                                     <SelectItem value="ambient">+18°C (Ambient)</SelectItem>
                                 </SelectContent>

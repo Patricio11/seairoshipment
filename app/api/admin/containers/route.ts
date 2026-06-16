@@ -5,7 +5,7 @@ import { containers, palletAllocations, user, containerTypes, sailings, productC
 import { eq, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
-type Temperature = "frozen" | "chilled" | "ambient";
+type Temperature = "frozen" | "cool" | "chilled" | "ambient";
 
 export async function GET() {
     try {
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
             : (temperature as Temperature | null);
 
         if (ct.type === "REEFER") {
-            const allowed: Temperature[] = ["frozen", "chilled", "ambient"];
+            const allowed: Temperature[] = ["frozen", "cool", "chilled", "ambient"];
             if (!effectiveTemperature || !allowed.includes(effectiveTemperature)) {
                 return NextResponse.json(
                     { error: `Pick a temperature for this reefer container (${allowed.join(", ")}).` },

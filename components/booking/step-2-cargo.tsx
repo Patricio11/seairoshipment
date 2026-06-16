@@ -67,7 +67,7 @@ interface SailingOption {
 
 interface BookingOptions {
     products: ProductOption[]
-    temperatures: Array<"frozen" | "chilled" | "ambient">
+    temperatures: Array<"frozen" | "cool" | "chilled" | "ambient">
     sailings: SailingOption[]
     totalContainers: number
 }
@@ -82,6 +82,7 @@ interface ExcludedContainer extends ContainerSlot {
 
 const TEMP_LABELS: Record<string, { label: string; icon: typeof Snowflake }> = {
     frozen: { label: "-18°C Frozen", icon: Snowflake },
+    cool: { label: "0°C Cool", icon: Snowflake },
     chilled: { label: "+5°C Chilled", icon: Snowflake },
     ambient: { label: "+18°C Ambient", icon: Sun },
 }
@@ -313,7 +314,7 @@ export function Step2Cargo({ formData, updateFormData }: Step2Props) {
 
     const handleRateTypeSelect = (rateTypeId: string) => {
         // SCS = Shared Container Service = dry container; no temperature regime.
-        // SRS = Shared Reefer Services; client must pick frozen / chilled / ambient.
+        // SRS = Shared Reefer Services; client must pick frozen / cool / chilled / ambient.
         const isDry = rateTypeId === "scs"
         updateFormData({
             salesRateTypeId: rateTypeId,

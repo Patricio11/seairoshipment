@@ -22,6 +22,7 @@ export const containerTypeEnum = pgEnum("container_type", ["20FT", "40FT"]);
 
 export const temperatureEnum = pgEnum("temperature", [
     "frozen",   // -18°C
+    "cool",     // 0°C — just above freezing (e.g. blueberries, fresh fish)
     "chilled",  // +5°C
     "ambient",  // +18°C
 ]);

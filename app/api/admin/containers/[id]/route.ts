@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { containers, palletAllocations, containerTypes, sailings, productCategories, documents, invoices } from "@/lib/db/schema";
 import { eq, inArray } from "drizzle-orm";
 
-type Temperature = "frozen" | "chilled" | "ambient";
+type Temperature = "frozen" | "cool" | "chilled" | "ambient";
 
 export async function PUT(
     request: NextRequest,
@@ -103,7 +103,7 @@ export async function PUT(
             if (containerCategory === "DRY") {
                 updates.temperature = null;
             } else if (body.temperature) {
-                const reeferAllowed: Temperature[] = ["frozen", "chilled", "ambient"];
+                const reeferAllowed: Temperature[] = ["frozen", "cool", "chilled", "ambient"];
                 if (!reeferAllowed.includes(body.temperature as Temperature)) {
                     return NextResponse.json(
                         { error: `Temperature "${body.temperature}" is not valid for a reefer container. Allowed: ${reeferAllowed.join(", ")}` },
