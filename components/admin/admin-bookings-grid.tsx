@@ -1565,13 +1565,17 @@ export function AdminBookingsGrid() {
                                 {(() => {
                                     const temps = detailDialog.allocations.map(a => a.allocation.temperature).filter(Boolean)
                                     const frozen = temps.filter(t => t === "frozen").length
+                                    const cool = temps.filter(t => t === "cool").length
                                     const chilled = temps.filter(t => t === "chilled").length
-                                    if (frozen === 0 && chilled === 0) return null
+                                    const ambient = temps.filter(t => t === "ambient").length
+                                    if (frozen === 0 && cool === 0 && chilled === 0 && ambient === 0) return null
                                     return (
-                                        <div className="flex items-center gap-3 mt-3 pt-3 border-t border-slate-800">
+                                        <div className="flex items-center gap-3 mt-3 pt-3 border-t border-slate-800 flex-wrap">
                                             <Thermometer className="h-3.5 w-3.5 text-slate-500" />
                                             {frozen > 0 && <span className="text-xs text-blue-400 font-bold">{frozen} Frozen (-18°C)</span>}
+                                            {cool > 0 && <span className="text-xs text-sky-400 font-bold">{cool} Cool (0°C)</span>}
                                             {chilled > 0 && <span className="text-xs text-cyan-400 font-bold">{chilled} Chilled (+5°C)</span>}
+                                            {ambient > 0 && <span className="text-xs text-amber-400 font-bold">{ambient} Ambient (+18°C)</span>}
                                         </div>
                                     )
                                 })()}
