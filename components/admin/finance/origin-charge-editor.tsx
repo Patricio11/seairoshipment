@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { NumericInput } from "@/components/ui/numeric-input"
 import { Badge } from "@/components/ui/badge"
 import {
     Select,
@@ -438,9 +439,7 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                                             <TableCell className="align-top py-2 bg-amber-900/5">
                                                 <div className="relative">
                                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-amber-500 font-mono text-sm">R</span>
-                                                    <Input
-                                                        type="number"
-                                                        step="0.01"
+                                                    <NumericInput
                                                         value={
                                                             (item.chargeType === "PER_PALLET" || item.chargeType === "PER_CBM")
                                                                 ? (item.buyUnitCost || "")
@@ -467,9 +466,7 @@ export function OriginChargeEditor({ initialData }: OriginChargeEditorProps) {
                                                 <div className="flex items-center gap-3">
                                                     <div className="flex items-center gap-2 flex-1 relative">
                                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-mono text-sm">R</span>
-                                                        <Input
-                                                            type="number"
-                                                            step="0.01"
+                                                        <NumericInput
                                                             value={
                                                                 (item.chargeType === "PER_PALLET" || item.chargeType === "PER_CBM")
                                                                     ? (item.unitCost || "")

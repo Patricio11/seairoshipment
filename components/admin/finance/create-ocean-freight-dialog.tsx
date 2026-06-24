@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { NumericInput } from "@/components/ui/numeric-input"
 import { Label } from "@/components/ui/label"
 import {
     Select,
@@ -446,8 +447,7 @@ export function CreateOceanFreightDialog({
                                 <div className="grid grid-cols-2 gap-3 mb-3">
                                     <div className="space-y-1.5">
                                         <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Freight</Label>
-                                        <Input
-                                            type="number"
+                                        <NumericInput
                                             value={formData.freightUSD}
                                             onChange={(e) => setFormData({ ...formData, freightUSD: Number(e.target.value) })}
                                             className="bg-slate-900 border-slate-800 h-9 text-sm font-mono"
@@ -455,8 +455,7 @@ export function CreateOceanFreightDialog({
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">BAF</Label>
-                                        <Input
-                                            type="number"
+                                        <NumericInput
                                             value={formData.bafUSD}
                                             onChange={(e) => setFormData({ ...formData, bafUSD: Number(e.target.value) })}
                                             className="bg-slate-900 border-slate-800 h-9 text-sm font-mono"
@@ -466,8 +465,7 @@ export function CreateOceanFreightDialog({
                                 <div className="grid grid-cols-3 gap-2">
                                     <div className="space-y-1.5">
                                         <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">ISPS</Label>
-                                        <Input
-                                            type="number"
+                                        <NumericInput
                                             value={formData.ispsUSD}
                                             onChange={(e) => setFormData({ ...formData, ispsUSD: Number(e.target.value) })}
                                             className="bg-slate-900 border-slate-800 h-9 text-xs font-mono"
@@ -475,8 +473,7 @@ export function CreateOceanFreightDialog({
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">RCG</Label>
-                                        <Input
-                                            type="number"
+                                        <NumericInput
                                             value={formData.rcgUSD}
                                             onChange={(e) => setFormData({ ...formData, rcgUSD: Number(e.target.value) })}
                                             className="bg-slate-900 border-slate-800 h-9 text-xs font-mono"
@@ -484,8 +481,7 @@ export function CreateOceanFreightDialog({
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">OTHER</Label>
-                                        <Input
-                                            type="number"
+                                        <NumericInput
                                             value={formData.otherSurchargesUSD}
                                             onChange={(e) => setFormData({ ...formData, otherSurchargesUSD: Number(e.target.value) })}
                                             className="bg-slate-900 border-slate-800 h-9 text-xs font-mono"
@@ -500,8 +496,7 @@ export function CreateOceanFreightDialog({
                                 <div className="grid grid-cols-2 gap-3 mb-3">
                                     <div className="space-y-1.5">
                                         <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Buy Freight</Label>
-                                        <Input
-                                            type="number"
+                                        <NumericInput
                                             value={formData.buyFreightUSD}
                                             onChange={(e) => setFormData({ ...formData, buyFreightUSD: Number(e.target.value) })}
                                             className="bg-slate-900 border-amber-800/40 h-9 text-sm font-mono"
@@ -509,8 +504,7 @@ export function CreateOceanFreightDialog({
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Buy BAF</Label>
-                                        <Input
-                                            type="number"
+                                        <NumericInput
                                             value={formData.buyBafUSD}
                                             onChange={(e) => setFormData({ ...formData, buyBafUSD: Number(e.target.value) })}
                                             className="bg-slate-900 border-amber-800/40 h-9 text-sm font-mono"
@@ -520,8 +514,7 @@ export function CreateOceanFreightDialog({
                                 <div className="grid grid-cols-3 gap-2">
                                     <div className="space-y-1.5">
                                         <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Buy ISPS</Label>
-                                        <Input
-                                            type="number"
+                                        <NumericInput
                                             value={formData.buyIspsUSD}
                                             onChange={(e) => setFormData({ ...formData, buyIspsUSD: Number(e.target.value) })}
                                             className="bg-slate-900 border-amber-800/40 h-9 text-xs font-mono"
@@ -529,8 +522,7 @@ export function CreateOceanFreightDialog({
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Buy RCG</Label>
-                                        <Input
-                                            type="number"
+                                        <NumericInput
                                             value={formData.buyRcgUSD}
                                             onChange={(e) => setFormData({ ...formData, buyRcgUSD: Number(e.target.value) })}
                                             className="bg-slate-900 border-amber-800/40 h-9 text-xs font-mono"
@@ -538,8 +530,7 @@ export function CreateOceanFreightDialog({
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Buy OTHER</Label>
-                                        <Input
-                                            type="number"
+                                        <NumericInput
                                             value={formData.buyOtherSurchargesUSD}
                                             onChange={(e) => setFormData({ ...formData, buyOtherSurchargesUSD: Number(e.target.value) })}
                                             className="bg-slate-900 border-amber-800/40 h-9 text-xs font-mono"
@@ -554,8 +545,7 @@ export function CreateOceanFreightDialog({
                                     <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Exchange Rate</span>
                                     <div className="flex items-center gap-2">
                                         <span className="text-[10px] text-slate-500">USD to ZAR:</span>
-                                        <Input
-                                            type="number"
+                                        <NumericInput
                                             value={formData.exchangeRate}
                                             onChange={(e) => setFormData({ ...formData, exchangeRate: Number(e.target.value) })}
                                             className="bg-transparent border-slate-800 h-6 w-16 text-[10px] text-right font-mono p-1"

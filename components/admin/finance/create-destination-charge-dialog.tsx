@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { NumericInput } from "@/components/ui/numeric-input"
 import { Label } from "@/components/ui/label"
 import {
     Select,
@@ -212,9 +213,7 @@ export function CreateDestinationChargeDialog({ onSuccess }: { onSuccess?: () =>
 
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label className="text-right whitespace-nowrap">ROE to ZAR</Label>
-                            <Input
-                                type="number"
-                                step="0.01"
+                            <NumericInput
                                 value={formData.exchangeRateToZAR}
                                 onChange={(e) => setFormData({ ...formData, exchangeRateToZAR: e.target.value })}
                                 className="col-span-3"

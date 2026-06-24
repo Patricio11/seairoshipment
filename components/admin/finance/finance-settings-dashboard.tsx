@@ -123,8 +123,8 @@ export function FinanceSettingsDashboard() {
                                     <Label className="text-xs text-slate-500">Prime Lending Rate (%)</Label>
                                     <div className="flex items-center gap-2">
                                         <Input
-                                            type="number"
-                                            step="0.01"
+                                            type="text"
+                                            inputMode="decimal"
                                             defaultValue={financeSettings.primeLendingRate}
                                             className="font-mono text-lg font-bold"
                                         />
@@ -136,8 +136,8 @@ export function FinanceSettingsDashboard() {
                                     <Label className="text-xs text-slate-500">Finance Margin (%)</Label>
                                     <div className="flex items-center gap-2">
                                         <Input
-                                            type="number"
-                                            step="0.01"
+                                            type="text"
+                                            inputMode="decimal"
                                             defaultValue={financeSettings.financeMargin}
                                             className="font-mono text-lg font-bold"
                                         />
@@ -173,8 +173,8 @@ export function FinanceSettingsDashboard() {
                                     <Label className="text-xs text-slate-500">Deposit Percentage (%)</Label>
                                     <div className="flex items-center gap-2">
                                         <Input
-                                            type="number"
-                                            step="1"
+                                            type="text"
+                                            inputMode="numeric"
                                             defaultValue={financeSettings.depositPercentage}
                                             className="font-mono text-lg font-bold"
                                         />
@@ -186,8 +186,8 @@ export function FinanceSettingsDashboard() {
                                     <Label className="text-xs text-slate-500">Balance Percentage (%)</Label>
                                     <div className="flex items-center gap-2">
                                         <Input
-                                            type="number"
-                                            step="1"
+                                            type="text"
+                                            inputMode="numeric"
                                             defaultValue={financeSettings.balancePercentage}
                                             className="font-mono text-lg font-bold"
                                         />
@@ -199,8 +199,8 @@ export function FinanceSettingsDashboard() {
                                     <Label className="text-xs text-slate-500">VAT Rate (%)</Label>
                                     <div className="flex items-center gap-2">
                                         <Input
-                                            type="number"
-                                            step="0.01"
+                                            type="text"
+                                            inputMode="decimal"
                                             defaultValue={financeSettings.vatRate}
                                             className="font-mono text-lg font-bold"
                                         />

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { NumericInput } from "@/components/ui/numeric-input"
 import { Badge } from "@/components/ui/badge"
 import {
     Select,
@@ -312,9 +313,7 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
                         <label className="text-sm font-medium text-slate-500">Sell ROE (to ZAR)</label>
                         <div className="relative">
                             <ArrowRightLeft className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                            <Input
-                                type="number"
-                                step="0.01"
+                            <NumericInput
                                 value={exchangeRate}
                                 onChange={(e) => handleExchangeRateChange(parseFloat(e.target.value) || 0)}
                                 className="pl-9 font-mono font-bold"
@@ -329,9 +328,7 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
                         <label className="text-sm font-medium text-amber-600">Buy ROE (to ZAR)</label>
                         <div className="relative">
                             <ArrowRightLeft className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-amber-400" />
-                            <Input
-                                type="number"
-                                step="0.01"
+                            <NumericInput
                                 value={buyExchangeRate}
                                 onChange={(e) => handleBuyExchangeRateChange(parseFloat(e.target.value) || 0)}
                                 className="pl-9 font-mono font-bold bg-slate-900 border-amber-700 text-white focus-visible:ring-amber-400"
@@ -482,9 +479,7 @@ export function DestinationChargeEditor({ initialData }: DestinationChargeEditor
                                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-mono text-sm">
                                                     {currency === 'GBP' ? '£' : currency === 'EUR' ? '€' : '$'}
                                                 </span>
-                                                <Input
-                                                    type="number"
-                                                    step="0.01"
+                                                <NumericInput
                                                     value={item.amountLocal || ""}
                                                     onChange={(e) => updateItem(item.id, { amountLocal: parseFloat(e.target.value) || 0 })}
                                                     placeholder="0.00"
