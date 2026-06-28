@@ -311,7 +311,7 @@ export function CreateOceanFreightDialog({
                 </DialogTrigger>
             ))}
             <DialogContent
-                className="sm:max-w-[780px] bg-slate-950 border-slate-800 text-white"
+                className="dark sm:max-w-[780px] bg-slate-950 border-slate-800 text-white"
                 onInteractOutside={(e) => e.preventDefault()}
                 onEscapeKeyDown={(e) => e.preventDefault()}
             >

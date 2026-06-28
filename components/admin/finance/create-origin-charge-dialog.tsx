@@ -101,7 +101,7 @@ export function CreateOriginChargeDialog() {
                 </Button>
             </DialogTrigger>
             <DialogContent
-                className="sm:max-w-[450px]"
+                className="dark sm:max-w-[450px] bg-slate-950 border-slate-800 text-white"
                 onInteractOutside={(e) => e.preventDefault()}
                 onEscapeKeyDown={(e) => e.preventDefault()}
             >
