@@ -112,20 +112,24 @@ A → B → C is the critical path. D closes the loop. E is independent after A 
 
 **Done**: a truck with file number SRS234 can be created on CPT-JNB, default + per-customer rates load, and the sea fleet view is unchanged.
 
-## Phase C — Client: Road Freight booking flow
+## Phase C — Client: Road Freight booking flow ✅
 
 **Goal**: A client books 1–28 pallets onto a truck end-to-end.
 
-- [ ] "New Booking" entry points → **choice screen/tabs**: Sea Freight (existing wizard, unchanged) | Road Freight (new)
-- [ ] Road wizard step 1 — route corridor select → collection address (text + optional maps link) → delivery address (same) → optional **additional delivery point**
-- [ ] Road wizard step 2 — product (from truck's category), temperature (road labels), **Select your truck** (open ROAD containers on that route), pallet count 1–28 vs remaining capacity, nett weight, pallet dimensions, **overhang YES/NO**
-- [ ] Road wizard step 3 — **packing list upload only** (reuses doc upload machinery)
-- [ ] Road wizard step 4 — cost breakdown (3 lines) + 60/40 split + PO number + road T&Cs checkbox + GIT insurance link → submit
-- [ ] NEW `/api/rates/road-quote` — resolves the customer's rate (fallback to default), returns the 3 lines + totals
-- [ ] `/api/bookings` accepts road bookings (delivery addresses, dims, overhang; no consignee); invoice split 60/40 for ROAD
-- [ ] Client bookings list + booking detail render road bookings correctly (truck name, route, addresses, no vessel/voyage noise)
+- [x] "New Booking" → **choice screen**: Sea Freight (existing wizard, unchanged) | Road Freight (new). Prefill deep-links (e.g. "book this container") skip straight to sea.
+- [x] [components/booking/road-booking-wizard.tsx](components/booking/road-booking-wizard.tsx) — 4-step wizard:
+  1. Route corridor → collection address (text + optional maps-pin link) → delivery address (same) → optional **additional delivery point** (amber card, warns about the drop fee)
+  2. Product (union of truck categories on the corridor) → temperature (road band labels) → **Select your truck** cards (name, departs/arrives, spaces left) → pallet count (1 → remaining) → nett weight → pallet dimensions L×W×H cm → **overhang YES/NO** (warns about the fee)
+  3. **Packing list upload only** (required, ≤10MB) — uploaded via the existing server-side upload route after the booking POST
+  4. Booking summary + live 3-line cost sheet from `/api/road/quote` + 60/40 split + PO number + road T&Cs checkbox
+- [x] NEW [lib/road-pricing.ts](lib/road-pricing.ts) — `resolveRoadRate` (customer card → default fallback) + `calculateRoadQuote` (3 lines, 60/40)
+- [x] NEW `/api/road/options` — open trucks on the corridor (capacity nets off pending requests) + products from their categories
+- [x] NEW `/api/road/quote` — session-scoped live quote
+- [x] `/api/bookings` POST — ROAD branch: validates truck/category/capacity/dims/addresses, creates the allocation (no consignee — addresses carry it) + DEPOSIT (60%) / BALANCE (40%) invoices. Invoice columns map: originCharges=transport, oceanFreight=drop fee, destinationCharges=overhang.
+- [x] `/api/bookings` GET returns `transportMode`, `deliveryAddresses`, `palletDimensions`, `overhang`; ClientBooking type extended; bookings list shows a truck icon for road rows
+- [x] Approve endpoint: road trucks skip the 15-pallet THRESHOLD_REACHED / MetaShip notification (sea-only concept)
 
-**Done when**: end-to-end road booking → admin sees it in the bookings grid → approve → 60% deposit invoice generated.
+**Done**: end-to-end road booking → admin sees it in the bookings grid → approve → 60% deposit invoice ready.
 
 ## Phase D — Docs & polish
 

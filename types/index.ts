@@ -194,7 +194,12 @@ export interface ClientBooking {
     temperature: string | null;
     consigneeName: string | null;
     consigneeAddress: string | null;
-    collectionAddresses?: Array<{ label?: string; address: string }>;
+    collectionAddresses?: Array<{ label?: string; address: string; mapsLink?: string }>;
+    // Road freight fields - SEA bookings carry the defaults
+    transportMode?: "SEA" | "ROAD";
+    deliveryAddresses?: Array<{ label?: string; address: string; mapsLink?: string }>;
+    palletDimensions?: { lengthCm: number; widthCm: number; heightCm: number } | null;
+    overhang?: boolean;
     vessel: string;
     voyageNumber: string | null;
     route: string;

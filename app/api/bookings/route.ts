@@ -5,8 +5,28 @@ import { containers, palletAllocations, adminNotifications, invoices, products, 
 import { eq, and, desc, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { calculateQuote, calculateCubeQuote } from "@/lib/rates";
+import { calculateRoadQuote } from "@/lib/road-pricing";
 import { totalCbm, totalWeight, volumetricWeightSea } from "@/lib/cbm";
-import type { CargoItem } from "@/lib/db/schema/pallet-allocations";
+import type { CargoItem, CollectionAddress, PalletDimensions } from "@/lib/db/schema/pallet-allocations";
+
+/** Sanitise an address list from the client - drops empties, caps length,
+ *  keeps optional label + maps link. Shared by collection + delivery lists. */
+function cleanAddresses(raw: unknown, max = 5): CollectionAddress[] {
+    if (!Array.isArray(raw)) return [];
+    return raw
+        .map((a: unknown) => {
+            if (!a || typeof a !== "object") return null;
+            const row = a as { label?: unknown; address?: unknown; mapsLink?: unknown };
+            const address = typeof row.address === "string" ? row.address.trim() : "";
+            if (!address) return null;
+            const out: CollectionAddress = { address };
+            if (typeof row.label === "string" && row.label.trim()) out.label = row.label.trim();
+            if (typeof row.mapsLink === "string" && row.mapsLink.trim()) out.mapsLink = row.mapsLink.trim();
+            return out;
+        })
+        .filter((a): a is CollectionAddress => a !== null)
+        .slice(0, max);
+}
 
 function deriveBookingStatus(
     allocationStatus: string,
@@ -87,6 +107,10 @@ export async function GET() {
                 consigneeName: allocation.consigneeName,
                 consigneeAddress: allocation.consigneeAddress,
                 collectionAddresses: allocation.collectionAddresses ?? [],
+                transportMode: container.transportMode ?? "SEA",
+                deliveryAddresses: allocation.deliveryAddresses ?? [],
+                palletDimensions: allocation.palletDimensions ?? null,
+                overhang: allocation.overhang ?? false,
                 vessel: container.vessel,
                 voyageNumber: container.voyageNumber,
                 route: container.route,
@@ -153,8 +177,202 @@ export async function POST(request: NextRequest) {
             // Cube booking fields - present only when cargoType === "CUBE"
             cargoType: cargoTypeRaw,
             calculationId,
+            // Road freight fields - present only when transportMode === "ROAD"
+            transportMode,
+            deliveryAddresses,
+            palletDimensions,
+            overhang,
         } = body;
 
+        // ── ROAD branch: refrigerated road freight booking onto a truck ──
+        if (transportMode === "ROAD") {
+            if (!requestedContainerId) {
+                return NextResponse.json({ error: "Select a truck" }, { status: 400 });
+            }
+            const pallets = Math.floor(Number(palletCount));
+            if (!(pallets >= 1)) {
+                return NextResponse.json({ error: "At least 1 pallet is required" }, { status: 400 });
+            }
+
+            const cleanCollection = cleanAddresses(collectionAddresses);
+            if (cleanCollection.length === 0) {
+                return NextResponse.json({ error: "A collection address is required" }, { status: 400 });
+            }
+            const cleanDelivery = cleanAddresses(deliveryAddresses);
+            if (cleanDelivery.length === 0) {
+                return NextResponse.json({ error: "A delivery address is required" }, { status: 400 });
+            }
+
+            // Pallet dimensions - required for packing-list verification
+            const dims = palletDimensions as PalletDimensions | undefined;
+            const dimsClean: PalletDimensions | null =
+                dims && Number(dims.lengthCm) > 0 && Number(dims.widthCm) > 0 && Number(dims.heightCm) > 0
+                    ? { lengthCm: Number(dims.lengthCm), widthCm: Number(dims.widthCm), heightCm: Number(dims.heightCm) }
+                    : null;
+            if (!dimsClean) {
+                return NextResponse.json({ error: "Pallet dimensions (length, width, height) are required" }, { status: 400 });
+            }
+
+            const [truck] = await db
+                .select()
+                .from(containers)
+                .where(eq(containers.id, requestedContainerId))
+                .limit(1);
+            if (!truck || truck.transportMode !== "ROAD") {
+                return NextResponse.json({ error: "Truck not found" }, { status: 400 });
+            }
+            if (truck.status !== "OPEN") {
+                return NextResponse.json({ error: "This truck is no longer open for bookings" }, { status: 400 });
+            }
+
+            // Product must belong to the truck's category (consolidation rule)
+            if (productId && truck.categoryId) {
+                const [productRow] = await db
+                    .select({ categoryId: products.categoryId })
+                    .from(products)
+                    .where(eq(products.id, productId))
+                    .limit(1);
+                if (!productRow) {
+                    return NextResponse.json({ error: "Selected product not found" }, { status: 400 });
+                }
+                if (productRow.categoryId !== truck.categoryId) {
+                    return NextResponse.json(
+                        { error: "This product can't be loaded on the selected truck (category mismatch). Please pick a different truck." },
+                        { status: 400 }
+                    );
+                }
+            }
+
+            // Capacity check incl. pending allocations. Road bookings start at
+            // 1 pallet - no minimum-5 rule.
+            const pendingRoadAllocs = await db
+                .select()
+                .from(palletAllocations)
+                .where(and(
+                    eq(palletAllocations.containerId, truck.id),
+                    eq(palletAllocations.status, "PENDING"),
+                ));
+            const pendingPallets = pendingRoadAllocs.reduce((sum, a) => sum + (a.palletCount || 0), 0);
+            const remaining = truck.maxCapacity - truck.totalPallets - pendingPallets;
+            if (pallets > remaining) {
+                return NextResponse.json(
+                    { error: `Truck only has ${remaining} pallet space${remaining !== 1 ? "s" : ""} remaining (including pending requests)` },
+                    { status: 400 }
+                );
+            }
+
+            // Price via the customer's road rate card (default fallback)
+            const quote = await calculateRoadQuote(
+                session.user.id,
+                truck.route,
+                pallets,
+                cleanDelivery.length,
+                Boolean(overhang),
+            );
+            if (!quote) {
+                return NextResponse.json(
+                    { error: "No road rates are loaded for this route yet. Please contact us for a quote." },
+                    { status: 422 }
+                );
+            }
+
+            const roadAllocationId = `ALC-${nanoid(10)}`;
+            await db.insert(palletAllocations).values({
+                id: roadAllocationId,
+                containerId: truck.id,
+                userId: session.user.id,
+                palletCount: pallets,
+                productId: productId || null,
+                commodityName: commodityName || null,
+                hsCode: hsCode || null,
+                nettWeight: nettWeight?.toString() || null,
+                grossWeight: grossWeight?.toString() || null,
+                temperature: temperature || truck.temperature || null,
+                consigneeName: null,   // road uses delivery addresses instead
+                consigneeAddress: null,
+                collectionAddresses: cleanCollection,
+                deliveryAddresses: cleanDelivery,
+                palletDimensions: dimsClean,
+                overhang: Boolean(overhang),
+                salesRateTypeId: "srs",
+                cargoType: "PALLET",
+                status: "PENDING",
+            });
+
+            await db.insert(adminNotifications).values({
+                id: `NTF-${nanoid(10)}`,
+                type: "BOOKING_CREATED",
+                title: "New Road Freight Request",
+                message: `New ${pallets}-pallet road booking on ${quote.routeLabel} (${truck.vessel}${truck.fileNumber ? ` · File ${truck.fileNumber}` : ""}). Awaiting review.`,
+                containerId: truck.id,
+                isRead: false,
+            });
+
+            const bookingRefRoad = `SRS-${nanoid(6).toUpperCase()}`;
+            const yearRoad = new Date().getFullYear();
+            const roadDepositId = `INV-${yearRoad}-${nanoid(6).toUpperCase()}`;
+            const roadBalanceId = `INV-${yearRoad}-${nanoid(6).toUpperCase()}`;
+            const roadDepositDue = new Date();
+            roadDepositDue.setDate(roadDepositDue.getDate() + 7);
+            const roadBalanceDue = truck.etd
+                ? new Date(truck.etd.getTime() - 2 * 24 * 60 * 60 * 1000)
+                : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+            // Invoice line mapping for road (the columns are sea-named but the
+            // amounts are exact): originCharges = transport, oceanFreight =
+            // additional drop fee, destinationCharges = overhang fee.
+            const invoiceBase = {
+                allocationId: roadAllocationId,
+                userId: session.user.id,
+                bookingRef: bookingRefRoad,
+                route: quote.routeLabel,
+                cargoType: "PALLET" as const,
+                palletCount: pallets,
+                cbmVolume: null,
+                originChargesZAR: quote.transportTotal.toFixed(2),
+                oceanFreightZAR: quote.additionalDropFee.toFixed(2),
+                destinationChargesZAR: quote.overhangTotal.toFixed(2),
+                subtotalZAR: quote.totalCost.toFixed(2),
+                poNumber: poNumber || null,
+            };
+            await db.insert(invoices).values([
+                {
+                    ...invoiceBase,
+                    id: roadDepositId,
+                    type: "DEPOSIT",
+                    status: "PENDING",
+                    percentage: quote.depositPercentage,
+                    amountZAR: quote.depositAmount.toFixed(2),
+                    dueDate: roadDepositDue,
+                },
+                {
+                    ...invoiceBase,
+                    id: roadBalanceId,
+                    type: "BALANCE",
+                    status: "PENDING",
+                    percentage: 100 - quote.depositPercentage,
+                    amountZAR: quote.balanceAmount.toFixed(2),
+                    dueDate: roadBalanceDue,
+                },
+            ]);
+
+            return NextResponse.json({
+                success: true,
+                bookingReference: bookingRefRoad,
+                allocationId: roadAllocationId,
+                containerId: truck.id,
+                cargoType: "PALLET",
+                transportMode: "ROAD",
+                totalPallets: pallets,
+                totalCBM: 0,
+                invoices: {
+                    deposit: { id: roadDepositId },
+                    balance: { id: roadBalanceId },
+                },
+            });
+        }
+
+        // ── SEA branch (existing behaviour, unchanged) ──
         const cargoType: "PALLET" | "CUBE" = cargoTypeRaw === "CUBE" ? "CUBE" : "PALLET";
 
         // Sanitise collection addresses - at least 1 required, max 5, drop empties

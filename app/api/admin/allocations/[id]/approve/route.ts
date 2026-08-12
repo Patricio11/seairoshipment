@@ -58,8 +58,10 @@ export async function POST(
             .set({ status: "CONFIRMED", updatedAt: new Date() })
             .where(eq(palletAllocations.id, id));
 
-        // Add pallets to container total
-        const newContainerStatus = newTotal >= 15 ? "THRESHOLD_REACHED" : "OPEN";
+        // Add pallets to container total. The 15-pallet MetaShip threshold is
+        // a sea concept - road trucks stay OPEN until capacity blocks bookings.
+        const isRoad = container.transportMode === "ROAD";
+        const newContainerStatus = !isRoad && newTotal >= 15 ? "THRESHOLD_REACHED" : "OPEN";
         await db
             .update(containers)
             .set({
@@ -80,8 +82,8 @@ export async function POST(
             isRead: false,
         });
 
-        // Notify admin when threshold first crossed
-        if (newTotal >= 15 && container.totalPallets < 15) {
+        // Notify admin when threshold first crossed (sea only)
+        if (!isRoad && newTotal >= 15 && container.totalPallets < 15) {
             await db.insert(adminNotifications).values({
                 id: `NTF-${nanoid(10)}`,
                 type: "CONTAINER_THRESHOLD",

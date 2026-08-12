@@ -6,6 +6,7 @@ import {
     Plus,
     Search,
     Ship,
+    Truck,
     Calendar,
     ArrowRight,
     CheckCircle2,
@@ -259,8 +260,15 @@ export default function BookingsPage() {
                                         >
                                             <td className="px-6 py-5">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="h-12 w-12 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center border border-blue-100 dark:border-blue-900/30">
-                                                        <Ship className="h-6 w-6 text-brand-blue" />
+                                                    <div className={cn(
+                                                        "h-12 w-12 rounded-2xl flex items-center justify-center border",
+                                                        booking.transportMode === "ROAD"
+                                                            ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-900/30"
+                                                            : "bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-900/30",
+                                                    )}>
+                                                        {booking.transportMode === "ROAD"
+                                                            ? <Truck className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                                                            : <Ship className="h-6 w-6 text-brand-blue" />}
                                                     </div>
                                                     <div className="flex flex-col">
                                                         <span className="font-black text-slate-900 dark:text-white tracking-tight">{booking.bookingRef}</span>
