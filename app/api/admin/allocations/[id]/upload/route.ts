@@ -82,8 +82,8 @@ export async function POST(
 
         const supabase = createClient(url, key, { auth: { persistSession: false } });
 
-        const validTypes = ["INVOICE", "BOL", "COA", "PACKING_LIST", "OTHER"] as const;
-        const docType = (validTypes.includes(type as typeof validTypes[number]) ? type : "OTHER") as "INVOICE" | "BOL" | "COA" | "PACKING_LIST" | "OTHER";
+        const validTypes = ["INVOICE", "BOL", "COA", "PACKING_LIST", "POD", "OTHER"] as const;
+        const docType = (validTypes.includes(type as typeof validTypes[number]) ? type : "OTHER") as "INVOICE" | "BOL" | "COA" | "PACKING_LIST" | "POD" | "OTHER";
 
         const prefixedName = `${accountPrefix}_${file.name}`;
         const safeKey = generateUniqueFileName(file.name, prefixedName);

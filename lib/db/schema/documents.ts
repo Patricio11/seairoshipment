@@ -8,6 +8,7 @@ export const documentTypeEnum = pgEnum("document_type", [
     "BOL",
     "COA",
     "PACKING_LIST",
+    "POD",       // Proof of Delivery - uploaded by admin after a road load delivers
     "OTHER",
 ]);
 

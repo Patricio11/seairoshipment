@@ -135,7 +135,10 @@ interface PendingRequest {
         temperature: string | null
         consigneeName: string | null
         consigneeAddress: string | null
-        collectionAddresses?: Array<{ label?: string; address: string }> | null
+        collectionAddresses?: Array<{ label?: string; address: string; mapsLink?: string }> | null
+        deliveryAddresses?: Array<{ label?: string; address: string; mapsLink?: string }> | null
+        palletDimensions?: { lengthCm: number; widthCm: number; heightCm: number } | null
+        overhang?: boolean
         salesRateTypeId: string | null
         status: string
         rejectionReason?: string | null
@@ -151,6 +154,8 @@ interface PendingRequest {
         totalPallets?: number
         status?: string
         salesRateTypeId: string
+        transportMode?: "SEA" | "ROAD"
+        fileNumber?: string | null
     } | null
     user: {
         id: string
@@ -2034,10 +2039,56 @@ export function AdminBookingsGrid() {
                                                         <div className="min-w-0 flex-1">
                                                             {row.label && <span className="text-brand-blue font-bold uppercase tracking-wider text-[9px] mr-1.5">{row.label}</span>}
                                                             <span className="text-slate-300">{row.address}</span>
+                                                            {row.mapsLink && (
+                                                                <a href={row.mapsLink} target="_blank" rel="noreferrer" className="ml-1.5 text-brand-blue hover:underline text-[10px]">map pin</a>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 ))}
                                             </div>
+                                        </div>
+                                    )}
+
+                                    {/* Road freight - delivery points + dims + overhang */}
+                                    {reviewRequest.allocation.deliveryAddresses && reviewRequest.allocation.deliveryAddresses.length > 0 && (
+                                        <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/50 col-span-2">
+                                            <p className="text-[10px] font-bold uppercase text-slate-500 flex items-center gap-1.5">
+                                                <MapPin className="h-3 w-3 text-emerald-400" />
+                                                Delivery Points ({reviewRequest.allocation.deliveryAddresses.length})
+                                                {reviewRequest.allocation.deliveryAddresses.length > 1 && (
+                                                    <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/20 text-[9px]">+ drop fee</Badge>
+                                                )}
+                                            </p>
+                                            <div className="mt-2 space-y-1.5">
+                                                {reviewRequest.allocation.deliveryAddresses.map((row, i) => (
+                                                    <div key={i} className="flex items-start gap-2 text-xs">
+                                                        <span className="shrink-0 h-4 w-4 rounded bg-slate-800 text-slate-500 font-mono text-[9px] flex items-center justify-center mt-0.5">{i + 1}</span>
+                                                        <div className="min-w-0 flex-1">
+                                                            {row.label && <span className="text-emerald-400 font-bold uppercase tracking-wider text-[9px] mr-1.5">{row.label}</span>}
+                                                            <span className="text-slate-300">{row.address}</span>
+                                                            {row.mapsLink && (
+                                                                <a href={row.mapsLink} target="_blank" rel="noreferrer" className="ml-1.5 text-emerald-400 hover:underline text-[10px]">map pin</a>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {reviewRequest.allocation.palletDimensions && (
+                                        <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/50">
+                                            <p className="text-[10px] font-bold uppercase text-slate-500">Pallet Dimensions</p>
+                                            <p className="text-sm font-mono font-bold text-white mt-1">
+                                                {reviewRequest.allocation.palletDimensions.lengthCm}×{reviewRequest.allocation.palletDimensions.widthCm}×{reviewRequest.allocation.palletDimensions.heightCm} cm
+                                            </p>
+                                        </div>
+                                    )}
+                                    {reviewRequest.container?.transportMode === "ROAD" && (
+                                        <div className="p-3 rounded-xl border border-slate-800 bg-slate-900/50">
+                                            <p className="text-[10px] font-bold uppercase text-slate-500">Overhang</p>
+                                            <p className={cn("text-sm font-bold mt-1", reviewRequest.allocation.overhang ? "text-amber-400" : "text-slate-300")}>
+                                                {reviewRequest.allocation.overhang ? "YES - overhang fee applies" : "No"}
+                                            </p>
                                         </div>
                                     )}
                                 </div>
@@ -2045,7 +2096,10 @@ export function AdminBookingsGrid() {
                                 {/* Container info */}
                                 <div className="p-4 rounded-xl border border-slate-800 bg-slate-900/30">
                                     <p className="text-[10px] font-bold uppercase text-slate-500 mb-2 flex items-center gap-1">
-                                        <Ship className="h-3 w-3" /> Target Container
+                                        <Ship className="h-3 w-3" /> {reviewRequest.container?.transportMode === "ROAD" ? "Target Truck" : "Target Container"}
+                                        {reviewRequest.container?.fileNumber && (
+                                            <Badge className="bg-indigo-500/15 text-indigo-400 border-none text-[9px] font-mono ml-1">{reviewRequest.container.fileNumber}</Badge>
+                                        )}
                                     </p>
                                     <div className="flex items-center justify-between">
                                         <div>

@@ -1,6 +1,6 @@
 import { AlertTriangle, FileText, Info, ShieldAlert } from "lucide-react"
 
-export const TERMS_VERSION = "2.0"
+export const TERMS_VERSION = "2.1"
 export const TERMS_EFFECTIVE_LABEL = "Effective as of the date of booking confirmation"
 
 /**
@@ -322,6 +322,20 @@ const SECTIONS: Section[] = [
     },
     {
         number: "16",
+        title: "Refrigerated Road Freight Consolidations",
+        blocks: [
+            { type: "p", text: "This section applies to bookings made under the Refrigerated Road Freight service - shared refrigerated truck consolidations between Cape Town, Johannesburg, and Durban. Where this section conflicts with the sea freight provisions above, this section prevails for road bookings." },
+            { type: "p", text: "Bookings are accepted from 1 (one) pallet space on a shared refrigerated trailer of 28 (twenty-eight) pallet spaces. The Shipper is responsible for the accuracy of the declared pallet count, dimensions, and nett weight; the packing list uploaded at booking is used to verify pallet dimensions prior to loading. Pallets that exceed the declared dimensions or that overhang without having been declared may be refused at collection or re-rated at the applicable overhang fee." },
+            { type: "p", text: "Pricing comprises the transport cost per pallet for the selected corridor, an additional drop fee where more than one delivery point is nominated, and an overhang fee per pallet where pallets overhang. Rates are loaded per customer and confirmed on the cost sheet before booking confirmation." },
+            { type: "p", text: "Upon confirmation of the booking by Seairo, 60% (sixty percent) of the total cost becomes payable upfront, with the balance of 40% (forty percent) payable in accordance with the invoice due dates. Collection will not be scheduled until the upfront payment has been received." },
+            { type: "p", text: "Collection and delivery take place at the addresses nominated by the Shipper at booking. The Shipper warrants that the collection and delivery points are accessible to an interlink/refrigerated trailer and that cargo will be ready for collection at the agreed time. Standing time caused by cargo not being ready, or by inaccessible premises, may be charged to the Shipper at cost." },
+            { type: "p", text: "The temperature regime selected at booking is the set-point at which the load compartment carrying the Shipper's pallets will run. Mixed-regime trailers may carry compartments at different set-points; Seairo will not accept cargo whose required regime does not match the truck's declared set-point." },
+            { type: "p", text: "Proof of Delivery (POD) is uploaded to the Platform after delivery and constitutes prima facie evidence of delivery in good order unless the Consignee endorses the POD with exceptions at the time of delivery." },
+            { type: "p", text: "Goods in Transit (GIT) insurance details are available for viewing on the Platform at any time. The Shipper is responsible for confirming that the GIT cover in force is adequate for the value of the consignment and for arranging top-up cover where required." },
+        ],
+    },
+    {
+        number: "17",
         title: "Contact and Dispute Resolution",
         blocks: [
             { type: "p", text: "For queries relating to these Terms and Conditions, bookings, rate adjustments, or any other SRS matter, please contact Seairo through the Platform or at the contact details provided in your booking confirmation." },

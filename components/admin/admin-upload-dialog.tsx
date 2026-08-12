@@ -21,11 +21,12 @@ import {
 } from "@/components/ui/select"
 import { toast } from "sonner"
 
-const DOC_TYPE_TO_ENUM: Record<string, "INVOICE" | "BOL" | "COA" | "PACKING_LIST" | "OTHER"> = {
+const DOC_TYPE_TO_ENUM: Record<string, "INVOICE" | "BOL" | "COA" | "PACKING_LIST" | "POD" | "OTHER"> = {
     invoice: "INVOICE",
     bol: "BOL",
     coa: "COA",
     packing: "PACKING_LIST",
+    pod: "POD",
     other: "OTHER",
 }
 
@@ -142,6 +143,7 @@ export function AdminUploadDialog({
                                 <SelectItem value="bol">Bill of Lading</SelectItem>
                                 <SelectItem value="coa">Certificate of Analysis</SelectItem>
                                 <SelectItem value="packing">Packing List</SelectItem>
+                                <SelectItem value="pod">Proof of Delivery (POD)</SelectItem>
                                 <SelectItem value="other">Other</SelectItem>
                             </SelectContent>
                         </Select>

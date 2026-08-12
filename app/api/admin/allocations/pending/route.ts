@@ -20,6 +20,8 @@ export async function GET() {
                     maxCapacity: containers.maxCapacity,
                     totalPallets: containers.totalPallets,
                     salesRateTypeId: containers.salesRateTypeId,
+                    transportMode: containers.transportMode,
+                    fileNumber: containers.fileNumber,
                 },
                 user: {
                     id: userTable.id,

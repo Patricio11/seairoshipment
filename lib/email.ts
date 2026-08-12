@@ -66,6 +66,13 @@ function ctaButton(href: string, label: string, color = "#2563eb"): string {
 /* Core sender                                                                 */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Send an email. When the Resend integration (admin → Integrations) is
+ * configured AND enabled, sends through the Resend API with the configured
+ * from-address; otherwise falls back to the SMTP transporter. Resend
+ * failures fall back to SMTP too, so flipping the integration on can never
+ * silently break platform email.
+ */
 export async function sendEmail({
     to,
     subject,
@@ -77,6 +84,31 @@ export async function sendEmail({
     html: string;
     replyTo?: string;
 }) {
+    try {
+        const { getEnabledIntegration } = await import("@/lib/integrations-server");
+        const resend = await getEnabledIntegration("resend");
+        if (resend?.apiKey && resend?.from) {
+            const res = await fetch("https://api.resend.com/emails", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${resend.apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    from: resend.from,
+                    to: [to],
+                    subject,
+                    html,
+                    ...(replyTo ? { reply_to: replyTo } : {}),
+                }),
+            });
+            if (res.ok) return;
+            console.warn(`[email] Resend send failed (${res.status}) - falling back to SMTP`);
+        }
+    } catch (err) {
+        console.warn("[email] Resend path errored - falling back to SMTP", err);
+    }
+
     await transporter.sendMail({
         from: `${fromName} <${fromAddress}>`,
         to,

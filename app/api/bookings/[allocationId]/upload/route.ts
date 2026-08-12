@@ -80,8 +80,8 @@ export async function POST(
         const supabase = createClient(url, key, { auth: { persistSession: false } });
 
         // Validate type against document enum
-        const validTypes = ["INVOICE", "BOL", "COA", "PACKING_LIST", "OTHER"] as const;
-        const docType = (validTypes.includes(type as typeof validTypes[number]) ? type : "OTHER") as "INVOICE" | "BOL" | "COA" | "PACKING_LIST" | "OTHER";
+        const validTypes = ["INVOICE", "BOL", "COA", "PACKING_LIST", "POD", "OTHER"] as const;
+        const docType = (validTypes.includes(type as typeof validTypes[number]) ? type : "OTHER") as "INVOICE" | "BOL" | "COA" | "PACKING_LIST" | "POD" | "OTHER";
 
         // Display name (kept human-readable for admin browsing) vs the storage
         // key (always sanitised + uniquified - see generateUniqueFileName).

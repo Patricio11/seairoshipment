@@ -248,6 +248,53 @@ export function BookingDetailDialog({ booking, open, onOpenChange }: BookingDeta
                         </div>
                     )}
 
+                    {/* Road freight - delivery points + dims + overhang */}
+                    {booking.deliveryAddresses && booking.deliveryAddresses.length > 0 && (
+                        <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400">
+                                    <MapPin className="h-3.5 w-3.5" />
+                                    Delivery Points
+                                </div>
+                                <span className="text-[10px] font-mono text-slate-400">
+                                    {booking.deliveryAddresses.length} {booking.deliveryAddresses.length === 1 ? "point" : "points"}
+                                </span>
+                            </div>
+                            <div className="space-y-2">
+                                {booking.deliveryAddresses.map((row, i) => (
+                                    <div
+                                        key={i}
+                                        className="flex items-start gap-3 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2.5"
+                                    >
+                                        <span className="shrink-0 h-6 w-6 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 font-mono text-[11px] flex items-center justify-center">
+                                            {i + 1}
+                                        </span>
+                                        <div className="min-w-0 flex-1">
+                                            {row.label && (
+                                                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-0.5">
+                                                    {row.label}
+                                                </p>
+                                            )}
+                                            <p className="text-xs text-slate-700 dark:text-slate-300 break-words">{row.address}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            {(booking.palletDimensions || booking.overhang) && (
+                                <div className="flex flex-wrap gap-4 pt-1 text-xs">
+                                    {booking.palletDimensions && (
+                                        <span className="text-slate-500">
+                                            Pallet dims: <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{booking.palletDimensions.lengthCm}×{booking.palletDimensions.widthCm}×{booking.palletDimensions.heightCm} cm</span>
+                                        </span>
+                                    )}
+                                    {booking.overhang && (
+                                        <span className="font-bold text-amber-600 dark:text-amber-400">Overhang: Yes</span>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     <Separator />
 
                     {/* Payment Status */}

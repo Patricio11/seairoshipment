@@ -21,6 +21,7 @@ import {
     Layers,
     CloudSun,
     Truck,
+    Plug,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
@@ -49,6 +50,7 @@ const ADMIN_LINKS = [
     { href: "/admin/categories", label: "Categories", icon: Layers },
     { href: "/admin/commodities", label: "Commodities", icon: Package },
     { href: "/admin/users", label: "User Vetting", icon: Users },
+    { href: "/admin/integrations", label: "Integrations", icon: Plug },
     { href: "/admin/dashboard-weather", label: "Dashboard Weather", icon: CloudSun },
 ]
 

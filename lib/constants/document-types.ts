@@ -30,6 +30,7 @@ export const DOCUMENT_TYPES: DocumentType[] = [
     { code: "SGS", label: "SGS Certificate", description: "Third-party inspection (some destinations)" },
     { code: "SAWIS", label: "SAWIS Certificate", description: "South African Wine Industry Information (wine)" },
     { code: "CITES", label: "CITES Certificate", description: "Convention on International Trade in Endangered Species (hunting trophies)" },
+    { code: "POD", label: "Proof of Delivery (POD)", description: "Transporter-signed delivery confirmation - uploaded after a road load delivers" },
     { code: "OTHER", label: "Other", description: "Any other supporting document" },
 ];
 

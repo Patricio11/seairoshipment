@@ -730,7 +730,7 @@ export function RoadBookingWizard({ onSuccess }: RoadBookingWizardProps) {
                                     />
                                     <span className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                                         I accept the <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline">Road Freight Terms &amp; Conditions</a>.
-                                        Goods in Transit insurance details are available on request and viewable at any time.
+                                        You can view our <a href="/documents/goods-in-transit-insurance.pdf" target="_blank" rel="noopener noreferrer" className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline">Goods in Transit insurance</a> at any time.
                                     </span>
                                 </label>
                                 <p className="text-[10px] text-slate-500 flex items-center gap-1.5">

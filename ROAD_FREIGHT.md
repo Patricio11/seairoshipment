@@ -131,31 +131,31 @@ A → B → C is the critical path. D closes the loop. E is independent after A 
 
 **Done**: end-to-end road booking → admin sees it in the bookings grid → approve → 60% deposit invoice ready.
 
-## Phase D — Docs & polish
+## Phase D — Docs & polish ✅
 
-- [ ] `POD` document type — admin uploads after the load; client sees it in booking docs
-- [ ] Goods in Transit insurance — viewable document link on the road T&Cs step (admin-updatable)
-- [ ] Road terms & conditions content
-- [ ] Admin bookings grid — addresses, overhang chip, file number surfaced on road rows
-- [ ] Tracking page — road bookings show a sensible "no vessel tracking" state (transporter tracking is deferred)
+- [x] `POD` document type — added to the `document_type` enum + document-type labels + both upload routes + the admin upload dialog ("Proof of Delivery (POD)"). Admin uploads it after the load from the booking's upload dialog; client sees it in the booking docs.
+- [x] Goods in Transit insurance — the road T&Cs checkbox links to `/documents/goods-in-transit-insurance.pdf` (drop the PDF in `public/documents/` — manual step)
+- [x] Road terms — new §16 "Refrigerated Road Freight Consolidations" in [components/legal/terms-content.tsx](components/legal/terms-content.tsx) (from-1-pallet, dimension verification vs packing list, 3-line pricing, 60% upfront, access/standing time, temperature set-points, POD as prima facie evidence, GIT responsibility). TERMS_VERSION bumped to 2.1.
+- [x] Admin review dialog — road requests show delivery points (with "+ drop fee" chip when >1), maps-pin links, pallet dimensions, overhang YES/NO, "Target Truck" heading + file-number chip
+- [x] Client booking detail — delivery points, pallet dims, overhang shown on road bookings; bookings list shows the truck icon
 
 ---
 
-## Phase E — Integrations console
+## Phase E — Integrations console ✅ (wire-ups partially deferred)
 
 **Goal**: `/admin/integrations` — cards grid (category label, Configured chip, enable toggle,
 Configure →) exactly like the Philasa reference. Per provider: credentials form (blank secret
 keeps the stored one) → **Test connection** → **Enable**.
 
-- [ ] `lib/integrations.ts` — provider catalogue (google_maps / resend / whatsapp) + `getIntegration(key)` server helper (decrypted creds, only when enabled)
-- [ ] `/api/admin/integrations` GET (safe statuses) + per-provider POST save / POST test
-- [ ] `/admin/integrations` page — cards grid + per-provider config dialogs
-- [ ] Google Maps: test = Places API ping; when enabled, road wizard address fields upgrade to autocomplete
-- [ ] Resend: test = `GET /domains`; when enabled, `lib/email.ts` routes sends through Resend instead of SMTP
-- [ ] WhatsApp Business Cloud API: test = token check against Graph API; when enabled, truck status changes fire WhatsApp messages (booking confirmed → departed → arrived → POD uploaded)
+- [x] [lib/integrations.ts](lib/integrations.ts) — provider catalogue (google_maps / resend / whatsapp with per-provider credential field definitions) + [lib/integrations-server.ts](lib/integrations-server.ts) — `getIntegration` / `getEnabledIntegration` / `getIntegrationStatus` / `saveIntegration` (AES-256-GCM at rest, creds never reach the browser)
+- [x] `/api/admin/integrations` GET (safe statuses) + `[key]` POST save (blank secret keeps stored value; enabling requires all fields) + `[key]/test` POST
+- [x] `/admin/integrations` page + sidebar link — cards grid with enable toggles (toggling an unconfigured provider opens its config dialog), Configured chip, per-provider config dialog with **Test connection** → **Save**
+- [x] Google Maps test — Geocoding API probe (OK / REQUEST_DENIED handling)
+- [x] Resend test — `GET /domains`; **wired**: `sendEmail` in [lib/email.ts](lib/email.ts) routes through Resend when configured + enabled, with automatic SMTP fallback on any Resend failure
+- [x] WhatsApp Business Cloud API test — Graph API phone-number probe (returns the verified business name + number)
+- [ ] *Deferred wire-ups*: road wizard Places autocomplete when google_maps is on; WhatsApp truck-progress messages (booking confirmed → departed → arrived → POD uploaded). Credentials + enable switches are ready; these light up in a follow-up phase.
 
-**Done when**: all three providers can be configured, tested, and toggled; features degrade
-gracefully when off.
+**Done**: all three providers can be configured, tested, and toggled; email actually routes through Resend when on; everything else stays dormant until wired.
 
 ---
 
