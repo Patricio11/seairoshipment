@@ -20,6 +20,20 @@ export const trackingSubscriptionStatusEnum = pgEnum("tracking_subscription_stat
 
 export const containerTypeEnum = pgEnum("container_type", ["20FT", "40FT"]);
 
+/**
+ * Transport mode - a ROAD row is a refrigerated truck, a SEA row is an ocean
+ * container. Same table, same allocations/invoices/documents machinery; the
+ * fleet UI, booking wizard, and rates branch on this discriminator.
+ *
+ * For ROAD rows the column semantics shift slightly:
+ *   - `vessel`       → transporter / truck name
+ *   - `route`        → road corridor (e.g. "CPT-JNB")
+ *   - `etd` / `eta`  → departure / arrival date
+ *   - `maxCapacity`  → pallet spaces (28 on a standard reefer trailer)
+ *   - sailing* refs  → always null
+ */
+export const transportModeEnum = pgEnum("transport_mode", ["SEA", "ROAD"]);
+
 export const temperatureEnum = pgEnum("temperature", [
     "frozen",   // -18°C
     "cool",     // 0°C — just above freezing (e.g. blueberries, fresh fish)
@@ -39,7 +53,13 @@ export const cargoTypeEnum = pgEnum("cargo_type", ["PALLET", "CUBE"]);
 
 export const containers = pgTable("containers", {
     id: text("id").primaryKey(),
-    route: text("route").notNull(), // e.g. "ZACPT-NLRTM"
+    // SEA on every existing row; ROAD rows are refrigerated trucks.
+    transportMode: transportModeEnum("transport_mode").default("SEA").notNull(),
+    // Admin-assigned load file number (e.g. "SRS234") - groups the customers
+    // loading the same truck for the finance side. ROAD-only in practice,
+    // nullable so SEA rows are untouched.
+    fileNumber: text("file_number"),
+    route: text("route").notNull(), // e.g. "ZACPT-NLRTM" (sea) or "CPT-JNB" (road)
     vessel: text("vessel").notNull(),
     voyageNumber: text("voyage_number"),
     sailingScheduleId: text("sailing_schedule_id"),

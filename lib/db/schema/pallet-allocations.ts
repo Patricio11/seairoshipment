@@ -1,10 +1,22 @@
-import { pgTable, text, timestamp, integer, numeric, jsonb, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, numeric, jsonb, boolean, pgEnum } from "drizzle-orm/pg-core";
 import { containers, cargoTypeEnum } from "./containers";
 import { user } from "./users";
 
 export interface CollectionAddress {
     label?: string;
     address: string;
+    /** Optional Google Maps pin link the customer pasted (road freight). */
+    mapsLink?: string;
+}
+
+/**
+ * Pallet dimensions captured on road-freight bookings so the transporter can
+ * verify against the packing list. Display/verification only - not priced.
+ */
+export interface PalletDimensions {
+    lengthCm: number;
+    widthCm: number;
+    heightCm: number;
 }
 
 /**
@@ -43,6 +55,13 @@ export const palletAllocations = pgTable("pallet_allocations", {
     consigneeName: text("consignee_name"),
     consigneeAddress: text("consignee_address"),
     collectionAddresses: jsonb("collection_addresses").$type<CollectionAddress[]>(),
+    // Road freight - delivery points (1 required, extras incur the additional
+    // drop fee), pallet dimensions for packing-list verification, and whether
+    // any pallets overhang (YES → overhang fee per pallet on the cost sheet).
+    // All null/false on sea bookings.
+    deliveryAddresses: jsonb("delivery_addresses").$type<CollectionAddress[]>(),
+    palletDimensions: jsonb("pallet_dimensions").$type<PalletDimensions>(),
+    overhang: boolean("overhang").default(false).notNull(),
     salesRateTypeId: text("sales_rate_type_id").default("srs"),
     // Cargo type - PALLET keeps `palletCount` meaningful; CUBE uses the three
     // cube fields below and `palletCount` is left at 0 (the column is NOT NULL
