@@ -100,17 +100,17 @@ A → B → C is the critical path. D closes the loop. E is independent after A 
 
 **Done when**: db:push applies cleanly; existing sea flows behave identically.
 
-## Phase B — Admin: trucks + road rates
+## Phase B — Admin: trucks + road rates ✅
 
 **Goal**: Admin can create trucks in the fleet and load per-customer road rates.
 
-- [ ] Fleet page ([components/admin/fleet-scheduler.tsx](components/admin/fleet-scheduler.tsx)) — mode filter (Sea / Road); create-container dialog gains a **transport mode** choice that flips the form: road route dropdown (6 corridors), transporter/truck name, departure + arrival dates, capacity default 28, file number, category + temperature same as sea (road temp labels)
-- [ ] Truck cards show file number + road route + road temp labels
-- [ ] `/api/admin/containers` POST/PUT accept the road fields; validation branches on mode
-- [ ] NEW `/admin/finance/road-rates` page — list + create/edit/delete road rates; customer picker (or "Default — all customers"); one row per (customer, route) with the 3 fee lines; bulk-delete selection like other rate lists
-- [ ] NEW `/api/admin/road-rates` CRUD + bulk-delete
+- [x] Fleet page ([components/admin/fleet-scheduler.tsx](components/admin/fleet-scheduler.tsx)) — All/Sea/Road mode filter pills; create dialog gains a **Sea Freight Container / Road Freight Truck** toggle (locked after creation) that flips the form: road corridor dropdown, transporter/truck name, file number, departure + arrival dates, pallet spaces (default 28), SRS category + temperature with road labels
+- [x] Truck cards — Truck icon (emerald), corridor label ("Cape Town → Johannesburg"), Road badge, file number chip, "Departs/Arrives" instead of ETD/ETA, MetaShip actions hidden for ROAD
+- [x] `/api/admin/containers` POST/PUT — ROAD branch: corridor + truck name + temperature validation against the SRS category; capacity guard on edit (can't drop below booked pallets); sea branch untouched
+- [x] NEW `/admin/finance/road-rates` + sidebar link — search, per-row edit/delete, active toggle, bulk-delete bar; create dialog with customer picker ("Default — all customers" + approved clients), corridor select, the 3 fee lines (NumericInput)
+- [x] NEW `/api/admin/road-rates` GET/POST + `[id]` PUT/DELETE + bulk-delete. POST guards duplicate (customer, route) pairs incl. the NULL-default case
 
-**Done when**: a truck with file number SRS234 exists on CPT-JNB, default + per-customer rates are loaded, and the sea fleet view is unchanged.
+**Done**: a truck with file number SRS234 can be created on CPT-JNB, default + per-customer rates load, and the sea fleet view is unchanged.
 
 ## Phase C — Client: Road Freight booking flow
 

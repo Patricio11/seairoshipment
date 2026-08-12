@@ -27,7 +27,11 @@ import {
     Sun,
     Apple,
     ChevronsUpDown,
+    Truck,
+    FileDigit,
 } from "lucide-react"
+import { ROAD_ROUTES, ROAD_TEMP_LABELS, ROAD_TRUCK_MAX_PALLETS, roadRouteLabel } from "@/lib/road"
+import { NumericInput } from "@/components/ui/numeric-input"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -109,6 +113,8 @@ interface ContainerAllocation {
 
 interface ContainerData {
     id: string
+    transportMode: "SEA" | "ROAD"
+    fileNumber: string | null
     route: string
     vessel: string
     voyageNumber: string | null
@@ -180,6 +186,7 @@ interface CategoryOption {
 }
 
 interface ContainerForm {
+    transportMode: "SEA" | "ROAD"
     origin: string
     destination: string
     sailingId: string
@@ -188,6 +195,12 @@ interface ContainerForm {
     categoryId: string
     maxCapacity: number
     cargoType: "PALLET" | "CUBE"
+    // Road-only fields
+    roadRoute: string
+    truckName: string
+    fileNumber: string
+    departureDate: string
+    arrivalDate: string
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -199,6 +212,7 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 const EMPTY_FORM: ContainerForm = {
+    transportMode: "SEA",
     origin: "",
     destination: "",
     sailingId: "",
@@ -207,12 +221,18 @@ const EMPTY_FORM: ContainerForm = {
     categoryId: "",
     maxCapacity: 20,
     cargoType: "PALLET",
+    roadRoute: "",
+    truckName: "",
+    fileNumber: "",
+    departureDate: "",
+    arrivalDate: "",
 }
 
 export function FleetScheduler() {
     const [containerData, setContainerData] = useState<ContainerData[]>([])
     const [loading, setLoading] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
+    const [modeFilter, setModeFilter] = useState<"ALL" | "SEA" | "ROAD">("ALL")
 
     // Create/Edit dialog
     const [dialogOpen, setDialogOpen] = useState(false)
@@ -293,13 +313,16 @@ export function FleetScheduler() {
         fetchReferenceData()
     }, [fetchContainers])
 
-    const filteredContainers = containerData.filter(c =>
-        c.route.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.vessel.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (c.metashipOrderNo && c.metashipOrderNo.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (c.voyageNumber && c.voyageNumber.toLowerCase().includes(searchTerm.toLowerCase()))
-    )
+    const filteredContainers = containerData
+        .filter(c => modeFilter === "ALL" || (c.transportMode || "SEA") === modeFilter)
+        .filter(c =>
+            c.route.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            c.vessel.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            c.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (c.fileNumber && c.fileNumber.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (c.metashipOrderNo && c.metashipOrderNo.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (c.voyageNumber && c.voyageNumber.toLowerCase().includes(searchTerm.toLowerCase()))
+        )
 
     const allVisibleContainersSelected = filteredContainers.length > 0 && filteredContainers.every(c => selectedContainers.has(c.id))
     const toggleAllContainers = () => {
@@ -330,8 +353,10 @@ export function FleetScheduler() {
 
     const handleOpenEdit = (container: ContainerData) => {
         setEditingContainer(container)
-        const [origin, destination] = container.route.split("-")
+        const isRoad = container.transportMode === "ROAD"
+        const [origin, destination] = isRoad ? ["", ""] : container.route.split("-")
         setFormData({
+            transportMode: container.transportMode || "SEA",
             origin: origin || "",
             destination: destination || "",
             sailingId: container.sailingId || "",
@@ -340,12 +365,65 @@ export function FleetScheduler() {
             categoryId: container.categoryId || "",
             maxCapacity: container.maxCapacity,
             cargoType: container.cargoType || "PALLET",
+            roadRoute: isRoad ? container.route : "",
+            truckName: isRoad ? container.vessel : "",
+            fileNumber: container.fileNumber || "",
+            departureDate: isRoad && container.etd ? container.etd.slice(0, 10) : "",
+            arrivalDate: isRoad && container.eta ? container.eta.slice(0, 10) : "",
         })
         setDialogOpen(true)
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+
+        // ── ROAD branch: trucks post a different payload ──
+        if (formData.transportMode === "ROAD") {
+            if (!formData.roadRoute) { toast.error("Pick a road route"); return }
+            if (!formData.truckName.trim()) { toast.error("Transporter / truck name is required"); return }
+            if (!formData.temperature) { toast.error("Select a temperature"); return }
+            if (!formData.categoryId) { toast.error("Select a category"); return }
+
+            setSaving(true)
+            try {
+                const isEdit = !!editingContainer
+                const res = await fetch(
+                    isEdit ? `/api/admin/containers/${editingContainer!.id}` : "/api/admin/containers",
+                    {
+                        method: isEdit ? "PUT" : "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            transportMode: "ROAD",
+                            route: formData.roadRoute,
+                            truckName: formData.truckName.trim(),
+                            fileNumber: formData.fileNumber.trim(),
+                            departureDate: formData.departureDate || null,
+                            arrivalDate: formData.arrivalDate || null,
+                            maxCapacity: formData.maxCapacity,
+                            categoryId: formData.categoryId,
+                            temperature: formData.temperature,
+                        }),
+                    }
+                )
+                if (res.ok) {
+                    toast.success(isEdit ? "Truck Updated" : "Truck Created", {
+                        description: `${roadRouteLabel(formData.roadRoute)} · ${formData.truckName.trim()}${formData.fileNumber.trim() ? ` · File ${formData.fileNumber.trim()}` : ""}`,
+                    })
+                    setDialogOpen(false)
+                    fetchContainers()
+                } else {
+                    const data = await res.json()
+                    toast.error(data.error || "Failed to save truck")
+                }
+            } catch {
+                toast.error("Failed to save truck")
+            } finally {
+                setSaving(false)
+            }
+            return
+        }
+
+        // ── SEA branch (existing behaviour) ──
         if (!formData.origin || !formData.destination) {
             toast.error("Origin and destination are required")
             return
@@ -523,9 +601,12 @@ export function FleetScheduler() {
     }
 
     const selectedContainerType = containerTypeOptions.find(c => c.id === formData.containerTypeId)
+    const isRoadForm = formData.transportMode === "ROAD"
 
-    // Category filtering: only categories matching the service type derived from the container type
+    // Category filtering: only categories matching the service type derived from
+    // the container type. Road trucks are always refrigerated → SRS categories.
     const derivedSalesRateType: "srs" | "scs" | null =
+        isRoadForm ? "srs" :
         selectedContainerType?.type === "DRY" ? "scs" :
         selectedContainerType?.type === "REEFER" ? "srs" : null
 
@@ -533,9 +614,9 @@ export function FleetScheduler() {
 
     // Container-type-level temperature constraints
     // DRY containers carry no temperature regime → empty array, the temp section
-    // is hidden entirely. REEFER containers can run any of the four regimes.
+    // is hidden entirely. REEFER containers + road trucks can run all four regimes.
     const containerTypeTemps: Array<"frozen" | "cool" | "chilled" | "ambient"> =
-        selectedContainerType?.type === "DRY" ? [] : ["frozen", "cool", "chilled", "ambient"]
+        !isRoadForm && selectedContainerType?.type === "DRY" ? [] : ["frozen", "cool", "chilled", "ambient"]
 
     // Final allowed temperatures = intersection of container type + category.allowedTemperatures.
     // SCS categories carry [] for allowedTemperatures; nothing to intersect, so for
@@ -546,7 +627,9 @@ export function FleetScheduler() {
             .filter(t => categoryTemps.includes(t))
             .map(t => ({
                 value: t,
-                label: t === "frozen" ? "-18°C (Frozen)"
+                label: isRoadForm
+                    ? ROAD_TEMP_LABELS[t]
+                    : t === "frozen" ? "-18°C (Frozen)"
                     : t === "cool" ? "0°C (Cool)"
                     : t === "chilled" ? "+5°C (Chilled)"
                     : "+18°C (Ambient)",
@@ -572,11 +655,30 @@ export function FleetScheduler() {
         <div className="space-y-6">
             {/* Header Bar */}
             <div className="flex flex-col sm:flex-row justify-between gap-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
-                <div className="flex items-center gap-4 text-sm text-slate-400">
-                    <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-blue-500" /> Open</span>
-                    <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-amber-500" /> Threshold</span>
-                    <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500" /> Booked</span>
-                    <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-purple-500" /> Sailing</span>
+                <div className="flex items-center gap-4">
+                    <div className="flex bg-slate-950 rounded-lg p-1 border border-slate-800">
+                        {([["ALL", "All"], ["SEA", "Sea"], ["ROAD", "Road"]] as const).map(([value, label]) => (
+                            <button
+                                key={value}
+                                type="button"
+                                onClick={() => setModeFilter(value)}
+                                className={cn(
+                                    "px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-md transition-all flex items-center gap-1.5",
+                                    modeFilter === value ? "bg-slate-800 text-white" : "text-slate-500 hover:text-slate-300",
+                                )}
+                            >
+                                {value === "SEA" && <Ship className="h-3 w-3" />}
+                                {value === "ROAD" && <Truck className="h-3 w-3" />}
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="hidden xl:flex items-center gap-4 text-sm text-slate-400">
+                        <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-blue-500" /> Open</span>
+                        <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-amber-500" /> Threshold</span>
+                        <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500" /> Booked</span>
+                        <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-purple-500" /> Sailing</span>
+                    </div>
                 </div>
                 <div className="flex items-center gap-3">
                     <div className="relative flex-1 min-w-[200px]">
@@ -639,15 +741,30 @@ export function FleetScheduler() {
                                             onCheckedChange={() => toggleOneContainer(container.id)}
                                             aria-label={`Select container ${container.id}`}
                                         />
-                                        <div className="h-12 w-12 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center border border-blue-500/20">
-                                            <Container className="h-6 w-6" />
+                                        <div className={cn(
+                                            "h-12 w-12 rounded-xl flex items-center justify-center border",
+                                            container.transportMode === "ROAD"
+                                                ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                                                : "bg-blue-500/10 text-blue-500 border-blue-500/20",
+                                        )}>
+                                            {container.transportMode === "ROAD" ? <Truck className="h-6 w-6" /> : <Container className="h-6 w-6" />}
                                         </div>
                                         <div>
                                             <h3 className="text-lg font-black text-white flex items-center gap-2 flex-wrap">
-                                                {container.route}
+                                                {container.transportMode === "ROAD" ? roadRouteLabel(container.route) : container.route}
                                                 <Badge className={STATUS_COLORS[container.status] || STATUS_COLORS.OPEN}>
                                                     {container.status.replace("_", " ")}
                                                 </Badge>
+                                                {container.transportMode === "ROAD" && (
+                                                    <Badge className="bg-emerald-500/15 text-emerald-400 border-none text-[10px]">
+                                                        <Truck className="h-3 w-3 mr-1" /> Road
+                                                    </Badge>
+                                                )}
+                                                {container.fileNumber && (
+                                                    <Badge className="bg-indigo-500/15 text-indigo-400 border-none text-[10px] font-mono">
+                                                        <FileDigit className="h-3 w-3 mr-1" /> {container.fileNumber}
+                                                    </Badge>
+                                                )}
                                                 {container.temperature ? (
                                                     <Badge className={
                                                         container.temperature === "ambient"
@@ -655,7 +772,9 @@ export function FleetScheduler() {
                                                             : "bg-sky-500/15 text-sky-400 border-none text-[10px]"
                                                     }>
                                                         {container.temperature === "ambient" ? <Sun className="h-3 w-3 mr-1" /> : <Snowflake className="h-3 w-3 mr-1" />}
-                                                        {container.temperature === "frozen" ? "-18°C"
+                                                        {container.transportMode === "ROAD"
+                                                            ? ROAD_TEMP_LABELS[container.temperature]?.split(" (")[0] ?? container.temperature
+                                                            : container.temperature === "frozen" ? "-18°C"
                                                             : container.temperature === "cool" ? "0°C"
                                                             : container.temperature === "chilled" ? "+5°C"
                                                             : "+18°C"}
@@ -677,14 +796,15 @@ export function FleetScheduler() {
                                                 )}
                                             </h3>
                                             <p className="text-slate-500 text-sm font-medium">
-                                                {container.vessel} • {container.containerTypeName || container.type} • {container.id}
-                                                {container.voyageNumber && ` • V/${container.voyageNumber}`}
+                                                {container.transportMode === "ROAD"
+                                                    ? <>{container.vessel} • Reefer Truck • {container.id}</>
+                                                    : <>{container.vessel} • {container.containerTypeName || container.type} • {container.id}{container.voyageNumber && ` • V/${container.voyageNumber}`}</>}
                                             </p>
                                             {(container.etd || container.eta) && (
                                                 <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
                                                     <Calendar className="h-3 w-3" />
-                                                    {container.etd && <span>ETD: <span className="text-slate-300">{new Date(container.etd).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</span></span>}
-                                                    {container.eta && <span>ETA: <span className="text-slate-300">{new Date(container.eta).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</span></span>}
+                                                    {container.etd && <span>{container.transportMode === "ROAD" ? "Departs" : "ETD"}: <span className="text-slate-300">{new Date(container.etd).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</span></span>}
+                                                    {container.eta && <span>{container.transportMode === "ROAD" ? "Arrives" : "ETA"}: <span className="text-slate-300">{new Date(container.eta).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</span></span>}
                                                 </div>
                                             )}
                                         </div>
@@ -715,7 +835,7 @@ export function FleetScheduler() {
                                             </div>
                                         )}
 
-                                        {container.status === "THRESHOLD_REACHED" && !container.metashipOrderNo && (
+                                        {container.transportMode !== "ROAD" && container.status === "THRESHOLD_REACHED" && !container.metashipOrderNo && (
                                             <Button
                                                 className="bg-amber-600 hover:bg-amber-700 text-white font-bold"
                                                 onClick={() => setBookingDialog(container)}
@@ -792,7 +912,7 @@ export function FleetScheduler() {
                                             style={{ width: `${(container.totalPallets / container.maxCapacity) * 100}%` }}
                                         />
                                     </div>
-                                    {container.totalPallets >= 15 && !container.metashipOrderNo && (
+                                    {container.transportMode !== "ROAD" && container.totalPallets >= 15 && !container.metashipOrderNo && (
                                         <div className="flex items-center gap-1 mt-2 text-amber-400 text-xs font-bold">
                                             <AlertTriangle className="h-3 w-3" />
                                             Threshold reached - ready for MetaShip order
@@ -895,16 +1015,129 @@ export function FleetScheduler() {
                     <form onSubmit={handleSubmit}>
                         <DialogHeader>
                             <DialogTitle className="text-xl font-black tracking-tight flex items-center gap-2">
-                                <Container className="h-5 w-5 text-blue-500" />
-                                {editingContainer ? "EDIT CONTAINER" : "CREATE CONTAINER"}
+                                {isRoadForm ? <Truck className="h-5 w-5 text-emerald-500" /> : <Container className="h-5 w-5 text-blue-500" />}
+                                {editingContainer
+                                    ? (isRoadForm ? "EDIT TRUCK" : "EDIT CONTAINER")
+                                    : (isRoadForm ? "CREATE TRUCK" : "CREATE CONTAINER")}
                             </DialogTitle>
                             <DialogDescription className="text-slate-400 font-mono text-[10px] uppercase tracking-widest">
-                                {editingContainer ? `Editing ${editingContainer.id}` : "Define Route, Vessel & Container Type"}
+                                {editingContainer
+                                    ? `Editing ${editingContainer.id}`
+                                    : isRoadForm ? "Refrigerated Road Freight - Define Route, Transporter & Schedule" : "Define Route, Vessel & Container Type"}
                             </DialogDescription>
                         </DialogHeader>
 
+                        {/* Transport mode - locked after creation */}
+                        {!editingContainer && (
+                            <div className="pt-4">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">Transport Mode</p>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...EMPTY_FORM, transportMode: "SEA" })}
+                                        className={cn(
+                                            "flex items-center justify-center gap-2 h-10 rounded-lg border text-xs font-bold transition-all",
+                                            !isRoadForm ? "border-brand-blue bg-brand-blue/15 text-brand-blue" : "border-slate-700 text-slate-400 hover:border-brand-blue hover:text-white",
+                                        )}
+                                    >
+                                        <Ship className="h-4 w-4" /> Sea Freight Container
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...EMPTY_FORM, transportMode: "ROAD", maxCapacity: ROAD_TRUCK_MAX_PALLETS })}
+                                        className={cn(
+                                            "flex items-center justify-center gap-2 h-10 rounded-lg border text-xs font-bold transition-all",
+                                            isRoadForm ? "border-emerald-500 bg-emerald-500/15 text-emerald-400" : "border-slate-700 text-slate-400 hover:border-emerald-500 hover:text-white",
+                                        )}
+                                    >
+                                        <Truck className="h-4 w-4" /> Road Freight Truck
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="space-y-4 py-6 border-y border-slate-800/50 my-4">
+                            {/* ── ROAD: Route corridor + transporter + schedule + capacity ── */}
+                            {isRoadForm && (
+                                <>
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-2">1. Road Route</p>
+                                        <Select value={formData.roadRoute} onValueChange={(v) => setFormData({ ...formData, roadRoute: v })}>
+                                            <SelectTrigger className="bg-slate-900 border-slate-800 h-9 text-sm">
+                                                <SelectValue placeholder="Select corridor" />
+                                            </SelectTrigger>
+                                            <SelectContent className="bg-slate-900 border-slate-800 text-white">
+                                                {ROAD_ROUTES.map(r => (
+                                                    <SelectItem key={r.code} value={r.code}>{r.label}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <div className="border-t border-slate-800/50 pt-4">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-2">2. Transporter</p>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-1.5">
+                                                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Transporter / Truck Name</Label>
+                                                <Input
+                                                    value={formData.truckName}
+                                                    onChange={(e) => setFormData({ ...formData, truckName: e.target.value })}
+                                                    placeholder="e.g. ColdChain Logistics"
+                                                    className="bg-slate-900 border-slate-800 h-9 text-sm"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">File Number (finance)</Label>
+                                                <Input
+                                                    value={formData.fileNumber}
+                                                    onChange={(e) => setFormData({ ...formData, fileNumber: e.target.value })}
+                                                    placeholder="e.g. SRS234"
+                                                    className="bg-slate-900 border-slate-800 h-9 text-sm font-mono"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="border-t border-slate-800/50 pt-4">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-2">3. Schedule & Capacity</p>
+                                        <div className="grid grid-cols-3 gap-3">
+                                            <div className="space-y-1.5">
+                                                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Departure</Label>
+                                                <Input
+                                                    type="date"
+                                                    value={formData.departureDate}
+                                                    onChange={(e) => setFormData({ ...formData, departureDate: e.target.value })}
+                                                    className="bg-slate-900 border-slate-800 h-9 text-sm"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Arrival</Label>
+                                                <Input
+                                                    type="date"
+                                                    value={formData.arrivalDate}
+                                                    onChange={(e) => setFormData({ ...formData, arrivalDate: e.target.value })}
+                                                    className="bg-slate-900 border-slate-800 h-9 text-sm"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pallet Spaces</Label>
+                                                <NumericInput
+                                                    value={formData.maxCapacity}
+                                                    onChange={(e) => setFormData({ ...formData, maxCapacity: Math.floor(Number(e.target.value)) || 0 })}
+                                                    className="bg-slate-900 border-slate-800 h-9 text-sm font-mono"
+                                                    placeholder={String(ROAD_TRUCK_MAX_PALLETS)}
+                                                />
+                                            </div>
+                                        </div>
+                                        <p className="text-[10px] text-slate-500 mt-1.5">
+                                            Standard reefer trailer takes {ROAD_TRUCK_MAX_PALLETS} pallet spaces - bookable from 1 pallet.
+                                        </p>
+                                    </div>
+                                </>
+                            )}
+
                             {/* Step 1: Route */}
+                            {!isRoadForm && (
                             <div>
                                 <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">1. Route</p>
                                 <div className="grid grid-cols-2 gap-3">
@@ -936,8 +1169,10 @@ export function FleetScheduler() {
                                     </div>
                                 </div>
                             </div>
+                            )}
 
                             {/* Step 2: Sailing */}
+                            {!isRoadForm && (
                             <div className="border-t border-slate-800/50 pt-4">
                                 <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">2. Sailing</p>
                                 {!formData.origin || !formData.destination ? (
@@ -966,8 +1201,10 @@ export function FleetScheduler() {
                                     </Select>
                                 )}
                             </div>
+                            )}
 
                             {/* Step 3: Container Type */}
+                            {!isRoadForm && (
                             <div className="border-t border-slate-800/50 pt-4">
                                 <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">3. Container Type</p>
                                 <div className="grid grid-cols-2 gap-3">
@@ -993,9 +1230,10 @@ export function FleetScheduler() {
                                     />
                                 </div>
                             </div>
+                            )}
 
             {/* Step 3b: Cargo Type - SCS (DRY) only. SRS (reefer) is always PALLET, so the field is hidden. */}
-                            {selectedContainerType?.type === "DRY" && (
+                            {!isRoadForm && selectedContainerType?.type === "DRY" && (
                                 <div className="border-t border-slate-800/50 pt-4">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">3b. Cargo Type</p>
                                     <div className="grid grid-cols-2 gap-2">
@@ -1029,7 +1267,7 @@ export function FleetScheduler() {
                             )}
 
             {/* Step 4: Temperature - hidden for Dry containers (no temperature regime) */}
-                            {selectedContainerType?.type === "DRY" ? (
+                            {!isRoadForm && selectedContainerType?.type === "DRY" ? (
                                 <div className="border-t border-slate-800/50 pt-4">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">4. Temperature</p>
                                     <div className="rounded-lg border border-slate-800 bg-slate-900/40 px-3 py-2.5 flex items-center gap-2">
@@ -1039,13 +1277,15 @@ export function FleetScheduler() {
                                 </div>
                             ) : (
                                 <div className="border-t border-slate-800/50 pt-4">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">4. Temperature</p>
-                                    <div className="grid grid-cols-4 gap-2">
+                                    <p className={cn("text-[10px] font-black uppercase tracking-widest mb-2", isRoadForm ? "text-emerald-400" : "text-brand-blue")}>4. Temperature</p>
+                                    <div className={cn("grid gap-2", isRoadForm ? "grid-cols-2" : "grid-cols-4")}>
                                         {(["frozen", "cool", "chilled", "ambient"] as const).map(t => {
                                             const allowed = temperatureOptions.some(o => o.value === t)
                                             const selected = formData.temperature === t
                                             const icon = t === "ambient" ? <Sun className="h-3.5 w-3.5" /> : <Snowflake className="h-3.5 w-3.5" />
-                                            const label = t === "frozen" ? "-18°C Frozen"
+                                            const label = isRoadForm
+                                                ? ROAD_TEMP_LABELS[t]
+                                                : t === "frozen" ? "-18°C Frozen"
                                                 : t === "cool" ? "0°C Cool"
                                                 : t === "chilled" ? "+5°C Chilled"
                                                 : "+18°C Ambient"
@@ -1058,8 +1298,8 @@ export function FleetScheduler() {
                                                     className={cn(
                                                         "flex items-center justify-center gap-1.5 h-9 rounded-lg border text-xs font-bold transition-all",
                                                         !allowed && "border-slate-800 text-slate-600 cursor-not-allowed opacity-40",
-                                                        allowed && !selected && "border-slate-700 text-slate-400 hover:border-brand-blue hover:text-white",
-                                                        selected && "border-brand-blue bg-brand-blue/15 text-brand-blue"
+                                                        allowed && !selected && (isRoadForm ? "border-slate-700 text-slate-400 hover:border-emerald-500 hover:text-white" : "border-slate-700 text-slate-400 hover:border-brand-blue hover:text-white"),
+                                                        selected && (isRoadForm ? "border-emerald-500 bg-emerald-500/15 text-emerald-400" : "border-brand-blue bg-brand-blue/15 text-brand-blue")
                                                     )}
                                                 >
                                                     {icon} {label}
@@ -1068,7 +1308,9 @@ export function FleetScheduler() {
                                         })}
                                     </div>
                                     <p className="text-[10px] text-slate-500 mt-1.5">
-                                        Reefer containers can carry frozen, chilled, or ambient (+18°C) cargo.
+                                        {isRoadForm
+                                            ? "Trucks can mix regimes across loads - the truck's setting is what this load runs at."
+                                            : "Reefer containers can carry frozen, chilled, or ambient (+18°C) cargo."}
                                     </p>
                                 </div>
                             )}
@@ -1158,9 +1400,12 @@ export function FleetScheduler() {
                             <Button type="button" variant="ghost" onClick={() => setDialogOpen(false)} className="text-slate-400 hover:text-white hover:bg-slate-900">
                                 CANCEL
                             </Button>
-                            <Button type="submit" disabled={saving} className="bg-brand-blue hover:bg-brand-blue/90 text-white font-black px-8">
+                            <Button type="submit" disabled={saving} className={cn("text-white font-black px-8", isRoadForm ? "bg-emerald-600 hover:bg-emerald-700" : "bg-brand-blue hover:bg-brand-blue/90")}>
                                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                                {saving ? "SAVING..." : editingContainer ? "UPDATE CONTAINER" : "CREATE CONTAINER"}
+                                {saving ? "SAVING..."
+                                    : editingContainer
+                                        ? (isRoadForm ? "UPDATE TRUCK" : "UPDATE CONTAINER")
+                                        : (isRoadForm ? "CREATE TRUCK" : "CREATE CONTAINER")}
                             </Button>
                         </DialogFooter>
                     </form>

@@ -3,8 +3,10 @@ import { requireAdmin } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { containers, palletAllocations, containerTypes, sailings, productCategories, documents, invoices } from "@/lib/db/schema";
 import { eq, inArray } from "drizzle-orm";
+import { isRoadRoute } from "@/lib/road";
 
 type Temperature = "frozen" | "cool" | "chilled" | "ambient";
+const ALL_TEMPS: Temperature[] = ["frozen", "cool", "chilled", "ambient"];
 
 export async function PUT(
     request: NextRequest,
@@ -27,6 +29,77 @@ export async function PUT(
             return NextResponse.json({ error: "Container not found" }, { status: 404 });
         }
 
+        // ── ROAD branch: trucks edit a different field set (corridor, truck
+        // name, dates, file number, capacity, category, temperature). No
+        // container type / sailing logic applies.
+        if (existing.transportMode === "ROAD") {
+            const updates: Record<string, unknown> = { updatedAt: new Date() };
+
+            if (body.route !== undefined) {
+                if (!isRoadRoute(body.route)) {
+                    return NextResponse.json({ error: "Pick a valid road route corridor" }, { status: 400 });
+                }
+                updates.route = body.route;
+            }
+            if (body.truckName !== undefined) {
+                if (!String(body.truckName).trim()) {
+                    return NextResponse.json({ error: "Transporter / truck name is required" }, { status: 400 });
+                }
+                updates.vessel = String(body.truckName).trim();
+            }
+            if (body.fileNumber !== undefined) updates.fileNumber = String(body.fileNumber).trim() || null;
+            if (body.departureDate !== undefined) updates.etd = body.departureDate ? new Date(body.departureDate) : null;
+            if (body.arrivalDate !== undefined) updates.eta = body.arrivalDate ? new Date(body.arrivalDate) : null;
+            if (body.maxCapacity !== undefined) {
+                const cap = Math.floor(Number(body.maxCapacity));
+                if (!(cap > 0)) return NextResponse.json({ error: "Capacity must be at least 1 pallet" }, { status: 400 });
+                if (cap < existing.totalPallets) {
+                    return NextResponse.json(
+                        { error: `Capacity can't drop below the ${existing.totalPallets} pallets already booked` },
+                        { status: 400 }
+                    );
+                }
+                updates.maxCapacity = cap;
+            }
+
+            let roadCategoryTemps: Temperature[] | null = null;
+            if (body.categoryId !== undefined && body.categoryId) {
+                const [cat] = await db.select().from(productCategories).where(eq(productCategories.id, body.categoryId)).limit(1);
+                if (!cat) return NextResponse.json({ error: "Invalid category" }, { status: 400 });
+                if (!cat.active) return NextResponse.json({ error: "Category is inactive" }, { status: 400 });
+                if (cat.salesRateTypeId !== "srs") {
+                    return NextResponse.json({ error: "Road trucks are refrigerated - pick an SRS (reefer) category" }, { status: 400 });
+                }
+                updates.categoryId = cat.id;
+                roadCategoryTemps = (cat.allowedTemperatures as Temperature[]) || [];
+            } else if (existing.categoryId) {
+                const [cat] = await db.select().from(productCategories).where(eq(productCategories.id, existing.categoryId)).limit(1);
+                if (cat) roadCategoryTemps = (cat.allowedTemperatures as Temperature[]) || [];
+            }
+
+            if (body.temperature !== undefined) {
+                if (!body.temperature || !ALL_TEMPS.includes(body.temperature as Temperature)) {
+                    return NextResponse.json({ error: `Pick a temperature for this truck (${ALL_TEMPS.join(", ")}).` }, { status: 400 });
+                }
+                if (roadCategoryTemps && !roadCategoryTemps.includes(body.temperature as Temperature)) {
+                    return NextResponse.json(
+                        { error: `Temperature "${body.temperature}" is not allowed for this category. Allowed: ${roadCategoryTemps.join(", ")}` },
+                        { status: 400 }
+                    );
+                }
+                updates.temperature = body.temperature;
+            }
+
+            const [updatedTruck] = await db
+                .update(containers)
+                .set(updates)
+                .where(eq(containers.id, id))
+                .returning();
+
+            return NextResponse.json(updatedTruck);
+        }
+
+        // ── SEA branch (existing behaviour, unchanged) ──
         // cargoType is locked at creation - refuse any change.
         if (body.cargoType !== undefined && body.cargoType !== existing.cargoType) {
             return NextResponse.json(

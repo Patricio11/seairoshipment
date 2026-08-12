@@ -20,6 +20,7 @@ import {
     Anchor,
     Layers,
     CloudSun,
+    Truck,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
@@ -55,6 +56,7 @@ const FINANCE_LINKS = [
     { href: "/admin/finance/origin-charges", label: "Origin Charges", icon: Package },
     { href: "/admin/finance/ocean-freight", label: "Ocean Freight", icon: Ship },
     { href: "/admin/finance/destination-charges", label: "Destination Charges", icon: MapPin },
+    { href: "/admin/finance/road-rates", label: "Road Freight Rates", icon: Truck },
     { href: "/admin/finance/settings", label: "Settings & Forex", icon: DollarSign },
 ]
 

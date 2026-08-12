@@ -4,8 +4,10 @@ import { db } from "@/lib/db";
 import { containers, palletAllocations, user, containerTypes, sailings, productCategories } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { isRoadRoute, ROAD_TRUCK_MAX_PALLETS } from "@/lib/road";
 
 type Temperature = "frozen" | "cool" | "chilled" | "ambient";
+const ALL_TEMPS: Temperature[] = ["frozen", "cool", "chilled", "ambient"];
 
 export async function GET() {
     try {
@@ -73,8 +75,85 @@ export async function POST(request: NextRequest) {
             temperature,
             salesRateTypeId,
             cargoType: cargoTypeRaw,
+            transportMode,
+            truckName,
+            fileNumber,
+            departureDate,
+            arrivalDate,
+            maxCapacity: maxCapacityRaw,
         } = body;
 
+        // ── ROAD branch: a refrigerated truck. No container type, no sailing —
+        // route is one of the fixed road corridors, `vessel` holds the
+        // transporter/truck name, etd/eta are the departure/arrival dates.
+        if (transportMode === "ROAD") {
+            if (!route || !isRoadRoute(route)) {
+                return NextResponse.json({ error: "Pick a valid road route corridor" }, { status: 400 });
+            }
+            if (!truckName?.trim()) {
+                return NextResponse.json({ error: "Transporter / truck name is required" }, { status: 400 });
+            }
+            if (!categoryId) {
+                return NextResponse.json({ error: "Select a category" }, { status: 400 });
+            }
+            // Trucks are always refrigerated — a temperature regime is required.
+            if (!temperature || !ALL_TEMPS.includes(temperature as Temperature)) {
+                return NextResponse.json(
+                    { error: `Pick a temperature for this truck (${ALL_TEMPS.join(", ")}).` },
+                    { status: 400 }
+                );
+            }
+
+            const [category] = await db
+                .select()
+                .from(productCategories)
+                .where(eq(productCategories.id, categoryId))
+                .limit(1);
+            if (!category) return NextResponse.json({ error: "Invalid category" }, { status: 400 });
+            if (!category.active) return NextResponse.json({ error: "Category is inactive" }, { status: 400 });
+            if (category.salesRateTypeId !== "srs") {
+                return NextResponse.json(
+                    { error: "Road trucks are refrigerated — pick an SRS (reefer) category" },
+                    { status: 400 }
+                );
+            }
+            const categoryAllowed = (category.allowedTemperatures as Temperature[]) || [];
+            if (!categoryAllowed.includes(temperature as Temperature)) {
+                return NextResponse.json(
+                    { error: `Temperature "${temperature}" is not allowed for this category. Allowed: ${categoryAllowed.join(", ")}` },
+                    { status: 400 }
+                );
+            }
+
+            const maxCapacity = Number(maxCapacityRaw) > 0 ? Math.floor(Number(maxCapacityRaw)) : ROAD_TRUCK_MAX_PALLETS;
+
+            const [newTruck] = await db
+                .insert(containers)
+                .values({
+                    id: `TRK-${nanoid(10)}`,
+                    transportMode: "ROAD",
+                    fileNumber: fileNumber?.trim() || null,
+                    route,
+                    vessel: truckName.trim(),
+                    voyageNumber: null,
+                    type: "40FT", // trailer size — column is NOT NULL; not used by road flows
+                    categoryId: category.id,
+                    temperature: temperature as Temperature,
+                    etd: departureDate ? new Date(departureDate) : null,
+                    eta: arrivalDate ? new Date(arrivalDate) : null,
+                    totalPallets: 0,
+                    maxCapacity,
+                    cargoType: "PALLET",
+                    totalCBM: "0",
+                    status: "OPEN",
+                    salesRateTypeId: "srs",
+                })
+                .returning();
+
+            return NextResponse.json(newTruck, { status: 201 });
+        }
+
+        // ── SEA branch (existing behaviour, unchanged) ──
         // Temperature is required for REEFER containers but must be null for
         // DRY (SCS) - see SCS_SRS_RULES.md. Validate after we've looked up the
         // container type below, since the rule depends on it.
