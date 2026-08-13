@@ -86,6 +86,10 @@ export async function POST(request: NextRequest) {
         // ── ROAD branch: a refrigerated truck. No container type, no sailing —
         // route is one of the fixed road corridors, `vessel` holds the
         // transporter/truck name, etd/eta are the departure/arrival dates.
+        //
+        // Amendments round 1: trucks run dual-temp compartments and mix all
+        // products, so there is NO category and the temperature is optional /
+        // informational (the booking's temperature is what matters).
         if (transportMode === "ROAD") {
             if (!route || !isRoadRoute(route)) {
                 return NextResponse.json({ error: "Pick a valid road route corridor" }, { status: 400 });
@@ -93,34 +97,9 @@ export async function POST(request: NextRequest) {
             if (!truckName?.trim()) {
                 return NextResponse.json({ error: "Transporter / truck name is required" }, { status: 400 });
             }
-            if (!categoryId) {
-                return NextResponse.json({ error: "Select a category" }, { status: 400 });
-            }
-            // Trucks are always refrigerated — a temperature regime is required.
-            if (!temperature || !ALL_TEMPS.includes(temperature as Temperature)) {
+            if (temperature && !ALL_TEMPS.includes(temperature as Temperature)) {
                 return NextResponse.json(
-                    { error: `Pick a temperature for this truck (${ALL_TEMPS.join(", ")}).` },
-                    { status: 400 }
-                );
-            }
-
-            const [category] = await db
-                .select()
-                .from(productCategories)
-                .where(eq(productCategories.id, categoryId))
-                .limit(1);
-            if (!category) return NextResponse.json({ error: "Invalid category" }, { status: 400 });
-            if (!category.active) return NextResponse.json({ error: "Category is inactive" }, { status: 400 });
-            if (category.salesRateTypeId !== "srs") {
-                return NextResponse.json(
-                    { error: "Road trucks are refrigerated — pick an SRS (reefer) category" },
-                    { status: 400 }
-                );
-            }
-            const categoryAllowed = (category.allowedTemperatures as Temperature[]) || [];
-            if (!categoryAllowed.includes(temperature as Temperature)) {
-                return NextResponse.json(
-                    { error: `Temperature "${temperature}" is not allowed for this category. Allowed: ${categoryAllowed.join(", ")}` },
+                    { error: `Invalid temperature (${ALL_TEMPS.join(", ")}).` },
                     { status: 400 }
                 );
             }
@@ -137,8 +116,8 @@ export async function POST(request: NextRequest) {
                     vessel: truckName.trim(),
                     voyageNumber: null,
                     type: "40FT", // trailer size — column is NOT NULL; not used by road flows
-                    categoryId: category.id,
-                    temperature: temperature as Temperature,
+                    categoryId: null, // all food types - trucks mix products
+                    temperature: temperature ? (temperature as Temperature) : null,
                     etd: departureDate ? new Date(departureDate) : null,
                     eta: arrivalDate ? new Date(arrivalDate) : null,
                     totalPallets: 0,

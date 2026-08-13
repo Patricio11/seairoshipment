@@ -25,18 +25,23 @@ export function roadRouteLabel(code: string): string {
 }
 
 /**
- * Road temperature bands - the SAME 4-value temperature enum as sea, with
- * trucking-specific labels per the plan:
- *   frozen  → -20°C to -18°C  Frozen
- *   cool    →   0°C to  +5°C  Partly Frozen
+ * Road temperature bands - a subset of the shared temperature enum with
+ * trucking-specific labels. Per the amendments feedback, road offers
+ * exactly 3 bands (no "partly frozen"):
+ *   frozen  → -18°C           Frozen
  *   chilled →  +5°C to  +7°C  Chilled
- *   ambient → +10°C to +18°C  Ambient
+ *   ambient → +15°C to +18°C  Ambient
+ *
+ * Trucks run dual-temp compartments, so the BOOKING's temperature is what
+ * matters - all 3 bands are always selectable regardless of the truck.
  */
+export const ROAD_TEMPS = ["frozen", "chilled", "ambient"] as const;
+export type RoadTemp = (typeof ROAD_TEMPS)[number];
+
 export const ROAD_TEMP_LABELS: Record<string, string> = {
-    frozen: "-20°C to -18°C (Frozen)",
-    cool: "0°C to +5°C (Partly Frozen)",
+    frozen: "-18°C (Frozen)",
     chilled: "+5°C to +7°C (Chilled)",
-    ambient: "+10°C to +18°C (Ambient)",
+    ambient: "+15°C to +18°C (Ambient)",
 };
 
 /** Standard reefer trailer capacity - 28 pallet spaces, bookable from 1. */

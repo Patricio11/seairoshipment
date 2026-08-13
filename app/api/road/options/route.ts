@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/server";
 import { db } from "@/lib/db";
-import { containers, palletAllocations, products, productCategories } from "@/lib/db/schema";
+import { containers, palletAllocations, products } from "@/lib/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
 import { isRoadRoute } from "@/lib/road";
 
 /**
  * Booking options for the Road Freight wizard - open trucks on a corridor
- * plus the products bookable on them (union of the trucks' categories).
+ * plus ALL active products.
  *
- * The wizard filters client-side: pick a product → temperature options narrow
- * to trucks in that product's category → pick the truck.
+ * Amendments round 1: trucks run dual-temp compartments and mix all product
+ * types, so there is no category or temperature filtering - any product can
+ * go on any truck, at any of the 3 road temperature bands.
  *
  * Remaining capacity counts CONFIRMED pallets (container.totalPallets) plus
  * PENDING allocations so a live unapproved request can't be double-sold.
@@ -26,19 +27,15 @@ export async function GET(request: NextRequest) {
         }
 
         const trucks = await db
-            .select({
-                container: containers,
-                categoryName: productCategories.name,
-            })
+            .select()
             .from(containers)
-            .leftJoin(productCategories, eq(containers.categoryId, productCategories.id))
             .where(and(
                 eq(containers.transportMode, "ROAD"),
                 eq(containers.route, route),
                 eq(containers.status, "OPEN"),
             ));
 
-        const truckIds = trucks.map(t => t.container.id);
+        const truckIds = trucks.map(t => t.id);
         const pendingAllocs = truckIds.length > 0
             ? await db
                 .select({ containerId: palletAllocations.containerId, palletCount: palletAllocations.palletCount })
@@ -53,34 +50,31 @@ export async function GET(request: NextRequest) {
             pendingByTruck.set(a.containerId, (pendingByTruck.get(a.containerId) ?? 0) + (a.palletCount || 0));
         }
 
-        const categoryIds = Array.from(new Set(trucks.map(t => t.container.categoryId).filter((c): c is string => !!c)));
-        const productRows = categoryIds.length > 0
-            ? await db
-                .select({
-                    id: products.id,
-                    name: products.name,
-                    hsCode: products.hsCode,
-                    description: products.description,
-                    categoryId: products.categoryId,
-                })
-                .from(products)
-                .where(and(inArray(products.categoryId, categoryIds), eq(products.active, true)))
-            : [];
+        const productRows = await db
+            .select({
+                id: products.id,
+                name: products.name,
+                hsCode: products.hsCode,
+                description: products.description,
+                categoryId: products.categoryId,
+            })
+            .from(products)
+            .where(eq(products.active, true));
 
         return NextResponse.json({
-            trucks: trucks.map(({ container, categoryName }) => {
+            trucks: trucks.map(container => {
                 const pending = pendingByTruck.get(container.id) ?? 0;
-                const remaining = Math.max(0, container.maxCapacity - container.totalPallets - pending);
+                const booked = container.totalPallets + pending;
+                const remaining = Math.max(0, container.maxCapacity - booked);
                 return {
                     id: container.id,
                     name: container.vessel,
                     route: container.route,
                     temperature: container.temperature,
-                    categoryId: container.categoryId,
-                    categoryName,
                     departure: container.etd,
                     arrival: container.eta,
                     maxCapacity: container.maxCapacity,
+                    booked,
                     remaining,
                 };
             }).filter(t => t.remaining > 0),

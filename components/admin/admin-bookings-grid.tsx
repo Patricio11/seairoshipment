@@ -422,14 +422,10 @@ export function AdminBookingsGrid() {
         }
     }
 
-    const openReviewDialog = async (req: PendingRequest) => {
-        setReviewRequest(req)
-        setShowRejectForm(false)
-        setRejectReason("")
+    const refreshReviewDocs = async (allocationId: string) => {
         setLoadingReviewDocs(true)
-        setReviewDocs([])
         try {
-            const res = await fetch(`/api/admin/allocations/${req.allocation.id}/documents`)
+            const res = await fetch(`/api/admin/allocations/${allocationId}/documents`)
             if (res.ok) {
                 const data = await res.json()
                 setReviewDocs(Array.isArray(data) ? data : (data.flat || []))
@@ -439,6 +435,14 @@ export function AdminBookingsGrid() {
         } finally {
             setLoadingReviewDocs(false)
         }
+    }
+
+    const openReviewDialog = async (req: PendingRequest) => {
+        setReviewRequest(req)
+        setShowRejectForm(false)
+        setRejectReason("")
+        setReviewDocs([])
+        await refreshReviewDocs(req.allocation.id)
     }
 
     const handleApprove = async () => {
@@ -2130,9 +2134,19 @@ export function AdminBookingsGrid() {
 
                                 {/* Documents */}
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 mb-2 flex items-center gap-1">
-                                        <FileText className="h-3 w-3" /> Submitted Documents
-                                    </p>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <p className="text-[10px] font-bold uppercase text-slate-500 flex items-center gap-1">
+                                            <FileText className="h-3 w-3" /> Submitted Documents
+                                        </p>
+                                        {/* Admin can add docs (e.g. the packing list) at the
+                                            pending stage - client feedback amendment. */}
+                                        <AdminUploadDialog
+                                            allocationId={reviewRequest.allocation.id}
+                                            bookingRef={reviewRequest.allocation.id}
+                                            clientName={reviewRequest.user?.name || null}
+                                            onUploaded={() => refreshReviewDocs(reviewRequest.allocation.id)}
+                                        />
+                                    </div>
                                     {loadingReviewDocs ? (
                                         <div className="flex items-center gap-2 py-3 text-slate-500 text-sm">
                                             <Loader2 className="h-4 w-4 animate-spin" /> Loading...

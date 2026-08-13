@@ -17,18 +17,17 @@ import {
 } from "@/components/ui/select"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { ROAD_ROUTES, ROAD_TEMP_LABELS } from "@/lib/road"
+import { ROAD_ROUTES, ROAD_TEMPS, ROAD_TEMP_LABELS } from "@/lib/road"
 
 interface RoadTruck {
     id: string
     name: string
     route: string
     temperature: string | null
-    categoryId: string | null
-    categoryName: string | null
     departure: string | null
     arrival: string | null
     maxCapacity: number
+    booked: number
     remaining: number
 }
 
@@ -73,6 +72,61 @@ const STEPS = [
 
 function fmtR(v: number) {
     return `R ${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+/**
+ * Trailer fill visual - a 2-row pallet grid (28 spaces on a standard reefer
+ * trailer) that fills up as the client picks their pallet count, mirroring
+ * the sea freight container view. Booked = taken by other loads (incl.
+ * pending requests), yours = the count being booked now.
+ */
+function TruckFillVisual({ maxCapacity, booked, yourPallets }: { maxCapacity: number; booked: number; yourPallets: number }) {
+    const slots = Array.from({ length: maxCapacity }, (_, i) => {
+        if (i < booked) return "booked" as const
+        if (i < booked + yourPallets) return "yours" as const
+        return "empty" as const
+    })
+    const remainingAfter = Math.max(0, maxCapacity - booked - yourPallets)
+    const cols = Math.ceil(maxCapacity / 2)
+
+    return (
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 space-y-3">
+            <div className="flex items-center justify-between">
+                <p className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
+                    <Truck className="h-3.5 w-3.5" /> Truck Load Plan
+                </p>
+                <span className="text-[10px] font-mono font-bold text-slate-400">
+                    {booked + yourPallets}/{maxCapacity} spaces
+                </span>
+            </div>
+            {/* Trailer outline: cab hint on the left + 2-row pallet deck */}
+            <div className="flex items-center gap-2">
+                <div className="hidden sm:block h-12 w-5 rounded-l-xl border-2 border-slate-300 dark:border-slate-700 border-r-0 shrink-0" title="Cab" />
+                <div
+                    className="flex-1 grid gap-1 rounded-lg border-2 border-slate-300 dark:border-slate-700 p-1.5"
+                    style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+                >
+                    {slots.map((s, i) => (
+                        <div
+                            key={i}
+                            className={cn(
+                                "aspect-square rounded-[3px] transition-colors",
+                                s === "booked" && "bg-slate-400 dark:bg-slate-600",
+                                s === "yours" && "bg-emerald-500",
+                                s === "empty" && "bg-slate-100 dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-700",
+                            )}
+                            title={s === "booked" ? "Booked" : s === "yours" ? "Your pallets" : "Open space"}
+                        />
+                    ))}
+                </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-4 text-[10px] font-bold text-slate-500">
+                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-[2px] bg-slate-400 dark:bg-slate-600 inline-block" /> Booked ({booked})</span>
+                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-[2px] bg-emerald-500 inline-block" /> Yours ({yourPallets})</span>
+                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-[2px] bg-slate-100 dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600 inline-block" /> Open ({remainingAfter})</span>
+            </div>
+        </div>
+    )
 }
 
 function fmtDate(d: string | null) {
@@ -134,21 +188,10 @@ export function RoadBookingWizard({ onSuccess }: RoadBookingWizardProps) {
 
     const selectedProduct = productsList.find(p => p.id === productId)
 
-    // Trucks compatible with the selected product's category
-    const productTrucks = useMemo(() =>
-        trucks.filter(t => !selectedProduct || t.categoryId === selectedProduct.categoryId),
-        [trucks, selectedProduct])
-
-    // Temperature options = distinct temps across compatible trucks
-    const temperatureOptions = useMemo(() => {
-        const set = new Set(productTrucks.map(t => t.temperature).filter((t): t is string => !!t))
-        return Array.from(set)
-    }, [productTrucks])
-
-    // Trucks matching product + temperature
-    const availableTrucks = useMemo(() =>
-        productTrucks.filter(t => !temperature || t.temperature === temperature),
-        [productTrucks, temperature])
+    // Amendments round 1: trucks run dual-temp compartments and mix all
+    // products - no product/temperature filtering. Every open truck on the
+    // corridor with space is bookable at any of the 3 road temperature bands.
+    const availableTrucks = trucks
 
     const selectedTruck = availableTrucks.find(t => t.id === truckId)
     const pallets = Math.floor(Number(palletCount)) || 0
@@ -451,7 +494,7 @@ export function RoadBookingWizard({ onSuccess }: RoadBookingWizardProps) {
                                     <div className="grid sm:grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <Label className="font-bold text-slate-700 dark:text-slate-300">Product</Label>
-                                            <Select value={productId} onValueChange={(v) => { setProductId(v); setTemperature(""); setTruckId("") }}>
+                                            <Select value={productId} onValueChange={setProductId}>
                                                 <SelectTrigger className="h-11 bg-white dark:bg-slate-950">
                                                     <SelectValue placeholder="Select product" />
                                                 </SelectTrigger>
@@ -464,12 +507,12 @@ export function RoadBookingWizard({ onSuccess }: RoadBookingWizardProps) {
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="font-bold text-slate-700 dark:text-slate-300">Temperature</Label>
-                                            <Select value={temperature} onValueChange={(v) => { setTemperature(v); setTruckId("") }} disabled={!productId}>
+                                            <Select value={temperature} onValueChange={setTemperature}>
                                                 <SelectTrigger className="h-11 bg-white dark:bg-slate-950">
-                                                    <SelectValue placeholder={productId ? "Select temperature" : "Pick a product first"} />
+                                                    <SelectValue placeholder="Select temperature" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {temperatureOptions.map(t => (
+                                                    {ROAD_TEMPS.map(t => (
                                                         <SelectItem key={t} value={t}>
                                                             <span className="flex items-center gap-2">
                                                                 {t === "ambient" ? <Sun className="h-3.5 w-3.5 text-amber-500" /> : <Snowflake className="h-3.5 w-3.5 text-sky-500" />}
@@ -479,16 +522,15 @@ export function RoadBookingWizard({ onSuccess }: RoadBookingWizardProps) {
                                                     ))}
                                                 </SelectContent>
                                             </Select>
+                                            <p className="text-[10px] text-slate-500">Trucks run dual-temp units - frozen and chilled load together.</p>
                                         </div>
                                     </div>
 
                                     {/* Truck picker */}
                                     <div className="space-y-2">
                                         <Label className="font-bold text-slate-700 dark:text-slate-300">Select your truck</Label>
-                                        {!temperature ? (
-                                            <p className="text-xs text-slate-500 italic">Pick a product + temperature to see available trucks.</p>
-                                        ) : availableTrucks.length === 0 ? (
-                                            <p className="text-xs text-amber-600 dark:text-amber-400">No trucks match this temperature - try another regime.</p>
+                                        {availableTrucks.length === 0 ? (
+                                            <p className="text-xs text-amber-600 dark:text-amber-400">No trucks with space on this route right now.</p>
                                         ) : (
                                             <div className="grid gap-2">
                                                 {availableTrucks.map(t => (
@@ -523,6 +565,15 @@ export function RoadBookingWizard({ onSuccess }: RoadBookingWizardProps) {
                                             </div>
                                         )}
                                     </div>
+
+                                    {/* Truck fill visual - like the sea freight container view */}
+                                    {selectedTruck && (
+                                        <TruckFillVisual
+                                            maxCapacity={selectedTruck.maxCapacity}
+                                            booked={selectedTruck.booked}
+                                            yourPallets={Math.min(pallets, selectedTruck.remaining)}
+                                        />
+                                    )}
 
                                     {/* Pallets + weight */}
                                     <div className="grid sm:grid-cols-2 gap-4">

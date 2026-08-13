@@ -197,15 +197,16 @@ Feedback digested into phases F–L below. Each closes with its own commit(s).
 | Packing list upload | Reported not working — investigate client wizard + add admin upload at the pending-review stage (Management wants "add packing list"). |
 | Truck GPS tracking | Answer to the question: possible once the trucking company names their telematics provider + API access. Deferred until then. |
 
-## Phase F — Cargo & truck simplification + fill visual
+## Phase F — Cargo & truck simplification + fill visual ✅
 
-- [ ] Truck create/edit: drop the category requirement (label the section "All food types"); all 3 road temps available on trucks; truck temperature becomes optional/informational
-- [ ] `/api/admin/containers` ROAD branches: category optional, no SRS-category/temperature-in-category validation
-- [ ] `/api/road/options`: return ALL active products; do not filter trucks by product category or temperature
-- [ ] Road wizard: product = all products; temperature = always the 3 road bands; truck list unfiltered by temp
-- [ ] `lib/road.ts`: ROAD_TEMP_LABELS → 3 bands (frozen/chilled/ambient); road UI stops offering "cool"
-- [ ] **Truck fill visual** in wizard step 2: 28-slot pallet grid showing booked / pending / your-pallets as the count changes
-- [ ] Investigate + fix the packing-list upload report (client wizard step 3 and/or admin-side upload at pending stage)
+- [x] Truck create/edit: category section replaced with a static **"All food types - trucks mix products freely"** note; temperature now **optional** (3 road bands, click again to clear) since trucks run dual-temp compartments
+- [x] `/api/admin/containers` ROAD branches: category always null for trucks, temperature optional, no SRS-category/temperature-in-category validation
+- [x] `/api/road/options`: returns ALL active products; trucks carry `booked` + `remaining`; no category/temperature coupling
+- [x] Road wizard: product dropdown = all products; temperature = always the 3 road bands (booking-level, independent of the truck); truck list unfiltered
+- [x] `lib/road.ts`: `ROAD_TEMPS` (frozen/chilled/ambient) + labels per the amendment (-18 / +5–7 / +15–18); "cool / partly frozen" retired from road (enum value remains for sea)
+- [x] **Truck fill visual**: trailer-outline 2-row pallet grid in wizard step 2 — grey = booked (incl. pending), emerald = your pallets, dashed = open; updates live with the count; legend + n/28 counter
+- [x] Packing-list upload: client-side route verified working; root cause of the report = **no admin upload at the pending-review stage** — the review dialog now embeds the admin upload dialog (with "Proof of Delivery (POD)" + "Packing List" types), refreshing the doc list after upload
+- [x] Bookings POST: product-category mismatch check removed for road (any product on any truck)
 
 ## Phase G — Tiered rates (pallet bands, per the Britos card)
 

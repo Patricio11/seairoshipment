@@ -378,11 +378,11 @@ export function FleetScheduler() {
         e.preventDefault()
 
         // ── ROAD branch: trucks post a different payload ──
+        // No category (trucks mix all products) and temperature is optional
+        // (dual-temp compartments - the booking's temperature is what matters).
         if (formData.transportMode === "ROAD") {
             if (!formData.roadRoute) { toast.error("Pick a road route"); return }
             if (!formData.truckName.trim()) { toast.error("Transporter / truck name is required"); return }
-            if (!formData.temperature) { toast.error("Select a temperature"); return }
-            if (!formData.categoryId) { toast.error("Select a category"); return }
 
             setSaving(true)
             try {
@@ -400,8 +400,7 @@ export function FleetScheduler() {
                             departureDate: formData.departureDate || null,
                             arrivalDate: formData.arrivalDate || null,
                             maxCapacity: formData.maxCapacity,
-                            categoryId: formData.categoryId,
-                            temperature: formData.temperature,
+                            temperature: formData.temperature || null,
                         }),
                     }
                 )
@@ -1266,8 +1265,37 @@ export function FleetScheduler() {
                                 </div>
                             )}
 
-            {/* Step 4: Temperature - hidden for Dry containers (no temperature regime) */}
-                            {!isRoadForm && selectedContainerType?.type === "DRY" ? (
+            {/* Step 4: Temperature */}
+                            {isRoadForm ? (
+                                /* Road: 3 bands, all selectable, optional - trucks run
+                                   dual-temp compartments so this is informational */
+                                <div className="border-t border-slate-800/50 pt-4">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-2">4. Temperature (optional)</p>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {(["frozen", "chilled", "ambient"] as const).map(t => {
+                                            const selected = formData.temperature === t
+                                            const icon = t === "ambient" ? <Sun className="h-3.5 w-3.5" /> : <Snowflake className="h-3.5 w-3.5" />
+                                            return (
+                                                <button
+                                                    key={t}
+                                                    type="button"
+                                                    onClick={() => setFormData({ ...formData, temperature: selected ? "" : t })}
+                                                    className={cn(
+                                                        "flex items-center justify-center gap-1.5 h-9 rounded-lg border text-xs font-bold transition-all",
+                                                        !selected && "border-slate-700 text-slate-400 hover:border-emerald-500 hover:text-white",
+                                                        selected && "border-emerald-500 bg-emerald-500/15 text-emerald-400"
+                                                    )}
+                                                >
+                                                    {icon} {ROAD_TEMP_LABELS[t]}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 mt-1.5">
+                                        Trucks run dual-temp compartments - frozen and chilled can load together. Each booking picks its own band; click again to clear.
+                                    </p>
+                                </div>
+                            ) : selectedContainerType?.type === "DRY" ? (
                                 <div className="border-t border-slate-800/50 pt-4">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">4. Temperature</p>
                                     <div className="rounded-lg border border-slate-800 bg-slate-900/40 px-3 py-2.5 flex items-center gap-2">
@@ -1277,15 +1305,13 @@ export function FleetScheduler() {
                                 </div>
                             ) : (
                                 <div className="border-t border-slate-800/50 pt-4">
-                                    <p className={cn("text-[10px] font-black uppercase tracking-widest mb-2", isRoadForm ? "text-emerald-400" : "text-brand-blue")}>4. Temperature</p>
-                                    <div className={cn("grid gap-2", isRoadForm ? "grid-cols-2" : "grid-cols-4")}>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">4. Temperature</p>
+                                    <div className="grid grid-cols-4 gap-2">
                                         {(["frozen", "cool", "chilled", "ambient"] as const).map(t => {
                                             const allowed = temperatureOptions.some(o => o.value === t)
                                             const selected = formData.temperature === t
                                             const icon = t === "ambient" ? <Sun className="h-3.5 w-3.5" /> : <Snowflake className="h-3.5 w-3.5" />
-                                            const label = isRoadForm
-                                                ? ROAD_TEMP_LABELS[t]
-                                                : t === "frozen" ? "-18°C Frozen"
+                                            const label = t === "frozen" ? "-18°C Frozen"
                                                 : t === "cool" ? "0°C Cool"
                                                 : t === "chilled" ? "+5°C Chilled"
                                                 : "+18°C Ambient"
@@ -1298,8 +1324,8 @@ export function FleetScheduler() {
                                                     className={cn(
                                                         "flex items-center justify-center gap-1.5 h-9 rounded-lg border text-xs font-bold transition-all",
                                                         !allowed && "border-slate-800 text-slate-600 cursor-not-allowed opacity-40",
-                                                        allowed && !selected && (isRoadForm ? "border-slate-700 text-slate-400 hover:border-emerald-500 hover:text-white" : "border-slate-700 text-slate-400 hover:border-brand-blue hover:text-white"),
-                                                        selected && (isRoadForm ? "border-emerald-500 bg-emerald-500/15 text-emerald-400" : "border-brand-blue bg-brand-blue/15 text-brand-blue")
+                                                        allowed && !selected && "border-slate-700 text-slate-400 hover:border-brand-blue hover:text-white",
+                                                        selected && "border-brand-blue bg-brand-blue/15 text-brand-blue"
                                                     )}
                                                 >
                                                     {icon} {label}
@@ -1308,14 +1334,21 @@ export function FleetScheduler() {
                                         })}
                                     </div>
                                     <p className="text-[10px] text-slate-500 mt-1.5">
-                                        {isRoadForm
-                                            ? "Trucks can mix regimes across loads - the truck's setting is what this load runs at."
-                                            : "Reefer containers can carry frozen, chilled, or ambient (+18°C) cargo."}
+                                        Reefer containers can carry frozen, chilled, or ambient (+18°C) cargo.
                                     </p>
                                 </div>
                             )}
 
-                            {/* Step 5: Category */}
+                            {/* Step 5: Category - road trucks mix all products, no category */}
+                            {isRoadForm ? (
+                                <div className="border-t border-slate-800/50 pt-4">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-2">5. Products</p>
+                                    <div className="rounded-lg border border-slate-800 bg-slate-900/40 px-3 py-2.5 flex items-center gap-2">
+                                        <Apple className="h-4 w-4 text-emerald-500" />
+                                        <span className="text-sm font-medium text-slate-300">All food types - trucks mix products freely</span>
+                                    </div>
+                                </div>
+                            ) : (
                             <div className="border-t border-slate-800/50 pt-4">
                                 <p className="text-[10px] font-black uppercase tracking-widest text-brand-blue mb-2">5. Category</p>
                                 <Popover>
@@ -1394,6 +1427,7 @@ export function FleetScheduler() {
                                     </p>
                                 )}
                             </div>
+                            )}
                         </div>
 
                         <DialogFooter className="gap-2">

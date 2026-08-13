@@ -225,21 +225,16 @@ export async function POST(request: NextRequest) {
                 return NextResponse.json({ error: "This truck is no longer open for bookings" }, { status: 400 });
             }
 
-            // Product must belong to the truck's category (consolidation rule)
-            if (productId && truck.categoryId) {
+            // Amendments round 1: trucks mix all product types (dual-temp
+            // compartments) - only verify the product exists.
+            if (productId) {
                 const [productRow] = await db
-                    .select({ categoryId: products.categoryId })
+                    .select({ id: products.id })
                     .from(products)
                     .where(eq(products.id, productId))
                     .limit(1);
                 if (!productRow) {
                     return NextResponse.json({ error: "Selected product not found" }, { status: 400 });
-                }
-                if (productRow.categoryId !== truck.categoryId) {
-                    return NextResponse.json(
-                        { error: "This product can't be loaded on the selected truck (category mismatch). Please pick a different truck." },
-                        { status: 400 }
-                    );
                 }
             }
 

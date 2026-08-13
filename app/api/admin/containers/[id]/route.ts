@@ -62,32 +62,17 @@ export async function PUT(
                 updates.maxCapacity = cap;
             }
 
-            let roadCategoryTemps: Temperature[] | null = null;
-            if (body.categoryId !== undefined && body.categoryId) {
-                const [cat] = await db.select().from(productCategories).where(eq(productCategories.id, body.categoryId)).limit(1);
-                if (!cat) return NextResponse.json({ error: "Invalid category" }, { status: 400 });
-                if (!cat.active) return NextResponse.json({ error: "Category is inactive" }, { status: 400 });
-                if (cat.salesRateTypeId !== "srs") {
-                    return NextResponse.json({ error: "Road trucks are refrigerated - pick an SRS (reefer) category" }, { status: 400 });
-                }
-                updates.categoryId = cat.id;
-                roadCategoryTemps = (cat.allowedTemperatures as Temperature[]) || [];
-            } else if (existing.categoryId) {
-                const [cat] = await db.select().from(productCategories).where(eq(productCategories.id, existing.categoryId)).limit(1);
-                if (cat) roadCategoryTemps = (cat.allowedTemperatures as Temperature[]) || [];
+            // Amendments round 1: trucks mix all products - no category, and
+            // temperature is optional/informational (dual-temp compartments).
+            if (body.categoryId !== undefined) {
+                updates.categoryId = null; // always "all food types" for trucks
             }
 
             if (body.temperature !== undefined) {
-                if (!body.temperature || !ALL_TEMPS.includes(body.temperature as Temperature)) {
-                    return NextResponse.json({ error: `Pick a temperature for this truck (${ALL_TEMPS.join(", ")}).` }, { status: 400 });
+                if (body.temperature && !ALL_TEMPS.includes(body.temperature as Temperature)) {
+                    return NextResponse.json({ error: `Invalid temperature (${ALL_TEMPS.join(", ")}).` }, { status: 400 });
                 }
-                if (roadCategoryTemps && !roadCategoryTemps.includes(body.temperature as Temperature)) {
-                    return NextResponse.json(
-                        { error: `Temperature "${body.temperature}" is not allowed for this category. Allowed: ${roadCategoryTemps.join(", ")}` },
-                        { status: 400 }
-                    );
-                }
-                updates.temperature = body.temperature;
+                updates.temperature = body.temperature || null;
             }
 
             const [updatedTruck] = await db
