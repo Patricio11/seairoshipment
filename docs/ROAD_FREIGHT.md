@@ -173,3 +173,75 @@ keeps the stored one) → **Test connection** → **Enable**.
 - Set `SRS_FIELD_KEY` in production env (base64, 32 bytes — `openssl rand -base64 32`); dev falls back to an ephemeral key
 - Phase D: supply the Goods in Transit insurance PDF + road T&Cs wording
 - Phase E: supply Google Maps API key / Resend API key / WhatsApp Business credentials when ready — everything stays dormant until entered
+
+---
+
+# AMENDMENTS — client feedback round 1 (Aug 2026)
+
+Source: [Amendments to Road Freight portal .pdf](../Amendments%20to%20Road%20Freight%20portal%20.pdf).
+Feedback digested into phases F–L below. Each closes with its own commit(s).
+
+## Decisions from the feedback
+
+| Topic | Decision |
+|---|---|
+| Cargo mixing | Trucks have **dual-temp units** — no product/category limitation. Product dropdown shows **ALL products**. |
+| Truck category | **Removed** from truck create/edit (a truck carries "all food types"). Existing trucks keep whatever category is stored but it no longer restricts anything. |
+| Road temperatures | **3 bands only**: Frozen (-18°C) · Chilled (+5–7°C) · Ambient (+15–18°C). All 3 always selectable on the booking regardless of the truck ("cool / partly frozen" retired from road labels; enum value stays for sea). |
+| Truck fill visual | Pallet-grid visual (28 spaces) in the road wizard, like the sea freight container visual — fills up as the client picks pallet count. Trucks physically take 30 but 2 are held back for bad packing → capacity stays 28. |
+| Rates | Per the Britos example card in the PDF: per-customer rate lines are **pallet-count bands per route** (e.g. 1 / 2–3 / 4–6 / 7–9 / 10–12 / 13–14 / 15+), each band carrying its own **per-pallet price**, **number of drops included** (1–3), and **additional-drop rate** (R850/R750/R550…). Resolver picks the band matching the booked count; drop fee = (delivery points − drops included) × band's drop rate, floored at 0. Flat "Dedicated truck" pricing (14t/30p columns) noted but **deferred** pending confirmation — the booking flow books pallet counts, dedicated trucks are a different product. |
+| Payment terms | Per-customer field chosen at vetting/approval (and editable later): **60/40 split on booking** (default, current behaviour) · **30 days from statement** · **7 days from delivery**. Drives invoice generation + due dates and shows on pricing. |
+| Road sub-admin roles | Two new roles: **Road Manager** (full access to road freight only: rates, packing lists, confirm loads, invoices, amend/add loads, WhatsApp, PODs) and **Road Operations** (confirm loads + WhatsApp + upload PODs ONLY — no rates, no invoicing, no amendments). |
+| Admin-created customers | Admin can create an existing customer's account with a password (pre-verified, approved, payment terms set); the customer can change the password later. |
+| Dashboard split | Admin bookings gets a **Containers / Trucks** top-level switch (like the fleet pills). Road-role users see road only. |
+| Packing list upload | Reported not working — investigate client wizard + add admin upload at the pending-review stage (Management wants "add packing list"). |
+| Truck GPS tracking | Answer to the question: possible once the trucking company names their telematics provider + API access. Deferred until then. |
+
+## Phase F — Cargo & truck simplification + fill visual
+
+- [ ] Truck create/edit: drop the category requirement (label the section "All food types"); all 3 road temps available on trucks; truck temperature becomes optional/informational
+- [ ] `/api/admin/containers` ROAD branches: category optional, no SRS-category/temperature-in-category validation
+- [ ] `/api/road/options`: return ALL active products; do not filter trucks by product category or temperature
+- [ ] Road wizard: product = all products; temperature = always the 3 road bands; truck list unfiltered by temp
+- [ ] `lib/road.ts`: ROAD_TEMP_LABELS → 3 bands (frozen/chilled/ambient); road UI stops offering "cool"
+- [ ] **Truck fill visual** in wizard step 2: 28-slot pallet grid showing booked / pending / your-pallets as the count changes
+- [ ] Investigate + fix the packing-list upload report (client wizard step 3 and/or admin-side upload at pending stage)
+
+## Phase G — Tiered rates (pallet bands, per the Britos card)
+
+- [ ] `road_rates` gains band columns: `minPallets` / `maxPallets` (existing rows become 1–28), `dropsIncluded` (default 1), and the additional-drop fee stays but is now **per band**; unique becomes (userId, route, minPallets)
+- [ ] Rates manager: multiple band lines per (customer, route) — compact band editor with overlap validation; shows "R x p/p · N drops incl · R y per extra drop" per line
+- [ ] `resolveRoadRate` picks the band matching the pallet count (customer bands → default bands); quote's drop fee = max(0, deliveryPoints − dropsIncluded) × band's drop rate
+- [ ] Wizard cost sheet reflects included drops ("2 drops included · 1 additional × R750")
+- [ ] *Deferred pending confirmation*: flat **Dedicated truck** pricing (14t / 30p columns in the example) — different product from pallet-count booking
+- [ ] `npm run db:push`
+
+## Phase H — Payment terms per customer
+
+- [ ] `user.paymentTerms` enum: `SPLIT_60_40` (default) · `NET_30_STATEMENT` · `NET_7_DELIVERY`
+- [ ] Vetting approval flow: payment-terms select in the user review modal (+ editable after approval)
+- [ ] Road booking invoice generation branches by terms: 60/40 split (current) vs single 100% invoice with terms-driven due date
+- [ ] Terms shown on the wizard cost step + invoices
+
+## Phase I — Road roles (Management / Operations)
+
+- [ ] `role` enum + `road_manager` + `road_ops`
+- [ ] Capability helpers (server): road-only access; ops = confirm loads / WhatsApp / PODs only
+- [ ] Admin layout + sidebar: road roles see road-only nav (Bookings→Trucks, Road Rates for manager only, Integrations hidden, etc.)
+- [ ] API guards: rates + invoices + amendments blocked for ops; everything sea-side blocked for both
+- [ ] Admin can create road-role users
+
+## Phase J — Admin-created customer accounts
+
+- [ ] "Create customer" admin action: name, email, company, temp password, payment terms → Better Auth server-side signup, pre-verified + APPROVED
+- [ ] Customer can change the password later (wire the real change-password flow in Settings → Security — currently a mock form)
+
+## Phase K — Sea/Road dashboard split
+
+- [ ] Admin bookings grid: Containers | Trucks switcher (like fleet's pills) filtering every tab (containers, requests, cancelled, shipments)
+- [ ] Road-role users land on Trucks and cannot switch to Sea
+
+## Phase L — Answers / deferred
+
+- [ ] Truck GPS tracking: needs the transporter's telematics provider + API credentials — question back to the trucking company
+- [ ] WhatsApp messaging from the portal: WhatsApp Business integration exists in the console (Phase E); actual send-flows land with the roles that use them (Phases I) or as their own follow-up
