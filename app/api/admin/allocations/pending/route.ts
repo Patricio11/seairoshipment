@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth/server";
+import { requireStaff } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { palletAllocations, containers, user as userTable, invoices } from "@/lib/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 
 export async function GET() {
     try {
-        const { error } = await requireAdmin();
+        const { error, roadOnly } = await requireStaff();
         if (error) return error;
 
         const results = await db
@@ -33,7 +33,11 @@ export async function GET() {
             .from(palletAllocations)
             .leftJoin(containers, eq(palletAllocations.containerId, containers.id))
             .leftJoin(userTable, eq(palletAllocations.userId, userTable.id))
-            .where(eq(palletAllocations.status, "PENDING"))
+            .where(
+                roadOnly
+                    ? and(eq(palletAllocations.status, "PENDING"), eq(containers.transportMode, "ROAD"))
+                    : eq(palletAllocations.status, "PENDING")
+            )
             .orderBy(desc(palletAllocations.createdAt));
 
         // For each allocation, check if deposit invoice is paid

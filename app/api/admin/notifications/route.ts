@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth/server";
+import { requireStaff } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { adminNotifications } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 
 export async function GET() {
     try {
-        const { error } = await requireAdmin();
+        const { error } = await requireStaff();
         if (error) return error;
 
         const notifications = await db
@@ -27,7 +27,7 @@ export async function GET() {
 // Mark notification as read
 export async function PATCH(request: NextRequest) {
     try {
-        const { error } = await requireAdmin();
+        const { error } = await requireStaff();
         if (error) return error;
 
         const { id } = await request.json();

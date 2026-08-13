@@ -226,13 +226,16 @@ Feedback digested into phases F–L below. Each closes with its own commit(s).
 - [x] Sea invoices unchanged (terms apply to road in v1)
 - [x] `npm run db:push` required (payment_terms enum + user column)
 
-## Phase I — Road roles (Management / Operations)
+## Phase I — Road roles (Management / Operations) ✅
 
-- [ ] `role` enum + `road_manager` + `road_ops`
-- [ ] Capability helpers (server): road-only access; ops = confirm loads / WhatsApp / PODs only
-- [ ] Admin layout + sidebar: road roles see road-only nav (Bookings→Trucks, Road Rates for manager only, Integrations hidden, etc.)
-- [ ] API guards: rates + invoices + amendments blocked for ops; everything sea-side blocked for both
-- [ ] Admin can create road-role users
+- [x] `role` enum gains `road_manager` + `road_ops` (`npm run db:push` required)
+- [x] [lib/roles.ts](../lib/roles.ts) (client-safe): `isStaff` / `isRoadStaff` / `canManageRoad` / `roadAllowedPath` + labels; server: `requireStaff(allowed?)` returns `{ session, role, roadOnly }`
+- [x] Admin layout admits any staff role; the client layout guard bounces road staff off non-road pages (allow-list: bookings for both, fleet + road-rates for manager); sidebar renders a trimmed road nav with role chip
+- [x] Bookings page passes `lockedMode="ROAD"` for road staff (pinned Trucks view, no sea switcher); login + 2FA routing lands road staff on /admin/bookings
+- [x] API guards: containers GET filtered to trucks for road staff; container create/edit/delete = admin + road_manager (trucks only); pending/cancelled allocations filtered to ROAD; approve/reject allowed for ops but only on road bookings; POD upload + docs + notifications = any staff; road-rates + vetting-list read = admin + road_manager; fleet dialog reads (locations/sailings/categories/types GET) readable by manager; everything else untouched (admin-only)
+- [x] Security hardening found along the way: `role` / `isVetted` additional fields are now `input: false` — the public signup API previously accepted a `role` override in the request body
+- [x] Admin creates road staff: "Add Road Staff" on User Vetting → dialog (name, email, generated temp password, manager/ops picker) → `POST /api/admin/users/staff` inserts user + credential rows via Better Auth's hasher (born verified + APPROVED, no emails fired)
+- [ ] WhatsApp send-flows for ops — deferred with Phase L
 
 ## Phase J — Admin-created customer accounts
 

@@ -24,6 +24,7 @@ import {
     Plug,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { type StaffRole } from "@/lib/roles"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { authClient } from "@/lib/auth/client"
@@ -62,7 +63,20 @@ const FINANCE_LINKS = [
     { href: "/admin/finance/settings", label: "Settings & Forex", icon: DollarSign },
 ]
 
-export function AdminSidebar() {
+// Road-only staff see a trimmed nav: trucks board for everyone, fleet +
+// road rates for the manager. Everything else is sea/admin territory.
+const ROAD_MANAGER_LINKS = [
+    { href: "/admin/bookings", label: "Trucks & Bookings", icon: Truck },
+    { href: "/admin/fleet", label: "Fleet", icon: Ship },
+]
+const ROAD_OPS_LINKS = [
+    { href: "/admin/bookings", label: "Trucks & Bookings", icon: Truck },
+]
+const ROAD_MANAGER_FINANCE_LINKS = [
+    { href: "/admin/finance/road-rates", label: "Road Freight Rates", icon: Truck },
+]
+
+export function AdminSidebar({ role = "admin" }: { role?: StaffRole }) {
     const pathname = usePathname()
     const router = useRouter()
     const [isCollapsed, setIsCollapsed] = useState(false)
@@ -70,6 +84,10 @@ export function AdminSidebar() {
     const [showNotifications, setShowNotifications] = useState(false)
 
     const unreadCount = notifications.filter(n => !n.isRead).length
+
+    const links = role === "road_manager" ? ROAD_MANAGER_LINKS : role === "road_ops" ? ROAD_OPS_LINKS : ADMIN_LINKS
+    const financeLinks = role === "admin" ? FINANCE_LINKS : role === "road_manager" ? ROAD_MANAGER_FINANCE_LINKS : []
+    const roleChip = role === "admin" ? "Admin" : role === "road_manager" ? "Road Manager" : "Road Ops"
 
     // Subscribe to notification updates via polling
     useEffect(() => {
@@ -139,7 +157,7 @@ export function AdminSidebar() {
                             height={33}
                             className="h-7 w-auto brightness-0 invert"
                         />
-                        <span className="font-mono font-bold tracking-widest text-[10px] text-brand-orange uppercase">Admin</span>
+                        <span className="font-mono font-bold tracking-widest text-[10px] text-brand-orange uppercase">{roleChip}</span>
                     </div>
                 )}
                 <Button
@@ -213,7 +231,7 @@ export function AdminSidebar() {
 
             {/* Navigation */}
             <nav className="flex-1 py-6 px-3 space-y-1 overflow-y-auto">
-                {ADMIN_LINKS.map((link) => {
+                {links.map((link) => {
                     const isActive = pathname === link.href
                     return (
                         <Link
@@ -247,13 +265,14 @@ export function AdminSidebar() {
                 })}
 
                 {/* Finance Section */}
+                {financeLinks.length > 0 && (
                 <div className="mt-6 pt-6 border-t border-slate-800">
                     <div className="px-3 mb-2">
                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
                             Rate Management
                         </span>
                     </div>
-                    {FINANCE_LINKS.map((link) => {
+                    {financeLinks.map((link) => {
                         const isActive = pathname === link.href
                         return (
                             <Link
@@ -286,6 +305,7 @@ export function AdminSidebar() {
                         )
                     })}
                 </div>
+                )}
             </nav>
 
             {/* Footer */}

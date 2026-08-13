@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth/server";
+import { requireStaff } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { roadRates } from "@/lib/db/schema";
 import { and, eq, isNull, ne } from "drizzle-orm";
@@ -14,7 +14,7 @@ export async function PUT(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { error } = await requireAdmin();
+        const { error } = await requireStaff(["admin", "road_manager"]);
         if (error) return error;
 
         const { id } = await params;
@@ -87,7 +87,7 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { error } = await requireAdmin();
+        const { error } = await requireStaff(["admin", "road_manager"]);
         if (error) return error;
 
         const { id } = await params;

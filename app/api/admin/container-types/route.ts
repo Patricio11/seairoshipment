@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth/server";
+import { requireAdmin, requireStaff } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { containerTypes } from "@/lib/db/schema";
 import { asc, eq } from "drizzle-orm";
 
 export async function GET() {
     try {
-        const { error } = await requireAdmin();
+        // Read-only list is harmless for road managers (fleet page renders it);
+        // create/edit/delete below stay admin-only.
+        const { error } = await requireStaff(["admin", "road_manager"]);
         if (error) return error;
 
         const results = await db

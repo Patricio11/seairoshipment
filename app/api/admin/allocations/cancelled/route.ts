@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth/server";
+import { requireStaff } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { palletAllocations, containers, user as userTable } from "@/lib/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 
 export async function GET() {
     try {
-        const { error } = await requireAdmin();
+        const { error, roadOnly } = await requireStaff();
         if (error) return error;
 
         const results = await db
@@ -31,7 +31,11 @@ export async function GET() {
             .from(palletAllocations)
             .leftJoin(containers, eq(palletAllocations.containerId, containers.id))
             .leftJoin(userTable, eq(palletAllocations.userId, userTable.id))
-            .where(eq(palletAllocations.status, "CANCELLED"))
+            .where(
+                roadOnly
+                    ? and(eq(palletAllocations.status, "CANCELLED"), eq(containers.transportMode, "ROAD"))
+                    : eq(palletAllocations.status, "CANCELLED")
+            )
             .orderBy(desc(palletAllocations.updatedAt));
 
         return NextResponse.json(results);

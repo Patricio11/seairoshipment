@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth/server";
+import { requireStaff } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { documents, palletAllocations } from "@/lib/db/schema";
 import { eq, and, or } from "drizzle-orm";
@@ -16,7 +16,7 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { error } = await requireAdmin();
+        const { error } = await requireStaff();
         if (error) return error;
 
         const { id } = await params;

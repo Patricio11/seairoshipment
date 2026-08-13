@@ -1,6 +1,10 @@
 import { pgTable, text, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core";
 
-export const roleEnum = pgEnum("role", ["admin", "client"]);
+// Staff roles beyond admin (road freight amendments):
+//   road_manager - road side only, full control there (trucks, rates, approvals)
+//   road_ops     - road side only, operational: confirm loads, PODs, WhatsApp;
+//                  no rates, no invoicing, no truck amendments
+export const roleEnum = pgEnum("role", ["admin", "client", "road_manager", "road_ops"]);
 
 export const vettingStatusEnum = pgEnum("vetting_status", [
     "EMAIL_PENDING",       // signed up, awaiting email verification

@@ -1,7 +1,13 @@
 import { AdminBookingsGrid } from "@/components/admin/admin-bookings-grid"
+import { getSession } from "@/lib/auth/server"
+import { isRoadStaff } from "@/lib/roles"
 import { Activity } from "lucide-react"
 
-export default function BookingsPage() {
+export default async function BookingsPage() {
+    // Road-only staff get the grid pinned to Trucks (no sea switcher)
+    const session = await getSession()
+    const roadOnly = isRoadStaff(session?.user.role as string)
+
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-3">
@@ -14,7 +20,7 @@ export default function BookingsPage() {
                 </div>
             </div>
 
-            <AdminBookingsGrid />
+            <AdminBookingsGrid lockedMode={roadOnly ? "ROAD" : undefined} />
         </div>
     )
 }

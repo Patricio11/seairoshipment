@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth/server";
+import { requireStaff } from "@/lib/auth/server";
 import { db } from "@/lib/db";
-import { palletAllocations, clientNotifications } from "@/lib/db/schema";
+import { palletAllocations, containers, clientNotifications } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
@@ -10,7 +10,7 @@ export async function POST(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { error } = await requireAdmin();
+        const { error, roadOnly } = await requireStaff();
         if (error) return error;
 
         const { id } = await params;
@@ -29,6 +29,17 @@ export async function POST(
 
         if (alloc.status === "CANCELLED") {
             return NextResponse.json({ error: "Allocation is already cancelled" }, { status: 400 });
+        }
+
+        if (roadOnly) {
+            const [container] = await db
+                .select({ transportMode: containers.transportMode })
+                .from(containers)
+                .where(eq(containers.id, alloc.containerId))
+                .limit(1);
+            if (container?.transportMode !== "ROAD") {
+                return NextResponse.json({ error: "Road staff can only manage road bookings" }, { status: 403 });
+            }
         }
 
         await db

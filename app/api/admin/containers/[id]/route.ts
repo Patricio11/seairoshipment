@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth/server";
+import { requireStaff } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { containers, palletAllocations, containerTypes, sailings, productCategories, documents, invoices } from "@/lib/db/schema";
 import { eq, inArray } from "drizzle-orm";
@@ -13,7 +13,8 @@ export async function PUT(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { error } = await requireAdmin();
+        // Admin edits anything; road manager edits trucks only (ops can't amend)
+        const { error, roadOnly } = await requireStaff(["admin", "road_manager"]);
         if (error) return error;
 
         const { id } = await params;
@@ -27,6 +28,9 @@ export async function PUT(
 
         if (!existing) {
             return NextResponse.json({ error: "Container not found" }, { status: 404 });
+        }
+        if (roadOnly && existing.transportMode !== "ROAD") {
+            return NextResponse.json({ error: "Road staff can only manage trucks" }, { status: 403 });
         }
 
         // ── ROAD branch: trucks edit a different field set (corridor, truck
@@ -211,7 +215,7 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { error } = await requireAdmin();
+        const { error, roadOnly } = await requireStaff(["admin", "road_manager"]);
         if (error) return error;
 
         const { id } = await params;
@@ -224,6 +228,9 @@ export async function DELETE(
 
         if (!existing) {
             return NextResponse.json({ error: "Container not found" }, { status: 404 });
+        }
+        if (roadOnly && existing.transportMode !== "ROAD") {
+            return NextResponse.json({ error: "Road staff can only manage trucks" }, { status: 403 });
         }
 
         // Pull every allocation under this container so we can cascade through

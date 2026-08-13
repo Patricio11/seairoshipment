@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth/server";
+import { requireAdmin, requireStaff } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { locations } from "@/lib/db/schema";
 import { and, eq, asc } from "drizzle-orm";
@@ -7,7 +7,7 @@ import { nanoid } from "nanoid";
 
 export async function GET(request: NextRequest) {
     try {
-        const { error } = await requireAdmin();
+        const { error } = await requireStaff(["admin", "road_manager"]);
         if (error) return error;
 
         const { searchParams } = new URL(request.url);

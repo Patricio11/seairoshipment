@@ -10,6 +10,7 @@ import { redirect } from "next/navigation";
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { sendVerificationEmail, sendPasswordResetEmail, type VerificationTemplate } from "@/lib/email";
+import { isStaff, isRoadStaff, type StaffRole } from "@/lib/roles";
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
@@ -117,15 +118,19 @@ export const auth = betterAuth({
     },
     user: {
         additionalFields: {
+            // input: false → never accepted from the public signup/update APIs.
+            // Roles are only ever set server-side (staff creation, break-glass SQL).
             role: {
                 type: "string",
                 required: false,
                 defaultValue: "client",
+                input: false,
             },
             isVetted: {
                 type: "boolean",
                 required: false,
                 defaultValue: false,
+                input: false,
             },
             accountNumber: {
                 type: "string",
@@ -180,6 +185,39 @@ export async function requireAdmin(): Promise<
 }
 
 /**
+ * Require a back-office role for API routes. Defaults to any staff role;
+ * pass an explicit list to restrict (e.g. ["admin", "road_manager"] for
+ * rate management). `roadOnly` is true for road staff - callers use it to
+ * scope queries to transportMode = 'ROAD'.
+ */
+export async function requireStaff(
+    allowed: StaffRole[] = ["admin", "road_manager", "road_ops"]
+): Promise<
+    | { session: NonNullable<Awaited<ReturnType<typeof getSession>>>; role: StaffRole; roadOnly: boolean; error?: never }
+    | { session?: never; role?: never; roadOnly?: never; error: NextResponse }
+> {
+    const session = await getSession();
+    if (!session) {
+        return {
+            error: NextResponse.json(
+                { error: "Not authenticated - please sign in again" },
+                { status: 401 }
+            ),
+        };
+    }
+    const role = session.user.role as string;
+    if (!isStaff(role) || !allowed.includes(role)) {
+        return {
+            error: NextResponse.json(
+                { error: "You don't have access to this action" },
+                { status: 403 }
+            ),
+        };
+    }
+    return { session, role, roadOnly: isRoadStaff(role) };
+}
+
+/**
  * Require authentication - redirects to home if not authenticated
  */
 export async function requireAuth() {
@@ -199,10 +237,11 @@ export async function requireAuth() {
  */
 export async function requireRole(allowedRoles: Array<"admin" | "client">) {
     const session = await requireAuth();
-    const userRole = session.user.role as "admin" | "client";
+    const userRole = session.user.role as string;
 
-    if (!allowedRoles.includes(userRole)) {
-        if (userRole === "admin") {
+    if (!allowedRoles.includes(userRole as "admin" | "client")) {
+        // Staff (admin + road roles) live in /admin, customers in /dashboard.
+        if (isStaff(userRole)) {
             redirect("/admin");
         } else {
             redirect("/dashboard");

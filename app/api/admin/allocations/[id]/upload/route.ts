@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth/server";
+import { requireStaff } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { documents, palletAllocations, user as userTable } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -13,7 +13,7 @@ const STORAGE_PATH = "bookings/documents";
 /**
  * Admin-side file upload for a client allocation. Same shape as the client
  * route at /api/bookings/[allocationId]/upload, but:
- *   - requireAdmin instead of allocation-ownership check (admin acts on behalf
+ *   - requireStaff instead of allocation-ownership check (staff act on behalf
  *     of any client)
  *   - the documents row is tagged `source: "ADMIN_UPLOAD"` so the UI can
  *     surface it distinctly from client-uploaded docs
@@ -29,7 +29,7 @@ export async function POST(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const auth = await requireAdmin();
+        const auth = await requireStaff();
         if (auth.error) return auth.error;
 
         const { id: allocationId } = await params;

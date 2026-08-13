@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth/server";
+import { requireStaff } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { roadRates, user } from "@/lib/db/schema";
 import { and, eq, isNull, desc } from "drizzle-orm";
@@ -14,7 +14,7 @@ import { isRoadRoute, ROAD_TRUCK_MAX_PALLETS } from "@/lib/road";
  */
 export async function GET() {
     try {
-        const { error } = await requireAdmin();
+        const { error } = await requireStaff(["admin", "road_manager"]);
         if (error) return error;
 
         const rows = await db
@@ -44,7 +44,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
     try {
-        const { error } = await requireAdmin();
+        const { error } = await requireStaff(["admin", "road_manager"]);
         if (error) return error;
 
         const body = await request.json();

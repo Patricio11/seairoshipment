@@ -104,10 +104,14 @@ export function AuthPanel({ isOpen, onClose, initialMode = 'login' }: AuthPanelP
                             description: "You have been successfully signed in."
                         });
 
-                        // Redirect based on role
+                        // Redirect based on role - staff (admin + road roles)
+                        // live in /admin, customers in /dashboard. Road staff
+                        // land straight on the trucks board.
                         const userRole = data?.user?.role;
                         if (userRole === 'admin') {
                             router.push('/admin');
+                        } else if (userRole === 'road_manager' || userRole === 'road_ops') {
+                            router.push('/admin/bookings');
                         } else {
                             router.push('/dashboard');
                         }

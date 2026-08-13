@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth/server";
+import { requireAdmin, requireStaff } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { productCategories, products, containers } from "@/lib/db/schema";
 import { asc, eq, sql } from "drizzle-orm";
@@ -14,7 +14,7 @@ type Temperature = "frozen" | "cool" | "chilled" | "ambient";
  */
 export async function GET() {
     try {
-        const { error } = await requireAdmin();
+        const { error } = await requireStaff(["admin", "road_manager"]);
         if (error) return error;
 
         const cats = await db

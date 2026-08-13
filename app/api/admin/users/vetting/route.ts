@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth/server";
+import { requireStaff } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { user, companyDocuments, onboardingRequirements } from "@/lib/db/schema";
 import { desc, eq, inArray } from "drizzle-orm";
@@ -11,7 +11,9 @@ import { desc, eq, inArray } from "drizzle-orm";
  */
 export async function GET() {
     try {
-        const { error } = await requireAdmin();
+        // Road managers get read access for the rate-card customer dropdown;
+        // vetting ACTIONS (approve/reject/terms) stay admin-only.
+        const { error } = await requireStaff(["admin", "road_manager"]);
         if (error) return error;
 
         const rows = await db

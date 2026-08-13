@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth/server";
+import { requireStaff } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { palletAllocations, containers, adminNotifications, clientNotifications } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -10,7 +10,9 @@ export async function POST(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { error } = await requireAdmin();
+        // Ops confirm loads too - that's their core job; road roles are
+        // restricted to ROAD allocations further down (once the container is loaded)
+        const { error, roadOnly } = await requireStaff();
         if (error) return error;
 
         const { id } = await params;
@@ -42,6 +44,9 @@ export async function POST(
 
         if (!container) {
             return NextResponse.json({ error: "Container not found" }, { status: 404 });
+        }
+        if (roadOnly && container.transportMode !== "ROAD") {
+            return NextResponse.json({ error: "Road staff can only manage road bookings" }, { status: 403 });
         }
 
         const newTotal = container.totalPallets + (alloc.palletCount || 0);

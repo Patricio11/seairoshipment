@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth/server";
+import { requireStaff } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { containers, palletAllocations, user, containerTypes, sailings, productCategories } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
@@ -11,10 +11,11 @@ const ALL_TEMPS: Temperature[] = ["frozen", "cool", "chilled", "ambient"];
 
 export async function GET() {
     try {
-        const { error } = await requireAdmin();
+        const { error, roadOnly } = await requireStaff();
         if (error) return error;
 
-        // Get all containers with joined container type / category / sailing for display
+        // Get all containers with joined container type / category / sailing for display.
+        // Road-only staff see trucks only.
         const allContainers = await db
             .select({
                 container: containers,
@@ -27,6 +28,7 @@ export async function GET() {
             .leftJoin(containerTypes, eq(containers.containerTypeId, containerTypes.id))
             .leftJoin(productCategories, eq(containers.categoryId, productCategories.id))
             .leftJoin(sailings, eq(containers.sailingId, sailings.id))
+            .where(roadOnly ? eq(containers.transportMode, "ROAD") : undefined)
             .orderBy(desc(containers.createdAt));
 
         const containersWithAllocations = await Promise.all(
@@ -63,10 +65,14 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
     try {
-        const { error } = await requireAdmin();
+        // Admin creates anything; road manager creates trucks only (ops can't create)
+        const { error, role } = await requireStaff(["admin", "road_manager"]);
         if (error) return error;
 
         const body = await request.json();
+        if (role === "road_manager" && body.transportMode !== "ROAD") {
+            return NextResponse.json({ error: "Road managers can only create trucks" }, { status: 403 });
+        }
         const {
             route,
             containerTypeId,
