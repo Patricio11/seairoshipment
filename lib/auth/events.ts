@@ -10,7 +10,8 @@ export async function logAuthEvent(
         | "TWO_FACTOR_VERIFY_SUCCESS"
         | "TWO_FACTOR_VERIFY_FAILED"
         | "TWO_FACTOR_BACKUP_CODES_REGENERATED"
-        | "TWO_FACTOR_BACKUP_CODE_USED",
+        | "TWO_FACTOR_BACKUP_CODE_USED"
+        | "PASSWORD_CHANGED",
     extra?: { userId?: string },
 ): Promise<void> {
     try {

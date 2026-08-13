@@ -18,6 +18,7 @@ export const authEventTypeEnum = pgEnum("auth_event_type", [
     "TWO_FACTOR_BACKUP_CODES_REGENERATED", // user clicked Regenerate
     "TWO_FACTOR_BACKUP_CODE_USED",       // sign-in via a backup code (compromise signal)
     "TWO_FACTOR_ADMIN_RESET",            // admin used the break-glass disable on another user
+    "PASSWORD_CHANGED",                  // user changed their password from Settings
 ]);
 
 export const authEvents = pgTable(

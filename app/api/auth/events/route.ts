@@ -37,6 +37,7 @@ const ALLOWED_CLIENT_EVENTS: Array<(typeof authEventTypeEnum.enumValues)[number]
     "TWO_FACTOR_VERIFY_FAILED",
     "TWO_FACTOR_BACKUP_CODES_REGENERATED",
     "TWO_FACTOR_BACKUP_CODE_USED",
+    "PASSWORD_CHANGED",
 ];
 
 function getRequestIp(req: NextRequest): string | null {

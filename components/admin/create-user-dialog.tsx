@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,13 +13,16 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
-import { Loader2, UserPlus, RefreshCw, Copy, Truck } from "lucide-react"
+import { Loader2, UserPlus, RefreshCw, Copy, Truck, Building2 } from "lucide-react"
+import { PAYMENT_TERMS, type PaymentTerms } from "@/lib/payment-terms"
 import { toast } from "sonner"
 
-const STAFF_ROLES = [
+const CREATABLE_ROLES = [
+    { value: "client", label: "Customer", description: "Full customer account - books sea + road freight. Skips onboarding/vetting." },
     { value: "road_manager", label: "Road Freight Manager", description: "Trucks, road rates, approvals, PODs" },
     { value: "road_ops", label: "Road Freight Operations", description: "Confirm loads and PODs only - no rates or truck changes" },
 ] as const
+type CreatableRole = (typeof CREATABLE_ROLES)[number]["value"]
 
 function generatePassword() {
     // Readable temp password: 3 blocks of 4 from an unambiguous alphabet
@@ -27,38 +31,50 @@ function generatePassword() {
     return `${block()}-${block()}-${block()}`
 }
 
-export function CreateStaffDialog() {
+export function CreateUserDialog() {
+    const router = useRouter()
     const [open, setOpen] = useState(false)
     const [saving, setSaving] = useState(false)
     const [name, setName] = useState("")
     const [email, setEmail] = useState("")
+    const [companyName, setCompanyName] = useState("")
     const [password, setPassword] = useState(generatePassword())
-    const [role, setRole] = useState<"road_manager" | "road_ops">("road_manager")
+    const [role, setRole] = useState<CreatableRole>("client")
+    const [terms, setTerms] = useState<PaymentTerms>("SPLIT_60_40")
 
     const reset = () => {
         setName("")
         setEmail("")
+        setCompanyName("")
         setPassword(generatePassword())
-        setRole("road_manager")
+        setRole("client")
+        setTerms("SPLIT_60_40")
     }
 
     const handleCreate = async () => {
         setSaving(true)
         try {
-            const res = await fetch("/api/admin/users/staff", {
+            const res = await fetch("/api/admin/users/create", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, email, password, role }),
+                body: JSON.stringify({
+                    name,
+                    email,
+                    password,
+                    role,
+                    ...(role === "client" ? { companyName, paymentTerms: terms } : {}),
+                }),
             })
             const data = await res.json()
-            if (!res.ok) throw new Error(data.error || "Failed to create staff user")
-            toast.success("Staff account created", {
+            if (!res.ok) throw new Error(data.error || "Failed to create user")
+            toast.success(`${role === "client" ? "Customer" : "Staff"} account created`, {
                 description: `${email} can now sign in with the temporary password.`,
             })
             setOpen(false)
             reset()
+            router.refresh()
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to create staff user")
+            toast.error(err instanceof Error ? err.message : "Failed to create user")
         } finally {
             setSaving(false)
         }
@@ -79,14 +95,14 @@ export function CreateStaffDialog() {
                 onClick={() => setOpen(true)}
                 className="bg-emerald-700 hover:bg-emerald-600 text-white font-bold gap-2"
             >
-                <UserPlus className="h-4 w-4" /> Add Road Staff
+                <UserPlus className="h-4 w-4" /> Add User
             </Button>
 
             <Dialog open={open} onOpenChange={(v) => { if (!saving) setOpen(v) }}>
-                <DialogContent className="dark bg-slate-950 border-slate-800 text-slate-200 sm:max-w-md">
+                <DialogContent className="dark bg-slate-950 border-slate-800 text-slate-200 sm:max-w-md max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="text-white flex items-center gap-2">
-                            <Truck className="h-5 w-5 text-emerald-500" /> Add Road Staff User
+                            <UserPlus className="h-5 w-5 text-emerald-500" /> Add User
                         </DialogTitle>
                         <DialogDescription className="text-slate-500">
                             Creates a ready-to-use account with a temporary password. They can change it later in Settings → Security.
@@ -94,6 +110,29 @@ export function CreateStaffDialog() {
                     </DialogHeader>
 
                     <div className="space-y-4 py-2">
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold uppercase tracking-wider text-slate-400">Account type</Label>
+                            <div className="space-y-2">
+                                {CREATABLE_ROLES.map((r) => (
+                                    <button
+                                        key={r.value}
+                                        type="button"
+                                        onClick={() => setRole(r.value)}
+                                        className={`w-full text-left rounded-lg border px-3 py-2.5 transition-all ${
+                                            role === r.value
+                                                ? "border-emerald-600 bg-emerald-950/40"
+                                                : "border-slate-800 bg-slate-900 hover:border-slate-700"
+                                        }`}
+                                    >
+                                        <p className="text-sm font-bold text-white flex items-center gap-1.5">
+                                            {r.value === "client" ? <Building2 className="h-3.5 w-3.5 text-slate-400" /> : <Truck className="h-3.5 w-3.5 text-slate-400" />}
+                                            {r.label}
+                                        </p>
+                                        <p className="text-[11px] text-slate-500 mt-0.5">{r.description}</p>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                         <div className="space-y-1.5">
                             <Label className="text-xs font-bold uppercase tracking-wider text-slate-400">Full name</Label>
                             <Input
@@ -113,26 +152,34 @@ export function CreateStaffDialog() {
                                 className="bg-slate-900 border-slate-800 text-white"
                             />
                         </div>
-                        <div className="space-y-1.5">
-                            <Label className="text-xs font-bold uppercase tracking-wider text-slate-400">Role</Label>
-                            <div className="space-y-2">
-                                {STAFF_ROLES.map((r) => (
-                                    <button
-                                        key={r.value}
-                                        type="button"
-                                        onClick={() => setRole(r.value)}
-                                        className={`w-full text-left rounded-lg border px-3 py-2.5 transition-all ${
-                                            role === r.value
-                                                ? "border-emerald-600 bg-emerald-950/40"
-                                                : "border-slate-800 bg-slate-900 hover:border-slate-700"
-                                        }`}
+                        {role === "client" && (
+                            <>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs font-bold uppercase tracking-wider text-slate-400">Company name</Label>
+                                    <Input
+                                        value={companyName}
+                                        onChange={(e) => setCompanyName(e.target.value)}
+                                        placeholder="e.g. Britos Meat Distributors"
+                                        className="bg-slate-900 border-slate-800 text-white"
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs font-bold uppercase tracking-wider text-slate-400">Payment terms</Label>
+                                    <select
+                                        value={terms}
+                                        onChange={(e) => setTerms(e.target.value as PaymentTerms)}
+                                        className="w-full h-10 rounded-md border border-slate-800 bg-slate-900 px-3 text-sm text-white"
                                     >
-                                        <p className="text-sm font-bold text-white">{r.label}</p>
-                                        <p className="text-[11px] text-slate-500 mt-0.5">{r.description}</p>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                                        {PAYMENT_TERMS.map((t) => (
+                                            <option key={t.value} value={t.value}>{t.label}</option>
+                                        ))}
+                                    </select>
+                                    <p className="text-[11px] text-slate-500">
+                                        {PAYMENT_TERMS.find((t) => t.value === terms)?.description}
+                                    </p>
+                                </div>
+                            </>
+                        )}
                         <div className="space-y-1.5">
                             <Label className="text-xs font-bold uppercase tracking-wider text-slate-400">Temporary password</Label>
                             <div className="flex gap-2">

@@ -234,13 +234,14 @@ Feedback digested into phases F–L below. Each closes with its own commit(s).
 - [x] Bookings page passes `lockedMode="ROAD"` for road staff (pinned Trucks view, no sea switcher); login + 2FA routing lands road staff on /admin/bookings
 - [x] API guards: containers GET filtered to trucks for road staff; container create/edit/delete = admin + road_manager (trucks only); pending/cancelled allocations filtered to ROAD; approve/reject allowed for ops but only on road bookings; POD upload + docs + notifications = any staff; road-rates + vetting-list read = admin + road_manager; fleet dialog reads (locations/sailings/categories/types GET) readable by manager; everything else untouched (admin-only)
 - [x] Security hardening found along the way: `role` / `isVetted` additional fields are now `input: false` — the public signup API previously accepted a `role` override in the request body
-- [x] Admin creates road staff: "Add Road Staff" on User Vetting → dialog (name, email, generated temp password, manager/ops picker) → `POST /api/admin/users/staff` inserts user + credential rows via Better Auth's hasher (born verified + APPROVED, no emails fired)
+- [x] Admin creates road staff: "Add User" on User Vetting → dialog (generated temp password, manager/ops picker) → `POST /api/admin/users/create` inserts user + credential rows via Better Auth's hasher (born verified + APPROVED, no emails fired)
 - [ ] WhatsApp send-flows for ops — deferred with Phase L
 
-## Phase J — Admin-created customer accounts
+## Phase J — Admin-created customer accounts ✅
 
-- [ ] "Create customer" admin action: name, email, company, temp password, payment terms → Better Auth server-side signup, pre-verified + APPROVED
-- [ ] Customer can change the password later (wire the real change-password flow in Settings → Security — currently a mock form)
+- [x] The Phase I "Add User" dialog also creates Customer accounts: name, email, company, payment terms picker, generated temp password → `POST /api/admin/users/create` (role `client`, pre-verified + APPROVED + terms set, skips onboarding entirely)
+- [x] Credentials copy button (email + temp password) — shown once, shared securely by the admin
+- [x] Real change-password flow wired in Settings → Security (was a mock form): `authClient.changePassword` with current-password check, min 8 chars, revokes other sessions, `PASSWORD_CHANGED` audit event (new enum value — `npm run db:push` required)
 
 ## Phase K — Sea/Road dashboard split ✅
 
