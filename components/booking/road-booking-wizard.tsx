@@ -48,8 +48,12 @@ interface AddressEntry {
 interface RoadQuoteData {
     routeLabel: string
     rateSource: "CUSTOMER" | "DEFAULT"
+    band: string
     transportPerPallet: number
     transportTotal: number
+    dropsIncluded: number
+    billableDrops: number
+    additionalDropRate: number
     additionalDropFee: number
     overhangFeePerPallet: number
     overhangTotal: number
@@ -733,9 +737,13 @@ export function RoadBookingWizard({ onSuccess }: RoadBookingWizardProps) {
                                             <span className="text-slate-600 dark:text-slate-400">Transport cost · {pallets} pallet{pallets === 1 ? "" : "s"} × {fmtR(quote.transportPerPallet)}</span>
                                             <span className="font-bold font-mono text-slate-900 dark:text-white">{fmtR(quote.transportTotal)}</span>
                                         </div>
+                                        <div className="flex justify-between text-xs">
+                                            <span className="text-slate-500">{quote.dropsIncluded} delivery point{quote.dropsIncluded === 1 ? "" : "s"} included in this rate</span>
+                                            <span className="font-mono text-slate-500">—</span>
+                                        </div>
                                         {quote.additionalDropFee > 0 && (
                                             <div className="flex justify-between">
-                                                <span className="text-slate-600 dark:text-slate-400">Additional drop fee</span>
+                                                <span className="text-slate-600 dark:text-slate-400">Additional drops · {quote.billableDrops} × {fmtR(quote.additionalDropRate)}</span>
                                                 <span className="font-bold font-mono text-slate-900 dark:text-white">{fmtR(quote.additionalDropFee)}</span>
                                             </div>
                                         )}

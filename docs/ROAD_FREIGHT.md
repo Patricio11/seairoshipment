@@ -208,14 +208,14 @@ Feedback digested into phases F–L below. Each closes with its own commit(s).
 - [x] Packing-list upload: client-side route verified working; root cause of the report = **no admin upload at the pending-review stage** — the review dialog now embeds the admin upload dialog (with "Proof of Delivery (POD)" + "Packing List" types), refreshing the doc list after upload
 - [x] Bookings POST: product-category mismatch check removed for road (any product on any truck)
 
-## Phase G — Tiered rates (pallet bands, per the Britos card)
+## Phase G — Tiered rates (pallet bands, per the Britos card) ✅
 
-- [ ] `road_rates` gains band columns: `minPallets` / `maxPallets` (existing rows become 1–28), `dropsIncluded` (default 1), and the additional-drop fee stays but is now **per band**; unique becomes (userId, route, minPallets)
-- [ ] Rates manager: multiple band lines per (customer, route) — compact band editor with overlap validation; shows "R x p/p · N drops incl · R y per extra drop" per line
-- [ ] `resolveRoadRate` picks the band matching the pallet count (customer bands → default bands); quote's drop fee = max(0, deliveryPoints − dropsIncluded) × band's drop rate
-- [ ] Wizard cost sheet reflects included drops ("2 drops included · 1 additional × R750")
+- [x] `road_rates` band columns: `minPallets` / `maxPallets` (existing rows default 1–28 so pre-amendment cards keep working), `dropsIncluded` (default 1); the additional-drop fee is now **per band**; unique is (userId, route, minPallets) with API-level range-overlap guards on create AND edit
+- [x] Rates manager: band lines per (customer, route) — "Pallets from/to" + "Drops included" inputs in the dialog, band + drops columns in the table, sorted route → default-first → customer → band start
+- [x] `resolveRoadRate(userId, route, palletCount)` matches the band covering the count (customer lines → default lines); drop fee = max(0, deliveryPoints − dropsIncluded) × band's rate
+- [x] Wizard cost sheet: "N delivery points included in this rate" + "Additional drops · n × R x" lines
 - [ ] *Deferred pending confirmation*: flat **Dedicated truck** pricing (14t / 30p columns in the example) — different product from pallet-count booking
-- [ ] `npm run db:push`
+- [x] `npm run db:push` required (band columns + unique-constraint change)
 
 ## Phase H — Payment terms per customer
 

@@ -28,7 +28,10 @@ interface RoadRateRow {
     id: string
     userId: string | null
     route: string
+    minPallets: number
+    maxPallets: number
     transportCostPerPallet: string
+    dropsIncluded: number
     additionalDropFee: string
     overhangFeePerPallet: string
     active: boolean
@@ -50,9 +53,12 @@ interface CustomerOption {
 }
 
 interface RateForm {
-    userId: string       // "" = default rate card
+    userId: string       // "" = default rate line
     route: string
+    minPallets: string
+    maxPallets: string
     transportCostPerPallet: string
+    dropsIncluded: string
     additionalDropFee: string
     overhangFeePerPallet: string
 }
@@ -60,7 +66,10 @@ interface RateForm {
 const EMPTY_FORM: RateForm = {
     userId: "",
     route: "",
+    minPallets: "1",
+    maxPallets: "28",
     transportCostPerPallet: "",
+    dropsIncluded: "1",
     additionalDropFee: "",
     overhangFeePerPallet: "",
 }
@@ -117,8 +126,12 @@ export function RoadRatesManager() {
                     (r.customerEmail || "").toLowerCase().includes(q) ||
                     (r.accountNumber || "").toLowerCase().includes(q)
             })
-            // Sort by route, defaults first within each route
-            .sort((a, b) => a.route.localeCompare(b.route) || Number(!!a.userId) - Number(!!b.userId))
+            // Sort by route, defaults first within each route, then by band start
+            .sort((a, b) =>
+                a.route.localeCompare(b.route) ||
+                Number(!!a.userId) - Number(!!b.userId) ||
+                (a.customerCompany || a.customerName || "").localeCompare(b.customerCompany || b.customerName || "") ||
+                a.minPallets - b.minPallets)
     }, [rates, searchTerm])
 
     const allVisibleSelected = filtered.length > 0 && filtered.every(r => selected.has(r.id))
@@ -149,7 +162,10 @@ export function RoadRatesManager() {
         setForm({
             userId: rate.userId || "",
             route: rate.route,
+            minPallets: String(rate.minPallets),
+            maxPallets: String(rate.maxPallets),
             transportCostPerPallet: rate.transportCostPerPallet,
+            dropsIncluded: String(rate.dropsIncluded),
             additionalDropFee: rate.additionalDropFee,
             overhangFeePerPallet: rate.overhangFeePerPallet,
         })
@@ -159,26 +175,27 @@ export function RoadRatesManager() {
     const handleSave = async () => {
         if (!editingRate && !form.route) { toast.error("Pick a route"); return }
         if (!(Number(form.transportCostPerPallet) > 0)) { toast.error("Transport cost per pallet must be greater than 0"); return }
+        const minP = Math.floor(Number(form.minPallets))
+        const maxP = Math.floor(Number(form.maxPallets))
+        if (!(minP >= 1) || maxP < minP) { toast.error("Pallet band is invalid - max must be ≥ min"); return }
 
         setSaving(true)
         try {
             const isEdit = !!editingRate
+            const bandFields = {
+                minPallets: minP,
+                maxPallets: maxP,
+                transportCostPerPallet: form.transportCostPerPallet,
+                dropsIncluded: Math.max(1, Math.floor(Number(form.dropsIncluded)) || 1),
+                additionalDropFee: form.additionalDropFee || "0",
+                overhangFeePerPallet: form.overhangFeePerPallet || "0",
+            }
             const res = await fetch(isEdit ? `/api/admin/road-rates/${editingRate!.id}` : "/api/admin/road-rates", {
                 method: isEdit ? "PUT" : "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(isEdit
-                    ? {
-                        transportCostPerPallet: form.transportCostPerPallet,
-                        additionalDropFee: form.additionalDropFee || "0",
-                        overhangFeePerPallet: form.overhangFeePerPallet || "0",
-                    }
-                    : {
-                        userId: form.userId || null,
-                        route: form.route,
-                        transportCostPerPallet: form.transportCostPerPallet,
-                        additionalDropFee: form.additionalDropFee || "0",
-                        overhangFeePerPallet: form.overhangFeePerPallet || "0",
-                    }),
+                    ? bandFields
+                    : { userId: form.userId || null, route: form.route, ...bandFields }),
             })
             const data = await res.json().catch(() => ({}))
             if (!res.ok) {
@@ -265,8 +282,10 @@ export function RoadRatesManager() {
                             </TableHead>
                             <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Customer</TableHead>
                             <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Route</TableHead>
+                            <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-center">Pallets</TableHead>
                             <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-right">Transport / Pallet</TableHead>
-                            <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-right">Additional Drop</TableHead>
+                            <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-center">Drops Incl.</TableHead>
+                            <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-right">Extra Drop</TableHead>
                             <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-right">Overhang / Pallet</TableHead>
                             <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-center">Active</TableHead>
                             <TableHead className="text-slate-400 font-bold uppercase tracking-wider text-[10px] text-right">Actions</TableHead>
@@ -275,13 +294,13 @@ export function RoadRatesManager() {
                     <TableBody>
                         {loading ? (
                             <TableRow className="border-slate-800">
-                                <TableCell colSpan={8} className="text-center py-12 text-slate-500">
+                                <TableCell colSpan={10} className="text-center py-12 text-slate-500">
                                     <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" /> Loading road rates…
                                 </TableCell>
                             </TableRow>
                         ) : filtered.length === 0 ? (
                             <TableRow className="border-slate-800 hover:bg-transparent">
-                                <TableCell colSpan={8} className="text-center py-14 text-slate-500">
+                                <TableCell colSpan={10} className="text-center py-14 text-slate-500">
                                     <Truck className="h-8 w-8 mx-auto mb-2 opacity-30" />
                                     <p className="font-bold text-slate-400">No road rate cards yet</p>
                                     <p className="text-xs mt-1">Add a default card per corridor, then per-customer cards for special structures.</p>
@@ -311,8 +330,16 @@ export function RoadRatesManager() {
                                     <TableCell>
                                         <span className="text-sm text-white font-semibold">{roadRouteLabel(rate.route)}</span>
                                     </TableCell>
+                                    <TableCell className="text-center">
+                                        <Badge className="bg-slate-800 text-slate-300 border-none font-mono text-[11px]">
+                                            {rate.minPallets === rate.maxPallets ? rate.minPallets : `${rate.minPallets}-${rate.maxPallets}`}
+                                        </Badge>
+                                    </TableCell>
                                     <TableCell className="text-right font-mono text-sm font-bold text-white">
                                         {fmt(rate.transportCostPerPallet)}
+                                    </TableCell>
+                                    <TableCell className="text-center font-mono text-sm text-slate-300">
+                                        {rate.dropsIncluded}
                                     </TableCell>
                                     <TableCell className="text-right font-mono text-sm text-slate-300">
                                         {fmt(rate.additionalDropFee)}
@@ -401,6 +428,40 @@ export function RoadRatesManager() {
                             </>
                         )}
 
+                        {/* Pallet band + drops included - the Britos-card tier model */}
+                        <div className="grid grid-cols-3 gap-3">
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pallets From</Label>
+                                <NumericInput
+                                    value={form.minPallets}
+                                    onChange={(e) => setForm({ ...form, minPallets: e.target.value })}
+                                    placeholder="1"
+                                    className="bg-slate-900 border-slate-800 h-9 text-sm font-mono text-center"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pallets To</Label>
+                                <NumericInput
+                                    value={form.maxPallets}
+                                    onChange={(e) => setForm({ ...form, maxPallets: e.target.value })}
+                                    placeholder="28"
+                                    className="bg-slate-900 border-slate-800 h-9 text-sm font-mono text-center"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Drops Included</Label>
+                                <NumericInput
+                                    value={form.dropsIncluded}
+                                    onChange={(e) => setForm({ ...form, dropsIncluded: e.target.value })}
+                                    placeholder="1"
+                                    className="bg-slate-900 border-slate-800 h-9 text-sm font-mono text-center"
+                                />
+                            </div>
+                        </div>
+                        <p className="text-[10px] text-slate-500 -mt-2">
+                            One line per band, e.g. 1 / 2-3 / 4-6 / 7-9… Bands can&apos;t overlap for the same customer + route.
+                        </p>
+
                         <div className="space-y-1.5">
                             <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Transport Cost per Pallet (ZAR)</Label>
                             <div className="relative">
@@ -415,7 +476,7 @@ export function RoadRatesManager() {
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1.5">
-                                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Additional Drop Fee</Label>
+                                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Fee per Additional Drop</Label>
                                 <div className="relative">
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-mono text-sm">R</span>
                                     <NumericInput
@@ -440,7 +501,7 @@ export function RoadRatesManager() {
                             </div>
                         </div>
                         <p className="text-[10px] text-slate-500">
-                            Drop fee is charged once per booking with an extra delivery point. Overhang fee is charged per pallet when the customer flags overhang.
+                            Delivery points beyond the included count are charged the additional-drop fee each. Overhang fee is charged per pallet when the customer flags overhang.
                         </p>
                     </div>
 

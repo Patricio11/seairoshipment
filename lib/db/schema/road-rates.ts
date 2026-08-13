@@ -1,28 +1,39 @@
-import { pgTable, text, timestamp, numeric, boolean, unique, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, numeric, integer, boolean, unique, index } from "drizzle-orm/pg-core";
 import { user } from "./users";
 
 /**
- * Road freight rates - the 3 cost lines for a refrigerated road consolidation
- * booking, loaded per route corridor and optionally per customer.
+ * Road freight rate lines - tiered per pallet-count band, per route corridor,
+ * per customer (amendments round 1, modelled on the Britos rate card):
  *
- * Resolution order at quote time:
- *   1. Row where (userId = customer, route) - customer-specific structure.
- *   2. Row where (userId IS NULL, route)    - the default rate card.
- *   3. No row → route not quotable, booking blocked with a clear message.
+ *   route      band        p/p price   drops incl   extra drop
+ *   CPT-JHB    1-1         R 3 100     1            R 850
+ *   CPT-JHB    2-3         R 2 950     2            R 750
+ *   CPT-JHB    4-6         R 2 650     2            R 750
+ *   ...
  *
- * Per the plan: "Rates will need to be loaded per customer as customers may
- * have different rate structures based on the volume that they send."
+ * Resolution order at quote time (band = minPallets <= count <= maxPallets):
+ *   1. The customer's own active line matching (route, band).
+ *   2. The default line (userId IS NULL) matching (route, band).
+ *   3. No line → route/count not quotable, booking blocked with a message.
  *
+ * Drop fee = max(0, deliveryPoints - dropsIncluded) × additionalDropFee.
+ * Overhang fee = overhang ? palletCount × overhangFeePerPallet : 0.
  * All amounts in ZAR.
  */
 export const roadRates = pgTable("road_rates", {
     id: text("id").primaryKey(),
-    // null = default rate card for the route (applies to every customer
-    // without their own row).
+    // null = default rate line for the route (applies to every customer
+    // without their own).
     userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
     route: text("route").notNull(), // corridor code, e.g. "CPT-JNB"
+    // Pallet-count band this line prices. Existing rows default to 1-28
+    // (the whole trailer) so pre-amendment cards keep working.
+    minPallets: integer("min_pallets").default(1).notNull(),
+    maxPallets: integer("max_pallets").default(28).notNull(),
     transportCostPerPallet: numeric("transport_cost_per_pallet").notNull(),
-    // Charged once per booking when there is more than one delivery point.
+    // Number of delivery points included in the band price.
+    dropsIncluded: integer("drops_included").default(1).notNull(),
+    // Charged per delivery point beyond dropsIncluded.
     additionalDropFee: numeric("additional_drop_fee").default("0").notNull(),
     // Charged per pallet when the customer flags overhang = YES.
     overhangFeePerPallet: numeric("overhang_fee_per_pallet").default("0").notNull(),
@@ -30,10 +41,10 @@ export const roadRates = pgTable("road_rates", {
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (t) => ({
-    // One rate card per (customer, route). Postgres treats NULLs as distinct
-    // in unique constraints, so multiple default rows per route are possible
-    // at the DB level - the API guards against that on create.
-    userRouteUnique: unique("road_rates_user_route_unique").on(t.userId, t.route),
+    // One line per (customer, route, band start). Postgres treats NULLs as
+    // distinct in unique constraints, so duplicate default lines are possible
+    // at the DB level - the API guards against overlap on create/update.
+    userRouteBandUnique: unique("road_rates_user_route_band_unique").on(t.userId, t.route, t.minPallets),
     routeIdx: index("road_rates_route_idx").on(t.route),
 }));
 
