@@ -15,7 +15,15 @@ import {
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import { toast } from "sonner"
+import { PAYMENT_TERMS, paymentTermsLabel } from "@/lib/payment-terms"
 
 export interface VettingUser {
     id: string
@@ -32,6 +40,7 @@ export interface VettingUser {
     vettingAdminNote: string | null
     emailVerified: boolean
     twoFactorEnabled: boolean | null
+    paymentTerms?: "SPLIT_60_40" | "NET_30_STATEMENT" | "NET_7_DELIVERY" | null
     createdAt: string | Date
     updatedAt: string | Date
     documents: Array<{
@@ -79,8 +88,36 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
     const [pendingAction, setPendingAction] = useState<Action>(null)
     const [reasonInput, setReasonInput] = useState("")
     const [submitting, setSubmitting] = useState(false)
+    // Payment terms - picked at approval; editable afterwards. Empty string =
+    // "not touched yet" (falls back to the user's stored value or the default).
+    const [termsInput, setTermsInput] = useState<string>("")
+    const [savingTerms, setSavingTerms] = useState(false)
 
     if (!user) return null
+
+    const effectiveTerms = termsInput || user.paymentTerms || "SPLIT_60_40"
+
+    const handleSaveTerms = async () => {
+        setSavingTerms(true)
+        try {
+            const res = await fetch(`/api/admin/users/${user.id}/payment-terms`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ paymentTerms: effectiveTerms }),
+            })
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) {
+                toast.error(data.error || "Failed to update payment terms")
+                return
+            }
+            toast.success(`Payment terms set to ${paymentTermsLabel(effectiveTerms)}`)
+            onActionComplete()
+        } catch {
+            toast.error("Failed to update payment terms")
+        } finally {
+            setSavingTerms(false)
+        }
+    }
 
     const reset = () => {
         setPendingAction(null)
@@ -109,6 +146,8 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
             let body: Record<string, string> | undefined
             if (action === "reject") body = { reason: reasonInput.trim() }
             if (action === "request-changes") body = { note: reasonInput.trim() }
+            // Approval carries the payment terms picked in the confirm card
+            if (action === "approve") body = { paymentTerms: effectiveTerms }
 
             // disable-2fa is a destructive break-glass - POST verb. All other
             // vetting actions are PATCH because they mutate fields on the
@@ -237,6 +276,44 @@ export function UserReviewModal({ user, open, onClose, onActionComplete }: UserR
                             </div>
                         )}
                     </div>
+
+                    {/* Payment terms - shown while approving (picked here) and
+                        on approved accounts (editable any time). Drives road
+                        invoice generation. */}
+                    {(pendingAction === "approve" || user.vettingStatus === "APPROVED") && (
+                        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-2">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 flex items-center gap-1.5">
+                                <Receipt className="h-3 w-3" /> Payment Terms
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <Select value={effectiveTerms} onValueChange={setTermsInput}>
+                                    <SelectTrigger className="bg-slate-900 border-slate-700 h-9 text-sm flex-1 text-white">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                                        {PAYMENT_TERMS.map(t => (
+                                            <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {user.vettingStatus === "APPROVED" && (
+                                    <Button
+                                        size="sm"
+                                        onClick={handleSaveTerms}
+                                        disabled={savingTerms || effectiveTerms === (user.paymentTerms || "SPLIT_60_40")}
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-9"
+                                    >
+                                        {savingTerms && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
+                                        Save
+                                    </Button>
+                                )}
+                            </div>
+                            <p className="text-[10px] text-emerald-200/60">
+                                {PAYMENT_TERMS.find(t => t.value === effectiveTerms)?.description}
+                                {pendingAction === "approve" && " - applied with the approval."}
+                            </p>
+                        </motion.div>
+                    )}
 
                     {/* Action prompts */}
                     {showReasonPrompt && (

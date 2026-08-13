@@ -61,6 +61,7 @@ interface RoadQuoteData {
     depositPercentage: number
     depositAmount: number
     balanceAmount: number
+    paymentTerms: "SPLIT_60_40" | "NET_30_STATEMENT" | "NET_7_DELIVERY"
 }
 
 interface RoadBookingWizardProps {
@@ -757,14 +758,25 @@ export function RoadBookingWizard({ onSuccess }: RoadBookingWizardProps) {
                                             <span className="font-black text-slate-900 dark:text-white">Total</span>
                                             <span className="font-black font-mono text-lg text-emerald-700 dark:text-emerald-400">{fmtR(quote.totalCost)}</span>
                                         </div>
-                                        <div className="flex justify-between text-xs">
-                                            <span className="text-slate-500">{quote.depositPercentage}% deposit on confirmation</span>
-                                            <span className="font-bold font-mono text-slate-700 dark:text-slate-300">{fmtR(quote.depositAmount)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-xs">
-                                            <span className="text-slate-500">{100 - quote.depositPercentage}% balance</span>
-                                            <span className="font-bold font-mono text-slate-700 dark:text-slate-300">{fmtR(quote.balanceAmount)}</span>
-                                        </div>
+                                        {quote.paymentTerms === "SPLIT_60_40" ? (
+                                            <>
+                                                <div className="flex justify-between text-xs">
+                                                    <span className="text-slate-500">{quote.depositPercentage}% deposit on confirmation</span>
+                                                    <span className="font-bold font-mono text-slate-700 dark:text-slate-300">{fmtR(quote.depositAmount)}</span>
+                                                </div>
+                                                <div className="flex justify-between text-xs">
+                                                    <span className="text-slate-500">{100 - quote.depositPercentage}% balance</span>
+                                                    <span className="font-bold font-mono text-slate-700 dark:text-slate-300">{fmtR(quote.balanceAmount)}</span>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div className="flex justify-between text-xs">
+                                                <span className="text-slate-500">
+                                                    Payment terms: {quote.paymentTerms === "NET_30_STATEMENT" ? "30 days from statement" : "7 days from delivery"} - invoiced in full
+                                                </span>
+                                                <span className="font-bold font-mono text-slate-700 dark:text-slate-300">{fmtR(quote.totalCost)}</span>
+                                            </div>
+                                        )}
                                     </div>
                                 ) : null}
                             </div>
@@ -794,7 +806,11 @@ export function RoadBookingWizard({ onSuccess }: RoadBookingWizardProps) {
                                 </label>
                                 <p className="text-[10px] text-slate-500 flex items-center gap-1.5">
                                     <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-                                    Once your booking is confirmed by our team, the {quote?.depositPercentage ?? 60}% deposit becomes payable upfront.
+                                    {quote?.paymentTerms === "NET_30_STATEMENT"
+                                        ? "Invoiced in full on your 30-days-from-statement terms once confirmed."
+                                        : quote?.paymentTerms === "NET_7_DELIVERY"
+                                        ? "Invoiced in full, payable 7 days after delivery."
+                                        : `Once your booking is confirmed by our team, the ${quote?.depositPercentage ?? 60}% deposit becomes payable upfront.`}
                                 </p>
                             </div>
                         </div>

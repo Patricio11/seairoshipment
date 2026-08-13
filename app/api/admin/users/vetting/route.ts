@@ -34,6 +34,7 @@ export async function GET() {
                 vettingReviewedBy: user.vettingReviewedBy,
                 emailVerified: user.emailVerified,
                 twoFactorEnabled: user.twoFactorEnabled,
+                paymentTerms: user.paymentTerms,
             })
             .from(user)
             .where(eq(user.role, "client"))

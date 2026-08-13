@@ -11,7 +11,7 @@ import { sendApprovalEmail } from "@/lib/email";
  * stamps reviewer + reviewedAt, and (Phase F) fires the welcome email.
  */
 export async function PATCH(
-    _req: NextRequest,
+    req: NextRequest,
     { params }: { params: Promise<{ id: string }> },
 ) {
     try {
@@ -19,6 +19,14 @@ export async function PATCH(
         if (error) return error;
 
         const { id } = await params;
+        const body = await req.json().catch(() => ({}));
+
+        // Payment terms picked at approval (road freight amendments). Optional -
+        // defaults to the customer's current value (SPLIT_60_40 on new accounts).
+        const validTerms = ["SPLIT_60_40", "NET_30_STATEMENT", "NET_7_DELIVERY"] as const;
+        const paymentTerms = validTerms.includes(body.paymentTerms)
+            ? (body.paymentTerms as (typeof validTerms)[number])
+            : undefined;
 
         const [target] = await db.select().from(user).where(eq(user.id, id)).limit(1);
         if (!target) return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -41,6 +49,7 @@ export async function PATCH(
                 vettingRejectionReason: null,
                 vettingAdminNote: null,
                 accountNumber,
+                ...(paymentTerms ? { paymentTerms } : {}),
                 updatedAt: new Date(),
             })
             .where(eq(user.id, id));

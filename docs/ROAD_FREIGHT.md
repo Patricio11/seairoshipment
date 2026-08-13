@@ -217,12 +217,14 @@ Feedback digested into phases F–L below. Each closes with its own commit(s).
 - [ ] *Deferred pending confirmation*: flat **Dedicated truck** pricing (14t / 30p columns in the example) — different product from pallet-count booking
 - [x] `npm run db:push` required (band columns + unique-constraint change)
 
-## Phase H — Payment terms per customer
+## Phase H — Payment terms per customer ✅
 
-- [ ] `user.paymentTerms` enum: `SPLIT_60_40` (default) · `NET_30_STATEMENT` · `NET_7_DELIVERY`
-- [ ] Vetting approval flow: payment-terms select in the user review modal (+ editable after approval)
-- [ ] Road booking invoice generation branches by terms: 60/40 split (current) vs single 100% invoice with terms-driven due date
-- [ ] Terms shown on the wizard cost step + invoices
+- [x] `user.paymentTerms` enum: `SPLIT_60_40` (default) · `NET_30_STATEMENT` · `NET_7_DELIVERY` + [lib/payment-terms.ts](../lib/payment-terms.ts) labels
+- [x] Review modal: emerald Payment Terms card — shown while approving (terms travel with the approve PATCH) and on APPROVED accounts (select + Save via new `PATCH /api/admin/users/[id]/payment-terms`); vetting GET returns the field
+- [x] Road invoice generation branches by terms: 60/40 split (deposit +7d, balance departure −2d) · NET_30 single 100% invoice due +30d · NET_7_DELIVERY single 100% invoice due arrival +7d (fallback +30d when no arrival date)
+- [x] `/api/road/quote` returns the customer's terms; wizard cost sheet shows the split lines OR "invoiced in full on your terms" + terms-aware confirmation note
+- [x] Sea invoices unchanged (terms apply to road in v1)
+- [x] `npm run db:push` required (payment_terms enum + user column)
 
 ## Phase I — Road roles (Management / Operations)
 

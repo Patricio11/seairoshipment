@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/server";
 import { db } from "@/lib/db";
-import { containers, palletAllocations, adminNotifications, invoices, products, cargoCalculations } from "@/lib/db/schema";
+import { containers, palletAllocations, adminNotifications, invoices, products, cargoCalculations, user } from "@/lib/db/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { calculateQuote, calculateCubeQuote } from "@/lib/rates";
@@ -307,11 +307,6 @@ export async function POST(request: NextRequest) {
             const yearRoad = new Date().getFullYear();
             const roadDepositId = `INV-${yearRoad}-${nanoid(6).toUpperCase()}`;
             const roadBalanceId = `INV-${yearRoad}-${nanoid(6).toUpperCase()}`;
-            const roadDepositDue = new Date();
-            roadDepositDue.setDate(roadDepositDue.getDate() + 7);
-            const roadBalanceDue = truck.etd
-                ? new Date(truck.etd.getTime() - 2 * 24 * 60 * 60 * 1000)
-                : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
             // Invoice line mapping for road (the columns are sea-named but the
             // amounts are exact): originCharges = transport, oceanFreight =
@@ -330,26 +325,62 @@ export async function POST(request: NextRequest) {
                 subtotalZAR: quote.totalCost.toFixed(2),
                 poNumber: poNumber || null,
             };
-            await db.insert(invoices).values([
-                {
-                    ...invoiceBase,
-                    id: roadDepositId,
-                    type: "DEPOSIT",
-                    status: "PENDING",
-                    percentage: quote.depositPercentage,
-                    amountZAR: quote.depositAmount.toFixed(2),
-                    dueDate: roadDepositDue,
-                },
-                {
-                    ...invoiceBase,
-                    id: roadBalanceId,
-                    type: "BALANCE",
-                    status: "PENDING",
-                    percentage: 100 - quote.depositPercentage,
-                    amountZAR: quote.balanceAmount.toFixed(2),
-                    dueDate: roadBalanceDue,
-                },
-            ]);
+
+            // Payment terms drive the invoice shape (road amendments round 1):
+            //   SPLIT_60_40      - 60% deposit (+7d) and 40% balance (departure - 2d)
+            //   NET_30_STATEMENT - single 100% invoice due in 30 days
+            //   NET_7_DELIVERY   - single 100% invoice due 7 days after arrival
+            const [customerRow] = await db
+                .select({ paymentTerms: user.paymentTerms })
+                .from(user)
+                .where(eq(user.id, session.user.id))
+                .limit(1);
+            const terms = customerRow?.paymentTerms ?? "SPLIT_60_40";
+
+            if (terms === "SPLIT_60_40") {
+                const roadDepositDue = new Date();
+                roadDepositDue.setDate(roadDepositDue.getDate() + 7);
+                const roadBalanceDue = truck.etd
+                    ? new Date(truck.etd.getTime() - 2 * 24 * 60 * 60 * 1000)
+                    : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                await db.insert(invoices).values([
+                    {
+                        ...invoiceBase,
+                        id: roadDepositId,
+                        type: "DEPOSIT",
+                        status: "PENDING",
+                        percentage: quote.depositPercentage,
+                        amountZAR: quote.depositAmount.toFixed(2),
+                        dueDate: roadDepositDue,
+                    },
+                    {
+                        ...invoiceBase,
+                        id: roadBalanceId,
+                        type: "BALANCE",
+                        status: "PENDING",
+                        percentage: 100 - quote.depositPercentage,
+                        amountZAR: quote.balanceAmount.toFixed(2),
+                        dueDate: roadBalanceDue,
+                    },
+                ]);
+            } else {
+                const singleDue = terms === "NET_7_DELIVERY"
+                    ? (truck.eta
+                        ? new Date(truck.eta.getTime() + 7 * 24 * 60 * 60 * 1000)
+                        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000))
+                    : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                await db.insert(invoices).values([
+                    {
+                        ...invoiceBase,
+                        id: roadDepositId,
+                        type: "DEPOSIT",
+                        status: "PENDING",
+                        percentage: 100,
+                        amountZAR: quote.totalCost.toFixed(2),
+                        dueDate: singleDue,
+                    },
+                ]);
+            }
 
             return NextResponse.json({
                 success: true,
@@ -360,9 +391,10 @@ export async function POST(request: NextRequest) {
                 transportMode: "ROAD",
                 totalPallets: pallets,
                 totalCBM: 0,
+                paymentTerms: terms,
                 invoices: {
                     deposit: { id: roadDepositId },
-                    balance: { id: roadBalanceId },
+                    balance: terms === "SPLIT_60_40" ? { id: roadBalanceId } : null,
                 },
             });
         }
