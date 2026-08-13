@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import {
     Search,
     Ship,
+    Truck,
     CreditCard,
     Container,
     MapPin,
@@ -113,6 +114,7 @@ interface ContainerData {
     maxCapacityCBM?: string | null
     status: string
     salesRateTypeId: string
+    transportMode?: "SEA" | "ROAD"
     metashipOrderNo: string | null
     metashipReference: string | null
     trackingStatus?: "NONE" | "SUBSCRIBED" | "FAILED" | "UNSUBSCRIBED" | null
@@ -246,10 +248,23 @@ interface ClientDoc {
     uploadedAt: string
 }
 
-export function AdminBookingsGrid() {
+// lockedMode pins the grid to one transport mode and hides the switcher —
+// used for road-only staff roles who must not see the sea side.
+export function AdminBookingsGrid({ lockedMode }: { lockedMode?: "SEA" | "ROAD" } = {}) {
     const [searchTerm, setSearchTerm] = useState("")
     const [rateTypeFilter, setRateTypeFilter] = useState<"all" | "srs" | "scs">("all")
     const [activeTab, setActiveTab] = useState("containers")
+    // Sea/Road split: every tab shows only the selected transport mode.
+    // Container Requests + Live Shipments are sea-only surfaces, so switching
+    // to Trucks while on one of them bounces back to the main list.
+    const [modeView, setModeView] = useState<"SEA" | "ROAD">(lockedMode || "SEA")
+    const switchMode = (mode: "SEA" | "ROAD") => {
+        setModeView(mode)
+        if (mode === "ROAD" && (activeTab === "container-requests" || activeTab === "shipments")) {
+            setActiveTab("containers")
+        }
+    }
+    const inMode = (m?: "SEA" | "ROAD" | null) => (m || "SEA") === modeView
     const [containerData, setContainerData] = useState<ContainerData[]>([])
     const [loadingContainers, setLoadingContainers] = useState(false)
     const [bookingDialog, setBookingDialog] = useState<ContainerData | null>(null)
@@ -673,7 +688,11 @@ export function AdminBookingsGrid() {
         })
     }
 
+    const visiblePending = pendingRequests.filter(r => inMode(r.container?.transportMode))
+    const visibleCancelled = cancelledRequests.filter(r => inMode(r.container?.transportMode))
+
     const filteredContainers = containerData.filter(c => {
+        if (!inMode(c.transportMode)) return false
         const matchesSearch = (
             c.route.toLowerCase().includes(searchTerm.toLowerCase()) ||
             c.vessel.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -688,11 +707,32 @@ export function AdminBookingsGrid() {
 
     return (
         <div className="space-y-6">
-            <Tabs defaultValue="containers" onValueChange={setActiveTab} className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="flex flex-col sm:flex-row justify-between gap-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
-                    <TabsList className="bg-slate-950 border border-slate-800">
+                    <div className="flex items-center gap-3 flex-wrap">
+                        {!lockedMode && (
+                        <div className="flex bg-slate-950 rounded-lg p-1 border border-slate-800">
+                            {([["SEA", "Containers"], ["ROAD", "Trucks"]] as const).map(([value, label]) => (
+                                <button
+                                    key={value}
+                                    type="button"
+                                    onClick={() => switchMode(value)}
+                                    className={cn(
+                                        "px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-md transition-all flex items-center gap-1.5",
+                                        modeView === value
+                                            ? value === "ROAD" ? "bg-emerald-700 text-white" : "bg-brand-blue text-white"
+                                            : "text-slate-500 hover:text-slate-300",
+                                    )}
+                                >
+                                    {value === "SEA" ? <Ship className="h-3 w-3" /> : <Truck className="h-3 w-3" />}
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+                        )}
+                        <TabsList className="bg-slate-950 border border-slate-800">
                         <TabsTrigger value="containers" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400 text-xs font-bold uppercase tracking-wider">
-                            Containers
+                            {modeView === "ROAD" ? "Trucks" : "Containers"}
                         </TabsTrigger>
                         <TabsTrigger value="requests" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400 text-xs font-bold uppercase tracking-wider">
                             Pending Requests
@@ -700,13 +740,18 @@ export function AdminBookingsGrid() {
                         <TabsTrigger value="cancelled" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400 text-xs font-bold uppercase tracking-wider">
                             Cancelled Requests
                         </TabsTrigger>
-                        <TabsTrigger value="container-requests" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400 text-xs font-bold uppercase tracking-wider">
-                            Container Requests
-                        </TabsTrigger>
-                        <TabsTrigger value="shipments" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400 text-xs font-bold uppercase tracking-wider">
-                            Live Shipments
-                        </TabsTrigger>
-                    </TabsList>
+                        {modeView === "SEA" && (
+                            <TabsTrigger value="container-requests" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400 text-xs font-bold uppercase tracking-wider">
+                                Container Requests
+                            </TabsTrigger>
+                        )}
+                        {modeView === "SEA" && (
+                            <TabsTrigger value="shipments" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400 text-xs font-bold uppercase tracking-wider">
+                                Live Shipments
+                            </TabsTrigger>
+                        )}
+                        </TabsList>
+                    </div>
 
                     <div className="flex items-center gap-2 flex-wrap">
                         <div className="relative flex-1 min-w-[180px] max-w-sm">
@@ -749,9 +794,9 @@ export function AdminBookingsGrid() {
                         </div>
                     ) : filteredContainers.length === 0 ? (
                         <div className="text-center py-20 text-slate-500">
-                            <Container className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                            <p className="font-bold">No containers yet</p>
-                            <p className="text-sm mt-1">Containers will appear here when clients book pallets.</p>
+                            {modeView === "ROAD" ? <Truck className="h-12 w-12 mx-auto mb-3 opacity-30" /> : <Container className="h-12 w-12 mx-auto mb-3 opacity-30" />}
+                            <p className="font-bold">{modeView === "ROAD" ? "No trucks yet" : "No containers yet"}</p>
+                            <p className="text-sm mt-1">{modeView === "ROAD" ? "Trucks will appear here when road bookings come in or you schedule one in Fleet." : "Containers will appear here when clients book pallets."}</p>
                         </div>
                     ) : (
                         <AnimatePresence>
@@ -1003,7 +1048,7 @@ export function AdminBookingsGrid() {
                         <div className="flex items-center justify-center py-20 text-slate-500">
                             <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading pending requests...
                         </div>
-                    ) : pendingRequests.length === 0 ? (
+                    ) : visiblePending.length === 0 ? (
                         <div className="text-center py-20 text-slate-500 border border-slate-800 rounded-xl bg-slate-950/30">
                             <PackageCheck className="h-12 w-12 mx-auto mb-3 opacity-30" />
                             <p className="font-bold">No pending requests</p>
@@ -1016,7 +1061,7 @@ export function AdminBookingsGrid() {
                                     <TableRow className="hover:bg-transparent border-slate-800">
                                         <TableHead className="w-10">
                                             {(() => {
-                                                const visibleIds = pendingRequests.filter(r => {
+                                                const visibleIds = visiblePending.filter(r => {
                                                     if (rateTypeFilter !== "all" && r.container?.salesRateTypeId !== rateTypeFilter) return false
                                                     if (!searchTerm) return true
                                                     const q = searchTerm.toLowerCase()
@@ -1045,7 +1090,7 @@ export function AdminBookingsGrid() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {pendingRequests.filter(r => {
+                                    {visiblePending.filter(r => {
                                         if (rateTypeFilter !== "all" && r.container?.salesRateTypeId !== rateTypeFilter) return false
                                         if (!searchTerm) return true
                                         const q = searchTerm.toLowerCase()
@@ -1103,7 +1148,7 @@ export function AdminBookingsGrid() {
                         <div className="flex items-center justify-center py-20 text-slate-500">
                             <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading cancelled requests...
                         </div>
-                    ) : cancelledRequests.length === 0 ? (
+                    ) : visibleCancelled.length === 0 ? (
                         <div className="text-center py-20 text-slate-500 border border-slate-800 rounded-xl bg-slate-950/30">
                             <BoxSelect className="h-12 w-12 mx-auto mb-3 opacity-30" />
                             <p className="font-bold">No cancelled requests</p>
@@ -1116,7 +1161,7 @@ export function AdminBookingsGrid() {
                                     <TableRow className="hover:bg-transparent border-slate-800">
                                         <TableHead className="w-10">
                                             {(() => {
-                                                const visibleIds = cancelledRequests.filter(r => {
+                                                const visibleIds = visibleCancelled.filter(r => {
                                                     if (rateTypeFilter !== "all" && r.container?.salesRateTypeId !== rateTypeFilter) return false
                                                     if (!searchTerm) return true
                                                     const q = searchTerm.toLowerCase()
@@ -1144,7 +1189,7 @@ export function AdminBookingsGrid() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {cancelledRequests.filter(r => {
+                                    {visibleCancelled.filter(r => {
                                         if (rateTypeFilter !== "all" && r.container?.salesRateTypeId !== rateTypeFilter) return false
                                         if (!searchTerm) return true
                                         const q = searchTerm.toLowerCase()

@@ -19,6 +19,7 @@ export async function GET() {
                     etd: containers.etd,
                     status: containers.status,
                     salesRateTypeId: containers.salesRateTypeId,
+                    transportMode: containers.transportMode,
                 },
                 user: {
                     id: userTable.id,

@@ -239,10 +239,13 @@ Feedback digested into phases F–L below. Each closes with its own commit(s).
 - [ ] "Create customer" admin action: name, email, company, temp password, payment terms → Better Auth server-side signup, pre-verified + APPROVED
 - [ ] Customer can change the password later (wire the real change-password flow in Settings → Security — currently a mock form)
 
-## Phase K — Sea/Road dashboard split
+## Phase K — Sea/Road dashboard split ✅
 
-- [ ] Admin bookings grid: Containers | Trucks switcher (like fleet's pills) filtering every tab (containers, requests, cancelled, shipments)
-- [ ] Road-role users land on Trucks and cannot switch to Sea
+- [x] Admin bookings grid: Containers | Trucks switcher (pill pair, sea = blue, road = emerald) filtering every tab
+  - Containers tab filters by `transportMode` (label flips to "Trucks" in road view, road-aware empty state)
+  - Pending + Cancelled tabs filter via `r.container.transportMode` (cancelled API now returns it); select-all checkboxes respect the mode filter
+  - Container Requests + Live Shipments are sea-only surfaces: their tabs hide in Trucks view, and switching to Trucks while on one bounces back to the main list
+- [x] `AdminBookingsGrid` accepts `lockedMode="ROAD"` (hides the switcher, pins the mode) — Phase I wires this up for road-role users so they land on Trucks and cannot switch to Sea
 
 ## Phase L — Answers / deferred
 
