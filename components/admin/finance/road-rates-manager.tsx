@@ -112,6 +112,9 @@ export function RoadRatesManager() {
     const [editingRate, setEditingRate] = useState<RoadRateRow | null>(null)
     const [form, setForm] = useState<RateForm>(EMPTY_FORM)
     const [bands, setBands] = useState<BandRow[]>([freshBand()])
+    // Create mode targets one or more corridors - the same band ladder is
+    // written to every selected route in one save.
+    const [routes, setRoutes] = useState<string[]>([])
     const [saving, setSaving] = useState(false)
 
     // Single delete confirm
@@ -178,17 +181,25 @@ export function RoadRatesManager() {
         setEditingRate(null)
         setForm(EMPTY_FORM)
         setBands([freshBand()])
+        setRoutes([])
         setDialogOpen(true)
     }
 
-    // Bands already saved for the lane currently picked in the create dialog -
-    // shown as chips so new bands are placed around them instead of clashing.
-    const existingLaneBands = useMemo(() => {
-        if (!form.route) return []
-        return rates
-            .filter(r => r.route === form.route && (r.userId || "") === form.userId)
-            .sort((a, b) => a.minPallets - b.minPallets)
-    }, [rates, form.route, form.userId])
+    const toggleRoute = (code: string) => {
+        setRoutes(prev => prev.includes(code) ? prev.filter(r => r !== code) : [...prev, code])
+    }
+
+    // Bands already saved per selected route for the picked customer - shown
+    // as chips so new bands are placed around them instead of clashing.
+    const existingByRoute = useMemo(() => {
+        const map = new Map<string, RoadRateRow[]>()
+        for (const code of routes) {
+            map.set(code, rates
+                .filter(r => r.route === code && (r.userId || "") === form.userId)
+                .sort((a, b) => a.minPallets - b.minPallets))
+        }
+        return map
+    }, [rates, routes, form.userId])
 
     const updateBand = (i: number, patch: Partial<BandRow>) => {
         setBands(prev => prev.map((b, idx) => idx === i ? { ...b, ...patch } : b))
@@ -250,12 +261,13 @@ export function RoadRatesManager() {
     }
 
     /**
-     * Create every band row for the picked lane in one go. `addAnotherLane`
-     * keeps the dialog open with the same customer so the next corridor can be
-     * loaded straight after - that's how a whole Britos-style card goes in.
+     * Create the whole band ladder on every selected route in one go.
+     * `addAnotherLane` keeps the dialog open with the same customer so the
+     * next corridors can be loaded straight after - that's how a whole
+     * Britos-style card goes in.
      */
     const handleCreateLane = async (addAnotherLane: boolean) => {
-        if (!form.route) { toast.error("Pick a route"); return }
+        if (routes.length === 0) { toast.error("Pick at least one route"); return }
 
         // Parse + validate all rows before sending anything
         const parsed = bands.map((b, i) => {
@@ -290,49 +302,56 @@ export function RoadRatesManager() {
                 }
             }
         }
-        // ...and against bands already saved for this lane
-        for (const p of parsed) {
-            const clash = existingLaneBands.find(e => p.minPallets <= e.maxPallets && e.minPallets <= p.maxPallets)
-            if (clash) {
-                toast.error(`${p.label} overlaps the existing ${clash.minPallets}-${clash.maxPallets} band - edit or delete that line first`)
-                return
+        // ...and against bands already saved on each selected route
+        for (const code of routes) {
+            const existing = existingByRoute.get(code) || []
+            for (const p of parsed) {
+                const clash = existing.find(e => p.minPallets <= e.maxPallets && e.minPallets <= p.maxPallets)
+                if (clash) {
+                    toast.error(`${roadRouteLabel(code)}: ${p.label} overlaps the existing ${clash.minPallets}-${clash.maxPallets} band - edit or delete that line first`)
+                    return
+                }
             }
         }
 
         setSaving(true)
         try {
             let created = 0
-            for (const p of parsed) {
-                const res = await fetch("/api/admin/road-rates", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        userId: form.userId || null,
-                        route: form.route,
-                        minPallets: p.minPallets,
-                        maxPallets: p.maxPallets,
-                        transportCostPerPallet: p.transportCostPerPallet,
-                        dropsIncluded: p.dropsIncluded,
-                        additionalDropFee: p.additionalDropFee,
-                        overhangFeePerPallet: p.overhangFeePerPallet,
-                    }),
-                })
-                if (!res.ok) {
-                    const data = await res.json().catch(() => ({}))
-                    toast.error(`${p.label} failed: ${data.error || "unknown error"}`)
-                    fetchRates()
-                    return // keep the dialog open so the remaining rows can be fixed
+            for (const code of routes) {
+                for (const p of parsed) {
+                    const res = await fetch("/api/admin/road-rates", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            userId: form.userId || null,
+                            route: code,
+                            minPallets: p.minPallets,
+                            maxPallets: p.maxPallets,
+                            transportCostPerPallet: p.transportCostPerPallet,
+                            dropsIncluded: p.dropsIncluded,
+                            additionalDropFee: p.additionalDropFee,
+                            overhangFeePerPallet: p.overhangFeePerPallet,
+                        }),
+                    })
+                    if (!res.ok) {
+                        const data = await res.json().catch(() => ({}))
+                        toast.error(`${roadRouteLabel(code)} ${p.label} failed: ${data.error || "unknown error"}`, {
+                            description: created > 0 ? `${created} line${created === 1 ? "" : "s"} before it saved fine.` : undefined,
+                        })
+                        fetchRates()
+                        return // keep the dialog open so the rest can be fixed
+                    }
+                    created++
                 }
-                created++
             }
-            toast.success(`${created} band${created === 1 ? "" : "s"} created`, {
-                description: `${roadRouteLabel(form.route)}${form.userId ? "" : " · Default"}`,
+            toast.success(`${created} rate line${created === 1 ? "" : "s"} created`, {
+                description: `${routes.map(roadRouteLabel).join(" · ")}${form.userId ? "" : " · Default"}`,
             })
             fetchRates()
             if (addAnotherLane) {
-                // Same customer, next corridor - fees usually repeat, so seed
-                // the first band of the next lane from this lane's first band
-                setForm(prev => ({ ...prev, route: "" }))
+                // Same customer, next corridors - fees usually repeat, so seed
+                // the first band of the next lane from this ladder's first band
+                setRoutes([])
                 setBands(prev => [{ ...freshBand(), dropsIncluded: prev[0].dropsIncluded, additionalDropFee: prev[0].additionalDropFee, overhangFeePerPallet: prev[0].overhangFeePerPallet }])
             } else {
                 setDialogOpen(false)
@@ -543,27 +562,49 @@ export function RoadRatesManager() {
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Route</Label>
-                                    <Select value={form.route} onValueChange={(v) => setForm({ ...form, route: v })}>
-                                        <SelectTrigger className="bg-slate-900 border-slate-800 h-9 text-sm">
-                                            <SelectValue placeholder="Select corridor" />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-slate-900 border-slate-800 text-white">
-                                            {ROAD_ROUTES.map(r => (
-                                                <SelectItem key={r.code} value={r.code}>{r.label}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {form.route && existingLaneBands.length > 0 && (
-                                        <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                                            <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Already loaded:</span>
-                                            {existingLaneBands.map(e => (
-                                                <Badge key={e.id} className="bg-slate-800 text-slate-300 border-none font-mono text-[10px]">
-                                                    {e.minPallets === e.maxPallets ? e.minPallets : `${e.minPallets}-${e.maxPallets}`} · {fmt(e.transportCostPerPallet)}
-                                                </Badge>
-                                            ))}
-                                        </div>
-                                    )}
+                                    <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                        Routes <span className="normal-case font-normal text-slate-600">- pick every corridor this ladder applies to</span>
+                                    </Label>
+                                    <div className="grid grid-cols-2 gap-1.5">
+                                        {ROAD_ROUTES.map(r => {
+                                            const on = routes.includes(r.code)
+                                            return (
+                                                <button
+                                                    key={r.code}
+                                                    type="button"
+                                                    onClick={() => toggleRoute(r.code)}
+                                                    className={cn(
+                                                        "flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs font-bold transition-all",
+                                                        on
+                                                            ? "border-emerald-600 bg-emerald-950/40 text-white"
+                                                            : "border-slate-800 bg-slate-900 text-slate-400 hover:border-slate-700 hover:text-slate-200",
+                                                    )}
+                                                >
+                                                    <span className={cn(
+                                                        "h-3.5 w-3.5 rounded-sm border flex items-center justify-center shrink-0",
+                                                        on ? "border-emerald-500 bg-emerald-600" : "border-slate-700",
+                                                    )}>
+                                                        {on && <svg viewBox="0 0 10 8" className="h-2 w-2.5 fill-none stroke-white" strokeWidth="2"><path d="M1 4l2.5 2.5L9 1" /></svg>}
+                                                    </span>
+                                                    {r.label}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                    {routes.map(code => {
+                                        const existing = existingByRoute.get(code) || []
+                                        if (existing.length === 0) return null
+                                        return (
+                                            <div key={code} className="flex items-center gap-1.5 flex-wrap pt-1">
+                                                <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">{roadRouteLabel(code)} already has:</span>
+                                                {existing.map(e => (
+                                                    <Badge key={e.id} className="bg-slate-800 text-slate-300 border-none font-mono text-[10px]">
+                                                        {e.minPallets === e.maxPallets ? e.minPallets : `${e.minPallets}-${e.maxPallets}`} · {fmt(e.transportCostPerPallet)}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        )
+                                    })}
                                 </div>
 
                                 {/* Band rows - one lane's whole tier ladder in one save */}
@@ -636,7 +677,7 @@ export function RoadRatesManager() {
                                     </Button>
                                 </div>
                                 <p className="text-[10px] text-slate-500">
-                                    One row per pallet band, e.g. 1 / 2-3 / 4-6 / 7-9… like the printed rate card. Bands can&apos;t overlap each other or the ones already loaded for this lane. Delivery points beyond the included count are charged the extra-drop fee each; overhang is per pallet when flagged.
+                                    One row per pallet band, e.g. 1 / 2-3 / 4-6 / 7-9… like the printed rate card - the sliding scale. The whole ladder is written to every route ticked above. Bands can&apos;t overlap each other or the ones already loaded on a route. Delivery points beyond the included count are charged the extra-drop fee each; overhang is per pallet when flagged.
                                 </p>
                             </>
                         )}
@@ -740,7 +781,7 @@ export function RoadRatesManager() {
                                 </Button>
                                 <Button onClick={() => handleCreateLane(false)} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6">
                                     {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                                    Create {bands.length > 1 ? `${bands.length} Bands` : ""}
+                                    Create{routes.length * bands.length > 1 ? ` ${routes.length * bands.length} Lines` : ""}
                                 </Button>
                             </>
                         )}
