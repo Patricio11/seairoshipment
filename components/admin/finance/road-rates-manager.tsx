@@ -74,6 +74,27 @@ const EMPTY_FORM: RateForm = {
     overhangFeePerPallet: "",
 }
 
+/** One pallet-band row in the create dialog - a lane is loaded as several of
+ *  these at once (1 / 2-3 / 4-6 / … like the Britos card). */
+interface BandRow {
+    minPallets: string
+    maxPallets: string
+    dropsIncluded: string
+    transportCostPerPallet: string
+    additionalDropFee: string
+    overhangFeePerPallet: string
+}
+
+const freshBand = (prev?: BandRow): BandRow => ({
+    // Next band starts where the previous one ended; fees usually repeat per lane
+    minPallets: prev ? String((Math.floor(Number(prev.maxPallets)) || 0) + 1) : "1",
+    maxPallets: "",
+    dropsIncluded: prev?.dropsIncluded || "1",
+    transportCostPerPallet: "",
+    additionalDropFee: prev?.additionalDropFee || "",
+    overhangFeePerPallet: prev?.overhangFeePerPallet || "",
+})
+
 /** Sentinel for the "Default - all customers" choice in the Select (Radix
  *  SelectItem can't carry an empty-string value). */
 const DEFAULT_SENTINEL = "__default__"
@@ -85,10 +106,12 @@ export function RoadRatesManager() {
     const [searchTerm, setSearchTerm] = useState("")
     const [selected, setSelected] = useState<Set<string>>(new Set())
 
-    // Create / edit dialog
+    // Create / edit dialog. Create loads a whole lane (several bands) at once;
+    // edit works on the single existing line.
     const [dialogOpen, setDialogOpen] = useState(false)
     const [editingRate, setEditingRate] = useState<RoadRateRow | null>(null)
     const [form, setForm] = useState<RateForm>(EMPTY_FORM)
+    const [bands, setBands] = useState<BandRow[]>([freshBand()])
     const [saving, setSaving] = useState(false)
 
     // Single delete confirm
@@ -154,8 +177,24 @@ export function RoadRatesManager() {
     const openCreate = () => {
         setEditingRate(null)
         setForm(EMPTY_FORM)
+        setBands([freshBand()])
         setDialogOpen(true)
     }
+
+    // Bands already saved for the lane currently picked in the create dialog -
+    // shown as chips so new bands are placed around them instead of clashing.
+    const existingLaneBands = useMemo(() => {
+        if (!form.route) return []
+        return rates
+            .filter(r => r.route === form.route && (r.userId || "") === form.userId)
+            .sort((a, b) => a.minPallets - b.minPallets)
+    }, [rates, form.route, form.userId])
+
+    const updateBand = (i: number, patch: Partial<BandRow>) => {
+        setBands(prev => prev.map((b, idx) => idx === i ? { ...b, ...patch } : b))
+    }
+    const addBand = () => setBands(prev => [...prev, freshBand(prev[prev.length - 1])])
+    const removeBand = (i: number) => setBands(prev => prev.length > 1 ? prev.filter((_, idx) => idx !== i) : prev)
 
     const openEdit = (rate: RoadRateRow) => {
         setEditingRate(rate)
@@ -172,8 +211,8 @@ export function RoadRatesManager() {
         setDialogOpen(true)
     }
 
-    const handleSave = async () => {
-        if (!editingRate && !form.route) { toast.error("Pick a route"); return }
+    const handleUpdate = async () => {
+        if (!editingRate) return
         if (!(Number(form.transportCostPerPallet) > 0)) { toast.error("Transport cost per pallet must be greater than 0"); return }
         const minP = Math.floor(Number(form.minPallets))
         const maxP = Math.floor(Number(form.maxPallets))
@@ -181,32 +220,123 @@ export function RoadRatesManager() {
 
         setSaving(true)
         try {
-            const isEdit = !!editingRate
-            const bandFields = {
-                minPallets: minP,
-                maxPallets: maxP,
-                transportCostPerPallet: form.transportCostPerPallet,
-                dropsIncluded: Math.max(1, Math.floor(Number(form.dropsIncluded)) || 1),
-                additionalDropFee: form.additionalDropFee || "0",
-                overhangFeePerPallet: form.overhangFeePerPallet || "0",
-            }
-            const res = await fetch(isEdit ? `/api/admin/road-rates/${editingRate!.id}` : "/api/admin/road-rates", {
-                method: isEdit ? "PUT" : "POST",
+            const res = await fetch(`/api/admin/road-rates/${editingRate.id}`, {
+                method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(isEdit
-                    ? bandFields
-                    : { userId: form.userId || null, route: form.route, ...bandFields }),
+                body: JSON.stringify({
+                    minPallets: minP,
+                    maxPallets: maxP,
+                    transportCostPerPallet: form.transportCostPerPallet,
+                    dropsIncluded: Math.max(1, Math.floor(Number(form.dropsIncluded)) || 1),
+                    additionalDropFee: form.additionalDropFee || "0",
+                    overhangFeePerPallet: form.overhangFeePerPallet || "0",
+                }),
             })
             const data = await res.json().catch(() => ({}))
             if (!res.ok) {
                 toast.error(data.error || "Failed to save rate card")
                 return
             }
-            toast.success(isEdit ? "Rate card updated" : "Rate card created", {
-                description: `${roadRouteLabel(isEdit ? editingRate!.route : form.route)}${form.userId ? "" : " · Default"}`,
+            toast.success("Rate card updated", {
+                description: `${roadRouteLabel(editingRate.route)}${editingRate.userId ? "" : " · Default"}`,
             })
             setDialogOpen(false)
             fetchRates()
+        } catch {
+            toast.error("Failed to save rate card")
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    /**
+     * Create every band row for the picked lane in one go. `addAnotherLane`
+     * keeps the dialog open with the same customer so the next corridor can be
+     * loaded straight after - that's how a whole Britos-style card goes in.
+     */
+    const handleCreateLane = async (addAnotherLane: boolean) => {
+        if (!form.route) { toast.error("Pick a route"); return }
+
+        // Parse + validate all rows before sending anything
+        const parsed = bands.map((b, i) => {
+            const minP = Math.floor(Number(b.minPallets))
+            const maxP = Math.floor(Number(b.maxPallets))
+            return {
+                label: `Band ${i + 1}`,
+                minPallets: minP,
+                maxPallets: maxP,
+                transportCostPerPallet: b.transportCostPerPallet,
+                dropsIncluded: Math.max(1, Math.floor(Number(b.dropsIncluded)) || 1),
+                additionalDropFee: b.additionalDropFee || "0",
+                overhangFeePerPallet: b.overhangFeePerPallet || "0",
+            }
+        })
+        for (const p of parsed) {
+            if (!(p.minPallets >= 1) || !(p.maxPallets >= p.minPallets)) {
+                toast.error(`${p.label}: pallet range is invalid - "to" must be ≥ "from" and ≥ 1`)
+                return
+            }
+            if (!(Number(p.transportCostPerPallet) > 0)) {
+                toast.error(`${p.label}: transport cost per pallet must be greater than 0`)
+                return
+            }
+        }
+        // Overlaps inside the dialog...
+        for (let i = 0; i < parsed.length; i++) {
+            for (let j = i + 1; j < parsed.length; j++) {
+                if (parsed[i].minPallets <= parsed[j].maxPallets && parsed[j].minPallets <= parsed[i].maxPallets) {
+                    toast.error(`${parsed[i].label} and ${parsed[j].label} overlap - adjust the pallet ranges`)
+                    return
+                }
+            }
+        }
+        // ...and against bands already saved for this lane
+        for (const p of parsed) {
+            const clash = existingLaneBands.find(e => p.minPallets <= e.maxPallets && e.minPallets <= p.maxPallets)
+            if (clash) {
+                toast.error(`${p.label} overlaps the existing ${clash.minPallets}-${clash.maxPallets} band - edit or delete that line first`)
+                return
+            }
+        }
+
+        setSaving(true)
+        try {
+            let created = 0
+            for (const p of parsed) {
+                const res = await fetch("/api/admin/road-rates", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        userId: form.userId || null,
+                        route: form.route,
+                        minPallets: p.minPallets,
+                        maxPallets: p.maxPallets,
+                        transportCostPerPallet: p.transportCostPerPallet,
+                        dropsIncluded: p.dropsIncluded,
+                        additionalDropFee: p.additionalDropFee,
+                        overhangFeePerPallet: p.overhangFeePerPallet,
+                    }),
+                })
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}))
+                    toast.error(`${p.label} failed: ${data.error || "unknown error"}`)
+                    fetchRates()
+                    return // keep the dialog open so the remaining rows can be fixed
+                }
+                created++
+            }
+            toast.success(`${created} band${created === 1 ? "" : "s"} created`, {
+                description: `${roadRouteLabel(form.route)}${form.userId ? "" : " · Default"}`,
+            })
+            fetchRates()
+            if (addAnotherLane) {
+                // Same customer, next corridor - fees usually repeat, so seed
+                // the first band of the next lane from this lane's first band
+                setForm(prev => ({ ...prev, route: "" }))
+                setBands(prev => [{ ...freshBand(), dropsIncluded: prev[0].dropsIncluded, additionalDropFee: prev[0].additionalDropFee, overhangFeePerPallet: prev[0].overhangFeePerPallet }])
+            } else {
+                setDialogOpen(false)
+            }
         } catch {
             toast.error("Failed to save rate card")
         } finally {
@@ -373,7 +503,7 @@ export function RoadRatesManager() {
 
             {/* Create / Edit dialog */}
             <Dialog open={dialogOpen} onOpenChange={(o) => !saving && setDialogOpen(o)}>
-                <DialogContent className="dark bg-slate-950 border-slate-800 text-white sm:max-w-[440px]">
+                <DialogContent className={cn("dark bg-slate-950 border-slate-800 text-white max-h-[90vh] overflow-y-auto", editingRate ? "sm:max-w-[440px]" : "sm:max-w-[680px]")}>
                     <DialogHeader>
                         <DialogTitle className="text-xl font-black tracking-tight flex items-center gap-2">
                             <Truck className="h-5 w-5 text-emerald-500" />
@@ -382,7 +512,7 @@ export function RoadRatesManager() {
                         <DialogDescription className="text-slate-400 font-mono text-[10px] uppercase tracking-widest">
                             {editingRate
                                 ? `${roadRouteLabel(editingRate.route)} · ${editingRate.userId ? (editingRate.customerCompany || editingRate.customerName) : "Default"}`
-                                : "Per-customer road freight pricing - the 3 cost lines"}
+                                : "Pick the lane, then load its pallet bands in one go"}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -424,95 +554,196 @@ export function RoadRatesManager() {
                                             ))}
                                         </SelectContent>
                                     </Select>
+                                    {form.route && existingLaneBands.length > 0 && (
+                                        <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                                            <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Already loaded:</span>
+                                            {existingLaneBands.map(e => (
+                                                <Badge key={e.id} className="bg-slate-800 text-slate-300 border-none font-mono text-[10px]">
+                                                    {e.minPallets === e.maxPallets ? e.minPallets : `${e.minPallets}-${e.maxPallets}`} · {fmt(e.transportCostPerPallet)}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
+
+                                {/* Band rows - one lane's whole tier ladder in one save */}
+                                <div className="space-y-2">
+                                    <div className="grid grid-cols-[1fr_1fr_1fr_1.5fr_1.5fr_1.5fr_28px] gap-1.5 items-end">
+                                        <Label className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Pallets From</Label>
+                                        <Label className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Pallets To</Label>
+                                        <Label className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Drops Incl.</Label>
+                                        <Label className="text-[9px] font-bold uppercase tracking-wider text-slate-500">R / Pallet</Label>
+                                        <Label className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Extra Drop R</Label>
+                                        <Label className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Overhang R</Label>
+                                        <span />
+                                    </div>
+                                    {bands.map((b, i) => (
+                                        <div key={i} className="grid grid-cols-[1fr_1fr_1fr_1.5fr_1.5fr_1.5fr_28px] gap-1.5 items-center">
+                                            <NumericInput
+                                                value={b.minPallets}
+                                                onChange={(e) => updateBand(i, { minPallets: e.target.value })}
+                                                placeholder="1"
+                                                className="bg-slate-900 border-slate-800 h-9 text-sm font-mono text-center"
+                                            />
+                                            <NumericInput
+                                                value={b.maxPallets}
+                                                onChange={(e) => updateBand(i, { maxPallets: e.target.value })}
+                                                placeholder="28"
+                                                className="bg-slate-900 border-slate-800 h-9 text-sm font-mono text-center"
+                                            />
+                                            <NumericInput
+                                                value={b.dropsIncluded}
+                                                onChange={(e) => updateBand(i, { dropsIncluded: e.target.value })}
+                                                placeholder="1"
+                                                className="bg-slate-900 border-slate-800 h-9 text-sm font-mono text-center"
+                                            />
+                                            <NumericInput
+                                                value={b.transportCostPerPallet}
+                                                onChange={(e) => updateBand(i, { transportCostPerPallet: e.target.value })}
+                                                placeholder="0.00"
+                                                className="bg-slate-900 border-slate-800 h-9 text-sm font-mono text-right"
+                                            />
+                                            <NumericInput
+                                                value={b.additionalDropFee}
+                                                onChange={(e) => updateBand(i, { additionalDropFee: e.target.value })}
+                                                placeholder="0.00"
+                                                className="bg-slate-900 border-slate-800 h-9 text-sm font-mono text-right"
+                                            />
+                                            <NumericInput
+                                                value={b.overhangFeePerPallet}
+                                                onChange={(e) => updateBand(i, { overhangFeePerPallet: e.target.value })}
+                                                placeholder="0.00"
+                                                className="bg-slate-900 border-slate-800 h-9 text-sm font-mono text-right"
+                                            />
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => removeBand(i)}
+                                                disabled={bands.length === 1}
+                                                className="h-8 w-7 text-slate-600 hover:text-red-400 hover:bg-red-950/30 disabled:opacity-30"
+                                            >
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={addBand}
+                                        className="border-slate-800 bg-slate-900 text-slate-300 hover:text-white text-xs font-bold"
+                                    >
+                                        <Plus className="h-3.5 w-3.5 mr-1" /> Add Band
+                                    </Button>
+                                </div>
+                                <p className="text-[10px] text-slate-500">
+                                    One row per pallet band, e.g. 1 / 2-3 / 4-6 / 7-9… like the printed rate card. Bands can&apos;t overlap each other or the ones already loaded for this lane. Delivery points beyond the included count are charged the extra-drop fee each; overhang is per pallet when flagged.
+                                </p>
                             </>
                         )}
 
-                        {/* Pallet band + drops included - the Britos-card tier model */}
-                        <div className="grid grid-cols-3 gap-3">
-                            <div className="space-y-1.5">
-                                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pallets From</Label>
-                                <NumericInput
-                                    value={form.minPallets}
-                                    onChange={(e) => setForm({ ...form, minPallets: e.target.value })}
-                                    placeholder="1"
-                                    className="bg-slate-900 border-slate-800 h-9 text-sm font-mono text-center"
-                                />
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pallets To</Label>
-                                <NumericInput
-                                    value={form.maxPallets}
-                                    onChange={(e) => setForm({ ...form, maxPallets: e.target.value })}
-                                    placeholder="28"
-                                    className="bg-slate-900 border-slate-800 h-9 text-sm font-mono text-center"
-                                />
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Drops Included</Label>
-                                <NumericInput
-                                    value={form.dropsIncluded}
-                                    onChange={(e) => setForm({ ...form, dropsIncluded: e.target.value })}
-                                    placeholder="1"
-                                    className="bg-slate-900 border-slate-800 h-9 text-sm font-mono text-center"
-                                />
-                            </div>
-                        </div>
-                        <p className="text-[10px] text-slate-500 -mt-2">
-                            One line per band, e.g. 1 / 2-3 / 4-6 / 7-9… Bands can&apos;t overlap for the same customer + route.
-                        </p>
-
-                        <div className="space-y-1.5">
-                            <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Transport Cost per Pallet (ZAR)</Label>
-                            <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-mono text-sm">R</span>
-                                <NumericInput
-                                    value={form.transportCostPerPallet}
-                                    onChange={(e) => setForm({ ...form, transportCostPerPallet: e.target.value })}
-                                    placeholder="0.00"
-                                    className="bg-slate-900 border-slate-800 h-9 text-sm font-mono pl-8 text-right"
-                                />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1.5">
-                                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Fee per Additional Drop</Label>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-mono text-sm">R</span>
-                                    <NumericInput
-                                        value={form.additionalDropFee}
-                                        onChange={(e) => setForm({ ...form, additionalDropFee: e.target.value })}
-                                        placeholder="0.00"
-                                        className="bg-slate-900 border-slate-800 h-9 text-sm font-mono pl-8 text-right"
-                                    />
+                        {editingRate && (
+                            <>
+                                {/* Single-line edit - same fields as one band row */}
+                                <div className="grid grid-cols-3 gap-3">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pallets From</Label>
+                                        <NumericInput
+                                            value={form.minPallets}
+                                            onChange={(e) => setForm({ ...form, minPallets: e.target.value })}
+                                            placeholder="1"
+                                            className="bg-slate-900 border-slate-800 h-9 text-sm font-mono text-center"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pallets To</Label>
+                                        <NumericInput
+                                            value={form.maxPallets}
+                                            onChange={(e) => setForm({ ...form, maxPallets: e.target.value })}
+                                            placeholder="28"
+                                            className="bg-slate-900 border-slate-800 h-9 text-sm font-mono text-center"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Drops Included</Label>
+                                        <NumericInput
+                                            value={form.dropsIncluded}
+                                            onChange={(e) => setForm({ ...form, dropsIncluded: e.target.value })}
+                                            placeholder="1"
+                                            className="bg-slate-900 border-slate-800 h-9 text-sm font-mono text-center"
+                                        />
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Overhang Fee / Pallet</Label>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-mono text-sm">R</span>
-                                    <NumericInput
-                                        value={form.overhangFeePerPallet}
-                                        onChange={(e) => setForm({ ...form, overhangFeePerPallet: e.target.value })}
-                                        placeholder="0.00"
-                                        className="bg-slate-900 border-slate-800 h-9 text-sm font-mono pl-8 text-right"
-                                    />
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Transport Cost per Pallet (ZAR)</Label>
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-mono text-sm">R</span>
+                                        <NumericInput
+                                            value={form.transportCostPerPallet}
+                                            onChange={(e) => setForm({ ...form, transportCostPerPallet: e.target.value })}
+                                            placeholder="0.00"
+                                            className="bg-slate-900 border-slate-800 h-9 text-sm font-mono pl-8 text-right"
+                                        />
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                        <p className="text-[10px] text-slate-500">
-                            Delivery points beyond the included count are charged the additional-drop fee each. Overhang fee is charged per pallet when the customer flags overhang.
-                        </p>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Fee per Additional Drop</Label>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-mono text-sm">R</span>
+                                            <NumericInput
+                                                value={form.additionalDropFee}
+                                                onChange={(e) => setForm({ ...form, additionalDropFee: e.target.value })}
+                                                placeholder="0.00"
+                                                className="bg-slate-900 border-slate-800 h-9 text-sm font-mono pl-8 text-right"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Overhang Fee / Pallet</Label>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-mono text-sm">R</span>
+                                            <NumericInput
+                                                value={form.overhangFeePerPallet}
+                                                onChange={(e) => setForm({ ...form, overhangFeePerPallet: e.target.value })}
+                                                placeholder="0.00"
+                                                className="bg-slate-900 border-slate-800 h-9 text-sm font-mono pl-8 text-right"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <p className="text-[10px] text-slate-500">
+                                    Delivery points beyond the included count are charged the additional-drop fee each. Overhang fee is charged per pallet when the customer flags overhang.
+                                </p>
+                            </>
+                        )}
                     </div>
 
-                    <DialogFooter>
+                    <DialogFooter className="gap-2">
                         <Button variant="ghost" onClick={() => setDialogOpen(false)} disabled={saving} className="text-slate-400 hover:text-white hover:bg-slate-900">
                             Cancel
                         </Button>
-                        <Button onClick={handleSave} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6">
-                            {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                            {editingRate ? "Update" : "Create"}
-                        </Button>
+                        {editingRate ? (
+                            <Button onClick={handleUpdate} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6">
+                                {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                                Update
+                            </Button>
+                        ) : (
+                            <>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => handleCreateLane(true)}
+                                    disabled={saving}
+                                    className="border-emerald-800 bg-emerald-950/40 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/70 font-bold"
+                                >
+                                    {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                                    Save + Add Lane
+                                </Button>
+                                <Button onClick={() => handleCreateLane(false)} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6">
+                                    {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                                    Create {bands.length > 1 ? `${bands.length} Bands` : ""}
+                                </Button>
+                            </>
+                        )}
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
